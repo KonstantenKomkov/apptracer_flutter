@@ -1,0 +1,67 @@
+{
+  // Запуск примера, когда эта папка открыта как отдельный проект.
+  // Тот же набор есть в .vscode/launch.json корня монорепозитория —
+  // на случай, если открыт весь репозиторий.
+  //
+  // ВАЖНО: токенов в этом файле нет и быть не должно. ${env:...} берёт их из
+  // окружения процесса VS Code, поэтому редактор нужно открывать из шелла,
+  // где они загружены:
+  //
+  //     source ~/.tracer-env && code .
+  //
+  // Иначе на Android плагин Tracer не применится и в карточке состояния будет
+  // «сбор включён: false».
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Ближе всего к тому, что увидит пользователь: обфускации нет, зато
+      // это настоящая release-сборка.
+      "name": "Android (release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "flutterMode": "release",
+      "toolArgs": ["-Ptracer.enabled=true"]
+    },
+    {
+      // События уходят и отсюда: TracerHostApplication примера выставляет
+      // CoreTracerConfiguration.setDebugUpload(true), без которого Android SDK
+      // Tracer из debug-сборки молчит.
+      "name": "Android (debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "toolArgs": ["-Ptracer.enabled=true"]
+    },
+    {
+      // На iOS токен идёт через Dart, а не через сборочный плагин, как на Android.
+      "name": "iOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "toolArgs": ["--dart-define=TRACER_APP_TOKEN=${env:TRACER_IOS_APP_TOKEN}"]
+    },
+    {
+      // Web и десктоп ходят по протоколу Sentry — им нужен DSN, а не appToken.
+      "name": "Web (Chrome)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
+    },
+    {
+      "name": "macOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "macos",
+      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
+    }
+  ]
+}

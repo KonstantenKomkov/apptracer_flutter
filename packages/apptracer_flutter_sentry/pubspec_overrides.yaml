@@ -1,0 +1,3 @@
+dependency_overrides:
+  apptracer_flutter_platform_interface:
+    path: ../apptracer_flutter_platform_interface

@@ -1,0 +1,8 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+#include? "Signing.xcconfig"
+
+// Обычно debug-сборка dSYM не производит, и загружать в Tracer нечего.
+// Пример включает их, чтобы канал загрузки символов можно было проверить на
+// симуляторе, не дожидаясь подписи под реальное устройство.
+DEBUG_INFORMATION_FORMAT=dwarf-with-dsym

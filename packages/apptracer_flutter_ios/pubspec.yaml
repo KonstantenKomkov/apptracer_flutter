@@ -1,0 +1,35 @@
+name: apptracer_flutter_ios
+description: >-
+  iOS implementation of apptracer_flutter, the unofficial Flutter integration
+  with Tracer (apptracer.ru). Forwards Dart errors to the OKTracer iOS SDK.
+version: 0.1.0
+repository: https://github.com/komkovkonstantin/apptracer_flutter
+issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+
+topics:
+  - crash-reporting
+  - error-monitoring
+  - observability
+  - tracer
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  apptracer_flutter_platform_interface: ^0.1.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    implements: apptracer_flutter
+    platforms:
+      ios:
+        pluginClass: AppTracerFlutterPlugin
+        dartPluginClass: AppTracerIos

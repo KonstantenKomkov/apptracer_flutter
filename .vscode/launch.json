@@ -1,0 +1,64 @@
+{
+  // Запуск примера из VS Code. Эквивалент целей Makefile: make example-android и т.д.
+  //
+  // ВАЖНО: токены сюда приходят из окружения процесса VS Code, а в файле их нет
+  // и быть не должно. Открывайте редактор из шелла, где токены загружены:
+  //
+  //     source ~/.tracer-env && code .
+  //
+  // Иначе ${env:...} подставится пустой строкой, а на Android плагин Tracer
+  // просто не применится — в примере он опционален и включается -Ptracer.enabled.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Ближе всего к тому, что увидит пользователь: обфускации нет, зато
+      // это настоящая release-сборка.
+      "name": "Пример: Android (release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/apptracer_flutter/example/lib/main.dart",
+      "cwd": "${workspaceFolder}/packages/apptracer_flutter/example",
+      "flutterMode": "release",
+      "toolArgs": ["-Ptracer.enabled=true"]
+    },
+    {
+      // События уходят и отсюда: TracerHostApplication примера выставляет
+      // CoreTracerConfiguration.setDebugUpload(true), без которого Android SDK
+      // Tracer из debug-сборки молчит.
+      "name": "Пример: Android (debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/apptracer_flutter/example/lib/main.dart",
+      "cwd": "${workspaceFolder}/packages/apptracer_flutter/example",
+      "toolArgs": ["-Ptracer.enabled=true"]
+    },
+    {
+      // На iOS токен идёт через Dart, а не через сборочный плагин, как на Android.
+      "name": "Пример: iOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/apptracer_flutter/example/lib/main.dart",
+      "cwd": "${workspaceFolder}/packages/apptracer_flutter/example",
+      "toolArgs": ["--dart-define=TRACER_APP_TOKEN=${env:TRACER_IOS_APP_TOKEN}"]
+    },
+    {
+      // Web и десктоп ходят по протоколу Sentry — им нужен DSN, а не appToken.
+      "name": "Пример: Web (Chrome)",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/apptracer_flutter/example/lib/main.dart",
+      "cwd": "${workspaceFolder}/packages/apptracer_flutter/example",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
+    },
+    {
+      "name": "Пример: macOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/apptracer_flutter/example/lib/main.dart",
+      "cwd": "${workspaceFolder}/packages/apptracer_flutter/example",
+      "deviceId": "macos",
+      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
+    }
+  ]
+}

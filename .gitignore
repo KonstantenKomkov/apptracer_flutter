@@ -1,0 +1,56 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+pubspec.lock
+**/doc/api/
+
+# Local development wiring is committed on purpose (see docs/contributing.md),
+# but generated per-package lockfiles are not.
+
+# IDE
+.idea/
+# Конфигурации запуска примера общие для всех — остальное из .vscode личное.
+# Правило нужно на любой глубине: пример открывают и отдельным проектом.
+**/.vscode/*
+!**/.vscode/launch.json
+*.iml
+*.iws
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/captures/
+**/android/.cxx/
+**/android/**/GeneratedPluginRegistrant.java
+
+# iOS / macOS
+# Идентификатор команды разработчика привязан к человеку, а не к проекту.
+**/ios/Flutter/Signing.xcconfig
+**/ios/Pods/
+**/ios/Podfile.lock
+**/ios/.symlinks/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/ephemeral/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Symbols and mappings must never be committed: they are release artefacts,
+# they are large, and app.*.symbols embeds absolute build-machine paths.
+**/symbols/
+*.symbols
+**/mapping.txt
+
+# Secrets. Tokens belong in the environment, never in the repository.
+.env
+*.keystore
+*.jks
+key.properties
+
+# OS
+.DS_Store

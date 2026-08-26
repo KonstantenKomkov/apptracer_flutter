@@ -1,0 +1,15 @@
+dependency_overrides:
+  apptracer_flutter:
+    path: ..
+  apptracer_flutter_platform_interface:
+    path: ../../apptracer_flutter_platform_interface
+  apptracer_flutter_android:
+    path: ../../apptracer_flutter_android
+  apptracer_flutter_ios:
+    path: ../../apptracer_flutter_ios
+  apptracer_flutter_http:
+    path: ../../apptracer_flutter_http
+  apptracer_flutter_sentry:
+    path: ../../apptracer_flutter_sentry
+  apptracer_flutter_web:
+    path: ../../apptracer_flutter_web

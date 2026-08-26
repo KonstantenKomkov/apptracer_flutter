@@ -1,0 +1,197 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A crash reporter that only works on the maintainer's machine is worthless, so
+# every claim the README makes about a platform is built here.
+env:
+  FLUTTER_VERSION: "3.35.7"
+
+jobs:
+  analyze:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - apptracer_flutter_platform_interface
+          - apptracer_flutter_http
+          - apptracer_flutter_sentry
+          - apptracer_flutter_android
+          - apptracer_flutter_ios
+          - apptracer_flutter_web
+          - apptracer_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: packages/${{ matrix.package }}
+        run: flutter pub get
+
+      - name: Check formatting
+        working-directory: packages/${{ matrix.package }}
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: packages/${{ matrix.package }}
+        run: flutter analyze --fatal-infos
+
+      - name: Set up Chrome
+        if: matrix.package == 'apptracer_flutter_web'
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Test
+        working-directory: packages/${{ matrix.package }}
+        env:
+          # The web package's tests exercise browser-only code paths, so they
+          # have to run in a real browser rather than on the Dart VM.
+          CHROME_EXECUTABLE: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          if [ ! -d test ]; then
+            echo "no tests in this package"
+          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
+            flutter test --platform chrome --reporter=expanded
+          else
+            flutter test --reporter=expanded --coverage
+          fi
+
+      - name: Upload coverage
+        if: hashFiles(format('packages/{0}/coverage/lcov.info', matrix.package)) != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.package }}
+          path: packages/${{ matrix.package }}/coverage/lcov.info
+
+  example:
+    name: Example (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: android
+            os: ubuntu-latest
+          - target: web
+            os: ubuntu-latest
+          - target: ios
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        if: matrix.target == 'android'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: packages/apptracer_flutter/example
+        run: flutter pub get
+
+      - name: Analyze and test the example
+        working-directory: packages/apptracer_flutter/example
+        run: |
+          flutter analyze --fatal-infos
+          flutter test --reporter=expanded
+
+      # Built with obfuscation, because that is the configuration whose stack
+      # traces are hardest to read and the one this package has to keep
+      # decodable. The symbol file is kept as an artefact: without it the
+      # release's Dart traces cannot be symbolicated, ever.
+      - name: Build Android
+        if: matrix.target == 'android'
+        working-directory: packages/apptracer_flutter/example
+        run: |
+          # Clean first: an incremental build can leave the Dart AOT step
+          # UP-TO-DATE and never regenerate the symbol file, producing a release
+          # APK whose stack traces can never be decoded. See
+          # docs/symbolication.md, finding 3.
+          flutter clean
+          flutter pub get
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --obfuscate --split-debug-info=build/symbols
+
+      # Covers the Dart-frame to StackTraceElement mapping, which is what
+      # Tracer groups Android events by.
+      - name: Kotlin unit tests
+        if: matrix.target == 'android'
+        working-directory: packages/apptracer_flutter/example/android
+        run: ./gradlew :apptracer_flutter_android:testDebugUnitTest
+
+      - name: Verify the Dart symbol file matches libapp.so
+        if: matrix.target == 'android'
+        working-directory: packages/apptracer_flutter/example
+        run: ../../../tool/verify_build_id.sh
+
+      - name: Upload Dart symbols
+        if: matrix.target == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-symbols-android
+          path: packages/apptracer_flutter/example/build/symbols
+          retention-days: 90
+
+      - name: Build web
+        if: matrix.target == 'web'
+        working-directory: packages/apptracer_flutter/example
+        run: flutter build web --release --source-maps
+
+      - name: Upload web source maps
+        if: matrix.target == 'web'
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-source-maps
+          path: packages/apptracer_flutter/example/build/web/*.map
+          retention-days: 90
+
+      # No code signing in CI, so the simulator build is what can be proven.
+      - name: Build iOS
+        if: matrix.target == 'ios'
+        working-directory: packages/apptracer_flutter/example
+        run: flutter build ios --simulator --debug
+
+  publish-dry-run:
+    name: pub publish --dry-run
+    runs-on: ubuntu-latest
+    # Until the first release, the packages are not on pub.dev and every
+    # dry-run that resolves a sibling dependency necessarily fails. Turn this
+    # job required once 0.1.0 is out; see docs/publishing.md.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - apptracer_flutter_platform_interface
+          - apptracer_flutter_http
+          - apptracer_flutter_android
+          - apptracer_flutter_ios
+          - apptracer_flutter_web
+          - apptracer_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dry run
+        working-directory: packages/${{ matrix.package }}
+        run: dart pub publish --dry-run

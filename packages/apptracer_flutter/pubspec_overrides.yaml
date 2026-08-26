@@ -1,0 +1,19 @@
+# Local development wiring only.
+#
+# `dart pub publish` ignores pubspec_overrides.yaml, and CI resolves the same
+# graph from pub.dev, so this file never affects a published artefact.
+#
+# apptracer_flutter_http is listed even though this package does not depend on
+# it directly: apptracer_flutter_web does, and an override has to cover the
+# whole transitive path while none of these packages exist on pub.dev yet.
+dependency_overrides:
+  apptracer_flutter_platform_interface:
+    path: ../apptracer_flutter_platform_interface
+  apptracer_flutter_android:
+    path: ../apptracer_flutter_android
+  apptracer_flutter_ios:
+    path: ../apptracer_flutter_ios
+  apptracer_flutter_http:
+    path: ../apptracer_flutter_http
+  apptracer_flutter_web:
+    path: ../apptracer_flutter_web

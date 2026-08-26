@@ -1,0 +1,73 @@
+group = 'ru.apptracer.flutter'
+version = '0.1.0'
+
+buildscript {
+    ext.kotlin_version = '1.9.24'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.5.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace = 'ru.apptracer.flutter'
+    compileSdk = 35
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
+    }
+
+    defaultConfig {
+        // Matches the minSdkVersion declared by ru.ok.tracer:tracer-commons.
+        minSdk = 21
+
+        // Without these, a minified release build of an application that does
+        // not add the Tracer SDK fails in R8 with "Missing classes detected".
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    // Deliberately compileOnly.
+    //
+    // The Tracer SDK is added by the host application, together with the
+    // `ru.ok.tracer` Gradle plugin that supplies appToken/pluginToken and
+    // uploads mappings. Declaring it as a real dependency here would pin a
+    // vendor SDK version inside someone else's build and would mean this
+    // package redistributes a proprietary artefact. If the SDK is absent at
+    // runtime the plugin reports "disabled" instead of crashing.
+    compileOnly 'ru.ok.tracer:tracer-crash-report:1.4.0'
+    compileOnly 'ru.ok.tracer:tracer-commons:1.4.0'
+
+    testImplementation 'ru.ok.tracer:tracer-crash-report:1.4.0'
+    testImplementation 'ru.ok.tracer:tracer-commons:1.4.0'
+    testImplementation 'junit:junit:4.13.2'
+}

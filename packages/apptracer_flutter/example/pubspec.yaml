@@ -1,0 +1,28 @@
+name: apptracer_flutter_example
+description: Example application for apptracer_flutter.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  apptracer_flutter: ^0.1.0
+  # Only needed on targets without a native Tracer SDK (desktop, Aurora).
+  # Android, iOS and web work without it.
+  apptracer_flutter_http: ^0.1.0
+  apptracer_flutter_sentry: ^0.1.0
+  cupertino_icons: ^1.0.8
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

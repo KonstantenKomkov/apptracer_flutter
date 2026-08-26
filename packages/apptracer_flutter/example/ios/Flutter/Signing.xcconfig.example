@@ -1,0 +1,9 @@
+// Скопируйте в Signing.xcconfig и впишите свой Team ID.
+//
+// Где взять: Xcode → Settings → Accounts → выберите Apple ID → Manage
+// Certificates, либо `security find-identity -v -p codesigning` — идентификатор
+// стоит в скобках после имени.
+//
+// Signing.xcconfig в .gitignore: он привязан к конкретному разработчику.
+
+DEVELOPMENT_TEAM = XXXXXXXXXX

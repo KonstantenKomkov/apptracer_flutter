@@ -1,0 +1,95 @@
+// Tracer Android wiring for the example app.
+//
+// Applied only when the build is started with -Ptracer.enabled=true, so that
+// `flutter build apk` keeps working in a checkout that has no Tracer
+// credentials. A real application would apply the plugin unconditionally.
+//
+// Tokens are read from the environment. Putting them in a build file would
+// commit them to version control, and a committed token is a leaked token.
+
+apply plugin: 'ru.ok.tracer'
+
+// providers.environmentVariable, not System.getenv: this script runs inside the
+// Gradle daemon, which inherits the environment of the shell that *started* it.
+// The daemon is reused across builds, so System.getenv keeps returning the
+// first build's environment — tokens exported afterwards stay invisible and the
+// build fails with "no tokens" against a fully populated ~/.tracer-env. The
+// provider API asks the client for the value, and is tracked correctly by the
+// configuration cache as a bonus.
+def tracerAppToken = providers.environmentVariable('TRACER_APP_TOKEN').getOrNull()
+def tracerPluginToken = providers.environmentVariable('TRACER_PLUGIN_TOKEN').getOrNull()
+
+if (!tracerAppToken || !tracerPluginToken) {
+    throw new GradleException(
+        'tracer.enabled=true requires TRACER_APP_TOKEN and TRACER_PLUGIN_TOKEN ' +
+        'in the environment. Failing the build rather than shipping a release ' +
+        'whose crashes silently go nowhere.')
+}
+
+android {
+    // The Tracer SDK reads build-time resources. AGP 9 turns resValues off by
+    // default, and without it the SDK fails at runtime.
+    buildFeatures {
+        resValues true
+    }
+
+    // TracerHostApplication implements HasTracerConfiguration, so it compiles
+    // only when the SDK is on the classpath — which is exactly when this
+    // script is applied. Its own source set keeps a credential-less checkout
+    // compiling.
+    sourceSets {
+        main {
+            java.srcDir 'src/tracer/kotlin'
+        }
+    }
+
+    defaultConfig {
+        // Flutter substitutes ${applicationName} in AndroidManifest.xml from
+        // this placeholder. Overriding it here rather than editing the
+        // manifest keeps the manifest valid for a build without Tracer, where
+        // the class does not exist at all.
+        manifestPlaceholders.put(
+            'applicationName',
+            'ru.apptracer.flutter.apptracer_flutter_example.TracerHostApplication')
+    }
+}
+
+tracer {
+    create('defaultConfig') {
+        appToken = tracerAppToken
+        pluginToken = tracerPluginToken
+
+        uploadMapping = true
+        uploadNativeSymbols = true
+        uploadRetryCount = 2
+
+        // Optional: upload Dart AOT symbols through the native-symbol channel.
+        //
+        // Point this at a directory prepared by tool/prepare_dart_symbols.sh,
+        // which copies app.<platform>-<arch>.symbols to `libapp.so` so that the
+        // uploaded breakpad module matches the real library on both name and
+        // build id. Measured locally: the plugin's own dump_syms turns that file
+        // into 7545 named FUNC entries, against 0 for the stripped libapp.so.
+        //
+        // Whether Tracer applies them to Dart frames is not confirmed, and the
+        // symbol file carries absolute build-machine paths. Read
+        // docs/symbolication.md before enabling this.
+        def splitDebugInfo = providers.environmentVariable('DART_SPLIT_DEBUG_INFO').getOrNull()
+        if (splitDebugInfo) {
+            additionalLibrariesPath = splitDebugInfo
+            // Required, not optional. The plugin asks the API whether symbols
+            // for this build already exist (`nativesymbol/exists`) and skips
+            // the upload if they do — and the ordinary build has usually
+            // uploaded the stripped libapp.so already. Without forcing, the
+            // Dart symbols are silently never sent and the experiment quietly
+            // measures nothing.
+            forceUploadNativeSymbols = true
+        }
+    }
+}
+
+dependencies {
+    implementation platform('ru.ok.tracer:tracer-platform:1.4.0')
+    implementation 'ru.ok.tracer:tracer-crash-report'
+    implementation 'ru.ok.tracer:tracer-crash-report-native'
+}

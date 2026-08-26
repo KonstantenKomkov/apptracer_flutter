@@ -1,0 +1,37 @@
+name: apptracer_flutter_android
+description: >-
+  Android implementation of apptracer_flutter, the unofficial Flutter
+  integration with Tracer (apptracer.ru). Forwards Dart errors to the
+  ru.ok.tracer Android SDK.
+version: 0.1.0
+repository: https://github.com/komkovkonstantin/apptracer_flutter
+issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+
+topics:
+  - crash-reporting
+  - error-monitoring
+  - observability
+  - tracer
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  apptracer_flutter_platform_interface: ^0.1.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    implements: apptracer_flutter
+    platforms:
+      android:
+        package: ru.apptracer.flutter
+        pluginClass: AppTracerFlutterPlugin
+        dartPluginClass: AppTracerAndroid

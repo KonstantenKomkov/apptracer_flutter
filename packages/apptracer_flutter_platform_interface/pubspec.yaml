@@ -1,0 +1,28 @@
+name: apptracer_flutter_platform_interface
+description: >-
+  Common platform interface, data models and Dart stack-trace parser for the
+  unofficial apptracer_flutter integration with the Tracer (apptracer.ru) service.
+version: 0.1.0
+repository: https://github.com/komkovkonstantin/apptracer_flutter
+issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+
+topics:
+  - crash-reporting
+  - error-monitoring
+  - observability
+  - tracer
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.12.0
+  plugin_platform_interface: ^2.1.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

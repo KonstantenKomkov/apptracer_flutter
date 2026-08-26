@@ -1,0 +1,111 @@
+# Verification status
+
+An honest ledger of what has actually been exercised, so that nothing here is
+mistaken for a guarantee.
+
+Last updated: 2026-08-26.
+
+## Verified
+
+| Claim | How |
+|---|---|
+| Dart stack traces of every shape parse correctly — JIT, obfuscated AOT with header, dart2js V8 and SpiderMonkey, async markers, garbage input | unit tests in `apptracer_flutter_platform_interface` |
+| The verbatim stack-trace text survives end to end | unit tests |
+| `appRunner` runs exactly once on success, on disabled collection, on SDK start failure, and with no implementation registered | unit tests |
+| A previously installed `FlutterError.onError` / `PlatformDispatcher.onError` keeps running | unit tests |
+| `stopCollection` restores the previous handlers, and only when the installed handler is still ours | unit tests |
+| Repeated `initialize` does not stack handlers | unit tests |
+| The same error object arriving twice is reported once | unit tests |
+| `beforeSend` / `beforeBreadcrumb` can drop, rewrite, and survive throwing | unit tests |
+| A missing native implementation or a `PlatformException` disables collection instead of propagating | unit tests |
+| Tracer's grouping ignores file names and line numbers, and `issueKey` overrides it for non-fatals | vendor documentation, "Символизация и группировка сбоев"; the iOS key and the Android frame mapping were both designed around it |
+| A pathological stack trace cannot flush the breadcrumb trail out of the 64 KiB circular log buffer | unit tests, then confirmed live on 2026-08-26: after six verbatim traces including a 128-frame one, both breadcrumbs were still the first two entries in the event's log tab, and the trace carried the `truncated, 123 more line(s)` marker |
+| The web payload matches the shape captured from the vendor's own SDK | unit tests in `apptracer_flutter_http`, written against the captured request |
+| The Sentry envelope is well formed: byte-accurate item length, hex event id, frames oldest-first, `in_app` classification, 429 back-off | unit tests in `apptracer_flutter_sentry` |
+| Android SDK coordinates, minSdk, permissions, init mechanism, generated resource names, and the one-way nature of `Tracer.disable()` | inspection of the published AAR and Gradle plugin bytecode |
+| iOS SDK API signatures, architectures, deployment target | the `.swiftinterface` shipped inside `OKTracer.xcframework` 1.5.1 |
+| The Tracer Licence Agreement does not prohibit publishing this wrapper | read in full (edition 29 May 2025); clause-by-clause reading in `legal.md` |
+| The Kotlin plugin compiles against the real `ru.ok.tracer` 1.4.0 artefacts | `compileReleaseKotlin` in the example's Android build |
+| A minified release build of an app *without* the Tracer SDK succeeds | required adding consumer ProGuard rules; R8 failed before them |
+| The Swift plugin compiles and links against the real `OKTracer` 1.5.1 xcframework | `flutter build ios --simulator` on the example |
+| The host `Podfile` needs `use_frameworks! :linkage => :static` | `pod install` failed without it |
+| `app.android-arm64.symbols` and the shipped `libapp.so` carry the same GNU build id | measured on a real obfuscated release build |
+| Tracer's own bundled `dump_syms` reads the Dart symbol file and emits 7 545 named `FUNC` entries, against 0 for the stripped `libapp.so`, under the same module id | ran the binary extracted from `tracer-plugin-1.4.0.jar` |
+| The real values behind Tracer's limits: 8 non-fatals per session, 10/hour with the rate limit on, 32-character `issueKey`, 64 KiB log buffer, 4-hour TTL on undelivered crashes | `ru.ok.tracer.crash.report.BuildConfig` in the 1.4.0 AAR |
+| The plugin grades symbol files `BROKEN` / `CFI_ONLY` / `FULL` and skips unusable ones, and describes `additionalLibrariesPath` as the way to override symbols for a packaged library | `ParsedSymbolFile.Quality` and the plugin's own warning text, both from the bytecode |
+| An incremental build can produce a release APK with no regenerated symbol file | reproduced; `tool/verify_build_id.sh` exists because of it |
+| Events arrive in a real Tracer project from Android and render as intended | live run, 2026-08-26, HUAWEI CLT-L29 / Android 10, release build; checks 1–6 and 18 of the live-verification plan |
+| The synthetic `DartError` groups by the injected Dart frames, not by JNI: each group is titled by its own top Dart frame | same run |
+| Grouping survives a code edit: the same throw at line 135 and at line 148 stayed in one group | same run; check 20 |
+| The stack trace arrives as Dart frames with file and line — `_BrokenWidget.build(package:apptracer_flutter_example/main.dart:266)` — matching the source exactly | same run |
+| `issueKey`, global and per-event `customKeys`, severity mapping, and breadcrumbs with category and data all arrive on Android | same run; `[EXAMPLE-PARSE]`, `checkout_step`, `endpoint`, `dart.exception_type`, `WARNING` vs `ERROR` |
+| `stopCollection` really stops delivery on Android | same run; check 18, and re-confirmed from the device log: the error tapped after `stopCollection` produces no upload |
+| Breadcrumbs reach an iOS event | live run, 2026-08-26: both `[info] ui | user tapped the breadcrumb button {screen=home}` entries, delivered through `TracerLogProviderProtocol` |
+| On iOS the whole event log arrives as one record | same run: breadcrumbs and the verbatim trace share record `0`, where Android splits them into `#0`, `#1`, `#2`. It renders correctly only because frame numbers are now written `[0]` — the console's record parser would have had even more to trip over here |
+| The synthesised `issueKey` groups iOS events, and produces the same keys as Android | live run, 2026-08-26: three errors, three groups, keys `d/ild.<anonymous closure>#5ef264` and `d/_BrokenWidget.build#3fc341` — identical to the Android run, which is what moving the rule into Dart was for |
+| An iOS event carries only a placeholder native frame, and its title is clean | 2026-08-26. Passing the real `Thread.callStackReturnAddresses` made delivery work but filled every report with twenty frames of UIKit, CoreFoundation and libdispatch, each rendered `Missing Binary image`, and put that complaint in the title — where it is visible in the issue list. Uploading the dSYM did not help (see above). A single placeholder address satisfies the SDK's non-empty requirement and leaves one `??? + 0` line; the title shortens from `Missing Binary image with UUID = … - FormatException: …` to `+ 0 - FormatException: …`. It does not become fully clean: the console always prefixes the title with its rendering of the top frame, and for a Dart error that frame is never meaningful. The readable Dart trace travels in the attached log either way | closed |
+| An uploaded iOS dSYM **is** applied to fatal reports | live crash on a real iPhone, 2026-08-26, raised with the vendor's own `TracerFactory.raise(crash: .fatal)`: the report resolves our frames down to file and line — `AppDelegate.swift line 42`, `FlutterChannels.mm line 322`. Only Apple's own images (`libswiftCore`, `libdispatch`, `UIKitCore`) stay unresolved, which is expected |
+| An uploaded iOS dSYM is **not** applied to non-fatal reports | measured 2026-08-26 twice: the simulator dSYM was uploaded (`{"success":true}`), and events produced afterwards still render every frame as `Missing Binary image with UUID = 5602aff4…` — the very UUID inside the uploaded archive. Re-uploading with the vendor's own metadata convention (`versionName=Runner`, `versionCode=1.0.0`, as their Run Script phase sends it) changed nothing. Whether a genuine native crash symbolicates is a separate question, untested |
+| Tracer accepts an iOS dSYM upload | live upload, 2026-08-26, through `tool/upload_ios_dsym.sh`: `{"success":true}` for a 1.4 MB archive. The dSYM's `Runner.debug.dylib` UUID matched the one the console complained about |
+| A native crash from a Flutter host reaches the iOS project | same run; the app has to be reopened for the report to upload, as on Android |
+| iOS delivery works: the SDK accepts the non-fatal and uploads it | live run on a simulator, 2026-08-26, after the fix: `event ASSERT_REPORTER: ok <uuid>` → `POST /api/crash/upload?…&type=NON_FATAL` → `upload ASSERT_REPORTER: ok, attemptsCount: 0` |
+| The iOS SDK reports nothing about a submitted non-fatal unless a delegate is attached | `send(nonFatal:)` returns `Void`; `TracerServiceDelegate` is the only channel, and `TracerLogDestination.console` the only way to see the SDK's own log. Both are now wired to `TracerOptions.debug`, which is what turned a silent failure into a one-line diagnosis |
+| A synthesised `issueKey` reaches Tracer and creates its own group | live run, 2026-08-26, after the fix; the key computed independently matched the one the console shows |
+| A native crash from a Flutter host reaches the project as its own `NATIVE` event, separate from `DartError` | live run, 2026-08-26; `SIGSEGV`, crash address, and a dump of all 39 threads with modules and offsets. Triggered with `Process.sendSignal`, so the crashed thread's stack is libc and ART rather than application code — arrival and readability are proven, application-code symbolication is not |
+| Tracer's backend resolves modules against uploaded symbols and names the ones it could not resolve | same report: `No symbols found for these libs (2): base.apk, libtracernative.so` |
+| ANR reporting is gated on API 30 in `tracer-crash-report` 1.4.0 | `AnrReporter.collect` opens with `SDK_INT < 30 -> emptyList()`, then reads `getHistoricalProcessExitReasons` filtered on `REASON_ANR`; read from the AAR bytecode, confirmed absent on an Android 10 device and present on an API 35 emulator |
+| An ANR from a Flutter host reaches the project and the server accepts it | live run on an API 35 emulator, 2026-08-26: `Spotted ANR` → `Detected crash with type ANR` → `POST /api/crash/uploadAnr` → `{"success":true}`. The system records `REASON_ANR` only when it kills the process while the main thread is still stuck, so the block has to outlast the dialog |
+| An ANR report names the code that blocked the main thread | the event's title is `MainActivity.configureFlutterEngine$lambda$1$lambda$0`, `MainActivity.kt` — the blocking lambda itself. The main-thread stack comes from the system's own ANR trace, not from the SDK's watchdog: the same report logged `No main snapshots to attach`, because `setExperimentalAnrSnapshotsEnabled` is off by default. That flag buys the *history* of the stall, not the stack at the end of it |
+| Tracer accepts the staged Dart symbol files through `additionalLibrariesPath` | live upload, 2026-08-26: the plugin logged `Uploading libapp.so:<id>` for all three staged architectures, with build ids matching the files `prepare_dart_symbols.sh` produced, and the build succeeded. `Uploading them anyway due to forced upload` also confirms the `nativesymbol/exists` check would otherwise have skipped them — `forceUploadNativeSymbols` is required, not optional |
+| The whole loop works end to end on an obfuscated release: the verbatim trace the package writes into the event log feeds `flutter symbolize` and comes back with file, line and column | live run, 2026-08-26: `#0 _HomePageState.build.<anonymous closure> (.../example/lib/main.dart:184:21)`, decoded from the log entry with the symbol file of that build. No backend involvement — this is the fallback that makes an obfuscated release readable even if Tracer never applies Dart symbols |
+| An obfuscated Dart error arrives address-only and stays grouped | live run on an obfuscated release, 2026-08-26: top frame `dart.obfuscated._kDartIsolateSnapshotInstructions+0x1db387`, and the caller-supplied `issueKey` held the group together. Without a key such builds would group on addresses, which move with every build |
+| `maxStackFrames` truncation applies: a 130-frame Flutter build trace arrived cut to the 128-frame default | same run |
+
+## Not verified
+
+| Claim | Why not | Risk |
+|---|---|---|
+| Events arrive in a Tracer project from **iOS and web** | Android is done (2026-08-26); iOS needs a device run, web needs a DSN | the wire format could be rejected on those two |
+| ~~`TraceType.custom(callStackAddresses: [])` is accepted by the iOS SDK~~ | **It is not.** Measured 2026-08-26: the SDK answers its delegate with `callStackAddresses is empty` from `CrashReporterService.getThreadInfo` and drops the event before any network call, so nothing whatsoever reached the iOS project. Fixed by passing `Thread.callStackReturnAddresses`; the upload then succeeds | closed |
+| The synthesised iOS `issueKey` groups the way it is meant to, and survives a code edit | same | grouping could scatter across releases |
+| Aurora has a native Tracer SDK, and it is C/C++ | vendor documentation, 2026-08-26: the project is created with the **C/C++** platform, integration is `libtracernative.so` and `tracer_init(app_key, storage_dir)`, and crashes arrive as minidumps from the system `crash-dumper`. None of that is reachable from Dart | Dart errors can travel over HTTP; native crashes on Aurora need the vendor's C/C++ SDK |
+| Source maps resolve a minified web stack back to Dart | live run on a dart2js release build, 2026-08-26, after `tool/upload_web_sourcemaps.sh`: the event is labelled `minified` and its frames read `(../../../lib/main.dart:190:21) _HomePageState.build.<anonymous function>`. Paths arrive relative, which is how dart2js records them; matching worked regardless |
+| Dart errors reach the project from a real browser | live run in Chrome, 2026-08-26, on the rewritten transport: the event arrives, the platform is recognised (`Chrome 151`, `Mac OS`), and under `flutter run -d chrome` the frames read straight against Dart sources — `package:apptracer_flutter_example/main.dart 190:21` — because DDC keeps that mapping at runtime. A release build compiles through dart2js and will need source maps instead |
+| Tracer accepts the rewritten web payload | live probe into the real JS project, 2026-08-26: `200 {"success":true}`, and the event appears in the console. A second probe differing only in stack-trace shape showed that JavaScript-style frames (`at name (url:line:col)`) are parsed into a structured stack, while Dart VM frames (`#0 name (package:…)`) are only stored as text — which costs nothing, since `dart2js` produces the former |
+| **The web half of the Sentry premise did not survive contact** (see [web-protocol.md](web-protocol.md)) | `design-decisions.md` claimed Tracer ingests over the Sentry protocol on every platform, citing nothing. Half of that is true — the vendor documents Sentry ingest for platforms with no Tracer SDK, with a DSN issued when the project is created through VK Cloud — but not for web, which has its own SDK and no DSN. Measured 2026-08-26: a JS project hands out no DSN, and the vendor's own `@apptracer/sdk` 2.6.9, unpacked from npm, posts to `sdk-api.apptracer.ru/api/crash/uploadBatch`, `/api/crash/trackSession` and `/api/perf/upload`, authenticating with the same `appToken` as Android and carrying `versionName`/`versionCode`. There is no Sentry anywhere in it | web delivery is not merely unverified: the route it was built for may not exist |
+| Delivery from **desktop and Aurora OS** | two routes exist and neither has been run there: the Sentry protocol, which Tracer documents for platforms without an SDK of its own and which needs a DSN from a VK Cloud project, and the HTTP ingest the web package uses. Aurora additionally has no way to collect native crashes from Dart | Dart errors are likely fine on both; native crashes are out of reach |
+| Clause 4.2.4 of the licence is not read as covering an integration wrapper | it is a reading, not a confirmation; question 2 to the vendor settles it | publishing could be contested |
+| Tracer's backend *applies* the staged Dart symbols | acceptance is now proven (2026-08-26). Application is not testable on demand: uploaded native symbols bind to addresses inside `libapp.so`, and a Dart error is reported as a text stack trace with nothing for them to bind to. It would take a genuine native crash inside Dart AOT code, which cannot be provoked — `Process.sendSignal` lands in libc | the upload may still be ignored; for reading obfuscated Dart, `flutter symbolize` on the verbatim trace is the proven route, and check 15 closed it |
+
+## Open findings from the live run
+
+Recorded so they are not lost between sessions. Dated 2026-08-26 unless stated.
+
+| Finding | Detail | State |
+|---|---|---|
+| **Android grouping keys on the top frame's class and method alone** — fixed | Three events — `StateError: synchronous Dart failure` at two different lines, and `TimeoutException: unawaited future failure` at a third — landed in one group. Different types, different messages, different stacks below the top frame. The one thing they share is a top frame reading `_HomePageState.build.<anonymous closure>`. In a Flutter app most handlers are anonymous closures inside one `build`, so unrelated errors collapse together. | **check 4 failed**, then fixed and re-confirmed against the project the same day: an `issueKey` is now synthesised from the error type plus the innermost named frame whenever the caller supplies none. The rule iOS already used, moved into Dart (`SyntheticIssueKey`) so both native platforms share one implementation. A `StateError` and a `TimeoutException` from one call site now land in separate groups. Groups created before the fix stay merged — Tracer has no way to rewrite history |
+| The console's log record format is `#N time | category | type | …` | the vendor documents it for Sentry-SDK users: breadcrumbs are rendered as that line. It is the same format whose parser choked on a multi-line stack trace, and it explains why: our trace carried `#N` of its own |
+| The console's log table hunts for the next record number and finds Dart's frame numbers — fixed | The console looks for the *next* record marker in sequence — `#3` after `#2` — and expects `#0 timestamp | text` where it finds one; its own message is `Match line error, expected format: #0 timestamp | text`. A trace sitting in record `#2` hands it a `#3` of its own a few lines down. An obfuscated trace escapes by accident: Dart numbers those frames `#00`, `#01`, so a parser hunting for `#2` never matches. Two dead ends on the way: entry size (2651 bytes rendered, 3580 did not — coincidence), and indentation (a leading space changed nothing, the parser found `#3` anyway). | fixed and confirmed live the same day: `defuseFrameNumbers` rewrites frame numbers to `[0]`, `[1]` on readable traces only, and the table view now renders the whole entry with its breadcrumbs. An obfuscated trace still goes byte for byte, because `flutter symbolize` needs it and the console renders it correctly anyway |
+| The vendor's list of collected device fields is a lower bound | The event also carries **free RAM**, which the vendor does not document. Everything else observed matched `privacy.md`. | `privacy.md` updated |
+| The event title reads `DartError: <DartType>: <message>` | The JVM class of the wrapper is always `DartError`; the Dart type is prepended to the message on purpose, because the wrapper class says nothing useful. The plan expected the bare `<DartType>: <message>`. | by design; plan corrected |
+| `System.getenv` in a Gradle build script reads the *daemon's* environment | The daemon is reused across builds, so tokens exported after it started stay invisible and the build fails with "no tokens" against a fully populated env file. | fixed: `providers.environmentVariable` in `tracer.gradle` and in every copyable snippet |
+| `-Ptracer.enabled=true` is not optional for the example, and `--dart-define=TRACER_APP_TOKEN` does nothing on Android | Without the flag neither the SDK nor the `tracer_app_token` resource is present, and the plugin reports itself disabled. The Android token comes from the Gradle plugin. | fixed: `Makefile` targets, plan step 3.3, example README |
+
+## How to close the gaps
+
+Full checklist: [live-verification-plan.md](live-verification-plan.md). The short version:
+
+1. Create a Tracer project, export `TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN` and
+   `TRACER_DSN`.
+2. Run the example on a device: `make example-android` (release plus
+   `-Ptracer.enabled=true`; on Android `--dart-define` does nothing, the token
+   comes from the Gradle plugin).
+3. `make example-live-check` drives the buttons on the device and prints what
+   is left to confirm by eye. Tracer has no read API, so the console half stays
+   manual: the event appears, the title reads
+   `DartError: <DartType>: <message>`, the stack is readable, the breadcrumbs
+   are in the log tab, and the custom keys are in the data tab.
+4. Record what happened in this file and in `symbolication.md`.
+
+Until step 4 is done for a platform, treat that platform as unproven and keep
+the version below `1.0.0`.

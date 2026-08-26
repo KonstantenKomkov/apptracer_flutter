@@ -1,0 +1,30 @@
+name: apptracer_flutter_http
+description: >-
+  Pure-Dart transport to the HTTP ingest of Tracer (apptracer.ru). Delivers Dart
+  errors from Flutter web, desktop and Aurora OS, where no native Tracer SDK is
+  reachable. Part of apptracer_flutter.
+version: 0.1.0
+repository: https://github.com/komkovkonstantin/apptracer_flutter
+issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+
+topics:
+  - crash-reporting
+  - error-monitoring
+  - observability
+  - tracer
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  apptracer_flutter_platform_interface: ^0.1.0
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  meta: ^1.12.0
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
