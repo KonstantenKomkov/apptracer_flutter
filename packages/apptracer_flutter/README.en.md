@@ -426,18 +426,20 @@ A fair question: Crashlytics is free, official, and does the same job.
 
 | | apptracer_flutter | firebase_crashlytics |
 |---|---|---|
-| Who makes it | an independent wrapper, unaffiliated with VK or OK.TECH | Google, the official plugin |
+| Whose SDKs, and where reports go | native SDKs by VK / OK.TECH; ingest on `*.apptracer.ru`, in the "Odnoklassniki Services" and "VK Services" networks, RU, AS47764 (checked 2026-08-27) | Google's SDKs, ingest in Google's infrastructure |
 | Platforms | Android, iOS, web | Android, iOS, macOS |
 | Where reports go | Tracer's servers (VK / OK.TECH) | Google's infrastructure |
 | Dart error capture | `FlutterError.onError`, `PlatformDispatcher.onError`, a guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
 | Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | `firebase crashlytics:symbols:upload` on Android, automatic on Apple |
 | Native symbols, every build | Android — the Gradle plugin itself; iOS and web — the package's command or the vendor's tooling | Apple — by itself, through an Xcode build phase; Android — through the Firebase CLI |
 
-**About the data.** Little can be said with certainty, and it is better said
-without legal phrasing: Crashlytics sends reports into Google's infrastructure,
-Tracer into its own. If keeping data inside a particular jurisdiction matters
-to you — which for Russian applications is usually the reason Tracer is on the
-table at all — that is the difference. A crash log is not anonymous by nature,
+**About the data.** This is where the reason for choosing Tracer usually lies,
+and it can be put without legal phrasing. Crashlytics means Google's native SDKs
+and Google's ingest. Tracer means VK / OK.TECH's native SDKs, and an ingest that
+whois puts in Russian networks as of 2026-08-27: `sdk-api.apptracer.ru` and
+`apptracer.ru` in "Odnoklassniki Services", AS47764, Moscow;
+`plugin-api.apptracer.ru` in "VK Services". A report therefore stays inside that
+jurisdiction, where with Google it crosses the border by construction. A crash log is not anonymous by nature,
 either: what makes it personal data is what you put in it — `userId`, custom
 keys, breadcrumbs, the exception message. Exactly what leaves the device from
 this package, and what the vendor's SDK adds on its own, is listed in
@@ -680,12 +682,15 @@ to avoid finding out the hard way.
 
 ## Maturity
 
-Version `0.1.0`. The Dart-side behaviour is unit-tested in detail; delivery has
-not yet been confirmed against a live Tracer project, because that needs
-credentials this repository does not have.
+Version `0.1.0`. Delivery was confirmed against live Tracer projects on
+26–27 August 2026 on all three platforms: Android (device and emulator,
+including a native crash and an ANR), iOS (a release build on an iPhone, with no
+debugger attached) and web (Chrome). Not only that events arrive — grouping,
+breadcrumbs, custom keys and stopping collection were checked too.
 [status.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/status.md)
-lists exactly what is proven and what is not. The version stays below `1.0.0`
-until a real project has confirmed end-to-end delivery on each platform.
+lists every item and what proves it, and what is still unproven.
+The version is below `1.0.0` not because something is unverified, but because
+the public API may still change.
 
 ## Packages
 
@@ -696,7 +701,8 @@ until a real project has confirmed end-to-end delivery on each platform.
 | `apptracer_flutter_android` | Kotlin bridge to `ru.ok.tracer` |
 | `apptracer_flutter_ios` | Swift bridge to `OKTracer` |
 | `apptracer_flutter_web` | web implementation |
-| `apptracer_flutter_http` | pure-Dart Sentry-protocol transport |
+| `apptracer_flutter_http` | pure-Dart client for Tracer's own ingest |
+| `apptracer_flutter_sentry` | the Sentry protocol; only for platforms this release does not support |
 
 ## License
 
