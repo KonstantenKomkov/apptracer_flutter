@@ -20,15 +20,17 @@ fuller version further down.
 platform: Android, iOS and web each have their own tokens, with none shared.
 Both values live under **Настройки → Проект → API** in the project you create.
 
-**2. Set up the platform.** Not skippable: the token is delivered differently on
-each platform, and without this step the package starts, prints that it is
+**2. Wire the Tracer SDK into your build.** This package is a wrapper: it
+neither ships the vendor's SDKs nor pulls them in — your application adds them.
+That is where the difference between platforms comes from, and where the token
+comes from too. Not skippable: without it the package starts, prints that it is
 disabled, and sends nothing.
 
-| Platform | What it needs | In full |
-|---|---|---|
-| Android | the `ru.ok.tracer` Gradle plugin and the SDK dependencies — the token comes from there, not from Dart | [Android](#android) |
-| iOS | a `source` line in the `Podfile` and static linkage | [iOS](#ios) |
-| Web | nothing beyond the token in `TracerOptions` | [Web](#web-and-other-platforms) |
+| Platform | What to add | Where the token comes from | In full |
+|---|---|---|---|
+| Android | the `ru.ok.tracer` Gradle plugin and the SDK dependencies | the `tracer { }` block in Gradle | [Android](#android) |
+| iOS | a `source` line in the `Podfile` and static linkage | `TracerOptions` | [iOS](#ios) |
+| Web | nothing: the pure-Dart implementation is already in the package | `TracerOptions` | [Web](#web-and-other-platforms) |
 
 **3. Wrap the application's start.**
 
