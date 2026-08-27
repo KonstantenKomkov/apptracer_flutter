@@ -13,7 +13,7 @@ DEVICE ?=
 export DEVICE
 
 .DEFAULT_GOAL := help
-.PHONY: help android android-debug ios web desktop live-check live-check-ios logcat tokens \
+.PHONY: help android android-debug ios web live-check live-check-ios logcat tokens \
 	apk apk-dart-symbols web-release web-sourcemaps analyze test clean
 
 help: ## Показать этот список
@@ -30,11 +30,8 @@ android-debug: ## Android в debug: hot reload и логи Dart
 ios: ## iOS
 	@$(MAKE) -C $(ROOT) example-ios
 
-web: ## Chrome (транспорт Sentry)
+web: ## Chrome (собственный API Tracer)
 	@$(MAKE) -C $(ROOT) example-web
-
-desktop: ## macOS (транспорт Sentry)
-	@$(MAKE) -C $(ROOT) example-desktop
 
 live-check-ios: ## Автопрогон сценариев проверок на iOS
 	@$(MAKE) -C $(ROOT) example-live-check-ios

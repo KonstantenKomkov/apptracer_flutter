@@ -26,11 +26,82 @@ English version: [README.en.md](README.en.md).
 между платформами, и то, откуда берётся токен. Пропустить шаг нельзя — без него
 пакет запустится, напечатает, что выключен, и ничего не отправит.
 
-| Платформа | Что добавить | Откуда токен | Подробно |
-|---|---|---|---|
-| Android | Gradle-плагин `ru.ok.tracer` и зависимости SDK | из блока `tracer { }` в Gradle | [Android](#android) |
-| iOS | строку `source` в `Podfile` и статическую линковку | из `TracerOptions` | [iOS](#ios) |
-| Web | ничего: реализация на чистом Dart уже в пакете | из `TracerOptions` | [Web](#web-и-остальные-платформы) |
+**Android.** В `android/settings.gradle.kts` — плагин лежит на Maven Central,
+а не в Gradle Plugin Portal:
+
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("ru.ok.tracer") version "1.4.0" apply false
+}
+```
+
+В `android/app/build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("ru.ok.tracer")
+}
+
+android {
+    // SDK читает appToken из ресурса, который генерируется при сборке.
+    // С AGP 9 фича выключена по умолчанию, и без неё SDK падает в рантайме.
+    buildFeatures {
+        resValues = true
+    }
+}
+
+tracer {
+    create("defaultConfig") {
+        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
+        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+        uploadMapping = true
+        uploadNativeSymbols = true
+    }
+}
+
+dependencies {
+    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
+    implementation("ru.ok.tracer:tracer-crash-report")
+    // По желанию, для нативных крашей:
+    implementation("ru.ok.tracer:tracer-crash-report-native")
+}
+```
+
+Токен на Android приходит отсюда, а не из Dart. Подробности и подводные камни —
+в разделе [Android](#android).
+
+**iOS.** В `ios/Podfile` — `OKTracer` лежит в spec-репозитории вендора, а
+поставляется статическим `xcframework`, поэтому нужны и свой источник, и смена
+типа линковки:
+
+```ruby
+source 'https://github.com/odnoklassniki/tracer-ios.git'
+source 'https://cdn.cocoapods.org/'
+
+platform :ios, '13.0'
+
+target 'Runner' do
+  use_frameworks! :linkage => :static   # было: use_frameworks!
+  # ...
+end
+```
+
+Затем `pod install`. Токен передаётся из Dart, шагом ниже. Подробности — в
+разделе [iOS](#ios).
+
+**Web.** Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен —
+тоже из Dart, шагом ниже.
 
 **3. Оберните запуск приложения.**
 

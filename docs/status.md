@@ -110,8 +110,8 @@ Recorded so they are not lost between sessions. Dated 2026-08-26 unless stated.
 
 Full checklist: [live-verification-plan.md](live-verification-plan.md). The short version:
 
-1. Create a Tracer project, export `TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN` and
-   `TRACER_DSN`.
+1. Create a Tracer project per platform and export its pair of tokens; the
+   example's README names the variables.
 2. Run the example on a device: `make example-android` (release plus
    `-Ptracer.enabled=true`; on Android `--dart-define` does nothing, the token
    comes from the Gradle plugin).

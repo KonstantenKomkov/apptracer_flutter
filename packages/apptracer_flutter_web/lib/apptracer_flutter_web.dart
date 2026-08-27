@@ -18,8 +18,9 @@
 /// * Stack traces are `dart2js` frames. Tracer matches source maps by file
 ///   path rather than by Debug ID, so the paths in an uploaded source-map
 ///   archive must match the paths in the frames. See `docs/symbolication.md`.
-/// * Breadcrumbs do not travel yet: the vendor carries them in a separate
-///   `logsFile` field whose format has not been observed.
+/// * Breadcrumbs, custom keys and `userId` do travel, since 2026-08-27: the
+///   vendor carries the log in a `logsFile` field whose format was read out of
+///   its own SDK bundle. See `docs/web-protocol.md`.
 library;
 
 import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';

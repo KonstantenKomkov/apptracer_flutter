@@ -45,23 +45,14 @@
       "toolArgs": ["--dart-define=TRACER_APP_TOKEN=${env:TRACER_IOS_APP_TOKEN}"]
     },
     {
-      // Web и десктоп ходят по протоколу Sentry — им нужен DSN, а не appToken.
+      // У web свой JS-проект в Tracer, а значит свой appToken.
       "name": "Web (Chrome)",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}",
       "deviceId": "chrome",
-      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
-    },
-    {
-      "name": "macOS",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "cwd": "${workspaceFolder}",
-      "deviceId": "macos",
-      "toolArgs": ["--dart-define=TRACER_DSN=${env:TRACER_DSN}"]
+      "toolArgs": ["--dart-define=TRACER_APP_TOKEN=${env:TRACER_JS_APP_TOKEN}"]
     }
   ]
 }

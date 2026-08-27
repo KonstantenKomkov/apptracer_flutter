@@ -16,14 +16,34 @@ follows is what those targets actually run.
 
 Tokens come from the environment; nothing is hard-coded.
 
-```sh
-export TRACER_APP_TOKEN=...       # iOS and web
-export TRACER_PLUGIN_TOKEN=...    # Android symbol and mapping upload
-export TRACER_DSN=...             # web and desktop
+Each platform is a separate Tracer project, so each has its own pair of tokens:
 
-flutter run --dart-define=TRACER_APP_TOKEN=$TRACER_APP_TOKEN \
-            --dart-define=TRACER_DSN=$TRACER_DSN
+```sh
+export TRACER_APP_TOKEN=...        # Android, read by the Gradle plugin
+export TRACER_PLUGIN_TOKEN=...     # Android, mapping and symbol upload
+export TRACER_IOS_APP_TOKEN=...    # iOS
+export TRACER_IOS_PLUGIN_TOKEN=... # iOS, dSYM upload
+export TRACER_JS_APP_TOKEN=...     # web
+export TRACER_JS_PLUGIN_TOKEN=...  # web, source-map upload
 ```
+
+On Android the token comes from the Gradle plugin, which writes it into a
+string resource at build time — `--dart-define` is ignored there:
+
+```sh
+flutter run --release -Ptracer.enabled=true
+```
+
+On iOS and web the token is passed from Dart, a different one each:
+
+```sh
+flutter run -d <iphone> --dart-define=TRACER_APP_TOKEN=$TRACER_IOS_APP_TOKEN
+flutter run -d chrome   --dart-define=TRACER_APP_TOKEN=$TRACER_JS_APP_TOKEN
+```
+
+No Sentry DSN is needed anywhere: web speaks Tracer's own ingest with the same
+`appToken`, and the platforms the vendor has no SDK for are not supported by
+this example.
 
 Without them the app still runs: the integration reports that it is disabled and
 the buttons do nothing but raise errors locally. That is the graceful-degradation

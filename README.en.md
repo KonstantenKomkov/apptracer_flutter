@@ -28,7 +28,9 @@ packages/
   apptracer_flutter_android/            Kotlin bridge to ru.ok.tracer
   apptracer_flutter_ios/                Swift bridge to OKTracer
   apptracer_flutter_web/                web implementation
-  apptracer_flutter_http/             pure-Dart Sentry-protocol transport
+  apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
+  apptracer_flutter_sentry/             the Sentry protocol; only for platforms
+                                        this release does not support
 docs/
 tool/
   bootstrap.sh              pub get in every package
@@ -67,8 +69,9 @@ make check      # analyze + test + publish dry-run
 
 The `Makefile` also carries the run commands for the example on each platform
 (`make example-android`, `example-ios`, `example-web`), which are easy to get
-wrong: the Android token comes from the Gradle plugin, iOS takes it through
-`--dart-define`, and web needs a Sentry DSN instead. `.vscode/launch.json`
+wrong: the Android token comes from the Gradle plugin, while iOS and web take
+theirs through `--dart-define` — and each platform is a separate project with a
+token of its own. `.vscode/launch.json`
 mirrors the same set for anyone launching from the editor.
 
 ## License

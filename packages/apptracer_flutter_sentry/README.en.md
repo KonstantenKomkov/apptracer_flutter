@@ -16,6 +16,12 @@ through **VK Cloud**.
 For Flutter that means desktop, and Aurora OS, where the vendor's C/C++ SDK with
 system minidumps cannot be reached from Dart.
 
+> **Neither platform is supported by the 0.1.0 release**, and neither has ever
+> been run against a live project. This package is published because it is
+> finished, not because a verified scenario stands behind it. The DSN, too, is
+> issued only for a project created through VK Cloud — an ordinary Tracer
+> project has none, measured 2026-08-26.
+
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_sentry/apptracer_flutter_sentry.dart';

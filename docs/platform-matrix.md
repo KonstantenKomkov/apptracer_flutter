@@ -12,8 +12,8 @@ Last verified: 2026-08-25.
 | Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
-| macOS / Windows / Linux | Sentry protocol (documented, needs a VK Cloud DSN) or Tracer's own HTTP ingest, registered by hand | yes | no | no | no | **not supported in this release** — opt-in, never run |
-| Aurora OS | same two routes, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — opt-in, never run |
+| macOS / Windows / Linux | Tracer's own HTTP ingest, registered by hand | yes | no | no | no | **not supported in this release** — never run |
+| Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
 [status.md](status.md) for what has and has not been exercised against a real
@@ -361,7 +361,7 @@ void main() {
     sdkVersion: '0.1.0',
   );
   Tracer.initialize(
-    options: const TracerOptions(dsn: 'https://<key>@<host>/<project>'),
+    options: const TracerOptions(appToken: '<appToken>'),
     appRunner: () => runApp(const MyApp()),
   );
 }

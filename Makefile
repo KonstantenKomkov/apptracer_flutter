@@ -24,7 +24,7 @@ LOAD_ENV := source $(TRACER_ENV)
 .DEFAULT_GOAL := help
 
 .PHONY: help bootstrap check format analyze test tokens \
-	example-android example-android-debug example-ios example-web example-desktop \
+	example-android example-android-debug example-ios example-web \
 	example-live-check example-live-check-ios \
 	apk apk-dart-symbols ios-dsym web-release web-sourcemaps logcat pod-install clean
 
@@ -51,8 +51,7 @@ tokens: $(TRACER_ENV) ## Проверить, какие токены подхв�
 			'TRACER_APP_TOKEN'     "$$(mask "$${TRACER_APP_TOKEN:-}")" \
 			'TRACER_PLUGIN_TOKEN'  "$$(mask "$${TRACER_PLUGIN_TOKEN:-}")" \
 			'TRACER_IOS_APP_TOKEN' "$$(mask "$${TRACER_IOS_APP_TOKEN:-}")" \
-			'TRACER_JS_PLUGIN_TOKEN' "$$(mask "$${TRACER_JS_PLUGIN_TOKEN:-}")" \
-			'TRACER_DSN'           "$$(mask "$${TRACER_DSN:-}")"
+			'TRACER_JS_PLUGIN_TOKEN' "$$(mask "$${TRACER_JS_PLUGIN_TOKEN:-}")"
 
 # Android-плагин Tracer валит сборку без обоих токенов — падаем раньше и понятнее.
 .PHONY: require-android-tokens
@@ -81,14 +80,11 @@ example-ios: $(TRACER_ENV) ## Пример на iOS
 		flutter run --dart-define=TRACER_APP_TOKEN=$$TRACER_IOS_APP_TOKEN
 
 # Web с 26.08.2026 говорит с собственным API Tracer и хочет appToken
-# JS-проекта. Десктоп по-прежнему на транспорте Sentry и хочет DSN.
+# JS-проекта. Десктопной цели здесь нет: платформа не поддерживается, а DSN,
+# которого она требовала, вендор не выдаёт ни одному проекту.
 example-web: $(TRACER_ENV) ## Пример в Chrome (собственный API Tracer)
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter run -d chrome --dart-define=TRACER_APP_TOKEN=$$TRACER_JS_APP_TOKEN
-
-example-desktop: $(TRACER_ENV) ## Пример на macOS (транспорт Sentry)
-	@$(LOAD_ENV) && cd $(EXAMPLE) && \
-		flutter run -d macos --dart-define=TRACER_DSN=$$TRACER_DSN
 
 # Гоняет integration_test на подключённом устройстве. Нужен именно drive, а не
 # `flutter test`: только он умеет передавать -P в Gradle.

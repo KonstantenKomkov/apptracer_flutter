@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
-import 'package:apptracer_flutter_sentry/apptracer_flutter_sentry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,38 +19,24 @@ import 'src/crash_inside_dart.dart';
 /// example refuses to carry a default.
 const String _appToken = String.fromEnvironment('TRACER_APP_TOKEN');
 
-/// Sentry DSN, issued by Tracer for a project created through VK Cloud. Only
-/// desktop and Aurora OS have any use for it; see docs/platform-matrix.md.
-const String _dsn = String.fromEnvironment('TRACER_DSN');
-
 void main() {
   // Android and iOS register their implementations automatically, and web
   // registers its HTTP transport for itself. Desktop and Aurora OS have no
   // native SDK a Flutter application can reach — none at all for desktop, a
-  // C/C++ library and system minidumps for Aurora — so a pure-Dart transport
-  // is registered by hand there.
-  //
-  // Two are available, and they differ in what backs them rather than in what
-  // they do. The Sentry route is the one Tracer documents for platforms
-  // without an SDK of its own, and it needs a DSN from a VK Cloud project. The
-  // HTTP route speaks Tracer's own ingest, needs only the appToken every other
-  // platform already uses, and was recovered by observation rather than read
-  // from documentation. The documented one wins when a DSN is present.
-  if (_needsDartTransport) {
-    if (_dsn.isNotEmpty) {
-      TracerPlatform.instance = SentryProtocolTracer();
-    } else if (_appToken.isNotEmpty) {
-      TracerPlatform.instance = TracerHttpTracer(
-        facts: PlatformClientFacts(),
-        sdkVersion: '0.1.0',
-      );
-    }
+  // C/C++ library and system minidumps for Aurora — so the pure-Dart transport
+  // is registered by hand there. Neither platform is supported by this release
+  // and neither has ever been run against a real project; this is here so the
+  // example still starts rather than as a promise that it works.
+  if (_needsDartTransport && _appToken.isNotEmpty) {
+    TracerPlatform.instance = TracerHttpTracer(
+      facts: PlatformClientFacts(),
+      sdkVersion: '0.1.0',
+    );
   }
 
   Tracer.initialize(
     options: TracerOptions(
       appToken: _appToken.isEmpty ? null : _appToken,
-      dsn: _dsn.isEmpty ? null : _dsn,
       environment: kReleaseMode ? 'prod' : 'dev',
       release: '1.0.0',
       debug: !kReleaseMode,

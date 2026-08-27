@@ -9,7 +9,5 @@ dependency_overrides:
     path: ../../apptracer_flutter_ios
   apptracer_flutter_http:
     path: ../../apptracer_flutter_http
-  apptracer_flutter_sentry:
-    path: ../../apptracer_flutter_sentry
   apptracer_flutter_web:
     path: ../../apptracer_flutter_web

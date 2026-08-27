@@ -18,10 +18,15 @@ English version: [README.en.md](README.en.md).
 
 Токены берутся из окружения, в коде их нет.
 
+У каждой платформы свой проект в Tracer, а значит своя пара токенов:
+
 ```sh
-export TRACER_APP_TOKEN=...       # Android (через Gradle-плагин), iOS
-export TRACER_PLUGIN_TOKEN=...    # загрузка символов и mapping для Android
-export TRACER_DSN=...             # web и десктоп
+export TRACER_APP_TOKEN=...        # Android, читается Gradle-плагином
+export TRACER_PLUGIN_TOKEN=...     # Android, загрузка mapping и символов
+export TRACER_IOS_APP_TOKEN=...    # iOS
+export TRACER_IOS_PLUGIN_TOKEN=... # iOS, загрузка dSYM
+export TRACER_JS_APP_TOKEN=...     # web
+export TRACER_JS_PLUGIN_TOKEN=...  # web, загрузка сорсмап
 ```
 
 На Android токен приходит из Gradle-плагина, который на этапе сборки пишет его
@@ -31,12 +36,16 @@ export TRACER_DSN=...             # web и десктоп
 flutter run --release -Ptracer.enabled=true
 ```
 
-На iOS и web токен и DSN передаются из Dart:
+На iOS и web токен передаётся из Dart, каждый свой:
 
 ```sh
-flutter run --dart-define=TRACER_APP_TOKEN=$TRACER_APP_TOKEN \
-            --dart-define=TRACER_DSN=$TRACER_DSN
+flutter run -d <iphone> --dart-define=TRACER_APP_TOKEN=$TRACER_IOS_APP_TOKEN
+flutter run -d chrome   --dart-define=TRACER_APP_TOKEN=$TRACER_JS_APP_TOKEN
 ```
+
+Sentry DSN не нужен нигде: web говорит с собственным приёмом Tracer по тому же
+`appToken`, а платформы, для которых у вендора нет SDK, этот пример не
+поддерживает.
 
 Без токенов приложение всё равно запускается: интеграция сообщает, что она
 выключена, а кнопки просто поднимают ошибки локально. Это и есть путь мягкой

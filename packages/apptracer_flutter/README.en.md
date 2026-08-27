@@ -28,11 +28,82 @@ That is where the difference between platforms comes from, and where the token
 comes from too. Not skippable: without it the package starts, prints that it is
 disabled, and sends nothing.
 
-| Platform | What to add | Where the token comes from | In full |
-|---|---|---|---|
-| Android | the `ru.ok.tracer` Gradle plugin and the SDK dependencies | the `tracer { }` block in Gradle | [Android](#android) |
-| iOS | a `source` line in the `Podfile` and static linkage | `TracerOptions` | [iOS](#ios) |
-| Web | nothing: the pure-Dart implementation is already in the package | `TracerOptions` | [Web](#web-and-other-platforms) |
+**Android.** In `android/settings.gradle.kts` — the plugin lives on Maven
+Central, not on the Gradle Plugin Portal:
+
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("ru.ok.tracer") version "1.4.0" apply false
+}
+```
+
+In `android/app/build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("ru.ok.tracer")
+}
+
+android {
+    // The SDK reads appToken from a resource generated at build time. AGP 9
+    // turns the feature off by default, and without it the SDK fails at runtime.
+    buildFeatures {
+        resValues = true
+    }
+}
+
+tracer {
+    create("defaultConfig") {
+        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
+        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+        uploadMapping = true
+        uploadNativeSymbols = true
+    }
+}
+
+dependencies {
+    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
+    implementation("ru.ok.tracer:tracer-crash-report")
+    // Optional, for native crashes:
+    implementation("ru.ok.tracer:tracer-crash-report-native")
+}
+```
+
+On Android the token comes from here, not from Dart. Details and pitfalls are
+in the [Android](#android) section.
+
+**iOS.** In `ios/Podfile` — `OKTracer` lives in the vendor's own spec repository
+and ships as a static `xcframework`, so both a source line and a change of
+linkage are needed:
+
+```ruby
+source 'https://github.com/odnoklassniki/tracer-ios.git'
+source 'https://cdn.cocoapods.org/'
+
+platform :ios, '13.0'
+
+target 'Runner' do
+  use_frameworks! :linkage => :static   # was: use_frameworks!
+  # ...
+end
+```
+
+Then `pod install`. The token is passed from Dart, one step below. Details are
+in the [iOS](#ios) section.
+
+**Web.** Nothing to add: the pure-Dart implementation is already inside the
+package. The token comes from Dart too, one step below.
 
 **3. Wrap the application's start.**
 

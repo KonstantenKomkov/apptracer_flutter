@@ -12,7 +12,6 @@ dependencies:
   # Only needed on targets without a native Tracer SDK (desktop, Aurora).
   # Android, iOS and web work without it.
   apptracer_flutter_http: ^0.1.0
-  apptracer_flutter_sentry: ^0.1.0
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter

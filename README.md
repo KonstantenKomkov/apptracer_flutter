@@ -29,7 +29,9 @@ packages/
   apptracer_flutter_android/            мост на Kotlin к ru.ok.tracer
   apptracer_flutter_ios/                мост на Swift к OKTracer
   apptracer_flutter_web/                реализация для web
-  apptracer_flutter_http/             транспорт по протоколу Sentry на чистом Dart
+  apptracer_flutter_http/               собственный приём Tracer на чистом Dart
+  apptracer_flutter_sentry/             протокол Sentry; только для платформ,
+                                        которые этот релиз не поддерживает
 docs/
 tool/
   bootstrap.sh              pub get во всех пакетах
@@ -70,8 +72,8 @@ make check      # analyze + test + publish dry-run
 
 В `Makefile` лежат и команды запуска примера на каждой платформе
 (`make example-android`, `example-ios`, `example-web`) — в них легко ошибиться:
-на Android токен приходит из Gradle-плагина, на iOS через `--dart-define`, а
-web вместо токена нужен DSN Sentry. `.vscode/launch.json` повторяет тот же
+на Android токен приходит из Gradle-плагина, а на iOS и web — через
+`--dart-define`, причём у каждой платформы свой проект и свой токен. `.vscode/launch.json` повторяет тот же
 набор для запуска из редактора. Если открыть `packages/apptracer_flutter/example`
 отдельным проектом, там свои `Makefile` (`make android`) и `launch.json`.
 

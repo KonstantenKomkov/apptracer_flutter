@@ -82,16 +82,22 @@ dart pub publish
 ## Secrets
 
 No credential of any kind belongs in this repository — not in a test fixture,
-not in the example, not in a Gradle file. The example reads
-`TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN` and `TRACER_DSN` from the environment
-and refuses to build with `-Ptracer.enabled=true` when they are absent, rather
-than producing a release whose crashes silently go nowhere.
+not in the example, not in a Gradle file. The example reads `TRACER_APP_TOKEN`
+and `TRACER_PLUGIN_TOKEN` from the environment and refuses to build with
+`-Ptracer.enabled=true` when they are absent, rather than producing a release
+whose crashes silently go nowhere.
+
+Of the two, only `pluginToken` is a secret. `appToken` ships inside the
+application — in an Android release it is in `classes.dex` and `resources.arsc`,
+put there by the Gradle plugin — so keeping it out of the repository is tidiness
+rather than protection. `pluginToken` signs uploads, never reaches the app, and
+is the one that matters.
 
 Before a release, confirm the packed archive is clean:
 
 ```sh
 dart pub publish --dry-run 2>&1 | sed -n '/Package has/,$p'
-git grep -nE '(appToken|pluginToken|dsn)\s*[:=]\s*["'\''][A-Za-z0-9]{8,}' -- . || echo "no literal secrets"
+git grep -nE '(pluginToken|appToken)\s*[:=]\s*["'\''][A-Za-z0-9]{8,}' -- . || echo "no literal secrets"
 ```
 
 ## Version policy
