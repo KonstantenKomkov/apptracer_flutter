@@ -512,20 +512,6 @@ starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov
 
 ## Usage
 
-```dart
-import 'package:apptracer_flutter/apptracer_flutter.dart';
-
-void main() {
-  Tracer.initialize(
-    options: const TracerOptions(
-      iosAppToken: 'IOS_APP_TOKEN',
-      webAppToken: 'WEB_APP_TOKEN',
-    ),
-    appRunner: () => runApp(const MyApp()),
-  );
-}
-```
-
 `appRunner` runs **exactly once, in every scenario** — a normal start, a start
 with collection disabled by policy, a platform SDK that throws while starting,
 and a platform with no implementation at all. An error reporter that can stop an
