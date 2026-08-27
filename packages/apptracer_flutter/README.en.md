@@ -188,13 +188,7 @@ Then `pod install`. The `appToken` **is** passed from Dart on iOS.
 ### Web
 
 Nothing to add: the pure-Dart implementation is already inside the package. The
-token comes from Dart too, one step below.
-
-Web speaks Tracer's own ingest — the same one the vendor's JS SDK uses — and
-wants the JS project's `appToken`, exactly as Android and iOS want theirs. No
-Sentry DSN is needed, and none is issued: measured 2026-08-26, a JS project
-simply has none. The protocol is written down in
-[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
+token is the JS project's `appToken`, passed one step below.
 
 **3. Wrap the application's start.**
 

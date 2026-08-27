@@ -183,13 +183,8 @@ transitive dependencies that include statically linked binaries»*. То же с
 
 ### Web
 
-Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен — тоже из
-Dart, шагом ниже.
-
-Web говорит с собственным приёмом Tracer — тем же, что и JS-SDK вендора, — и
-хочет `appToken` JS-проекта, ровно как Android и iOS хотят свой. Sentry DSN не
-нужен и не выдаётся: проверено 26.08.2026, у JS-проекта его попросту нет.
-Разбор протокола — в [web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
+Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен —
+`appToken` JS-проекта, передаётся шагом ниже.
 
 **3. Оберните запуск приложения.**
 
