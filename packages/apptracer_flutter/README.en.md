@@ -17,8 +17,10 @@ Five minutes to the first event in the Tracer console. Every step below has a
 fuller version further down.
 
 **1. Create a project in the [Tracer console](https://apptracer.ru).** One per
-platform: Android, iOS and web each have their own tokens, with none shared.
-Both values live under **Настройки → Проект → API** in the project you create.
+platform. Each project issues **its own pair** — an `appToken` and a
+`pluginToken` — and nothing is shared between them: an application on Android,
+iOS and web means three projects and three pairs. Both values live under
+**Настройки → Проект → API**.
 
 **2. Wire the Tracer SDK into your build.** This package is a wrapper: it
 neither ships the vendor's SDKs nor pulls them in — your application adds them.
@@ -260,12 +262,19 @@ is usually enough:
 
 ```sh
 # ~/.tracer-env — outside any git repository, chmod 600
-export TRACER_APP_TOKEN=...
-export TRACER_PLUGIN_TOKEN=...
+export TRACER_ANDROID_APP_TOKEN=...
+export TRACER_ANDROID_PLUGIN_TOKEN=...
+# If the application also ships on iOS or web, those are separate projects with
+# separate pairs, and mixing them up is easy:
+export TRACER_IOS_APP_TOKEN=...
+export TRACER_IOS_PLUGIN_TOKEN=...
 ```
 
 ```sh
-source ~/.tracer-env && flutter build apk --release
+source ~/.tracer-env && \
+  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
+  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
+  flutter build apk --release
 ```
 
 In CI, through the build system's secrets — in GitHub Actions:
@@ -273,8 +282,8 @@ In CI, through the build system's secrets — in GitHub Actions:
 ```yaml
 - run: flutter build apk --release
   env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
 ```
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8

@@ -17,8 +17,10 @@ English version: [README.en.md](README.en.md).
 ниже по документу.
 
 **1. Заведите проект в [консоли Tracer](https://apptracer.ru).** Отдельный на
-каждую платформу: у Android, iOS и web свои токены, общих нет. Оба нужных
-значения — в разделе **Настройки → Проект → API** созданного проекта.
+каждую платформу. Каждый проект выдаёт **свою пару** — `appToken` и
+`pluginToken`, — и общих между платформами нет: приложение на Android, iOS и web
+означает три проекта и три пары. Оба значения лежат в разделе
+**Настройки → Проект → API**.
 
 **2. Подключите SDK Tracer к сборке.** Пакет — обёртка: сами SDK вендора он не
 распространяет и за собой не тянет, их добавляет приложение. Отсюда и разница
@@ -257,12 +259,19 @@ dependencies {
 
 ```sh
 # ~/.tracer-env — вне любого git-репозитория, chmod 600
-export TRACER_APP_TOKEN=...
-export TRACER_PLUGIN_TOKEN=...
+export TRACER_ANDROID_APP_TOKEN=...
+export TRACER_ANDROID_PLUGIN_TOKEN=...
+# Если приложение выходит ещё и на iOS или web — там свои проекты, а значит
+# свои пары токенов, и путать их не стоит:
+export TRACER_IOS_APP_TOKEN=...
+export TRACER_IOS_PLUGIN_TOKEN=...
 ```
 
 ```sh
-source ~/.tracer-env && flutter build apk --release
+source ~/.tracer-env && \
+  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
+  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
+  flutter build apk --release
 ```
 
 В CI — секретами сборочной системы, например в GitHub Actions:
@@ -270,8 +279,8 @@ source ~/.tracer-env && flutter build apk --release
 ```yaml
 - run: flutter build apk --release
   env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
 ```
 
 Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
