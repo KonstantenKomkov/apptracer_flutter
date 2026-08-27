@@ -568,7 +568,10 @@ Dart уезжают внутри `libapp.so`, а бинарник больше �
 Script фаза Xcode, ограниченная условием `ACTION == install && CONFIGURATION ==
 Release`, поэтому срабатывает она только при архивации;
 `tool/upload_ios_dsym.sh` делает ту же загрузку из командной строки и падает
-закрыто, как и загрузка сорсмап для web. Подтверждено на живом эндпоинте
+закрыто, как и загрузка сорсмап для web. Приложению подключать вендорскую
+оснастку не нужно: `apptracer_flutter_ios` прописывает равнозначную фазу в
+`Runner.xcodeproj` при `pod install` (`ios/tracer_add_upload_phase.rb`), и она
+зовёт `dart run apptracer_flutter:upload_symbols ios` на release-сборках. Подтверждено на живом эндпоинте
 26.08.2026: `POST https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=…`
 с `versionName`, `versionCode` и zip из `.dSYM`-бандлов ответил
 `{"success":true}`. Кадров Dart это не касается: там та же история со

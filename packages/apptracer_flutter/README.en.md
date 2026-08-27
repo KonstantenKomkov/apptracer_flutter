@@ -113,23 +113,23 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-The `<application>` tag in `android/app/src/main/AndroidManifest.xml` already
-has an `android:name` — Flutter's template sets it to `"${applicationName}"`.
-Change **only its value**:
+The package's `TracerApplication` is wired in one of two ways — same result,
+take either.
+
+**A. In the manifest.** The `<application>` tag in
+`android/app/src/main/AndroidManifest.xml` already has an `android:name`;
+Flutter's template sets it to `"${applicationName}"`. Change **only that
+value** — the attributes next to it are yours and stay as they are:
 
 ```xml
 <application
-    android:label="my_app"
     android:name="ru.apptracer.flutter.TracerApplication"
+    android:label="my_app"
     android:icon="@mipmap/ic_launcher">
 ```
 
-`label` and `icon` appear only because the template puts them next to it: they
-are yours and stay as they are. One value changes — the one that read
-`${applicationName}`.
-
-If you would rather not touch the manifest, substituting the placeholder from
-Gradle does the same thing — which is what this repository's example does:
+**B. Through a Gradle placeholder**, if you would rather not touch the manifest.
+In `android/app/build.gradle.kts`:
 
 ```kotlin
 android {
@@ -140,8 +140,24 @@ android {
 }
 ```
 
-It turns on the softer non-fatal rate limit, which matters more than it sounds:
-Tracer's hard default is **8 non-fatals per session**
+In a Groovy file (`android/app/build.gradle`) the same call reads differently:
+
+```groovy
+android {
+    defaultConfig {
+        manifestPlaceholders += [
+            applicationName: "ru.apptracer.flutter.TracerApplication",
+        ]
+    }
+}
+```
+
+B is the easier one when the manifest is shared by builds with and without
+Tracer. This repository's example takes it — substituting a subclass of its own,
+`TracerHostApplication`.
+
+`TracerApplication` turns on the softer non-fatal rate limit, which matters
+more than it sounds: Tracer's hard default is **8 non-fatals per session**
 (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart error this package reports
 is a non-fatal — so that is the ceiling your app meets first, and it meets it
 silently. The rate limit raises it to 10 per hour, and the vendor recommends
@@ -328,52 +344,11 @@ There is no Android field: its SDK reads the token from a resource the Gradle
 plugin generates, and nothing from Dart overrides it. For a single platform the
 shared `appToken` is enough — it is used wherever no specific one is set.
 
-Version and environment need not be given at all. Android and iOS take the
-version from the application bundle, web reads it from the `version.json` that
-`flutter build web` writes out of `pubspec.yaml`, and the environment follows
-the build mode — `prod` for release, `dev` otherwise. `release`, `dist` and
-`environment` remain in `TracerOptions` for when you need to say something
-else.
-
-Keeping the keys in a file of their own next to the sources is exactly what
-`flutterfire configure` does when it writes `lib/firebase_options.dart`. Nothing
-is needed here for that beyond the convention:
-
-```dart
-// lib/tracer_options.dart
-import 'package:apptracer_flutter/apptracer_flutter.dart';
-
-const TracerOptions tracerOptions = TracerOptions(
-  iosAppToken: 'IOS_APP_TOKEN',
-  webAppToken: 'WEB_APP_TOKEN',
-);
-```
-
-```dart
-Tracer.initialize(options: tracerOptions, appRunner: ...);
-```
-
-The Android token cannot move there: the Gradle plugin needs it at build time,
-before any Dart exists.
-
-**The `appToken` is not a secret**, and there is little point hiding it: the
-Gradle plugin bakes it into the APK — it sits in `resources.arsc` and
-`classes.dex`, unzip one and see — and on web it is in the JavaScript bundle
-anyway. It identifies the project rather than granting access to it. So use
-whichever of these suits you:
-
-* a string in the code, or in a settings file next to your sources — the same
-  shape as Firebase's `firebase_options.dart`;
-* `--dart-define=TRACER_APP_TOKEN=…` together with
-  `appToken: String.fromEnvironment('TRACER_APP_TOKEN')`, if you would rather
-  it stayed out of git;
-* from your own configuration at runtime — `TracerOptions` takes an ordinary
-  string and does not care where you got it.
-
-**The `pluginToken` is a secret.** It signs the upload of mappings and symbols,
-only the build needs it, and it never reaches the application: it is not in the
-APK. It belongs in the build environment and in CI secrets, not in a
-repository.
+`appRunner` is your application's startup, handed to the package as a function:
+usually `() => runApp(const MyApp())`. The package calls it itself, from inside
+the guarded zone. That is the only way asynchronous errors nobody awaited reach
+that zone, and the only way `WidgetsFlutterBinding.ensureInitialized()` ends up
+in the same zone as `runApp` — otherwise Flutter complains that the zones differ.
 
 Everything thrown from here on — uncaught exceptions, failures inside `build()`,
 asynchronous errors nobody awaited — reaches Tracer on its own. There is nothing
@@ -446,49 +421,20 @@ A fair question: Crashlytics is free, official, and does the same job.
 
 | | apptracer_flutter | firebase_crashlytics |
 |---|---|---|
-| Whose SDKs, and where reports go | native SDKs by VK / OK.TECH; ingest on `*.apptracer.ru`, in the "Odnoklassniki Services" and "VK Services" networks, RU, AS47764 (checked 2026-08-27) | Google's SDKs, ingest in Google's infrastructure |
+| Whose SDKs, and where reports go | native SDKs by VK / OK.TECH; ingest on `*.apptracer.ru`, in the "Odnoklassniki Services" and "VK Services" networks, RU, AS47764 | Google's SDKs, ingest in Google's infrastructure |
 | Platforms | Android, iOS, web | Android, iOS, macOS |
 | Where reports go | Tracer's servers (VK / OK.TECH) | Google's infrastructure |
 | Dart error capture | `FlutterError.onError`, `PlatformDispatcher.onError`, a guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
 | Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | `firebase crashlytics:symbols:upload` on Android, automatic on Apple |
-| Native symbols, every build | Android — the Gradle plugin itself; iOS and web — the package's command or the vendor's tooling | Apple — by itself, through an Xcode build phase; Android — through the Firebase CLI |
+| Native symbols, every build | Android — the Gradle plugin itself; iOS — a build phase the package writes for you; web — the package's command | Apple — by itself, through an Xcode build phase; Android — through the Firebase CLI |
 
-**About the data.** This is where the reason for choosing Tracer usually lies,
-and it can be put without legal phrasing. Crashlytics means Google's native SDKs
-and Google's ingest. Tracer means VK / OK.TECH's native SDKs, and an ingest that
-whois puts in Russian networks as of 2026-08-27: `sdk-api.apptracer.ru` and
-`apptracer.ru` in "Odnoklassniki Services", AS47764, Moscow;
-`plugin-api.apptracer.ru` in "VK Services". A report therefore stays inside that
-jurisdiction, where with Google it crosses the border by construction. A crash log is not anonymous by nature,
-either: what makes it personal data is what you put in it — `userId`, custom
-keys, breadcrumbs, the exception message. Exactly what leaves the device from
-this package, and what the vendor's SDK adds on its own, is listed in
-[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Whether that satisfies your
-jurisdiction's rules is a question for your lawyer, not for a README.
-
-**Both upload symbols on every release.** That is a property of building, not a
-vendor's choice: each build's `dSYM`s carry their own UUIDs, so last version's
-symbols do not fit this one.
-
-If it feels like Crashlytics never asked you to upload anything, that is true —
-but not because it does not happen. On Apple the plugin writes an Xcode build
-phase that ships the `dSYM` on every build by itself, and since Flutter 3.12 with
-plugin 3.3.4 you do not even add the phase by hand. The other side of it is
-Android: build with `--obfuscate` and the Dart symbols go up through the
-Firebase CLI, which is a thing to remember.
-
-Tracer's automation falls the other way round: Android is covered end to end by
-the Gradle plugin, while on iOS the equivalent phase, or the Fastlane plugin,
-has to be wired up by you — nothing writes it for a Flutter project. Whatever is
-left over is one command in CI, for either of them.
-
-**About Dart symbols, honestly.** Crashlytics is plainly better here. It reads
-such a release by itself; here that is manual work. Tracer has no channel for
-Dart debug files — the vendor confirmed as much on 2026-08-27 — and the native
-channel accepts the upload but never applies it, because the reporter records
-`libapp.so` with a zero build id. Measured 2026-08-27, written up in [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
-Until the vendor fixes that, there is one working route: archive the build's
-symbol file and decode traces with `flutter symbolize`.
+**About the data.** This is the main reason to pick Tracer: Crashlytics means
+Google's SDKs and Google's ingest, Tracer means VK / OK.TECH's, with an ingest
+whois puts in Russian networks (AS47764, Moscow), so no report
+crosses the border — which does not make a crash log anonymous, since what makes
+it personal data is what you put in it, and exactly what leaves the device is
+listed in
+[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 
 ## What you get beyond Dart errors
 
@@ -502,20 +448,17 @@ part:
 * **iOS** — native crashes and the hang counter.
 * **Web** — Dart errors only; there is no such thing as a native crash there.
 
-Desktop and Aurora are not supported and are not among the package's platforms:
-neither has a Flutter-facing Tracer SDK, and no build for either has ever been
-run against a real project.
-
 On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
 starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
 ## Usage
 
-`appRunner` runs **exactly once, in every scenario** — a normal start, a start
-with collection disabled by policy, a platform SDK that throws while starting,
-and a platform with no implementation at all. An error reporter that can stop an
-application from starting is worse than no error reporter.
+`appRunner` — the startup function from step 3 — runs **exactly once, in every
+scenario** — a normal start, a start with collection disabled by policy, a
+platform SDK that throws while starting, and a platform with no implementation
+at all. An error reporter that can stop an application from starting is worse
+than no error reporter.
 
 Reporting a handled error:
 
@@ -540,6 +483,14 @@ Tracer.log('user tapped checkout', category: 'ui');
 await Tracer.setCustomKey(key: 'checkout_step', value: '3');
 await Tracer.removeCustomKey('checkout_step');
 ```
+
+Neither of these is analytics: nothing here is sent on its own. Breadcrumbs are
+the trail of what happened before a failure, keys are a snapshot of the state at
+the moment of it, and both travel attached to an error report — with no error
+they are simply evicted from the buffer. A key lives until the end of the
+session, which is why you remove it: otherwise `checkout_step=3` arrives with a
+crash in the settings screen and misleads whoever reads it, and stale keys crowd
+out useful ones — Tracer keeps at most 30.
 
 Breadcrumbs are buffered in Dart *and* mirrored into the native log buffer as
 they happen, so a native crash — which the Dart side never sees — still arrives
@@ -580,8 +531,9 @@ original event is still sent.
 
 ### Very large stack traces
 
-The verbatim trace written to the platform log is capped at 8 KiB by default,
-and the parsed frames at 128.
+The verbatim trace — the raw text Dart printed, the one `flutter symbolize`
+knows how to decode — is written to the platform log and capped at 8 KiB by
+default, and the parsed frames at 128.
 
 Both defaults exist because Android's log buffer is a **circular** 64 KiB
 buffer: everything written to it evicts something older. A pathological Dart
@@ -631,12 +583,7 @@ When the caller supplies no `issueKey`, the package synthesises one from the
 error type and the innermost named frame, bounded to 32 characters.
 
 This is not decoration. On Android, Tracer keys a group on the top frame's class
-and method and nothing else — measured against a live project on 2026-08-26,
-where a `StateError` and a `TimeoutException` thrown from two closures inside
-one `build` landed in the same group. In a Flutter application most handlers are
-exactly such closures. iOS gets there by a different route with the same result:
-a Dart stack trace carries no native addresses, so there is nothing to group on
-at all.
+and method and nothing else.
 
 Neither the file nor the line number goes into the key: Tracer ignores them by
 design, so that editing code does not scatter one issue across several groups,
@@ -645,23 +592,37 @@ always wins.
 
 ## Release builds with `--split-debug-info`
 
-If you build with `--split-debug-info` — with or without `--obfuscate`, measured
-2026-08-27 — Dart stack traces become addresses:
+If you build with `--split-debug-info` — with or without `--obfuscate` — Dart
+stack traces become addresses:
 
 ```
 build_id: 'b71885097a7ebc4d1ab80642f606c4be'
 #00 abs 0000007938a1c2f0 virt 00000000002cc2f0
 ```
 
-The package always sends the **verbatim** trace, header included, so it stays
-decodable:
+The package sends the **verbatim** trace by default, header included, so it
+stays decodable.
+
+The text sits in the event's log tab, under the line
+`--- apptracer_flutter: verbatim Dart stack trace ---`. Copy the trace itself
+out of it — from the `build_id:` line down to the last `#NN abs …` frame — and
+save it to a file; the service lines the package wrote above it are not part of
+the trace. Then:
 
 ```
 flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 ```
 
+The symbol file has to come from **that same build**: the `build_id` in the
+trace must match the `app.<platform>-<arch>.symbols` that `--split-debug-info`
+wrote next to the artefact. A neighbouring release's symbols will not do, so
+archive them for every build. If the trace ends in
+`... [apptracer_flutter] truncated, N more line(s)`, the log cut the tail off:
+only the surviving frames decode, and the cap is
+`TracerOptions.maxRawStackTraceLogBytes`.
+
 **Tracer has no upload channel for Dart `--split-debug-info` files** — the
-vendor confirmed as much on 2026-08-27 — so decoding stays a manual step. Read
+vendor confirmed as much — so decoding stays a manual step. Read
 [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md)
 before you ship such a build — it explains what does and does not work, and how
 to avoid finding out the hard way.
