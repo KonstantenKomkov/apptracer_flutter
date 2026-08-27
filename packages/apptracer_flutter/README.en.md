@@ -502,33 +502,13 @@ part:
 * **iOS** — native crashes and the hang counter.
 * **Web** — Dart errors only; there is no such thing as a native crash there.
 
-Desktop and Aurora are not supported and are not among the package's platforms.
-Why is in [Desktop and Aurora](#desktop-and-aurora).
+Desktop and Aurora are not supported and are not among the package's platforms:
+neither has a Flutter-facing Tracer SDK, and no build for either has ever been
+run against a real project.
 
 On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
 starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
-
-## Desktop and Aurora
-
-This release does **not support** them. Neither has a Flutter-facing Tracer
-SDK, and no build for either has ever been run against a
-real project. The transport can be registered there and Dart errors would
-probably arrive — "probably" being the entire claim:
-
-```yaml
-dependencies:
-  apptracer_flutter_http: ^0.1.0
-```
-
-```dart
-import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
-
-TracerPlatform.instance = TracerHttpTracer(
-  facts: PlatformClientFacts(),
-  sdkVersion: '0.1.0',
-);
-```
 
 ## Usage
 
