@@ -11,6 +11,91 @@ error-monitoring service by OK.TECH / VK.
 
 Русская версия: [README.md](README.md).
 
+## Quick start
+
+Five minutes to the first event in the Tracer console. Every step below has a
+fuller version further down.
+
+**1. Create a project in Tracer.** One per platform: Android, iOS and web each
+have their own `appToken`, and there is no shared one.
+
+**2. Add the package.**
+
+```sh
+flutter pub add apptracer_flutter
+```
+
+**3. Set up the platform.** Not skippable: the token is delivered differently on
+each platform, and without this step the package starts, prints that it is
+disabled, and sends nothing.
+
+| Platform | What it needs | In full |
+|---|---|---|
+| Android | the `ru.ok.tracer` Gradle plugin and the SDK dependencies — the token comes from there, not from Dart | [Android](#android) |
+| iOS | a `source` line in the `Podfile` and static linkage | [iOS](#ios) |
+| Web | nothing beyond the token in `TracerOptions` | [Web](#web-and-other-platforms) |
+
+**4. Wrap the application's start.**
+
+```dart
+import 'package:apptracer_flutter/apptracer_flutter.dart';
+
+void main() {
+  Tracer.initialize(
+    options: const TracerOptions(
+      // iOS and web. On Android the token comes from the Gradle plugin and
+      // this is ignored.
+      appToken: String.fromEnvironment('TRACER_APP_TOKEN'),
+      release: '1.0.0',
+      environment: 'prod',
+    ),
+    appRunner: () => runApp(const MyApp()),
+  );
+}
+```
+
+Everything thrown from here on — uncaught exceptions, failures inside `build()`,
+asynchronous errors nobody awaited — reaches Tracer on its own. There is nothing
+else to call.
+
+**5. Confirm it is alive.** Put one line behind a button and press it:
+
+```dart
+onPressed: () => throw StateError('apptracer_flutter check'),
+```
+
+An event should appear in the console. The title differs by platform, and that
+is expected: on Android it reads
+`DartError: StateError: apptracer_flutter check`, while on iOS the console
+always prefixes its own rendering of the top native frame, so it reads
+`+ 0 - StateError: apptracer_flutter check`. The readable Dart stack trace is
+in the log tab either way.
+
+### If nothing arrives
+
+It is almost always one of four things:
+
+* **The platform setup was skipped.** At startup the package prints a line
+  saying it is disabled and why, and `Tracer.isEnabled` is `false` at that
+  moment. Read the log first.
+* **It is a debug build.** The native SDK sends nothing from debug builds by
+  default, on either platform. Test on release, or turn on `setDebugUpload`
+  (Android, below).
+* **Android: `resValues = true` is missing.** AGP 9 turns the feature off by
+  default, and the SDK reads `appToken` out of exactly that generated resource
+  — without it, it fails at runtime.
+* **Android: the token was passed in `TracerOptions`.** It is ignored there; on
+  Android the token comes only from the `tracer { }` block in Gradle.
+
+### Where to go next
+
+* [Usage](#usage) — reporting by hand, breadcrumbs, custom keys.
+* [Consent](#consent) — how to collect nothing until the user agrees.
+* [What data is transmitted](#what-data-is-transmitted) — the full list,
+  including what the native SDK adds on its own.
+* [Obfuscated release builds](#obfuscated-release-builds) — what happens to a
+  stack trace and how to read it back.
+
 ## Why this exists
 
 The native Tracer SDKs cannot see Dart errors.
@@ -48,15 +133,10 @@ On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
 starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
-## Install
+## Platform setup
 
-```yaml
-dependencies:
-  apptracer_flutter: ^0.1.0
-```
-
-Then follow the platform setup below. It is not optional: without it the package
-starts, reports that it is disabled, and sends nothing.
+Step 3 of the quick start, in full. Not optional: without it the package starts,
+reports that it is disabled, and sends nothing.
 
 ### Android
 
@@ -189,7 +269,7 @@ Web speaks Tracer's own ingest — the same one the vendor's JS SDK uses — and
 wants the JS project's `appToken`, exactly as Android and iOS want theirs. No
 Sentry DSN is needed, and none is issued: measured 2026-08-26, a JS project
 simply has none. The protocol is written down in
-[web-protocol.md](../../docs/web-protocol.md).
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 **Desktop and Aurora are not supported in this release.** Neither has a
 Flutter-facing Tracer SDK, and no build for either has ever been run against a
