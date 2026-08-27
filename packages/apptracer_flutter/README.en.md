@@ -16,8 +16,9 @@ error-monitoring service by OK.TECH / VK.
 Five minutes to the first event in the Tracer console. Every step below has a
 fuller version further down.
 
-**1. Create a project in Tracer.** One per platform: Android, iOS and web each
-have their own `appToken`, and there is no shared one.
+**1. Create a project in the [Tracer console](https://apptracer.ru).** One per
+platform: Android, iOS and web each have their own tokens, with none shared.
+Both values live under **Настройки → Проект → API** in the project you create.
 
 **2. Set up the platform.** Not skippable: the token is delivered differently on
 each platform, and without this step the package starts, prints that it is
