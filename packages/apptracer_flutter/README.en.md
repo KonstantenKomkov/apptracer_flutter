@@ -18,8 +18,8 @@ fuller version further down.
 
 **1. Create a project in the [Tracer console](https://apptracer.ru).** One per
 platform. Each project issues **its own pair** — an `appToken` and a
-`pluginToken` — and nothing is shared between them: an application on Android,
-iOS and web means three projects and three pairs. Both values live under
+`pluginToken`: an application on Android, iOS and web means three projects and
+three pairs. Both values live under
 **Настройки → Проект → API**.
 
 **2. Wire the Tracer SDK into your build.** This package is a wrapper: it
