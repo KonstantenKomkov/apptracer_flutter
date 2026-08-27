@@ -115,19 +115,21 @@ This package hooks those three Dart entry points and forwards what it finds to
 the native SDK, which keeps handling native crashes, ANRs and the crash-free
 metric itself.
 
-## Platform support
+## What you get beyond Dart errors
 
-| Platform | Dart errors | Native crashes | ANR / hangs | Notes |
-|---|---|---|---|---|
-| Android | ✅ | ✅ native SDK | ✅ native SDK, **Android 11+ only** | needs the `ru.ok.tracer` Gradle plugin |
-| iOS | ✅ | ✅ native SDK | ✅ hang count | needs a `Podfile` source line |
-| Web | ✅ | — | — | Tracer's own ingest, needs an `appToken` |
-| macOS / Windows / Linux | ⚠️ unsupported | — | — | the transport can be registered by hand, but has never been run |
-| Aurora OS | ⚠️ unsupported | — | — | the same |
+The list of platforms is on the package page itself, so there is no point
+repeating it here. Dart errors are this package's job and arrive the same from
+all three. What differs is everything else, because the vendor's native SDK
+does that part:
 
-ANR on Android needs Android 11: `AnrReporter` in `tracer-crash-report` 1.4.0
-builds the report from `ApplicationExitInfo`, which arrived in API 30. Below
-that, `setSendAnr(true)` buys nothing.
+* **Android** — native crashes and ANRs. ANRs only from Android 11: `AnrReporter`
+  in `tracer-crash-report` 1.4.0 builds its report from `ApplicationExitInfo`,
+  which arrived in API 30, and below that `setSendAnr(true)` buys nothing.
+* **iOS** — native crashes and the hang counter.
+* **Web** — Dart errors only; there is no such thing as a native crash there.
+
+Desktop and Aurora are not supported and are not among the package's platforms.
+Why is at the end of the [Web](#web-and-other-platforms) section.
 
 On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
