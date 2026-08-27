@@ -175,8 +175,21 @@ end
 
 `pluginToken` iOS-проекта здесь не участвует: он нужен при загрузке `dSYM`, без
 которой нативные краши в консоли остаются нечитаемыми. У вендора для этого есть
-плагин Fastlane и bash-скрипт; рабочий пример —
-[`tool/upload_ios_dsym.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_ios_dsym.sh) в репозитории пакета.
+плагин Fastlane и Run Script для Xcode, а руками это один запрос — zip из
+`.dSYM`-бандлов после сборки:
+
+```sh
+cd build/ios/archive/Runner.xcarchive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+
+curl --location --http1.1 \
+  --form versionName=1.0.0 \
+  --form versionCode=1 \
+  --form file=@/tmp/dsym.zip \
+  "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
+```
+
+Ответ `{"success":true}` — принято. `versionName` и `versionCode` должны совпасть
+с теми, что шлёт приложение, иначе символы лягут к другой версии.
 
 `OKTracer` поставляется **статическим** `xcframework`, а CocoaPods не позволяет
 таргету с динамическими фреймворками получить статический бинарник транзитивно
@@ -192,9 +205,22 @@ transitive dependencies that include statically linked binaries»*. То же с
 `appToken` JS-проекта, передаётся шагом ниже.
 
 `pluginToken` JS-проекта, как и на iOS, нужен не для событий, а для загрузки
-сорсмап: `POST /api/sourcemap/upload` с полем `sourcemapToken`. Без них
-стектрейс из release-сборки остаётся минифицированным. Пример —
-[`tool/upload_web_sourcemaps.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_web_sourcemaps.sh).
+сорсмап — без них стектрейс из release-сборки остаётся минифицированным:
+
+```sh
+flutter build web --release --source-maps
+cd build/web && zip -qr /tmp/sourcemaps.zip . -i '*.js' '*.map'
+
+curl --location \
+  -F sourcemapToken=WEB_PLUGIN_TOKEN \
+  -F versionName=1.0.0 \
+  -F file=@/tmp/sourcemaps.zip \
+  https://plugin-api.apptracer.ru/api/sourcemap/upload
+```
+
+Архив собирается **изнутри** `build/web`, чтобы пути в нём совпали с путями в
+кадрах: Tracer сопоставляет сорсмапы по пути файла, а не по Debug ID.
+`versionName` должен совпасть с `release`, который передан в `TracerOptions`.
 
 **3. Оберните запуск приложения.**
 
