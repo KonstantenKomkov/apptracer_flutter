@@ -6,6 +6,7 @@ import 'package:apptracer_flutter_sentry/apptracer_flutter_sentry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 import 'src/crash_inside_dart.dart';
 
@@ -64,8 +65,50 @@ void main() {
         return event;
       },
     ),
-    appRunner: () => runApp(const ExampleApp()),
+    appRunner: () {
+      unawaited(_warmUpNetworkPermission());
+      runApp(const ExampleApp());
+    },
   );
+}
+
+/// Просит систему разрешить сеть один раз — на старте, а не в момент сбоя.
+///
+/// Оболочки Android, EMUI и не только, показывают собственный вопрос про
+/// доступ в сеть при первом сетевом запросе приложения, и пока на него не
+/// ответили, запрос ждёт. У приложения с Tracer первым сетевым запросом обычно
+/// оказывается отправка отчёта — а значит вопрос всплывает ровно в момент
+/// ошибки, поверх сломанного экрана, и отчёт уходит не раньше, чем
+/// пользователь его закроет. Худшего момента для системного диалога не
+/// придумать.
+///
+/// Один безобидный запрос к тому же хосту, куда потом пойдут отчёты, переносит
+/// вопрос на запуск. Ответ сервера не нужен и не проверяется: важно само
+/// обращение к сети.
+///
+/// Это дело приложения, а не пакета: библиотека не вправе ходить в сеть по
+/// собственному почину, поэтому в `apptracer_flutter` такого нет.
+///
+/// В примере запрос уходит безусловно — сбор здесь включён всегда. Приложению,
+/// которое включает сбор по согласию, прогрев надо привязать к тому же
+/// согласию: сервер вендора не должен слышать о пользователе, который ничего
+/// не разрешал.
+Future<void> _warmUpNetworkPermission() async {
+  if (kIsWeb) {
+    return;
+  }
+  final http.Client client = http.Client();
+  try {
+    await client
+        .head(Uri.https(TracerHttpTracer.defaultHost, '/'))
+        .timeout(const Duration(seconds: 5));
+  } catch (error) {
+    if (kDebugMode) {
+      debugPrint('прогрев сети не удался, это не ошибка: $error');
+    }
+  } finally {
+    client.close();
+  }
 }
 
 /// Channel to the two failure modes Dart cannot reach on its own: a native

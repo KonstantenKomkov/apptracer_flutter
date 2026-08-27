@@ -16,6 +16,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
+  # Только ради одного запроса на старте, который выводит системный вопрос про
+  # доступ в сеть из момента сбоя; см. _warmUpNetworkPermission в lib/main.dart.
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_lints: ^5.0.0
