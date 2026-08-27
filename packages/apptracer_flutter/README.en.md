@@ -179,9 +179,21 @@ Then `pod install`. The `appToken` is passed from Dart, one step below.
 
 The iOS project's `pluginToken` plays no part here: it is needed when uploading
 the `dSYM`, without which native crashes stay unreadable in the console. The
-vendor ships a Fastlane plugin and a bash script for that; a working example is
-[`tool/upload_ios_dsym.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_ios_dsym.sh) in this package's
-repository.
+vendor ships a Fastlane plugin and an Xcode Run Script for that, and by hand it
+is one request — a zip of the `.dSYM` bundles the build leaves behind:
+
+```sh
+cd build/ios/archive/Runner.xcarchive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+
+curl --location --http1.1 \
+  --form versionName=1.0.0 \
+  --form versionCode=1 \
+  --form file=@/tmp/dsym.zip \
+  "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
+```
+
+`{"success":true}` means accepted. `versionName` and `versionCode` have to match
+what the application reports, or the symbols land against a different version.
 
 `OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
 target using dynamic frameworks pull a static binary in transitively — hence the
