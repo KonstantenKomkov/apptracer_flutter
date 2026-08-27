@@ -73,20 +73,26 @@ rather than by this contract, and the standard safe posture applies — a name
 that describes the integration rather than claiming to be the vendor's, plus a
 prominent statement that the package is unofficial. Both are in place.
 
-### The one residual ambiguity
+### Clause 4.2.4 — asked, and answered
 
 Clause 4.2.4 is worded broadly enough ("продукт, содержащий такую же
 функциональность") that a conservative reading could be stretched to cover any
 package whose subject matter is crash reporting. The reading above — that the
 clause targets building a rival SDK out of theirs, not building an adapter into
-theirs — is the sensible one and matches the rest of the agreement, but it is a
-reading rather than a certainty.
+theirs — matches the rest of the agreement, but on its own it was a reading
+rather than a certainty, and it was the one thing blocking publication.
 
-Since the vendor is being contacted anyway about symbol upload, one sentence of
-written confirmation removes it. See
-[questions-for-vendor.md](questions-for-vendor.md), question 2. Getting it in
-writing before publishing is cheap; discovering the other reading afterwards is
-not.
+**Answered 2026-08-27: the vendor does not object.** Question 2 was put to them
+as written in [questions-for-vendor.md](questions-for-vendor.md) — that the
+package distributes none of their artefacts, that every user registers with
+them and accepts the agreement themselves, and that 4.2.4 is read as barring a
+rival SDK rather than an integration wrapper. They raised no objection, to the
+reading or to the name `apptracer_flutter`.
+
+One caveat about this record: the answer is summarised here rather than quoted,
+because it came through the maintainer rather than into this repository. For a
+licence question the exact wording is the artefact — if the message still
+exists, paste it into this section verbatim, with its date and channel.
 
 ### The Sentry-protocol transport is outside the agreement
 

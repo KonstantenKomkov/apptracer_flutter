@@ -12,8 +12,8 @@ Last verified: 2026-08-25.
 | Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
-| macOS / Windows / Linux | Sentry protocol (documented, needs a VK Cloud DSN) or Tracer's own HTTP ingest, registered by hand | yes | no | no | no | opt-in, neither verified live |
-| Aurora OS | same two routes, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | opt-in, neither verified live |
+| macOS / Windows / Linux | Sentry protocol (documented, needs a VK Cloud DSN) or Tracer's own HTTP ingest, registered by hand | yes | no | no | no | **not supported in this release** — opt-in, never run |
+| Aurora OS | same two routes, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — opt-in, never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
 [status.md](status.md) for what has and has not been exercised against a real
@@ -335,7 +335,11 @@ Consequences worth knowing:
 
 ## Desktop and Aurora OS
 
-Neither has a Flutter-facing Tracer SDK.
+**Not supported in this release** — a decision taken 2026-08-27, not an
+oversight. Neither platform has a Flutter-facing Tracer SDK, and neither has
+been run against a real project even once, so nothing here is a promise. The
+transport below exists because web uses it; registering it on a desktop build
+would probably deliver Dart errors, and "probably" is the whole claim.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system

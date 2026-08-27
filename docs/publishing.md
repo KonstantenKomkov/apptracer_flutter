@@ -1,21 +1,19 @@
 # Publishing
 
-## Before the first release — settle this
+## Before the first release — settled
 
 **The licence has been read** (edition of 29 May 2025) and does not prohibit
 publishing this wrapper. The full reading, clause by clause, is in
 [legal.md](legal.md).
 
-One point is left open: clause 4.2.4 forbids using the Library "as the basis for
-a product containing the same functionality", and while that plainly targets a
-rival SDK rather than an integration adapter, it is a reading rather than a
-certainty. Question 2 in [questions-for-vendor.md](questions-for-vendor.md) asks
-the vendor to confirm it.
+The one point that was open — clause 4.2.4, which forbids using the Library "as
+the basis for a product containing the same functionality" — was put to the
+vendor as question 2.
 
-- [ ] the vendor's answer to question 2 confirms the reading
-
-**If it does not, stop and do not publish.** The work still stands as a private
-integration.
+- [x] the vendor's answer to question 2 confirms the reading — **2026-08-27, no
+  objection**, to the reading or to the name. Recorded in
+  [legal.md](legal.md); the wording is summarised there rather than quoted,
+  which is worth fixing if the message can still be pasted in.
 
 ## Prove it works first
 

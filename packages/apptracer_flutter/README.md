@@ -37,9 +37,9 @@ crash-free.
 |---|---|---|---|---|
 | Android | ✅ | ✅ нативный SDK | ✅ нативный SDK, **только Android 11+** | нужен Gradle-плагин `ru.ok.tracer` |
 | iOS | ✅ | ✅ нативный SDK | ✅ счётчик зависаний | нужна строка `source` в `Podfile` |
-| Web | ✅ | — | — | протокол Sentry, нужен DSN |
-| macOS / Windows / Linux | ✅ по желанию | — | — | транспорт регистрируется вручную |
-| ОС Аврора | ✅ по желанию | — | — | транспорт регистрируется вручную |
+| Web | ✅ | — | — | собственный приём Tracer, нужен `appToken` |
+| macOS / Windows / Linux | ⚠️ не поддерживается | — | — | транспорт можно зарегистрировать вручную, но ни разу не проверялся |
+| ОС Аврора | ⚠️ не поддерживается | — | — | то же самое |
 
 ANR на Android приходит только с Android 11: `AnrReporter` в
 `tracer-crash-report` 1.4.0 строит отчёт из `ApplicationExitInfo`, а тот
@@ -186,12 +186,15 @@ transitive dependencies that include statically linked binaries»*. То же с
 
 ### Web и остальные платформы
 
-Tracer принимает события по протоколу Sentry — именно так закрываются
-платформы без нативного SDK. Скопируйте Sentry DSN из настроек проекта в Tracer
-(раздел «API») и передайте его.
+Web говорит с собственным приёмом Tracer — тем же, что и JS-SDK вендора, — и
+хочет `appToken` JS-проекта, ровно как Android и iOS хотят свой. Sentry DSN не
+нужен и не выдаётся: проверено 26.08.2026, у JS-проекта его попросту нет.
+Разбор протокола — в [web-protocol.md](../../docs/web-protocol.md).
 
-Для web достаточно `TracerOptions.dsn`. На десктопе и Авроре транспорт нужно
-зарегистрировать самостоятельно:
+**Десктоп и Аврора в этом релизе не поддерживаются.** Нативного SDK для Flutter
+там нет, и ни одна сборка под них ни разу не проверялась на живом проекте.
+Транспорт зарегистрировать можно, ошибки Dart, скорее всего, поедут — но
+«скорее всего» это и есть всё утверждение целиком:
 
 ```yaml
 dependencies:
@@ -216,7 +219,7 @@ void main() {
   Tracer.initialize(
     options: const TracerOptions(
       appToken: String.fromEnvironment('TRACER_APP_TOKEN'), // iOS и web
-      dsn: String.fromEnvironment('TRACER_DSN'),            // web и десктоп
+      // dsn нужен только транспорту Sentry, то есть неподдерживаемым платформам
       environment: 'prod',
       release: '1.0.0',
     ),

@@ -46,7 +46,13 @@ jobs:
         working-directory: packages/${{ matrix.package }}
         run: flutter analyze --fatal-infos
 
+      # `id` is what makes the outputs reachable below. Without it,
+      # `steps.setup-chrome.outputs.chrome-path` is an empty string, and
+      # `flutter test --platform chrome` fails with `Failed to find "" in the
+      # search path` — an error that reads like a missing browser rather than
+      # a missing id.
       - name: Set up Chrome
+        id: setup-chrome
         if: matrix.package == 'apptracer_flutter_web'
         uses: browser-actions/setup-chrome@v1
 
