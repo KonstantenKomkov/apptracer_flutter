@@ -176,6 +176,28 @@ void main() {
 Gradle-плагин, и переопределить это из Dart нечем. Если платформа одна, хватит
 общего `appToken` — он используется там, где своего не задано.
 
+Держать ключи отдельным файлом рядом с исходниками — ровно то, что делает
+`flutterfire configure`, создавая `lib/firebase_options.dart`. Здесь для этого
+ничего не требуется, достаточно соглашения:
+
+```dart
+// lib/tracer_options.dart
+import 'package:apptracer_flutter/apptracer_flutter.dart';
+
+const TracerOptions tracerOptions = TracerOptions(
+  iosAppToken: 'токен-iOS-проекта',
+  webAppToken: 'токен-JS-проекта',
+  release: '1.0.0',
+);
+```
+
+```dart
+Tracer.initialize(options: tracerOptions, appRunner: ...);
+```
+
+Токен Android туда не переедет: он нужен Gradle-плагину на этапе сборки, до того
+как появится хоть какой-то Dart.
+
 **`appToken` — не секрет,** и прятать его особого смысла нет: Gradle-плагин
 вшивает его в APK (он лежит в `resources.arsc` и `classes.dex` — можно
 распаковать и убедиться), а на web он и так в JS-бандле. Он опознаёт проект, а

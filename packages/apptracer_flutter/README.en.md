@@ -178,6 +178,28 @@ There is no Android field: its SDK reads the token from a resource the Gradle
 plugin generates, and nothing from Dart overrides it. For a single platform the
 shared `appToken` is enough — it is used wherever no specific one is set.
 
+Keeping the keys in a file of their own next to the sources is exactly what
+`flutterfire configure` does when it writes `lib/firebase_options.dart`. Nothing
+is needed here for that beyond the convention:
+
+```dart
+// lib/tracer_options.dart
+import 'package:apptracer_flutter/apptracer_flutter.dart';
+
+const TracerOptions tracerOptions = TracerOptions(
+  iosAppToken: 'ios-project-token',
+  webAppToken: 'js-project-token',
+  release: '1.0.0',
+);
+```
+
+```dart
+Tracer.initialize(options: tracerOptions, appRunner: ...);
+```
+
+The Android token cannot move there: the Gradle plugin needs it at build time,
+before any Dart exists.
+
 **The `appToken` is not a secret**, and there is little point hiding it: the
 Gradle plugin bakes it into the APK — it sits in `resources.arsc` and
 `classes.dex`, unzip one and see — and on web it is in the JavaScript bundle
