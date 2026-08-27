@@ -48,6 +48,16 @@ void main() {
 }
 ```
 
+`String.fromEnvironment` читает окружение **времени сборки**, а не шелла, так
+что токен подставляется флагом:
+
+```sh
+flutter build ipa --dart-define=TRACER_APP_TOKEN=$TRACER_APP_TOKEN
+```
+
+На Android этот флаг не нужен и ничего не даст: там токен приходит из
+Gradle-плагина.
+
 Всё, что бросается дальше, — необработанные исключения, ошибки внутри `build()`
 и асинхронные ошибки без `await` — уходит в Tracer само. Ничего больше вызывать
 не нужно.
@@ -80,6 +90,9 @@ onPressed: () => throw StateError('проверка apptracer_flutter'),
   падает в рантайме без него.
 * **Android: токен передан в `TracerOptions`.** Там он игнорируется — на Android
   токен берётся только из блока `tracer { }` в Gradle.
+* **iOS или web: забыт `--dart-define`.** `String.fromEnvironment` без флага
+  сборки возвращает пустую строку, пакет честно сообщает, что `appToken` не
+  задан, и остаётся выключенным.
 
 ### Что дальше
 
@@ -227,6 +240,27 @@ dependencies {
 ```
 
 Токены читайте из окружения. Токен, попавший в репозиторий, — это утёкший токен.
+
+Само окружение — ваше дело. Локально обычно хватает файла вне репозитория:
+
+```sh
+# ~/.tracer-env — вне любого git-репозитория, chmod 600
+export TRACER_APP_TOKEN=...
+export TRACER_PLUGIN_TOKEN=...
+```
+
+```sh
+source ~/.tracer-env && flutter build apk --release
+```
+
+В CI — секретами сборочной системы, например в GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}
+```
 
 Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
 нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка

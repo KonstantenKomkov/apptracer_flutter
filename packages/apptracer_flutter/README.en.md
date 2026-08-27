@@ -48,6 +48,16 @@ void main() {
 }
 ```
 
+`String.fromEnvironment` reads the **build-time** environment rather than the
+shell's, so the token goes in through a flag:
+
+```sh
+flutter build ipa --dart-define=TRACER_APP_TOKEN=$TRACER_APP_TOKEN
+```
+
+On Android the flag is neither needed nor read: the token comes from the Gradle
+plugin there.
+
 Everything thrown from here on — uncaught exceptions, failures inside `build()`,
 asynchronous errors nobody awaited — reaches Tracer on its own. There is nothing
 else to call.
@@ -80,6 +90,9 @@ It is almost always one of four things:
   — without it, it fails at runtime.
 * **Android: the token was passed in `TracerOptions`.** It is ignored there; on
   Android the token comes only from the `tracer { }` block in Gradle.
+* **iOS or web: `--dart-define` was forgotten.** Without the build flag
+  `String.fromEnvironment` returns an empty string, the package says plainly
+  that no `appToken` was given, and stays disabled.
 
 ### Where to go next
 
@@ -226,6 +239,28 @@ dependencies {
 
 Read the tokens from the environment. A token committed to a repository is a
 token that has leaked.
+
+The environment itself is your business. Locally a file outside the repository
+is usually enough:
+
+```sh
+# ~/.tracer-env — outside any git repository, chmod 600
+export TRACER_APP_TOKEN=...
+export TRACER_PLUGIN_TOKEN=...
+```
+
+```sh
+source ~/.tracer-env && flutter build apk --release
+```
+
+In CI, through the build system's secrets — in GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}
+```
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8
 non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
