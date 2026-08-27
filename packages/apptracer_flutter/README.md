@@ -85,9 +85,73 @@ dependencies {
 }
 ```
 
-Токен на Android приходит отсюда, а не из Dart. Подводные камни и
-необязательные настройки — в разделе
-[Android: что ещё стоит знать](#android-что-ещё-стоит-знать).
+Токен на Android приходит отсюда, а не из Dart: SDK читает его из ресурса,
+который Gradle-плагин генерирует во время сборки. Альтернативы в рантайме нет —
+поэтому плагин и обязателен.
+
+`pluginToken` читайте из окружения: он не попадает в приложение и остаётся
+секретом, а секрет, попавший в репозиторий, — это утёкший секрет. С `appToken`
+строже, чем вам удобно, быть незачем — плагин всё равно вшивает его в APK.
+
+Само окружение — ваше дело. Локально обычно хватает файла вне репозитория:
+
+```sh
+# ~/.tracer-env — вне любого git-репозитория, chmod 600
+export TRACER_ANDROID_APP_TOKEN=...
+export TRACER_ANDROID_PLUGIN_TOKEN=...
+# Если приложение выходит ещё и на iOS или web — там свои проекты, а значит
+# свои пары токенов, и путать их не стоит:
+export TRACER_IOS_APP_TOKEN=...
+export TRACER_IOS_PLUGIN_TOKEN=...
+```
+
+```sh
+source ~/.tracer-env && \
+  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
+  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
+  flutter build apk --release
+```
+
+В CI — секретами сборочной системы, например в GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
+```
+
+Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
+нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
+Dart, которую отправляет этот пакет, — нефатальная, так что упрётесь вы именно
+в этот потолок. Рейт-лимит поднимает его до 10 в час, и вендор сам рекомендует
+его включать:
+
+```kotlin
+class MyApplication : Application(), HasTracerConfiguration {
+    override val tracerConfiguration: List<TracerConfiguration>
+        get() = listOf(
+            CrashReportConfiguration.build {
+                setExperimentalNonFatalRateLimitEnabled(true)
+            },
+        )
+}
+```
+
+Ещё четыре момента, о которые легко споткнуться:
+
+* **`TracerOptions.appToken` на Android игнорируется.** Токен приходит из
+  Gradle-плагина. Если передать его всё равно, плагин напишет предупреждение, а
+  не сделает вид, что значение применилось.
+* По умолчанию SDK не отправляет данные из debug-сборок. Включается через
+  `CoreTracerConfiguration.Builder.setDebugUpload` в `Application`, реализующем
+  `HasTracerConfiguration`.
+* `Tracer.stopCollection()` вызывает `Tracer.disable()` нативного SDK, а его
+  нельзя отменить до перезапуска процесса. Это сделано намеренно, см.
+  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
+* `TracerOptions.environment` на Android тоже игнорируется — SDK берёт его из
+  Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
+  `tracer { }`.
 
 ### iOS
 
@@ -107,13 +171,25 @@ target 'Runner' do
 end
 ```
 
-Затем `pod install`. Токен передаётся из Dart, шагом ниже. Подробности — в
-разделе [iOS: что ещё стоит знать](#ios-что-ещё-стоит-знать).
+Затем `pod install`. Токен передаётся из Dart, шагом ниже.
+
+`OKTracer` поставляется **статическим** `xcframework`, а CocoaPods не позволяет
+таргету с динамическими фреймворками получить статический бинарник транзитивно
+— отсюда и смена типа линковки. Без неё `pod install` падает с ошибкой *«The 'Pods-Runner' target has
+transitive dependencies that include statically linked binaries»*. То же самое
+требуют статические фреймворки Firebase; Flutter это поддерживает.
+
+Затем `pod install`. На iOS `appToken` **передаётся** из Dart.
 
 ### Web
 
 Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен — тоже из
 Dart, шагом ниже.
+
+Web говорит с собственным приёмом Tracer — тем же, что и JS-SDK вендора, — и
+хочет `appToken` JS-проекта, ровно как Android и iOS хотят свой. Sentry DSN не
+нужен и не выдаётся: проверено 26.08.2026, у JS-проекта его попросту нет.
+Разбор протокола — в [web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 **3. Оберните запуск приложения.**
 
@@ -123,7 +199,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      appToken: 'токен-вашего-проекта',
+      iosAppToken: 'токен-iOS-проекта',
+      webAppToken: 'токен-JS-проекта',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -132,21 +209,9 @@ void main() {
 }
 ```
 
-Одного `appToken` хватает, пока приложение выходит на одной платформе. Если на
-нескольких — у каждой свой проект и свой токен, и выбирать между ними руками не
-нужно: передайте оба, пакет возьмёт подходящий сам.
-
-```dart
-options: const TracerOptions(
-  iosAppToken: 'токен-iOS-проекта',
-  webAppToken: 'токен-JS-проекта',
-  release: '1.0.0',
-),
-```
-
-Android в этом списке отсутствует намеренно: его SDK читает токен из ресурса,
-который создаёт Gradle-плагин, и ничем из Dart это не переопределить. `appToken`
-остаётся запасным значением — он используется там, где своего нет.
+Поля Android здесь нет: его SDK читает токен из ресурса, который создаёт
+Gradle-плагин, и переопределить это из Dart нечем. Если платформа одна, хватит
+общего `appToken` — он используется там, где своего не задано.
 
 **`appToken` — не секрет,** и прятать его особого смысла нет: Gradle-плагин
 вшивает его в APK (он лежит в `resources.arsc` и `classes.dex` — можно
@@ -275,112 +340,16 @@ Dart у Tracer есть, загрузка проходит — но символ
 * **Web** — только ошибки Dart, нативных крашей там нет по определению.
 
 Десктоп и Аврора не поддерживаются, и в списке платформ пакета их нет. Почему —
-в конце раздела [Web](#web-и-остальные-платформы).
+в разделе [Десктоп и Аврора](#десктоп-и-аврора).
 
 На платформе без реализации пакет инертен: `isEnabled` равен `false`,
 печатается одна диагностическая строка, ничего не бросается, приложение
 стартует. Подробности — в
 [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
-## Платформенная настройка: подробности
+## Десктоп и Аврора
 
-Код для вставки — в [быстром старте](#быстрый-старт). Здесь то, что в него не
-поместилось: подводные камни, необязательные настройки и
-поведение на платформах, которых этот релиз не поддерживает.
-
-### Android: что ещё стоит знать
-
-Код для вставки — в [быстром старте](#android). Здесь то, что в него не
-поместилось.
-
-Android SDK Tracer читает `appToken` из ресурса, который генерируется во время
-сборки, поэтому Gradle-плагин обязателен. Альтернативы в рантайме нет.
-
-`pluginToken` читайте из окружения: он не попадает в приложение и остаётся
-секретом, а секрет, попавший в репозиторий, — это утёкший секрет. С `appToken`
-строже, чем вам удобно, быть незачем — плагин всё равно вшивает его в APK.
-
-Само окружение — ваше дело. Локально обычно хватает файла вне репозитория:
-
-```sh
-# ~/.tracer-env — вне любого git-репозитория, chmod 600
-export TRACER_ANDROID_APP_TOKEN=...
-export TRACER_ANDROID_PLUGIN_TOKEN=...
-# Если приложение выходит ещё и на iOS или web — там свои проекты, а значит
-# свои пары токенов, и путать их не стоит:
-export TRACER_IOS_APP_TOKEN=...
-export TRACER_IOS_PLUGIN_TOKEN=...
-```
-
-```sh
-source ~/.tracer-env && \
-  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
-  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
-  flutter build apk --release
-```
-
-В CI — секретами сборочной системы, например в GitHub Actions:
-
-```yaml
-- run: flutter build apk --release
-  env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
-```
-
-Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
-нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
-Dart, которую отправляет этот пакет, — нефатальная, так что упрётесь вы именно
-в этот потолок. Рейт-лимит поднимает его до 10 в час, и вендор сам рекомендует
-его включать:
-
-```kotlin
-class MyApplication : Application(), HasTracerConfiguration {
-    override val tracerConfiguration: List<TracerConfiguration>
-        get() = listOf(
-            CrashReportConfiguration.build {
-                setExperimentalNonFatalRateLimitEnabled(true)
-            },
-        )
-}
-```
-
-Три важных момента:
-
-* **`TracerOptions.appToken` на Android игнорируется.** Токен приходит из
-  Gradle-плагина. Если передать его всё равно, плагин напишет предупреждение, а
-  не сделает вид, что значение применилось.
-* По умолчанию SDK не отправляет данные из debug-сборок. Включается через
-  `CoreTracerConfiguration.Builder.setDebugUpload` в `Application`, реализующем
-  `HasTracerConfiguration`.
-* `Tracer.stopCollection()` вызывает `Tracer.disable()` нативного SDK, а его
-  нельзя отменить до перезапуска процесса. Это сделано намеренно, см.
-  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
-* `TracerOptions.environment` на Android тоже игнорируется — SDK берёт его из
-  Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
-  `tracer { }`.
-
-### iOS: что ещё стоит знать
-
-Код для вставки — в [быстром старте](#ios). Здесь то, что в него не поместилось.
-
-`OKTracer` поставляется **статическим** `xcframework`, а CocoaPods не позволяет
-таргету с динамическими фреймворками получить статический бинарник транзитивно
-— отсюда и смена типа линковки. Без неё `pod install` падает с ошибкой *«The 'Pods-Runner' target has
-transitive dependencies that include statically linked binaries»*. То же самое
-требуют статические фреймворки Firebase; Flutter это поддерживает.
-
-Затем `pod install`. На iOS `appToken` **передаётся** из Dart.
-
-### Web и остальные платформы
-
-Web говорит с собственным приёмом Tracer — тем же, что и JS-SDK вендора, — и
-хочет `appToken` JS-проекта, ровно как Android и iOS хотят свой. Sentry DSN не
-нужен и не выдаётся: проверено 26.08.2026, у JS-проекта его попросту нет.
-Разбор протокола — в [web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
-
-**Десктоп и Аврора в этом релизе не поддерживаются.** Нативного SDK для Flutter
-там нет, и ни одна сборка под них ни разу не проверялась на живом проекте.
+В этом релизе они **не поддерживаются**. Нативного SDK для Flutter там нет, и ни одна сборка под них ни разу не проверялась на живом проекте.
 Транспорт зарегистрировать можно, ошибки Dart, скорее всего, поедут — но
 «скорее всего» это и есть всё утверждение целиком:
 

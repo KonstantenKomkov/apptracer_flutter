@@ -87,8 +87,75 @@ dependencies {
 }
 ```
 
-On Android the token comes from here, not from Dart. Pitfalls and optional
-settings are in [Android: the rest of it](#android-the-rest-of-it).
+On Android the token comes from here, not from Dart: the SDK reads it from a
+resource the Gradle plugin generates at build time. There is no runtime
+alternative — which is why the plugin is required.
+
+Read the `pluginToken` from the environment: it never reaches the application
+and stays a secret, and a secret committed to a repository is a secret that has
+leaked. There is no need to be stricter with the `appToken` than suits you —
+the plugin bakes it into the APK regardless.
+
+The environment itself is your business. Locally a file outside the repository
+is usually enough:
+
+```sh
+# ~/.tracer-env — outside any git repository, chmod 600
+export TRACER_ANDROID_APP_TOKEN=...
+export TRACER_ANDROID_PLUGIN_TOKEN=...
+# If the application also ships on iOS or web, those are separate projects with
+# separate pairs, and mixing them up is easy:
+export TRACER_IOS_APP_TOKEN=...
+export TRACER_IOS_PLUGIN_TOKEN=...
+```
+
+```sh
+source ~/.tracer-env && \
+  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
+  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
+  flutter build apk --release
+```
+
+In CI, through the build system's secrets — in GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
+    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
+```
+
+Turn on the softer non-fatal rate limit. Tracer's hard default is **8
+non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
+error this package reports is a non-fatal, so that ceiling is the one your app
+will meet first. Enabling the rate limit raises it to 10 per hour and is what
+the vendor recommends:
+
+```kotlin
+class MyApplication : Application(), HasTracerConfiguration {
+    override val tracerConfiguration: List<TracerConfiguration>
+        get() = listOf(
+            CrashReportConfiguration.build {
+                setExperimentalNonFatalRateLimitEnabled(true)
+            },
+        )
+}
+```
+
+Four more things that are easy to trip over:
+
+* **`TracerOptions.appToken` is ignored on Android.** The token comes from the
+  Gradle plugin. The plugin logs a warning if you pass one anyway rather than
+  pretending it took effect.
+* By default the SDK does not upload from debug builds. Enable it through
+  `CoreTracerConfiguration.Builder.setDebugUpload` in an `Application` that
+  implements `HasTracerConfiguration`.
+* `Tracer.stopCollection()` calls the SDK's `Tracer.disable()`, which cannot be
+  undone before the process restarts. That is deliberate; see
+  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
+* `TracerOptions.environment` is ignored on Android too — the SDK takes it from
+  the Gradle plugin, defaulting to the build variant name. Set it in the
+  `tracer { }` block.
 
 ### iOS
 
@@ -108,13 +175,26 @@ target 'Runner' do
 end
 ```
 
-Then `pod install`. The token is passed from Dart, one step below. Details are
-in [iOS: the rest of it](#ios-the-rest-of-it).
+Then `pod install`. The token is passed from Dart, one step below.
+
+`OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
+target using dynamic frameworks pull a static binary in transitively — hence the
+change of linkage. Without it, `pod install` fails with *"The 'Pods-Runner' target has transitive
+dependencies that include statically linked binaries"*. It is the same
+requirement Firebase's static frameworks impose, and Flutter supports it.
+
+Then `pod install`. The `appToken` **is** passed from Dart on iOS.
 
 ### Web
 
 Nothing to add: the pure-Dart implementation is already inside the package. The
 token comes from Dart too, one step below.
+
+Web speaks Tracer's own ingest — the same one the vendor's JS SDK uses — and
+wants the JS project's `appToken`, exactly as Android and iOS want theirs. No
+Sentry DSN is needed, and none is issued: measured 2026-08-26, a JS project
+simply has none. The protocol is written down in
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 **3. Wrap the application's start.**
 
@@ -124,7 +204,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      appToken: 'your-project-token',
+      iosAppToken: 'ios-project-token',
+      webAppToken: 'js-project-token',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -133,21 +214,9 @@ void main() {
 }
 ```
 
-One `appToken` is enough while the application ships on a single platform. When
-it ships on several, each has its own project and its own token — and there is
-nothing to choose by hand: pass both and the package picks the one that applies.
-
-```dart
-options: const TracerOptions(
-  iosAppToken: 'ios-project-token',
-  webAppToken: 'js-project-token',
-  release: '1.0.0',
-),
-```
-
-Android is deliberately absent from that list: its SDK reads the token from a
-resource the Gradle plugin generates, and nothing passed from Dart overrides it.
-`appToken` stays as the fallback, used wherever no platform-specific one is set.
+There is no Android field: its SDK reads the token from a resource the Gradle
+plugin generates, and nothing from Dart overrides it. For a single platform the
+shared `appToken` is enough — it is used wherever no specific one is set.
 
 **The `appToken` is not a secret**, and there is little point hiding it: the
 Gradle plugin bakes it into the APK — it sits in `resources.arsc` and
@@ -277,115 +346,16 @@ part:
 * **Web** — Dart errors only; there is no such thing as a native crash there.
 
 Desktop and Aurora are not supported and are not among the package's platforms.
-Why is at the end of the [Web](#web-and-other-platforms) section.
+Why is in [Desktop and Aurora](#desktop-and-aurora).
 
 On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
 starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
-## Platform setup: the rest of it
+## Desktop and Aurora
 
-The code to paste is in the [quick start](#quick-start). This section holds what
-did not fit: pitfalls, optional settings, and how things behave on the platforms
-this release does not support.
-
-### Android: the rest of it
-
-The code to paste is in the [quick start](#android). This is what did not
-fit into it.
-
-Tracer's Android SDK reads the `appToken` from a resource generated at build
-time, which is why the Gradle plugin is required. There is no runtime
-alternative.
-
-Read the `pluginToken` from the environment: it never reaches the application
-and stays a secret, and a secret committed to a repository is a secret that has
-leaked. There is no need to be stricter with the `appToken` than suits you —
-the plugin bakes it into the APK regardless.
-
-The environment itself is your business. Locally a file outside the repository
-is usually enough:
-
-```sh
-# ~/.tracer-env — outside any git repository, chmod 600
-export TRACER_ANDROID_APP_TOKEN=...
-export TRACER_ANDROID_PLUGIN_TOKEN=...
-# If the application also ships on iOS or web, those are separate projects with
-# separate pairs, and mixing them up is easy:
-export TRACER_IOS_APP_TOKEN=...
-export TRACER_IOS_PLUGIN_TOKEN=...
-```
-
-```sh
-source ~/.tracer-env && \
-  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
-  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
-  flutter build apk --release
-```
-
-In CI, through the build system's secrets — in GitHub Actions:
-
-```yaml
-- run: flutter build apk --release
-  env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
-```
-
-Turn on the softer non-fatal rate limit. Tracer's hard default is **8
-non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
-error this package reports is a non-fatal, so that ceiling is the one your app
-will meet first. Enabling the rate limit raises it to 10 per hour and is what
-the vendor recommends:
-
-```kotlin
-class MyApplication : Application(), HasTracerConfiguration {
-    override val tracerConfiguration: List<TracerConfiguration>
-        get() = listOf(
-            CrashReportConfiguration.build {
-                setExperimentalNonFatalRateLimitEnabled(true)
-            },
-        )
-}
-```
-
-Three things worth knowing:
-
-* **`TracerOptions.appToken` is ignored on Android.** The token comes from the
-  Gradle plugin. The plugin logs a warning if you pass one anyway rather than
-  pretending it took effect.
-* By default the SDK does not upload from debug builds. Enable it through
-  `CoreTracerConfiguration.Builder.setDebugUpload` in an `Application` that
-  implements `HasTracerConfiguration`.
-* `Tracer.stopCollection()` calls the SDK's `Tracer.disable()`, which cannot be
-  undone before the process restarts. That is deliberate; see
-  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
-* `TracerOptions.environment` is ignored on Android too — the SDK takes it from
-  the Gradle plugin, defaulting to the build variant name. Set it in the
-  `tracer { }` block.
-
-### iOS: the rest of it
-
-The code to paste is in the [quick start](#ios). This is what did not fit.
-
-`OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
-target using dynamic frameworks pull a static binary in transitively — hence the
-change of linkage. Without it, `pod install` fails with *"The 'Pods-Runner' target has transitive
-dependencies that include statically linked binaries"*. It is the same
-requirement Firebase's static frameworks impose, and Flutter supports it.
-
-Then `pod install`. The `appToken` **is** passed from Dart on iOS.
-
-### Web and other platforms
-
-Web speaks Tracer's own ingest — the same one the vendor's JS SDK uses — and
-wants the JS project's `appToken`, exactly as Android and iOS want theirs. No
-Sentry DSN is needed, and none is issued: measured 2026-08-26, a JS project
-simply has none. The protocol is written down in
-[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
-
-**Desktop and Aurora are not supported in this release.** Neither has a
-Flutter-facing Tracer SDK, and no build for either has ever been run against a
+This release does **not support** them. Neither has a Flutter-facing Tracer
+SDK, and no build for either has ever been run against a
 real project. The transport can be registered there and Dart errors would
 probably arrive — "probably" being the entire claim:
 
