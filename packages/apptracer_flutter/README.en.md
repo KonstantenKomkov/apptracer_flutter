@@ -65,7 +65,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "ANDROID_APP_TOKEN"
-        pluginToken = providers.environmentVariable("ANDROID_PLUGIN_TOKEN").orNull
+        pluginToken = providers.gradleProperty("androidPluginToken").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -88,35 +88,25 @@ into the APK regardless, so there is nothing to hide — a literal is fine. The
 `pluginToken` signs the upload of mappings and symbols, never reaches the
 application, and does not belong in a repository.
 
-Put it in a `.env` at the project root, next to `pubspec.yaml`:
+Put it in `~/.gradle/gradle.properties`:
 
-```sh
-# .env
-ANDROID_PLUGIN_TOKEN=...
+```properties
+androidPluginToken=...
 ```
 
-```sh
-# .gitignore
-.env
+That file lives outside the repository and Gradle reads it on its own, so
+nothing about launching changes: `flutter build` and the IDE's Run button both
+see the value.
+
+CI needs no file: the same property arrives as the environment variable
+`ORG_GRADLE_PROJECT_androidPluginToken` — Gradle turns those into project
+properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
-
-Nothing reads `.env`: not Flutter, not Gradle, not the IDE — it is just a file,
-and `providers.environmentVariable` looks at the environment of the process that
-started the build. So the value has to be put there:
-
-```sh
-set -a && . ./.env && set +a && flutter build apk --release
-```
-
-The Run button in Android Studio or VS Code will not do that, and the token will
-be missing there. To keep launching the way you always do, either install
-`direnv`, or skip the `.env` altogether: put the token in
-`~/.gradle/gradle.properties`, which is outside the repository and which Gradle
-reads on its own, and take it in the block with
-`providers.gradleProperty("androidPluginToken").orNull`.
-
-CI needs no file: the value comes from the build system's secrets, say
-`ANDROID_PLUGIN_TOKEN: ${{ secrets.ANDROID_PLUGIN_TOKEN }}` in GitHub Actions.
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8
 non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart

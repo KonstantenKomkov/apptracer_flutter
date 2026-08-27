@@ -64,7 +64,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "ANDROID_APP_TOKEN"
-        pluginToken = providers.environmentVariable("ANDROID_PLUGIN_TOKEN").orNull
+        pluginToken = providers.gradleProperty("androidPluginToken").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -87,35 +87,24 @@ dependencies {
 загрузку маппингов и символов, в приложение не попадает и в репозитории ему не
 место.
 
-Положите его в `.env` в корне проекта, рядом с `pubspec.yaml`:
+Положите его в `~/.gradle/gradle.properties`:
 
-```sh
-# .env
-ANDROID_PLUGIN_TOKEN=...
+```properties
+androidPluginToken=...
 ```
 
-```sh
-# .gitignore
-.env
+Этот файл лежит вне репозитория, и Gradle читает его сам — способ запуска не
+меняется ничем: и `flutter build`, и кнопка Run в IDE увидят значение.
+
+В CI файла нет, и заводить его не надо: то же свойство приходит переменной
+`ORG_GRADLE_PROJECT_androidPluginToken` — Gradle подставляет такие переменные в
+свойства проекта, — или флагом `-PandroidPluginToken=…`. В GitHub Actions:
+
+```yaml
+- run: flutter build apk --release
+  env:
+    ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
-
-`.env` не читает никто: ни Flutter, ни Gradle, ни IDE — это просто файл, а
-`providers.environmentVariable` смотрит в окружение процесса, который запустил
-сборку. Значит его надо туда положить:
-
-```sh
-set -a && . ./.env && set +a && flutter build apk --release
-```
-
-Кнопка Run в Android Studio или VS Code этого не сделает, и токена там не будет.
-Если запускать хочется как обычно — либо поставьте `direnv`, либо не заводите
-`.env` вовсе: положите токен в `~/.gradle/gradle.properties` (он и так вне
-репозитория, и Gradle читает его сам) и возьмите в блоке через
-`providers.gradleProperty("androidPluginToken").orNull`.
-
-В CI файла нет и не нужно: значение приходит из секретов сборочной системы,
-например `ANDROID_PLUGIN_TOKEN: ${{ secrets.ANDROID_PLUGIN_TOKEN }}` в GitHub
-Actions.
 
 Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
 нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
