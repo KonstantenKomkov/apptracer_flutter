@@ -414,6 +414,7 @@ A fair question: Crashlytics is free, official, and does the same job.
 | Where reports go | Tracer's servers (VK / OK.TECH) | Google's infrastructure |
 | Dart error capture | `FlutterError.onError`, `PlatformDispatcher.onError`, a guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
 | Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | `firebase crashlytics:symbols:upload` on Android, automatic on Apple |
+| Native symbols, every build | Android — the Gradle plugin itself; iOS and web — the package's command or the vendor's tooling | Apple — by itself, through an Xcode build phase; Android — through the Firebase CLI |
 
 **About the data.** Little can be said with certainty, and it is better said
 without legal phrasing: Crashlytics sends reports into Google's infrastructure,
@@ -425,6 +426,12 @@ keys, breadcrumbs, the exception message. Exactly what leaves the device from
 this package, and what the vendor's SDK adds on its own, is listed in
 [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Whether that satisfies your
 jurisdiction's rules is a question for your lawyer, not for a README.
+
+**Both upload symbols on every release.** That is not a difference between the
+two: each build's `dSYM`s carry their own UUIDs, so last version's symbols do
+not fit this one. What differs is which platform is handled for you — Android
+for Tracer, Apple for Crashlytics. What is left over is one command in CI for
+either.
 
 **About Dart symbols, honestly.** Crashlytics is plainly better here. It reads
 such a release by itself; here that is manual work. Tracer has no channel for

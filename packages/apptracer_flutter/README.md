@@ -410,6 +410,7 @@ crash-free.
 | Куда уходят отчёты | серверы Tracer (VK / OK.TECH) | инфраструктура Google |
 | Перехват ошибок Dart | `FlutterError.onError`, `PlatformDispatcher.onError`, guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
 | Обфусцированный Dart | вручную: `flutter symbolize` по сохранённому файлу символов | `firebase crashlytics:symbols:upload` на Android, на Apple автоматически |
+| Нативные символы каждой сборки | Android — сам Gradle-плагин; iOS и web — команда пакета или оснастка вендора | Apple — сама, сборочной фазой Xcode; Android — командой Firebase CLI |
 
 **Про данные.** Утверждать можно немногое, и лучше без юридических формулировок:
 Crashlytics отправляет отчёты в инфраструктуру Google, Tracer — в свою. Если
@@ -420,6 +421,12 @@ Crashlytics отправляет отчёты в инфраструктуру Go
 добавляет от себя SDK вендора, перечислено в
 [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Подходит ли это под 152-ФЗ в вашем
 случае — вопрос к вашему юристу, а не к README.
+
+**Символы грузятся на каждый релиз в обоих случаях.** Это не разница между
+продуктами: `dSYM` каждой сборки несёт свои UUID, и символы прошлой версии к
+новой не подходят. Разница в том, что делается само: у Tracer — Android
+(Gradle-плагин), у Crashlytics — Apple (фаза сборки Xcode). Оставшееся у обоих
+вешается на CI одной командой.
 
 **Про символы Dart, честно.** Здесь Crashlytics объективно лучше. Он читает
 такой релиз сам, а тут это ручная работа: канала для debug-файлов Dart у Tracer
