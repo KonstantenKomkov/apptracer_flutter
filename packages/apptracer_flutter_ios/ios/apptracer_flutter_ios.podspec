@@ -28,4 +28,23 @@ own spec repository. Add this line to your Podfile:
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
   }
   s.swift_version = '5.0'
+
+  # Adds the dSYM-upload build phase to the application's target, the way
+  # firebase_crashlytics does: a phase declared here would belong to this pod
+  # and run before the application is even linked, when Runner.app.dSYM does
+  # not exist yet.
+  #
+  # Set TRACER_SKIP_IOS_PHASE=1 to keep pod install away from the project file.
+  if ENV['TRACER_SKIP_IOS_PHASE'].to_s.empty?
+    begin
+      require_relative 'tracer_add_upload_phase'
+      # The directory holding the Podfile, i.e. the application's `ios/`.
+      # Dir.pwd during podspec evaluation is this plugin's own directory.
+      project_dir = Pod::Config.instance.installation_root.to_s
+      add_phase(File.join(project_dir, 'Runner.xcodeproj'), 'Runner')
+    rescue StandardError => error
+      Pod::UI.warn "apptracer_flutter: could not add the dSYM upload phase " \
+                   "(#{error.class}); see the package README for the manual step."
+    end
+  end
 end

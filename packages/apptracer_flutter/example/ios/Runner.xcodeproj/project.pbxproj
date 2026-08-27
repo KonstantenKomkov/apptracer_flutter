@@ -198,6 +198,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				5C8C5B56FA3E1B1514B07524 /* [CP] Copy Pods Resources */,
+				25A2C2EF03A1398F97089B12 /* [apptracer_flutter] Upload dSYMs to Tracer */,
 			);
 			buildRules = (
 			);
@@ -269,6 +270,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		25A2C2EF03A1398F97089B12 /* [apptracer_flutter] Upload dSYMs to Tracer */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[apptracer_flutter] Upload dSYMs to Tracer";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Added by apptracer_flutter at pod install. Safe to delete: without it,\n# upload dSYMs yourself with\n#   dart run apptracer_flutter:upload_symbols ios --token=…\n[ \"$CONFIGURATION\" = \"Release\" ] || exit 0\n\nTOKEN=\"${TRACER_IOS_PLUGIN_TOKEN:-${TRACER_PLUGIN_TOKEN:-}}\"\nif [ -z \"$TOKEN\" ] && [ -f \"$SRCROOT/tracer_plugin_token\" ]; then\n  TOKEN=\"$(cat \"$SRCROOT/tracer_plugin_token\")\"\nfi\nif [ -z \"$TOKEN\" ]; then\n  echo \"warning: apptracer_flutter: no iOS pluginToken, skipping dSYM upload.\"\n  echo \"warning: set TRACER_IOS_PLUGIN_TOKEN, or put the token in ios/tracer_plugin_token.\"\n  exit 0\nfi\n\n# The phase runs in `ios/`; the package and pubspec.yaml live one level up.\ncd \"$SRCROOT/..\" || exit 0\n\n\"$FLUTTER_ROOT/bin/dart\" run apptracer_flutter:upload_symbols ios \\\n  --dir=\"$DWARF_DSYM_FOLDER_PATH\" --token=\"$TOKEN\" ||\n  echo \"warning: apptracer_flutter: dSYM upload failed; crashes of this build will be unreadable.\"\n";
+			showEnvVarsInLog = 0;
+		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

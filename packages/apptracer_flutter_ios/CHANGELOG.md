@@ -13,6 +13,15 @@ as pub.dev expects.
 
 ### Added
 
+- `pod install` adds a build phase to the application's `Runner.xcodeproj` that
+  uploads `dSYM`s on every release build, which is how `firebase_crashlytics`
+  arranges the same thing. A phase declared in this pod's own podspec would not
+  do: it belongs to the pod target and runs before the application is linked,
+  when `Runner.app.dSYM` does not exist yet. The phase reads the token from
+  `TRACER_IOS_PLUGIN_TOKEN`, `TRACER_PLUGIN_TOKEN` or `ios/tracer_plugin_token`,
+  warns instead of failing the build when it cannot upload, and is skipped
+  entirely with `TRACER_SKIP_IOS_PHASE=1`.
+
 - Initial release.
 - Forwards Dart errors to `OKTracer` as `TracerNonFatalModel`, carrying the Dart
   frames as `callStackSymbols`.

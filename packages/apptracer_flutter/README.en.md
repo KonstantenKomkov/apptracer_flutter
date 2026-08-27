@@ -180,27 +180,31 @@ Then `pod install`. The `appToken` is passed from Dart, one step below.
 The iOS project's `pluginToken` plays no part here: it is needed when uploading
 the `dSYM`, without which native crashes stay unreadable in the console.
 
-One command from the package uploads them, after the release build:
+They upload themselves. At `pod install` the package adds a build phase to
+`Runner.xcodeproj`, and it ships the `dSYM` on every **release** build — the same
+thing Firebase Crashlytics does. Nothing to call; all it needs is the token:
+
+```sh
+# ios/tracer_plugin_token — next to the Podfile, and in .gitignore
+echo IOS_PLUGIN_TOKEN > ios/tracer_plugin_token
+```
+
+CI needs no file: the phase reads `TRACER_IOS_PLUGIN_TOKEN` (or
+`TRACER_PLUGIN_TOKEN`) from the build environment. With no token it warns and
+skips; when an upload fails it warns and carries on, because failing an archive
+over a network hiccup is worse than producing one without symbols.
+
+To turn it off, delete the phase in Xcode — it is labelled `[apptracer_flutter]`
+— or set `TRACER_SKIP_IOS_PHASE=1`, and `pod install` will leave the project
+file alone.
+
+If releases are built in CI and you want the pipeline to **fail** when symbols
+do not make it, call the upload explicitly; this command exits non-zero:
 
 ```sh
 flutter build ipa
 dart run apptracer_flutter:upload_symbols ios --token=IOS_PLUGIN_TOKEN
 ```
-
-It finds the `.dSYM`s in the archive, takes the version from `pubspec.yaml`,
-zips them and sends them — and exits non-zero if the server refuses, so a
-release pipeline stops rather than shipping a build whose crashes cannot be
-read. Directory, version and build number can be given explicitly with `--dir=…`,
-`--version=…`, `--build=…`, and `TRACER_PLUGIN_TOKEN` is read when `--token` is
-absent. It belongs wherever you build releases — CI, or a release script — so
-that nobody has to remember it.
-
-Two alternatives for anyone who already has tooling. If you use **Fastlane** (a
-release-automation tool for iOS; if you have not heard of it, you are not using
-it), Tracer ships a plugin for it. Tracer also ships an **Xcode Run Script
-phase** that fires when a release is archived. Both are installed from the
-vendor's documentation and do exactly what the command above does — pick one,
-not all three.
 
 Finally, the same request by hand, if you would rather install nothing:
 
