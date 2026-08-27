@@ -183,17 +183,29 @@ vendor ships a Fastlane plugin and an Xcode Run Script for that, and by hand it
 is one request — a zip of the `.dSYM` bundles the build leaves behind:
 
 ```sh
-cd build/ios/archive/Runner.xcarchive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+archive=build/ios/archive/Runner.xcarchive
+plist=$archive/Products/Applications/Runner.app/Info.plist
+
+cd $archive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
 
 curl --location --http1.1 \
-  --form versionName=1.0.0 \
-  --form versionCode=1 \
+  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
+  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" \
   --form file=@/tmp/dsym.zip \
   "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
 ```
 
-`{"success":true}` means accepted. `versionName` and `versionCode` have to match
-what the application reports, or the symbols land against a different version.
+`{"success":true}` means accepted.
+
+**This happens for every release.** Each build has its own `dSYM`s with their
+own UUIDs, so last version's symbols do not fit this one. The version is read
+out of the built `Info.plist` rather than typed: it has to match what the
+application reports, or the symbols land against a different version — silently.
+
+And it has to happen **before the first crashes arrive**: Tracer applies symbols
+only to events received after the upload, and it has no re-symbolication. So
+this command belongs in the release pipeline or in an Xcode Run Script phase,
+not on a list of things to remember.
 
 `OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
 target using dynamic frameworks pull a static binary in transitively — hence the
@@ -225,6 +237,9 @@ curl --location \
 The archive is zipped from **inside** `build/web` so that the paths in it match
 the paths in the frames: Tracer matches source maps by file path, not by Debug
 ID. `versionName` has to match the `release` passed in `TracerOptions`.
+
+As on iOS: every release, and before the deploy — source maps apply only to what
+arrives after they are uploaded.
 
 **3. Wrap the application's start.**
 

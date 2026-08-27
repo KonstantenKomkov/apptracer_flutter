@@ -179,17 +179,29 @@ end
 `.dSYM`-бандлов после сборки:
 
 ```sh
-cd build/ios/archive/Runner.xcarchive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+archive=build/ios/archive/Runner.xcarchive
+plist=$archive/Products/Applications/Runner.app/Info.plist
+
+cd $archive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
 
 curl --location --http1.1 \
-  --form versionName=1.0.0 \
-  --form versionCode=1 \
+  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
+  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" \
   --form file=@/tmp/dsym.zip \
   "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
 ```
 
-Ответ `{"success":true}` — принято. `versionName` и `versionCode` должны совпасть
-с теми, что шлёт приложение, иначе символы лягут к другой версии.
+Ответ `{"success":true}` — принято.
+
+**Это делается на каждый релиз.** У каждой сборки свои `dSYM` с собственными
+UUID, поэтому символы прошлой версии новой не подходят. Версия здесь читается из
+собранного `Info.plist`, а не пишется руками: она обязана совпасть с той, что
+шлёт приложение, иначе символы лягут к другой версии — молча.
+
+И делать это надо **до того, как придут первые краши**: Tracer применяет символы
+только к событиям, полученным после загрузки, пересимволизации у него нет.
+Поэтому место этой команде — в релизном пайплайне или в Run Script фазе Xcode,
+а не в списке дел, который можно забыть.
 
 `OKTracer` поставляется **статическим** `xcframework`, а CocoaPods не позволяет
 таргету с динамическими фреймворками получить статический бинарник транзитивно
@@ -221,6 +233,9 @@ curl --location \
 Архив собирается **изнутри** `build/web`, чтобы пути в нём совпали с путями в
 кадрах: Tracer сопоставляет сорсмапы по пути файла, а не по Debug ID.
 `versionName` должен совпасть с `release`, который передан в `TracerOptions`.
+
+Как и на iOS — на каждый релиз и до выкладки: сорсмапы применяются только к
+тому, что пришло после их загрузки.
 
 **3. Оберните запуск приложения.**
 
