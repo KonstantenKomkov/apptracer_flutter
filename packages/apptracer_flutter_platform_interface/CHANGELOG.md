@@ -13,6 +13,14 @@ as pub.dev expects.
 
 ### Added
 
+- `TracerOptions.iosAppToken` and `TracerOptions.webAppToken`, resolved by
+  `TracerOptions.resolvedAppToken`. Every platform is a separate Tracer project
+  with a token of its own, and an application shipping on both iOS and web had
+  to pick between them by hand; now it passes both. `appToken` remains the
+  fallback, and Android is absent on purpose — its SDK reads the token from a
+  resource the Gradle plugin generates. Only the resolved token is serialized,
+  so an unrelated project's token never crosses the channel.
+
 - Initial release.
 - `TracerPlatform` contract and the inert `UnsupportedTracerPlatform` default.
 - `MethodChannelTracer`, shared by the Android and iOS implementations, which

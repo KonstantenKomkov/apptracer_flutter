@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 
 import 'tracer_breadcrumb.dart';
 import 'tracer_event.dart';
@@ -25,6 +25,8 @@ class TracerOptions {
   /// Creates a set of options.
   const TracerOptions({
     this.appToken,
+    this.iosAppToken,
+    this.webAppToken,
     this.dsn,
     this.environment,
     this.release,
@@ -52,20 +54,41 @@ class TracerOptions {
 
   /// The Tracer application token, found under *Настройки → Проект → API*.
   ///
-  /// Each platform is a separate Tracer project with a token of its own, and a
-  /// build targets one platform, so this holds the token of whichever project
-  /// is being built for. An application shipping on both iOS and web picks
-  /// between them, `kIsWeb ? … : …`, which is a constant expression and keeps
-  /// the options `const`.
+  /// Enough on its own for an application that ships on one platform. Where
+  /// several do, give each its own token through [iosAppToken] and
+  /// [webAppToken] instead of choosing between them by hand — every platform
+  /// is a separate Tracer project with a token of its own, and only one of
+  /// them can be right in a given build.
   ///
-  /// Used by the iOS and web implementations, which configure the SDK at
-  /// runtime, and by the pure-Dart transports.
+  /// Whichever of the three applies is resolved by [resolvedAppToken], which is
+  /// what implementations read.
   ///
   /// **Android ignores this value.** The Android SDK reads its token from
   /// resources generated at build time by the `ru.ok.tracer` Gradle plugin,
   /// and there is no supported runtime override outside an `Application`
   /// subclass. See `docs/platform-matrix.md`.
   final String? appToken;
+
+  /// The iOS project's token, used instead of [appToken] on iOS.
+  final String? iosAppToken;
+
+  /// The web (JS) project's token, used instead of [appToken] on web.
+  final String? webAppToken;
+
+  /// The token that applies to the platform this build is running on.
+  ///
+  /// Android is not among them on purpose: its SDK reads the token from a
+  /// resource the Gradle plugin generates, and nothing passed from Dart can
+  /// change that.
+  String? get resolvedAppToken {
+    if (kIsWeb) {
+      return webAppToken ?? appToken;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return iosAppToken ?? appToken;
+    }
+    return appToken;
+  }
 
   /// A Sentry DSN issued for the Tracer project.
   ///
@@ -178,6 +201,8 @@ class TracerOptions {
   /// Returns a copy with the given fields replaced.
   TracerOptions copyWith({
     String? appToken,
+    String? iosAppToken,
+    String? webAppToken,
     String? dsn,
     String? environment,
     String? release,
@@ -199,6 +224,8 @@ class TracerOptions {
   }) {
     return TracerOptions(
       appToken: appToken ?? this.appToken,
+      iosAppToken: iosAppToken ?? this.iosAppToken,
+      webAppToken: webAppToken ?? this.webAppToken,
       dsn: dsn ?? this.dsn,
       environment: environment ?? this.environment,
       release: release ?? this.release,
@@ -229,7 +256,9 @@ class TracerOptions {
   /// The callbacks are Dart-only and are deliberately not included.
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      if (appToken != null) 'appToken': appToken,
+      // One value crosses the channel: the platform on the other side has no
+      // use for the tokens of the other two.
+      if (resolvedAppToken != null) 'appToken': resolvedAppToken,
       if (dsn != null) 'dsn': dsn,
       if (environment != null) 'environment': environment,
       if (release != null) 'release': release,

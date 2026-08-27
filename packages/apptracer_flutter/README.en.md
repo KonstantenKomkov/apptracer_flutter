@@ -120,15 +120,11 @@ token comes from Dart too, one step below.
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      // A build always targets one platform, so there is one field, holding
-      // the token of the project being built for. On Android the field is
-      // ignored: the token comes from the Gradle plugin there.
-      appToken: kIsWeb ? 'js-project-token' : 'ios-project-token',
+      appToken: 'your-project-token',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -137,8 +133,21 @@ void main() {
 }
 ```
 
-If the application ships on only one of those platforms, drop the condition and
-put its token in as a string.
+One `appToken` is enough while the application ships on a single platform. When
+it ships on several, each has its own project and its own token — and there is
+nothing to choose by hand: pass both and the package picks the one that applies.
+
+```dart
+options: const TracerOptions(
+  iosAppToken: 'ios-project-token',
+  webAppToken: 'js-project-token',
+  release: '1.0.0',
+),
+```
+
+Android is deliberately absent from that list: its SDK reads the token from a
+resource the Gradle plugin generates, and nothing passed from Dart overrides it.
+`appToken` stays as the fallback, used wherever no platform-specific one is set.
 
 **The `appToken` is not a secret**, and there is little point hiding it: the
 Gradle plugin bakes it into the APK — it sits in `resources.arsc` and

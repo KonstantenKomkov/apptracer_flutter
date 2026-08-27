@@ -13,6 +13,9 @@ as pub.dev expects.
 
 ### Added
 
+- The transport reads `TracerOptions.resolvedAppToken`, so `webAppToken` is
+  honoured where it is set.
+
 - Initial release.
 - `TracerHttpTracer`, a pure-Dart `TracerPlatform` that posts to Tracer's own
   ingest — `POST /api/crash/uploadBatch`, authenticated by the project's

@@ -81,7 +81,7 @@ class TracerHttpTracer extends TracerPlatform {
       return;
     }
 
-    final String? token = options.appToken;
+    final String? token = options.resolvedAppToken;
     if (token == null || token.isEmpty) {
       _log('TracerOptions.appToken is required on web; collection is off.');
       _enabled = false;
