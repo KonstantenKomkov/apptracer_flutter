@@ -691,18 +691,6 @@ ANR), iOS (release-сборка на iPhone, без отладчика) и web (
 неподтверждённое. Версия ниже `1.0.0` не потому, что что-то не проверено, а
 потому, что публичный интерфейс ещё может измениться.
 
-## Пакеты
-
-| Пакет | Назначение |
-|---|---|
-| `apptracer_flutter` | то, от чего зависит приложение |
-| `apptracer_flutter_platform_interface` | модели, парсер стектрейсов, контракт платформы |
-| `apptracer_flutter_android` | мост на Kotlin к `ru.ok.tracer` |
-| `apptracer_flutter_ios` | мост на Swift к `OKTracer` |
-| `apptracer_flutter_web` | реализация для web |
-| `apptracer_flutter_http` | клиент собственного приёма Tracer на чистом Dart |
-| `apptracer_flutter_sentry` | протокол Sentry; только для платформ, которые этот релиз не поддерживает |
-
 ## Лицензия
 
 MIT. SDK вендора лицензируются отдельно, см.

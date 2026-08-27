@@ -692,18 +692,6 @@ lists every item and what proves it, and what is still unproven.
 The version is below `1.0.0` not because something is unverified, but because
 the public API may still change.
 
-## Packages
-
-| Package | Purpose |
-|---|---|
-| `apptracer_flutter` | what applications depend on |
-| `apptracer_flutter_platform_interface` | models, stack-trace parser, platform contract |
-| `apptracer_flutter_android` | Kotlin bridge to `ru.ok.tracer` |
-| `apptracer_flutter_ios` | Swift bridge to `OKTracer` |
-| `apptracer_flutter_web` | web implementation |
-| `apptracer_flutter_http` | pure-Dart client for Tracer's own ingest |
-| `apptracer_flutter_sentry` | the Sentry protocol; only for platforms this release does not support |
-
 ## License
 
 MIT. The vendor SDKs are licensed separately; see
