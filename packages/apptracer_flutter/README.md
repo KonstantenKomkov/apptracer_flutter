@@ -510,20 +510,6 @@ build id. Измерено 27.08.2026,
 
 ## Использование
 
-```dart
-import 'package:apptracer_flutter/apptracer_flutter.dart';
-
-void main() {
-  Tracer.initialize(
-    options: const TracerOptions(
-      iosAppToken: 'IOS_APP_TOKEN',
-      webAppToken: 'WEB_APP_TOKEN',
-    ),
-    appRunner: () => runApp(const MyApp()),
-  );
-}
-```
-
 `appRunner` вызывается **ровно один раз в любом сценарии**: при обычном старте,
 при запрете сбора политикой, при падении инициализации нативного SDK и на
 платформе без реализации. Сборщик ошибок, способный не дать приложению
