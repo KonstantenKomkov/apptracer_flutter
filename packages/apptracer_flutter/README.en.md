@@ -83,44 +83,13 @@ On Android the token comes from here, not from Dart: the SDK reads it from a
 resource the Gradle plugin generates at build time. There is no runtime
 alternative — which is why the plugin is required.
 
-Both are literals above for the sake of showing them, and they are not
-equivalent. The `appToken` can stay one: the plugin bakes it into the APK
-anyway, so there is nothing to hide. The `pluginToken` is a secret — it signs
-the upload of mappings and symbols and never reaches the application — so a
-repository is the wrong place for it:
-
-```kotlin
-pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
-```
-
-Where that environment comes from is your business. Locally a file outside the
-repository is usually enough:
-
-```sh
-# ~/.tracer-env — outside any git repository, chmod 600
-export TRACER_ANDROID_APP_TOKEN=...
-export TRACER_ANDROID_PLUGIN_TOKEN=...
-# If the application also ships on iOS or web, those are separate projects with
-# separate pairs, and mixing them up is easy:
-export TRACER_IOS_APP_TOKEN=...
-export TRACER_IOS_PLUGIN_TOKEN=...
-```
-
-```sh
-source ~/.tracer-env && \
-  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
-  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
-  flutter build apk --release
-```
-
-In CI, through the build system's secrets — in GitHub Actions:
-
-```yaml
-- run: flutter build apk --release
-  env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
-```
+Both keys are literals here, but they are not equivalent. The `appToken` can
+stay one: the plugin bakes it into the APK anyway, so there is nothing to hide.
+The `pluginToken` signs the upload of mappings and symbols and never reaches the
+application — a repository is the wrong place for it, and how you feed it in is
+up to you: a `gradle.properties` outside the repository,
+`providers.environmentVariable(...)`, a CI secret. The plugin receives a plain
+string and does not care where it came from.
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8
 non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart

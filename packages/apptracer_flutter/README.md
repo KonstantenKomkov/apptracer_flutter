@@ -82,43 +82,12 @@ dependencies {
 который Gradle-плагин генерирует во время сборки. Альтернативы в рантайме нет —
 поэтому плагин и обязателен.
 
-Строками эти два ключа стоят только ради наглядности, и они не равноценны.
-`appToken` так и можно оставить: плагин всё равно вшивает его в APK, прятать
-нечего. А `pluginToken` — секрет, он подписывает загрузку маппингов и символов
-и в приложение не попадает, так что в репозитории ему не место:
-
-```kotlin
-pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
-```
-
-Откуда возьмётся само окружение — ваше дело. Локально обычно хватает файла вне
-репозитория:
-
-```sh
-# ~/.tracer-env — вне любого git-репозитория, chmod 600
-export TRACER_ANDROID_APP_TOKEN=...
-export TRACER_ANDROID_PLUGIN_TOKEN=...
-# Если приложение выходит ещё и на iOS или web — там свои проекты, а значит
-# свои пары токенов, и путать их не стоит:
-export TRACER_IOS_APP_TOKEN=...
-export TRACER_IOS_PLUGIN_TOKEN=...
-```
-
-```sh
-source ~/.tracer-env && \
-  TRACER_APP_TOKEN=$TRACER_ANDROID_APP_TOKEN \
-  TRACER_PLUGIN_TOKEN=$TRACER_ANDROID_PLUGIN_TOKEN \
-  flutter build apk --release
-```
-
-В CI — секретами сборочной системы, например в GitHub Actions:
-
-```yaml
-- run: flutter build apk --release
-  env:
-    TRACER_APP_TOKEN: ${{ secrets.TRACER_ANDROID_APP_TOKEN }}
-    TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_ANDROID_PLUGIN_TOKEN }}
-```
+Оба ключа здесь строками, но они не равноценны. `appToken` так и можно
+оставить: плагин всё равно вшивает его в APK, прятать нечего. `pluginToken`
+подписывает загрузку маппингов и символов и в приложение не попадает — держать
+его в репозитории не стоит, а чем подставлять, решаете вы: `gradle.properties`
+вне репозитория, `providers.environmentVariable(...)`, секрет CI. Плагину
+приходит обычная строка, откуда она взялась, ему безразлично.
 
 Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
 нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
