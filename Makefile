@@ -122,9 +122,12 @@ apk: require-android-tokens ## Обфусцированный release-APK + св
 			--obfuscate --split-debug-info=build/symbols && \
 		../../../tool/verify_build_id.sh
 
-# Эксперимент из docs/symbolication.md: символы Dart уезжают в Tracer каналом
-# нативных символов. Прочитайте документ перед запуском — файл символов несёт
-# абсолютные пути со сборочной машины.
+# docs/symbolication.md, находка 2: символы Dart уезжают в Tracer каналом
+# нативных символов — и это сейчас ничего не даёт, кадры всё равно не
+# символизируются. Цель оставлена, чтобы перепроверить, если вендор починит. Первая сборка нужна только чтобы получить файл символов,
+# вторая — чтобы залить подставной libapp.so; forceUploadNativeSymbols при этом
+# не нужен. Прочитайте документ перед запуском — файл символов несёт абсолютные
+# пути со сборочной машины и все имена символов Dart.
 apk-dart-symbols: require-android-tokens ## APK + загрузка Dart-символов через additionalLibrariesPath
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter build apk --release -Ptracer.enabled=true \

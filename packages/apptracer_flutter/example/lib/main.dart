@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'src/crash_inside_dart.dart';
+
 /// Tokens are read from the build environment, never hard-coded.
 ///
 /// ```
@@ -246,13 +248,15 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             _Section(
               title: 'Нативные сбои',
-              description:
-                  'Эти два пути — работа нативного SDK Tracer, а не этого '
+              description: 'Эти пути — работа нативного SDK Tracer, а не этого '
                   'пакета. Кнопки нужны, чтобы подтвердить, что связка жива. '
                   'Каждая завершает сеанс: после краша процесс умирает, '
                   'после ANR приложение надо закрыть из системного диалога — '
                   'иначе отчёта не будет. ANR есть только на Android и требует '
-                  'Android 11 или новее.',
+                  'Android 11 или новее. Третья кнопка отличается от первой '
+                  'местом падения: сбой происходит в самом коде Dart, внутри '
+                  'libapp.so, — этим проверяется, применил ли Tracer '
+                  'загруженные символы Dart (проверка 16).',
               children: <Widget>[
                 OutlinedButton(
                   onPressed: () {
@@ -262,6 +266,15 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                   child: const Text('Уронить процесс нативно'),
+                ),
+                OutlinedButton(
+                  onPressed: () {
+                    // Отчёт уйдёт при следующем запуске, как и у соседней
+                    // кнопки: процесс умирает здесь же, на следующей строке.
+                    _report('процесс сейчас упадёт внутри кода Dart');
+                    crashInsideDartCode();
+                  },
+                  child: const Text('Уронить процесс изнутри Dart (FFI)'),
                 ),
                 if (_hasAnr)
                   OutlinedButton(
