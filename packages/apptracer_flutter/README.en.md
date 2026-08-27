@@ -65,7 +65,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "your-app-token"
-        pluginToken = "your-plugin-token"
+        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -83,13 +83,37 @@ On Android the token comes from here, not from Dart: the SDK reads it from a
 resource the Gradle plugin generates at build time. There is no runtime
 alternative — which is why the plugin is required.
 
-Both keys are literals here, but they are not equivalent. The `appToken` can
-stay one: the plugin bakes it into the APK anyway, so there is nothing to hide.
-The `pluginToken` signs the upload of mappings and symbols and never reaches the
-application — a repository is the wrong place for it, and how you feed it in is
-up to you: a `gradle.properties` outside the repository,
-`providers.environmentVariable(...)`, a CI secret. The plugin receives a plain
-string and does not care where it came from.
+The two keys arrive differently for a reason. The plugin bakes the `appToken`
+into the APK regardless, so there is nothing to hide — a literal is fine. The
+`pluginToken` signs the upload of mappings and symbols, never reaches the
+application, and does not belong in a repository.
+
+Put it in a `.env` at the project root, next to `pubspec.yaml`:
+
+```sh
+# .env
+TRACER_PLUGIN_TOKEN=your-plugin-token
+```
+
+```sh
+# .gitignore
+.env
+```
+
+Gradle does not read that file by itself — the variable has to be in the
+build's environment:
+
+```sh
+set -a && . ./.env && set +a && flutter build apk --release
+```
+
+CI needs no file: the value comes from the build system's secrets, say
+`TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}` in GitHub Actions.
+
+If you would rather not deal with the environment at all, there is a shorter
+way: put the token in `~/.gradle/gradle.properties`, which is outside the
+repository and which Gradle reads on its own, and take it in the block with
+`providers.gradleProperty("tracerPluginToken").orNull`.
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8
 non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
@@ -504,10 +528,10 @@ design, so that editing code does not scatter one issue across several groups,
 and the synthetic key preserves that. An `issueKey` you pass to `recordError`
 always wins.
 
-## Obfuscated release builds
+## Release builds with `--split-debug-info`
 
-If you build with `--obfuscate --split-debug-info`, Dart stack traces become
-addresses:
+If you build with `--split-debug-info` — with or without `--obfuscate`, measured
+2026-08-27 — Dart stack traces become addresses:
 
 ```
 build_id: 'b71885097a7ebc4d1ab80642f606c4be'
@@ -521,11 +545,11 @@ decodable:
 flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 ```
 
-**Tracer has no documented upload channel for Dart `--split-debug-info` files**,
-so decoding is currently a manual step. Read
+**Tracer has no upload channel for Dart `--split-debug-info` files** — the
+vendor confirmed as much on 2026-08-27 — so decoding stays a manual step. Read
 [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md)
-before you ship an obfuscated build — it explains what does and does not work,
-and how to avoid finding out the hard way.
+before you ship such a build — it explains what does and does not work, and how
+to avoid finding out the hard way.
 
 ## Maturity
 

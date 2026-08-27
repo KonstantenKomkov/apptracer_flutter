@@ -8,8 +8,8 @@ Last updated: 2026-08-27.
 
 ## The problem
 
-Build with `--obfuscate --split-debug-info` and Dart stack traces stop being
-text:
+Build with `--split-debug-info` — with or without `--obfuscate` — and Dart
+stack traces stop being text:
 
 ```
 *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
@@ -61,25 +61,28 @@ arriving symbolicated and unsymbolicated therefore lands in two different
 groups. A build whose symbols went missing does not merely look bad — it
 splits its issues away from every other build's.
 
-### What that means for obfuscated Dart on Android
+### What that means for a split-debug-info build on Android
 
-An obfuscated Dart trace has no names, only addresses, and those move with
-every build. Frames forwarded to Tracer end up as
+A DWARF trace has no names, only addresses, and those move with every build.
+Frames forwarded to Tracer end up as
 `dart.obfuscated._kDartIsolateSnapshotInstructions+0x...`, so grouping is
 **stable within a build and unstable across builds**: the same logical error
 opens a new group in every release.
 
-That is inherent to obfuscation rather than a defect here — there is nothing
-stable left to group by — but it is worth knowing before choosing it. Two ways
-out:
+That is inherent to the trace format rather than a defect here — there is
+nothing stable left to group by — but it is worth knowing before choosing
+`--split-debug-info`. Two ways out:
 
-* Build with `--split-debug-info` but **without** `--obfuscate`. Traces keep
+* Drop `--split-debug-info` (see "Keeping traces readable" below). Traces keep
   their function names, grouping is stable across releases, and no symbol file
-  is needed to read them. For most applications this is the better trade, and
-  it is the same recommendation as in "Not obfuscating" below, now with a
-  second reason.
+  is needed to read them.
 * Pass an explicit `issueKey` to `Tracer.recordError` at call sites you care
   about. That pins grouping regardless of what the stack looks like.
+
+The custom key `dart.obfuscated` is named for the case it was first met in. It
+is set from whether any frame is address-only — that is, whether the event needs
+`flutter symbolize` — so it reads `true` for a `--split-debug-info` build that
+was never obfuscated. Read it as "needs symbolication".
 
 ## Tracer's symbol channels
 
@@ -92,9 +95,21 @@ Tracer documents three, and none of them is for Dart:
 | iOS `dSYM` | Tracer's Fastlane plugin or its bash script |
 | Web source maps | `POST https://plugin-api.apptracer.ru/api/sourcemap/upload` with `sourcemapToken` and `versionName` |
 
-**There is no documented channel for Dart `--split-debug-info` files.** That is
-the central fact of this document, and it is why decoding an obfuscated Dart
-trace is currently a manual step.
+**There is no channel for Dart `--split-debug-info` files, documented or
+otherwise.** That is the central fact of this document, and it is why decoding
+an obfuscated Dart trace is a manual step. It is also the vendor's own position,
+stated on 2026-08-27 in answer to a question about a Sentry-compatible
+`debug-files upload`:
+
+> В Tracer нет поддержки стектрейсов на Dart и нет никакого способа накатить
+> debug-файл dart на стектрейс.
+
+Note how wide that is. The first half — no support for Dart stack traces — has
+nothing to do with obfuscation: Tracer's backend does not read a Dart trace as a
+trace in any build, which is why this package parses one into Tracer's frame
+model on the client and carries the verbatim text in the log. The second half,
+about debug files, only costs anything when a debug file exists to apply, that
+is when `--split-debug-info` is on.
 
 ## Findings
 
@@ -351,14 +366,25 @@ the ELF; whatever Tracer's reporter is built from does not.
 So even a matching id would not be enough: every address is `0xb0000` short,
 and the names resolved would be the wrong ones.
 
-**What this means in practice.** Staging Dart symbols has no effect today. The
-upload works, the vendor's matching rule is the right one, and the client never
+**What this means in practice.** Staging Dart symbols has no effect. The upload
+works, the vendor's matching rule is the right one, and the client never
 produces anything to match — so `flutter symbolize` on the archived symbol file
-remains the only way to read an obfuscated Dart trace on Android. This is
-reported back to the vendor as a defect in
-[questions-for-vendor.md](questions-for-vendor.md); if it is fixed, check 16 in
-[live-verification-plan.md](live-verification-plan.md) re-runs in minutes,
-because everything else in the chain is already proven.
+remains the only way to read an obfuscated Dart trace on Android.
+
+The vendor closed the question from the other end on 2026-08-27: «В Tracer нет
+поддержки стектрейсов на Dart и нет никакого способа накатить debug-файл dart на
+стектрейс». Read against the answer of the same day about
+`additionalLibrariesPath` («перекрывать/добавлять через такое можно, да»), the
+two are about different things — the native uploader will take any breakpad
+`.sym`, and the product has no Dart symbolication — and the measurement above
+sits with the second. So this is not a scenario waiting on a fix.
+
+The zero build id is still reported back as a defect in
+[questions-for-vendor.md](questions-for-vendor.md), because it is not about Dart:
+it costs every Flutter application its `libflutter.so` frames. If it is fixed,
+check 16 in [live-verification-plan.md](live-verification-plan.md) re-runs in
+minutes, since everything else in the chain is proven — but a passing check 16
+would be a side effect of that repair, not a supported route.
 
 Two caveats, if you enable the staging anyway:
 
@@ -399,6 +425,68 @@ It runs on every CI build of the example, and it is worth copying into your own
 release pipeline. Use `flutter clean` before a release build if you want
 certainty rather than a check.
 
+### 4. `--split-debug-info` alone makes traces address-only — `--obfuscate` is not what does it — confirmed
+
+This corrects the earlier text of this document, which said in two places that a
+build with `--split-debug-info` but without `--obfuscate` keeps readable traces.
+It does not.
+
+The flag is passed to `gen_snapshot` by `flutter_tools`, and the two options are
+independent — `packages/flutter_tools/lib/src/base/build.dart`, Flutter 3.35.7:
+
+```dart
+genSnapshotArgs.addAll(<String>[
+  if (shouldSplitDebugInfo) ...<String>[
+    '--dwarf-stack-traces',
+    '--resolve-dwarf-paths',
+    '--save-debugging-info=...',
+  ],
+  if (dartObfuscation) '--obfuscate',
+]);
+```
+
+`--dwarf-stack-traces` is what stops function names being written into the
+snapshot for stack traces, and it hangs on `--split-debug-info` alone.
+
+Measured 2026-08-27, three release builds of the same throwaway app on one
+Android 15 arm64 emulator, each printing the stack of a caught `StateError`
+raised through three `@pragma('vm:never-inline')` functions:
+
+| build | first frame |
+|---|---|
+| `--release` | `#0 innermostProbeFunction (package:dwarf_probe/main.dart:5)` |
+| `--release --split-debug-info` | `#00 abs 0000006ebd670993 virt 0000000000216993 _kDartIsolateSnapshotInstructions+0x160053` |
+| `--release --obfuscate --split-debug-info` | `#00 abs 0000006f44b9e6ff virt 00000000002066ff _kDartIsolateSnapshotInstructions+0x15fdbf` |
+
+The last two are the same format, `build_id:` header and all. Obfuscation
+changes the addresses, because it changes the code layout, and nothing else that
+is visible in a trace.
+
+`flutter symbolize` decodes the unobfuscated DWARF trace against that build's
+symbol file exactly as it does the obfuscated one, down to the column:
+
+```
+#0      innermostProbeFunction (.../dwarf_probe/lib/main.dart:5:3)
+#1      middleProbeFunction (.../dwarf_probe/lib/main.dart:9:31)
+```
+
+So the archive-the-symbol-file rule of this document applies to **every**
+`--split-debug-info` build, not only obfuscated ones.
+
+The same three builds also settle what each flag keeps out of the shipped
+library. Grepping the `libapp.so` inside each APK for the probe function's name:
+
+| build | `innermostProbeFunction` in `libapp.so` | size |
+|---|---|---|
+| `--release` | present | 2 753 456 |
+| `--release --split-debug-info` | absent | 2 360 240 |
+| `--release --obfuscate --split-debug-info` | absent | 2 294 704 |
+
+Both symbol files contain the real name, which is why `flutter symbolize`
+resolves it in either build. So `--split-debug-info` alone already takes Dart
+function names out of the binary; `--obfuscate` on top renames what is left and
+saves a further 65 KB here, and neither difference is visible in a stack trace.
+
 ## The workflow that works today
 
 1. **Build and verify.**
@@ -428,26 +516,31 @@ certainty rather than a check.
    does nothing for Dart frames, but it is what makes the Kotlin and Java halves
    of a native crash readable.
 
-5. **Do not bother staging the Dart symbols for upload.** The channel accepts
-   them (finding 2) but the SDK's crash reporter records `libapp.so` with a zero
+5. **Do not stage the Dart symbols for upload.** The channel accepts them
+   (finding 2) but the SDK's crash reporter records `libapp.so` with a zero
    build id and a shifted base, so nothing is ever matched against them —
-   measured 2026-08-27. `tool/prepare_dart_symbols.sh` and the wiring around it
-   are kept because the defect is on the vendor's side and may be fixed; until
-   it is, staging only sends your source paths and Dart symbol names to a server
-   for no return.
+   measured 2026-08-27. The vendor states plainly that Tracer has no Dart
+   symbolication at all, so this is not a fix to wait for.
+   `tool/prepare_dart_symbols.sh` and the wiring around it are kept as evidence
+   for the defect report and in case the module-identity bug is repaired;
+   running them today only sends your source paths and Dart symbol names to a
+   server for no return.
 
-## Not obfuscating
+## Keeping traces readable
 
 A legitimate choice, and the one to make if the manual step above is not
-acceptable to your team.
+acceptable to your team. It has exactly one requirement, and it is not the one
+this document used to state: **build without `--split-debug-info`.**
 
-Without `--obfuscate`, Dart AOT stack traces keep function names and file paths,
-and everything arrives in Tracer readable with no symbol file at all. The cost
-is that your Dart symbol names ship inside `libapp.so`.
+Then Dart AOT stack traces keep function names and file paths, and everything
+arrives in Tracer readable with no symbol file at all. The cost is that your
+Dart symbol names ship inside `libapp.so`, and the binary is larger by the
+debug information.
 
-You can also keep `--split-debug-info` **without** `--obfuscate`: the binary
-shrinks, and traces stay readable. That combination is usually the best trade
-for an application that is not worried about name-level reverse engineering.
+`--split-debug-info` on its own, without `--obfuscate`, does **not** buy you
+readable traces: it is the flag that turns them into addresses. See finding 4.
+Obfuscation on top of it changes what is written into the symbol file, not what
+the trace looks like.
 
 ## iOS
 

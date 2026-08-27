@@ -64,7 +64,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "ваш-app-token"
-        pluginToken = "ваш-plugin-token"
+        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -82,12 +82,37 @@ dependencies {
 который Gradle-плагин генерирует во время сборки. Альтернативы в рантайме нет —
 поэтому плагин и обязателен.
 
-Оба ключа здесь строками, но они не равноценны. `appToken` так и можно
-оставить: плагин всё равно вшивает его в APK, прятать нечего. `pluginToken`
-подписывает загрузку маппингов и символов и в приложение не попадает — держать
-его в репозитории не стоит, а чем подставлять, решаете вы: `gradle.properties`
-вне репозитория, `providers.environmentVariable(...)`, секрет CI. Плагину
-приходит обычная строка, откуда она взялась, ему безразлично.
+Два ключа подставляются по-разному не для красоты. `appToken` плагин всё равно
+вшивает в APK, прятать нечего — пусть лежит строкой. `pluginToken` подписывает
+загрузку маппингов и символов, в приложение не попадает и в репозитории ему не
+место.
+
+Положите его в `.env` в корне проекта, рядом с `pubspec.yaml`:
+
+```sh
+# .env
+TRACER_PLUGIN_TOKEN=ваш-plugin-token
+```
+
+```sh
+# .gitignore
+.env
+```
+
+Сам Gradle этот файл не читает — переменная должна оказаться в окружении
+сборки:
+
+```sh
+set -a && . ./.env && set +a && flutter build apk --release
+```
+
+В CI файла нет и не нужно: значение приходит из секретов сборочной системы,
+например `TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}` в GitHub
+Actions.
+
+Если возиться с окружением не хочется, есть путь короче: положить токен в
+`~/.gradle/gradle.properties` — он и так вне репозитория, и Gradle читает его
+сам, — а в блоке взять `providers.gradleProperty("tracerPluginToken").orNull`.
 
 Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
 нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
@@ -501,10 +526,10 @@ iOS ситуация другая, но исход тот же: стектрей
 ключ это свойство сохраняет. Свой `issueKey`, переданный в `recordError`, всегда
 имеет приоритет.
 
-## Обфусцированные release-сборки
+## Release-сборки со `--split-debug-info`
 
-При сборке с `--obfuscate --split-debug-info` Dart-стектрейсы превращаются в
-адреса:
+При сборке со `--split-debug-info` — с `--obfuscate` или без него, измерено
+27.08.2026 — Dart-стектрейсы превращаются в адреса:
 
 ```
 build_id: 'b71885097a7ebc4d1ab80642f606c4be'
@@ -518,11 +543,12 @@ build_id: 'b71885097a7ebc4d1ab80642f606c4be'
 flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 ```
 
-**У Tracer нет документированного канала для загрузки Dart-файлов
-`--split-debug-info`**, поэтому расшифровка сейчас — ручной шаг. Прочитайте
+**У Tracer нет канала для загрузки Dart-файлов `--split-debug-info`** — это
+подтвердил вендор 27.08.2026, — поэтому расшифровка остаётся ручным шагом.
+Прочитайте
 [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md)
-до того, как выкатите обфусцированную сборку: там написано, что работает, что
-нет, и как не узнать об этом слишком поздно.
+до того, как выкатите такую сборку: там написано, что работает, что нет, и как
+не узнать об этом слишком поздно.
 
 ## Зрелость
 

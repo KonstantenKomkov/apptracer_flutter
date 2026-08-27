@@ -249,7 +249,7 @@ Two consequences this package depends on:
 
 `crashId` is computed **after** mappings are applied, so the same failure
 arriving symbolicated and unsymbolicated lands in two different groups. That
-matters for obfuscated Dart builds; see
+matters for any build with `--split-debug-info`, obfuscated or not; see
 [symbolication.md](symbolication.md).
 
 ### Grouping needs an explicit issueKey

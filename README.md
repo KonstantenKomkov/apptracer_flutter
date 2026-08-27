@@ -51,7 +51,7 @@ tool/
 | [live-verification-plan.md](docs/live-verification-plan.md) | пошаговый чек-лист проверки интеграции на живом проекте Tracer — начинать отсюда перед публикацией |
 | [platform-matrix.md](docs/platform-matrix.md) | какой SDK, какой версии, с каким минимумом и что где покрыто — каждый факт со ссылкой на то, как он проверен |
 | [web-protocol.md](docs/web-protocol.md) | как Tracer на самом деле принимает события из браузера — и почему нынешняя web-реализация под вопросом |
-| [symbolication.md](docs/symbolication.md) | что происходит с обфусцированным стектрейсом Dart и что с этим делать |
+| [symbolication.md](docs/symbolication.md) | что `--split-debug-info` делает со стектрейсом Dart и что с этим делать |
 | [privacy.md](docs/privacy.md) | что именно уходит с устройства — из этого пакета и из SDK вендора |
 | [legal.md](docs/legal.md) | лицензии, наименование и единственный вопрос, который надо закрыть до публикации |
 | [status.md](docs/status.md) | что доказано, а что нет |

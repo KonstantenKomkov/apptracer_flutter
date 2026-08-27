@@ -48,7 +48,7 @@ tool/
 |---|---|
 | [live-verification-plan.md](docs/live-verification-plan.md) | step-by-step checklist for proving the integration against a real Tracer project — start here before publishing |
 | [platform-matrix.md](docs/platform-matrix.md) | which SDK, which version, which minimum, what is covered where — every fact traced to how it was checked |
-| [symbolication.md](docs/symbolication.md) | what happens to an obfuscated Dart stack trace, and what to do about it |
+| [symbolication.md](docs/symbolication.md) | what `--split-debug-info` does to a Dart stack trace, and what to do about it |
 | [privacy.md](docs/privacy.md) | exactly what leaves the device, from this package and from the vendor SDKs |
 | [legal.md](docs/legal.md) | licensing, naming, and the one question to settle before publishing |
 | [status.md](docs/status.md) | what is proven and what is not |
