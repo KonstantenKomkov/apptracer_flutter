@@ -20,6 +20,11 @@ fuller version further down.
 platform. Each project issues **its own pair** — an `appToken` and a
 `pluginToken`: an application on Android, iOS and web means three projects and
 three pairs. Both values live under
+
+They are needed at different times. The `appToken` belongs to the application,
+which sends events with it and does nothing without it. The `pluginToken`
+belongs to the build, which uploads symbols with it — and until the first
+release it is not needed at all.
 **Настройки → Проект → API**.
 
 **2. Wire the Tracer SDK into your build.** This package is a wrapper: it
@@ -170,7 +175,13 @@ target 'Runner' do
 end
 ```
 
-Then `pod install`. The token is passed from Dart, one step below.
+Then `pod install`. The `appToken` is passed from Dart, one step below.
+
+The iOS project's `pluginToken` plays no part here: it is needed when uploading
+the `dSYM`, without which native crashes stay unreadable in the console. The
+vendor ships a Fastlane plugin and a bash script for that; a working example is
+[`tool/upload_ios_dsym.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_ios_dsym.sh) in this package's
+repository.
 
 `OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
 target using dynamic frameworks pull a static binary in transitively — hence the
@@ -184,6 +195,11 @@ Then `pod install`. The `appToken` **is** passed from Dart on iOS.
 
 Nothing to add: the pure-Dart implementation is already inside the package. The
 token is the JS project's `appToken`, passed one step below.
+
+The JS project's `pluginToken`, as on iOS, is not for events but for uploading
+source maps: `POST /api/sourcemap/upload` with a `sourcemapToken` field. Without
+them a stack trace from a release build stays minified. Example:
+[`tool/upload_web_sourcemaps.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_web_sourcemaps.sh).
 
 **3. Wrap the application's start.**
 
