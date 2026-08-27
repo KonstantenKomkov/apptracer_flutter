@@ -180,14 +180,7 @@ Then `pod install`. The `appToken` is passed from Dart, one step below.
 The iOS project's `pluginToken` plays no part here: it is needed when uploading
 the `dSYM`, without which native crashes stay unreadable in the console.
 
-**This is not meant to be done by hand.** The vendor ships a Fastlane plugin and
-an Xcode Run Script phase that fires when a release is archived, after which
-there is nothing to remember — the same way the Gradle plugin handles it on
-Android. Set it up from Tracer's documentation, not from here: this package has
-no part in uploading symbols.
-
-If Fastlane is not in the picture, the package carries a command that does the
-same:
+One command from the package uploads them, after the release build:
 
 ```sh
 flutter build ipa
@@ -199,9 +192,17 @@ zips them and sends them — and exits non-zero if the server refuses, so a
 release pipeline stops rather than shipping a build whose crashes cannot be
 read. Directory, version and build number can be given explicitly with `--dir=…`,
 `--version=…`, `--build=…`, and `TRACER_PLUGIN_TOKEN` is read when `--token` is
-absent.
+absent. It belongs wherever you build releases — CI, or a release script — so
+that nobody has to remember it.
 
-The same request by hand, for a build with no pipeline at all:
+Two alternatives for anyone who already has tooling. If you use **Fastlane** (a
+release-automation tool for iOS; if you have not heard of it, you are not using
+it), Tracer ships a plugin for it. Tracer also ships an **Xcode Run Script
+phase** that fires when a release is archived. Both are installed from the
+vendor's documentation and do exactly what the command above does — pick one,
+not all three.
+
+Finally, the same request by hand, if you would rather install nothing:
 
 ```sh
 archive=build/ios/archive/Runner.xcarchive
