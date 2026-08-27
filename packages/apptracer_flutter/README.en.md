@@ -197,9 +197,22 @@ Nothing to add: the pure-Dart implementation is already inside the package. The
 token is the JS project's `appToken`, passed one step below.
 
 The JS project's `pluginToken`, as on iOS, is not for events but for uploading
-source maps: `POST /api/sourcemap/upload` with a `sourcemapToken` field. Without
-them a stack trace from a release build stays minified. Example:
-[`tool/upload_web_sourcemaps.sh`](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/tool/upload_web_sourcemaps.sh).
+source maps — without them a release build's stack traces stay minified:
+
+```sh
+flutter build web --release --source-maps
+cd build/web && zip -qr /tmp/sourcemaps.zip . -i '*.js' '*.map'
+
+curl --location \
+  -F sourcemapToken=WEB_PLUGIN_TOKEN \
+  -F versionName=1.0.0 \
+  -F file=@/tmp/sourcemaps.zip \
+  https://plugin-api.apptracer.ru/api/sourcemap/upload
+```
+
+The archive is zipped from **inside** `build/web` so that the paths in it match
+the paths in the frames: Tracer matches source maps by file path, not by Debug
+ID. `versionName` has to match the `release` passed in `TracerOptions`.
 
 **3. Wrap the application's start.**
 
