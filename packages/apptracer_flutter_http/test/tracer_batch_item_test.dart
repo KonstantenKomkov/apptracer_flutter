@@ -87,7 +87,10 @@ void main() {
       expect(properties['errorEventType'], 'error');
     });
 
-    test('carries custom keys and the issue key', () {
+    test('custom keys go out as properties and as tags, both on purpose', () {
+      // The console renders `properties` and ignores `tags`; the vendor's own
+      // SDK sends `tags`. Measured 2026-08-27 by sending one event each way,
+      // so neither half of this is a guess and neither can be dropped.
       final Map<String, Object?> item = _build(
         _event(issueKey: 'ISSUE-1', customKeys: const <String, String>{
           'checkout_step': '3',
@@ -98,8 +101,60 @@ void main() {
           item['uploadBean']! as Map<String, Object?>;
       final Map<String, Object?> properties =
           bean['properties']! as Map<String, Object?>;
-      expect(properties['checkout_step'], '3');
       expect(properties['issueKey'], 'ISSUE-1');
+      expect(properties['checkout_step'], '3');
+      expect(bean['tags'], <String>['checkout_step=3']);
+    });
+
+    test('an event key overrides a global one of the same name', () {
+      final Map<String, Object?> item = buildBatchItem(
+        event: _event(customKeys: const <String, String>{'screen': 'checkout'}),
+        facts: const _FakeFacts(),
+        versionName: '1.0.0',
+        versionCode: 10000,
+        environment: 'prod',
+        sdkVersion: '0.1.0',
+        customKeys: const <String, String>{'screen': 'home', 'tier': 'gold'},
+      );
+
+      final Map<String, Object?> bean =
+          item['uploadBean']! as Map<String, Object?>;
+      final Map<String, Object?> properties =
+          bean['properties']! as Map<String, Object?>;
+      expect(
+        (bean['tags']! as List<Object?>).toSet(),
+        <String>{'screen=checkout', 'tier=gold'},
+      );
+      expect(properties['screen'], 'checkout');
+      expect(properties['tier'], 'gold');
+    });
+
+    test('no keys means no tags field at all, as the vendor omits it', () {
+      final Map<String, Object?> item = _build(_event());
+      final Map<String, Object?> bean =
+          item['uploadBean']! as Map<String, Object?>;
+      expect(bean.containsKey('tags'), isFalse);
+      expect(item.containsKey('logsFile'), isFalse);
+    });
+
+    test('the user id is a property, and the log is a top-level field', () {
+      final Map<String, Object?> item = buildBatchItem(
+        event: _event(),
+        facts: const _FakeFacts(),
+        versionName: '1.0.0',
+        versionCode: 10000,
+        environment: 'prod',
+        sdkVersion: '0.1.0',
+        userId: 'u-42',
+        logsFile: 'BASE64',
+      );
+
+      final Map<String, Object?> bean =
+          item['uploadBean']! as Map<String, Object?>;
+      final Map<String, Object?> properties =
+          bean['properties']! as Map<String, Object?>;
+      expect(properties['userId'], 'u-42');
+      expect(item['logsFile'], 'BASE64');
     });
 
     test('the stack trace reads as type, message, then the verbatim frames',

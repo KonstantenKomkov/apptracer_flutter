@@ -7,8 +7,10 @@ import 'tracer_client_facts.dart';
 /// The shape is not documented by the vendor. It was recovered on 2026-08-26 by
 /// running `@apptracer/sdk` 2.6.9 in a browser with its `apiHost` pointed at a
 /// local server that printed what arrived; the captured request is quoted in
-/// `docs/web-protocol.md`. Anything here that looks arbitrary is arbitrary
-/// because the wire format is.
+/// `docs/web-protocol.md`. The fields that request did not happen to exercise —
+/// `logsFile`, `tags`, `userId` — were read on 2026-08-27 out of the SDK's own
+/// bundle, `lib/main/index.mjs`, in `StackTraceUploader`. Anything here that
+/// looks arbitrary is arbitrary because the wire format is.
 Map<String, Object?> buildBatchItem({
   required TracerEvent event,
   required TracerClientFacts facts,
@@ -16,7 +18,18 @@ Map<String, Object?> buildBatchItem({
   required int versionCode,
   required String environment,
   required String sdkVersion,
+  Map<String, String> customKeys = const <String, String>{},
+  String? userId,
+  String? logsFile,
 }) {
+  // Global keys first, the event's own on top — the same merge the vendor does
+  // in `getErrorData`.
+  final Map<String, String> keys = <String, String>{
+    ...customKeys,
+    ...event.customKeys.map(
+      (String key, Object? value) => MapEntry<String, String>(key, '$value'),
+    ),
+  };
   // The vendor sends CRASH for anything that terminated the page and NON_FATAL
   // for everything reported by hand. A Dart error never terminates the page, so
   // only an explicitly fatal event earns CRASH.
@@ -45,10 +58,27 @@ Map<String, Object?> buildBatchItem({
         'screenOrientationAngle': facts.screenOrientationAngle,
         'documentVisibilityState': facts.documentVisibilityState,
         'tracerSdkVersion': sdkVersion,
-        ...event.customKeys,
+        // See the note on `tags` below: this is the copy the console renders.
+        ...keys,
+        if (userId != null) 'userId': userId,
         if (event.issueKey != null) 'issueKey': event.issueKey,
       },
+      // Custom keys go out twice, and both times deliberately. The console's
+      // «Данные» tab renders `properties` and ignores `tags` — measured
+      // 2026-08-27 by sending one event each way and reading the tab — while
+      // `tags`, one `key=value` string each, is what the vendor's own
+      // `StackTraceUploader.getUploadBeanForError` builds out of its key
+      // store. Sending only what renders would drop whatever the vendor uses
+      // tags for; sending only what the vendor sends would leave the tab
+      // empty.
+      if (keys.isNotEmpty)
+        'tags': <String>[
+          for (final MapEntry<String, String> entry in keys.entries)
+            '${entry.key}=${entry.value}',
+        ],
     },
+    // Base64 of the log buffer; absent when nothing was logged, as in the SDK.
+    if (logsFile != null) 'logsFile': logsFile,
     // The vendor's SDK sends `Error: message` followed by indented `at` lines.
     // A Dart trace is close enough in shape that the same field carries it, and
     // it is the only place a reader will find the real frames.

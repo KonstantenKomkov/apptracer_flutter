@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 
 import 'tracer_client_facts.dart';
 import 'tracer_batch_item.dart';
+import 'tracer_log_buffer.dart';
 
 /// Delivers Dart errors to Tracer's own HTTP ingest.
 ///
@@ -54,17 +55,23 @@ class TracerHttpTracer extends TracerPlatform {
   bool _enabled = false;
   bool _debug = false;
 
+  final TracerLogBuffer _logs = TracerLogBuffer();
+  final Map<String, String> _customKeys = <String, String>{};
+  String? _userId;
+
   @override
   String get backendName => _backendName;
 
   @override
   bool get isEnabled => _enabled;
 
-  /// Breadcrumbs are not mirrored: the vendor carries them in a separate
-  /// `logsFile` field whose format has not been observed, so sending them into
-  /// the platform log would send them nowhere. See `docs/web-protocol.md`.
+  /// Breadcrumbs are mirrored into the log, because that is where the vendor
+  /// puts them too: they travel in `logsFile`, and [recordLog] is what fills
+  /// it. Until 2026-08-27 this was `false` and the log was dropped, the format
+  /// being unknown; it was then read out of the SDK's own bundle. See
+  /// `docs/web-protocol.md`.
   @override
-  bool get mirrorsBreadcrumbsToLog => false;
+  bool get mirrorsBreadcrumbsToLog => true;
 
   @override
   Future<void> initialize(TracerOptions options) async {
@@ -110,6 +117,9 @@ class TracerHttpTracer extends TracerPlatform {
       versionCode: _versionCode,
       environment: _environment,
       sdkVersion: sdkVersion,
+      customKeys: _customKeys,
+      userId: _userId,
+      logsFile: _logs.encode(),
     );
 
     // compressType=NONE is the vendor's own path when gzip is unavailable, and
@@ -121,13 +131,15 @@ class TracerHttpTracer extends TracerPlatform {
       'sdkVersion': sdkVersion,
     });
 
+    final String payload = jsonEncode(<Map<String, Object?>>[item]);
+
     try {
       final http.Response response = await _client.post(
         uri,
         headers: const <String, String>{
           'Content-Type': 'application/octet-stream',
         },
-        body: utf8.encode(jsonEncode(<Map<String, Object?>>[item])),
+        body: utf8.encode(payload),
       );
       if (response.statusCode >= 400) {
         _log('upload rejected: ${response.statusCode} ${response.body}');
@@ -141,17 +153,30 @@ class TracerHttpTracer extends TracerPlatform {
   }
 
   @override
-  Future<void> recordLog(String message) async {}
+  Future<void> recordLog(String message) async {
+    if (!_enabled) {
+      return;
+    }
+    _logs.add(message);
+  }
 
   @override
-  Future<void> setCustomKey(
-      {required String key, required String value}) async {}
+  Future<void> setCustomKey({
+    required String key,
+    required String value,
+  }) async {
+    _customKeys[key] = value;
+  }
 
   @override
-  Future<void> removeCustomKey(String key) async {}
+  Future<void> removeCustomKey(String key) async {
+    _customKeys.remove(key);
+  }
 
   @override
-  Future<void> setUserId(String? userId) async {}
+  Future<void> setUserId(String? userId) async {
+    _userId = userId;
+  }
 
   /// Accepts either a bare host or a full URL, because both look reasonable to
   /// someone filling in `TracerOptions.apiUrl`.

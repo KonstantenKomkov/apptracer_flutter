@@ -9,6 +9,22 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Added
+
+- Breadcrumbs, custom keys and `userId` now leave the device. `recordLog`,
+  `setCustomKey`, `removeCustomKey` and `setUserId` used to be empty methods,
+  so on web none of that was sent at all. Breadcrumbs travel in `logsFile` as
+  base64 of `#<index> <epoch millis> | <text>` rows, capped at 64 000 bytes
+  with the oldest dropped first — the format `LogsData` in `@apptracer/sdk`
+  2.6.9 uses, and the one the console's log table insists on.
+- `TracerLogBuffer`, holding that log, with the row format pinned by tests.
+
+### Changed
+
+- Custom keys are sent both as `uploadBean.properties` and as
+  `uploadBean.tags`. The vendor's SDK sends only tags, but the console's data
+  tab reads only properties; measured 2026-08-27 by sending one event each way.
+
 ## [0.1.0] - 2026-08-25
 
 ### Added

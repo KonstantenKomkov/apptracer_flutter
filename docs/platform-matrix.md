@@ -11,7 +11,7 @@ Last verified: 2026-08-25.
 |---|---|---|---|---|---|---|
 | Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
-| Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26 |
+| Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
 | macOS / Windows / Linux | Sentry protocol (documented, needs a VK Cloud DSN) or Tracer's own HTTP ingest, registered by hand | yes | no | no | no | opt-in, neither verified live |
 | Aurora OS | same two routes, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | opt-in, neither verified live |
 
@@ -323,6 +323,15 @@ Consequences worth knowing:
   must match the paths in the frames. See [symbolication.md](symbolication.md).
 * `TracerOptions.appToken` is required. `dsn` is not used by any path: Tracer
   issues no DSN to any project.
+* Breadcrumbs, custom keys and `userId` do travel — since 2026-08-27, and not
+  before it: those four methods used to be empty on this transport. Custom keys
+  are sent twice, once where the console reads them and once where the vendor's
+  own SDK puts them; see [web-protocol.md](web-protocol.md).
+* A `200 {"success":true}` is not proof the payload was understood. The ingest
+  answers that to a body that is not JSON at all; only a bad token is refused.
+  There is no way to fail closed on a malformed event, only on a bad token.
+* No crash-free metric: `POST /api/crash/trackSession` is a separate module in
+  the vendor's SDK and this package does not report sessions.
 
 ## Desktop and Aurora OS
 
