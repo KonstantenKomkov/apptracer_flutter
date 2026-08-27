@@ -64,7 +64,7 @@ android {
 
 tracer {
     create("defaultConfig") {
-        appToken = "your-app-token"
+        appToken = "ANDROID_APP_TOKEN"
         pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
@@ -92,7 +92,7 @@ Put it in a `.env` at the project root, next to `pubspec.yaml`:
 
 ```sh
 # .env
-TRACER_PLUGIN_TOKEN=your-plugin-token
+TRACER_PLUGIN_TOKEN=ANDROID_PLUGIN_TOKEN
 ```
 
 ```sh
@@ -188,8 +188,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      iosAppToken: 'ios-project-token',
-      webAppToken: 'js-project-token',
+      iosAppToken: 'IOS_APP_TOKEN',
+      webAppToken: 'WEB_APP_TOKEN',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -211,8 +211,8 @@ is needed here for that beyond the convention:
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 
 const TracerOptions tracerOptions = TracerOptions(
-  iosAppToken: 'ios-project-token',
-  webAppToken: 'js-project-token',
+  iosAppToken: 'IOS_APP_TOKEN',
+  webAppToken: 'WEB_APP_TOKEN',
   release: '1.0.0',
 );
 ```

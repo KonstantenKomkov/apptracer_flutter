@@ -63,7 +63,7 @@ android {
 
 tracer {
     create("defaultConfig") {
-        appToken = "ваш-app-token"
+        appToken = "ANDROID_APP_TOKEN"
         pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
@@ -91,7 +91,7 @@ dependencies {
 
 ```sh
 # .env
-TRACER_PLUGIN_TOKEN=ваш-plugin-token
+TRACER_PLUGIN_TOKEN=ANDROID_PLUGIN_TOKEN
 ```
 
 ```sh
@@ -187,8 +187,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      iosAppToken: 'токен-iOS-проекта',
-      webAppToken: 'токен-JS-проекта',
+      iosAppToken: 'IOS_APP_TOKEN',
+      webAppToken: 'WEB_APP_TOKEN',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -210,8 +210,8 @@ Gradle-плагин, и переопределить это из Dart нечем
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 
 const TracerOptions tracerOptions = TracerOptions(
-  iosAppToken: 'токен-iOS-проекта',
-  webAppToken: 'токен-JS-проекта',
+  iosAppToken: 'IOS_APP_TOKEN',
+  webAppToken: 'WEB_APP_TOKEN',
   release: '1.0.0',
 );
 ```
