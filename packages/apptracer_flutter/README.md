@@ -110,14 +110,31 @@ androidPluginToken=...
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Добавьте один атрибут к уже существующему тегу `<application>` в
-`android/app/src/main/AndroidManifest.xml` — остальные его атрибуты не трогайте:
+В `android/app/src/main/AndroidManifest.xml` у тега `<application>` уже есть
+атрибут `android:name` — в шаблоне Flutter он равен `"${applicationName}"`.
+Поменяйте **только его значение**:
 
 ```xml
 <application
-    android:name="ru.apptracer.flutter.TracerApplication"
     android:label="my_app"
+    android:name="ru.apptracer.flutter.TracerApplication"
     android:icon="@mipmap/ic_launcher">
+```
+
+`label` и `icon` здесь показаны просто потому, что в шаблоне они рядом: они
+ваши и остаются как были. Меняется одно значение — то, где стоял
+`${applicationName}`.
+
+Если манифест трогать не хочется, тот же результат даёт подстановка плейсхолдера
+из Gradle — так сделано в примере этого репозитория:
+
+```kotlin
+android {
+    defaultConfig {
+        manifestPlaceholders["applicationName"] =
+            "ru.apptracer.flutter.TracerApplication"
+    }
+}
 ```
 
 Он включает мягкий рейт-лимит на нефатальные, и это не мелочь: жёсткий дефолт

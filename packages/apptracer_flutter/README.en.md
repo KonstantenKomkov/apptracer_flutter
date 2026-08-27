@@ -113,14 +113,31 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Add one attribute to the `<application>` tag you already have in
-`android/app/src/main/AndroidManifest.xml`, leaving its other attributes alone:
+The `<application>` tag in `android/app/src/main/AndroidManifest.xml` already
+has an `android:name` — Flutter's template sets it to `"${applicationName}"`.
+Change **only its value**:
 
 ```xml
 <application
-    android:name="ru.apptracer.flutter.TracerApplication"
     android:label="my_app"
+    android:name="ru.apptracer.flutter.TracerApplication"
     android:icon="@mipmap/ic_launcher">
+```
+
+`label` and `icon` appear only because the template puts them next to it: they
+are yours and stay as they are. One value changes — the one that read
+`${applicationName}`.
+
+If you would rather not touch the manifest, substituting the placeholder from
+Gradle does the same thing — which is what this repository's example does:
+
+```kotlin
+android {
+    defaultConfig {
+        manifestPlaceholders["applicationName"] =
+            "ru.apptracer.flutter.TracerApplication"
+    }
+}
 ```
 
 It turns on the softer non-fatal rate limit, which matters more than it sounds:
