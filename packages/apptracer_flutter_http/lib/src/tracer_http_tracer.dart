@@ -90,9 +90,13 @@ class TracerHttpTracer extends TracerPlatform {
 
     _appToken = token;
     _host = hostFrom(options.apiUrl) ?? defaultHost;
-    _environment = options.environment ?? 'prod';
+    _environment = options.resolvedEnvironment;
     _versionName = options.release ?? _versionName;
-    _versionCode = _versionCodeFrom(_versionName);
+    // `dist` carries the real build number where one is known — on web it comes
+    // from `version.json`. Deriving a number from the version name is the
+    // fallback, and only that: 1.2.3 and 1.2.3+7 would otherwise be one build.
+    _versionCode =
+        int.tryParse(options.dist ?? '') ?? _versionCodeFrom(_versionName);
     _enabled = true;
   }
 

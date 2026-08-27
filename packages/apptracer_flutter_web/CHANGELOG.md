@@ -13,6 +13,12 @@ as pub.dev expects.
 
 ### Added
 
+- The version is read from the `version.json` that `flutter build web` writes,
+  which carries `version:` from `pubspec.yaml`. This is web's equivalent of the
+  bundle version Android and iOS read for themselves, and it is why `release`
+  no longer has to be passed. A missing or unreadable file changes nothing:
+  whatever the options said still stands.
+
 - Initial release.
 - Registers the pure-Dart Sentry-protocol transport as the web implementation.
   Tracer's JavaScript SDK ships only as an npm package, which a Flutter web

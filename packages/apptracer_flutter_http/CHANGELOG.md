@@ -13,6 +13,11 @@ as pub.dev expects.
 
 ### Added
 
+- The transport reads `resolvedEnvironment`, and takes `versionCode` from
+  `dist` when it is set, so a real build number is reported rather than one
+  derived from the version name — `1.2.3` and `1.2.3+7` were otherwise the
+  same build.
+
 - The transport reads `TracerOptions.resolvedAppToken`, so `webAppToken` is
   honoured where it is set.
 

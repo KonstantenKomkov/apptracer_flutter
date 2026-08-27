@@ -294,8 +294,6 @@ void main() {
     options: const TracerOptions(
       iosAppToken: 'IOS_APP_TOKEN',
       webAppToken: 'WEB_APP_TOKEN',
-      release: '1.0.0',
-      environment: 'prod',
     ),
     appRunner: () => runApp(const MyApp()),
   );
@@ -305,6 +303,12 @@ void main() {
 Поля Android здесь нет: его SDK читает токен из ресурса, который создаёт
 Gradle-плагин, и переопределить это из Dart нечем. Если платформа одна, хватит
 общего `appToken` — он используется там, где своего не задано.
+
+Версию и окружение задавать не нужно: Android и iOS берут версию из бандла
+приложения, web — из `version.json`, который пишет `flutter build web` по
+`version:` из `pubspec.yaml`, а окружение выводится из режима сборки —
+`prod` для release, `dev` для остальных. `release`, `dist` и `environment` в
+`TracerOptions` остались на случай, когда надо сказать что-то другое.
 
 Держать ключи отдельным файлом рядом с исходниками — ровно то, что делает
 `flutterfire configure`, создавая `lib/firebase_options.dart`. Здесь для этого
@@ -317,7 +321,6 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 const TracerOptions tracerOptions = TracerOptions(
   iosAppToken: 'IOS_APP_TOKEN',
   webAppToken: 'WEB_APP_TOKEN',
-  release: '1.0.0',
 );
 ```
 
@@ -508,10 +511,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      appToken: String.fromEnvironment('TRACER_APP_TOKEN'), // iOS и web
-      // dsn нужен только транспорту Sentry, то есть неподдерживаемым платформам
-      environment: 'prod',
-      release: '1.0.0',
+      iosAppToken: 'IOS_APP_TOKEN',
+      webAppToken: 'WEB_APP_TOKEN',
     ),
     appRunner: () => runApp(const MyApp()),
   );

@@ -98,9 +98,18 @@ class TracerOptions {
   final String? dsn;
 
   /// Deployment environment, for example `prod`, `test` or `dev`.
+  ///
+  /// Optional: [resolvedEnvironment] falls back to `prod` in a release build
+  /// and `dev` otherwise. Android ignores it either way — there the SDK takes
+  /// the environment from the Gradle plugin.
   final String? environment;
 
   /// Application version reported to Tracer.
+  ///
+  /// Optional, and usually left alone. Android and iOS take the version from
+  /// the application bundle themselves; web fills it in from the `version.json`
+  /// that `flutter build web` writes, which carries the version out of
+  /// `pubspec.yaml`. Set this only to report something other than that.
   ///
   /// Tracer strips everything up to and including the last `@` when the value
   /// looks like `<application>@<version>`, so `my_app@1.2.3` is recorded as
@@ -108,6 +117,9 @@ class TracerOptions {
   final String? release;
 
   /// Build distribution identifier, for example a CI build number.
+  ///
+  /// Also filled in from `version.json` on web, where it becomes the numeric
+  /// `versionCode` the ingest expects.
   final String? dist;
 
   /// Whether collection is allowed at all.
@@ -192,6 +204,14 @@ class TracerOptions {
   /// Whether the package logs its own diagnostics to the console.
   final bool debug;
 
+  /// The environment that applies to this build.
+  ///
+  /// Defaults to `prod` in a release build and `dev` otherwise, so that
+  /// nothing has to be passed for the usual case. Set [environment] to
+  /// override — for a staging flavour, say.
+  String get resolvedEnvironment =>
+      environment ?? (kReleaseMode ? 'prod' : 'dev');
+
   /// Overrides the Tracer ingest endpoint, for proxying setups.
   final String? apiUrl;
 
@@ -260,7 +280,7 @@ class TracerOptions {
       // use for the tokens of the other two.
       if (resolvedAppToken != null) 'appToken': resolvedAppToken,
       if (dsn != null) 'dsn': dsn,
-      if (environment != null) 'environment': environment,
+      'environment': resolvedEnvironment,
       if (release != null) 'release': release,
       if (dist != null) 'dist': dist,
       'isCollectionEnabled': isCollectionEnabled,

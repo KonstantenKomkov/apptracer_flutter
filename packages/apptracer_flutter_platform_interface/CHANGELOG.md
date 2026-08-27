@@ -13,6 +13,11 @@ as pub.dev expects.
 
 ### Added
 
+- `TracerOptions.resolvedEnvironment`, which falls back to `prod` in a release
+  build and `dev` otherwise, so an application no longer passes `environment`
+  for the ordinary case. `release` and `dist` became optional in the same
+  spirit: Android and iOS read the version from the application bundle.
+
 - `TracerOptions.iosAppToken` and `TracerOptions.webAppToken`, resolved by
   `TracerOptions.resolvedAppToken`. Every platform is a separate Tracer project
   with a token of its own, and an application shipping on both iOS and web had

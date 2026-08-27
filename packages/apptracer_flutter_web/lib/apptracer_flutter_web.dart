@@ -23,9 +23,13 @@
 ///   its own SDK bundle. See `docs/web-protocol.md`.
 library;
 
+import 'dart:convert';
+import 'dart:js_interop';
+
 import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:web/web.dart' as web;
 
 import 'src/window_browser_facts.dart';
 
@@ -47,6 +51,50 @@ class AppTracerWeb extends TracerHttpTracer {
   /// Ours, not the vendor's: what reaches their ingest comes from this package,
   /// and saying otherwise would make a support conversation confusing.
   static const String packageVersion = '0.1.0';
+
+  /// Fills in the application's version before starting.
+  ///
+  /// `flutter build web` writes `version.json` next to `index.html`, carrying
+  /// the `version:` from `pubspec.yaml`. Reading it here is what keeps
+  /// `release` and `dist` out of an application's `TracerOptions`: Android and
+  /// iOS take the version from their bundle, and this is web's equivalent.
+  ///
+  /// A build served from a subdirectory, or one whose `version.json` was
+  /// stripped, simply keeps whatever the options already said. A crash
+  /// reporter that refuses to start because it could not read a version file
+  /// would be worse than one reporting an unknown version.
+  @override
+  Future<void> initialize(TracerOptions options) async {
+    if (options.release != null && options.dist != null) {
+      return super.initialize(options);
+    }
+
+    final Map<String, Object?>? version = await _readVersionJson();
+    if (version == null) {
+      return super.initialize(options);
+    }
+
+    return super.initialize(options.copyWith(
+      release: options.release ?? version['version'] as String?,
+      dist: options.dist ?? version['build_number'] as String?,
+    ));
+  }
+
+  Future<Map<String, Object?>?> _readVersionJson() async {
+    try {
+      final String base = web.window.document.baseURI;
+      final web.Response response =
+          await web.window.fetch('${base}version.json'.toJS).toDart;
+      if (!response.ok) {
+        return null;
+      }
+      final String body = (await response.text().toDart).toDart;
+      return jsonDecode(body) as Map<String, Object?>;
+    } on Object {
+      // A missing or unreadable version.json is not a reason to report nothing.
+      return null;
+    }
+  }
 
   /// Registers this class as the implementation for web.
   ///

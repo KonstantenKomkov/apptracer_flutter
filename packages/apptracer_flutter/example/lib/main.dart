@@ -37,8 +37,9 @@ void main() {
   Tracer.initialize(
     options: TracerOptions(
       appToken: _appToken.isEmpty ? null : _appToken,
-      environment: kReleaseMode ? 'prod' : 'dev',
-      release: '1.0.0',
+      // release и environment не задаются намеренно: версию Android и iOS
+      // берут из бандла, web — из version.json, а окружение выводится из
+      // kReleaseMode. Пример показывает и это тоже.
       debug: !kReleaseMode,
       maxBreadcrumbs: 50,
       // Nothing personal is collected by default; this hook is where an
