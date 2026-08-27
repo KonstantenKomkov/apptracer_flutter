@@ -38,8 +38,8 @@ for every user who ever hits that crash.
   error, expected format: #0 timestamp | text`). An obfuscated trace is left
   byte for byte alone: it is the one that must survive verbatim, and its frames
   are numbered `#00`, `#01`, which the console does not mistake for records.
-* `dart.obfuscated` and `dart.build_id` are set as custom keys, so you can tell
-  at a glance which symbol file a given event needs.
+* `dart.needs_symbolication` and `dart.build_id` are set as custom keys, so you
+  can tell at a glance which symbol file a given event needs.
 * Parsed frames keep the virtual address in `virtAddress`, which is the value
   `flutter symbolize` resolves.
 
@@ -65,7 +65,7 @@ splits its issues away from every other build's.
 
 A DWARF trace has no names, only addresses, and those move with every build.
 Frames forwarded to Tracer end up as
-`dart.obfuscated._kDartIsolateSnapshotInstructions+0x...`, so grouping is
+`dart.unsymbolized._kDartIsolateSnapshotInstructions+0x...`, so grouping is
 **stable within a build and unstable across builds**: the same logical error
 opens a new group in every release.
 
@@ -79,13 +79,15 @@ nothing stable left to group by — but it is worth knowing before choosing
 * Pass an explicit `issueKey` to `Tracer.recordError` at call sites you care
   about. That pins grouping regardless of what the stack looks like.
 
-The custom key `dart.obfuscated` is named for the case it was first met in. It
-is set from whether any frame is address-only — that is, whether the event needs
-`flutter symbolize` — so it reads `true` for a `--split-debug-info` build that
-was never obfuscated. Read it as "needs symbolication".
+The flag behind all of this is set from whether any frame is address-only —
+that is, whether the event needs `flutter symbolize`. It therefore reads `true`
+for a `--split-debug-info` build that was never obfuscated. Until 2026-08-27 it
+was called `dart.obfuscated`, and the synthetic frame class was too, which said
+something the flag does not measure; both were renamed to
+`dart.needs_symbolication` and `dart.unsymbolized` before the first release.
 
-Narrowing it to genuinely obfuscated builds would be a mistake, and not for want
-of a way to tell. A trace cannot tell (finding 4), but the runtime can: measured
+Narrowing the flag to genuinely obfuscated builds would be a mistake, and not
+for want of a way to tell. A trace cannot tell (finding 4), but the runtime can: measured
 2026-08-27, `_ObfuscationProbeClass().runtimeType` prints `_ObfuscationProbeClass`
 in a `--split-debug-info` build and `_Lp` with `--obfuscate` on top. The reason
 to keep the flag as it is comes from what it is for. An event from an

@@ -100,20 +100,23 @@ ANDROID_PLUGIN_TOKEN=...
 .env
 ```
 
-Gradle does not read that file by itself — the variable has to be in the
-build's environment:
+Nothing reads `.env`: not Flutter, not Gradle, not the IDE — it is just a file,
+and `providers.environmentVariable` looks at the environment of the process that
+started the build. So the value has to be put there:
 
 ```sh
 set -a && . ./.env && set +a && flutter build apk --release
 ```
 
+The Run button in Android Studio or VS Code will not do that, and the token will
+be missing there. To keep launching the way you always do, either install
+`direnv`, or skip the `.env` altogether: put the token in
+`~/.gradle/gradle.properties`, which is outside the repository and which Gradle
+reads on its own, and take it in the block with
+`providers.gradleProperty("androidPluginToken").orNull`.
+
 CI needs no file: the value comes from the build system's secrets, say
 `ANDROID_PLUGIN_TOKEN: ${{ secrets.ANDROID_PLUGIN_TOKEN }}` in GitHub Actions.
-
-If you would rather not deal with the environment at all, there is a shorter
-way: put the token in `~/.gradle/gradle.properties`, which is outside the
-repository and which Gradle reads on its own, and take it in the block with
-`providers.gradleProperty("tracerPluginToken").orNull`.
 
 Turn on the softer non-fatal rate limit. Tracer's hard default is **8
 non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
@@ -286,8 +289,8 @@ It is almost always one of four things:
 * [Consent](#consent) — how to collect nothing until the user agrees.
 * [What data is transmitted](#what-data-is-transmitted) — the full list,
   including what the native SDK adds on its own.
-* [Obfuscated release builds](#obfuscated-release-builds) — what happens to a
-  stack trace and how to read it back.
+* [Release builds with `--split-debug-info`](#release-builds-with---split-debug-info) —
+  what happens to a stack trace and how to read it back.
 
 ## Why this exists
 
@@ -331,11 +334,11 @@ this package, and what the vendor's SDK adds on its own, is listed in
 [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Whether that satisfies your
 jurisdiction's rules is a question for your lawyer, not for a README.
 
-**About obfuscation, honestly.** Crashlytics is plainly better here. It reads an
-obfuscated release by itself; here that is manual work. Tracer has a channel for
-Dart symbols and the upload goes through, but the symbols are never applied,
-because the native reporter records `libapp.so` with a zero build id. Measured
-2026-08-27, written up in [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
+**About Dart symbols, honestly.** Crashlytics is plainly better here. It reads
+such a release by itself; here that is manual work. Tracer has no channel for
+Dart debug files — the vendor confirmed as much on 2026-08-27 — and the native
+channel accepts the upload but never applies it, because the reporter records
+`libapp.so` with a zero build id. Measured 2026-08-27, written up in [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
 Until the vendor fixes that, there is one working route: archive the build's
 symbol file and decode traces with `flutter symbolize`.
 

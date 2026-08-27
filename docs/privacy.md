@@ -21,7 +21,7 @@ installed. Both halves are listed below.
 | `issueKey` | supplied by the caller, or synthesised on iOS from type + top frame | every event | — |
 | Breadcrumbs | free text written by the application | events, plus mirrored to the native log as they happen | `maxBreadcrumbs: 0`, `beforeBreadcrumb` |
 | Custom keys | key/value pairs written by the application | every event | do not set them |
-| `dart.exception_type`, `dart.obfuscated`, `dart.build_id` | diagnostics for symbolication | every event | — |
+| `dart.exception_type`, `dart.needs_symbolication`, `dart.build_id` | diagnostics for symbolication | every event | — |
 | User id | whatever the application passed to `Tracer.setUserId` | only after that call | never call it |
 
 Nothing on that list is populated automatically from the device, the install or
