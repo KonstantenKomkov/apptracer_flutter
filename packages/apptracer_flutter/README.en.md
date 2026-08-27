@@ -142,10 +142,9 @@ symbol file and decode traces with `flutter symbolize`.
 
 ## What you get beyond Dart errors
 
-The list of platforms is on the package page itself, so there is no point
-repeating it here. Dart errors are this package's job and arrive the same from
-all three. What differs is everything else, because the vendor's native SDK
-does that part:
+Dart errors are this package's job and arrive the same from every platform.
+What differs is everything else, because the vendor's native SDK does that
+part:
 
 * **Android** — native crashes and ANRs. ANRs only from Android 11: `AnrReporter`
   in `tracer-crash-report` 1.4.0 builds its report from `ApplicationExitInfo`,
