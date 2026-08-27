@@ -13,9 +13,9 @@ own spec repository. Add this line to your Podfile:
     source 'https://github.com/odnoklassniki/tracer-ios.git'
     source 'https://cdn.cocoapods.org/'
                        DESC
-  s.homepage         = 'https://github.com/komkovkonstantin/apptracer_flutter'
+  s.homepage         = 'https://github.com/KonstantenKomkov/apptracer_flutter'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'apptracer_flutter contributors' => 'noreply@example.com' }
+  s.author           = { 'Константин Комков' => 'fireandmight@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'
   s.dependency 'Flutter'

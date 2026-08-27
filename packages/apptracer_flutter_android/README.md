@@ -1,6 +1,6 @@
 # apptracer_flutter_android
 
-Реализация [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) под Android — неофициальной интеграции
+Реализация [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) под Android — неофициальной интеграции
 Flutter с [Tracer](https://apptracer.ru).
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.
@@ -24,7 +24,7 @@ English version: [README.en.md](README.en.md).
 
 SDK Tracer подключён здесь как `compileOnly`, поэтому его добавляет само
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
-`appToken`. См. [README](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
+`appToken`. См. [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
 
 О двух вещах плагин скажет в рантайме, а не промолчит:
 

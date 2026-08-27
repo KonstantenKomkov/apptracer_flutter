@@ -1,6 +1,6 @@
 # apptracer_flutter_platform_interface
 
-Общий интерфейс платформы для [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) — неофициальной
+Общий интерфейс платформы для [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) — неофициальной
 интеграции Flutter с [Tracer](https://apptracer.ru).
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.
@@ -32,4 +32,4 @@ English version: [README.en.md](README.en.md).
 добавлять без ломающего изменения, — и регистрируйте реализацию в
 `registerWith`.
 
-См. [матрицу платформ](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/platform-matrix.md).
+См. [матрицу платформ](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).

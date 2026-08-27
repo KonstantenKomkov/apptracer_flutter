@@ -4,8 +4,8 @@ description: >-
   errors from Flutter web, desktop and Aurora OS, where no native Tracer SDK is
   reachable. Part of apptracer_flutter.
 version: 0.1.0
-repository: https://github.com/komkovkonstantin/apptracer_flutter
-issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+repository: https://github.com/KonstantenKomkov/apptracer_flutter
+issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 
 topics:
   - crash-reporting

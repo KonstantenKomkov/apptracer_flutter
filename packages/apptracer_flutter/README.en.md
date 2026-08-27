@@ -6,7 +6,7 @@ error-monitoring service by OK.TECH / VK.
 > **Not an official SDK.** This package is not affiliated with, endorsed by, or
 > supported by VK or OK.TECH. It is an independent wrapper around the vendor's
 > public SDKs and it does not redistribute them. Do not report problems with it
-> to Tracer support — [open an issue here](https://github.com/komkovkonstantin/apptracer_flutter/issues)
+> to Tracer support — [open an issue here](https://github.com/KonstantenKomkov/apptracer_flutter/issues)
 > instead.
 
 Русская версия: [README.md](README.md).
@@ -46,7 +46,7 @@ that, `setSendAnr(true)` buys nothing.
 
 On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
-starts. Full details in [platform-matrix.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/platform-matrix.md).
+starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
 ## Install
 
@@ -148,7 +148,7 @@ Three things worth knowing:
   implements `HasTracerConfiguration`.
 * `Tracer.stopCollection()` calls the SDK's `Tracer.disable()`, which cannot be
   undone before the process restarts. That is deliberate; see
-  [privacy.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/privacy.md).
+  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 * `TracerOptions.environment` is ignored on Android too — the SDK takes it from
   the Gradle plugin, defaulting to the build variant name. Set it in the
   `tracer { }` block.
@@ -339,7 +339,7 @@ or something you handed it explicitly.
 The native SDKs are a separate matter — the Android SDK collects device model,
 manufacturer, ABI, OS version, mobile operator and installer package on its own,
 whether or not this package is installed. The full table, and how to constrain
-it, is in [privacy.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/privacy.md).
+it, is in [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 
 ### Grouping
 
@@ -378,7 +378,7 @@ flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 
 **Tracer has no documented upload channel for Dart `--split-debug-info` files**,
 so decoding is currently a manual step. Read
-[symbolication.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/symbolication.md)
+[symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md)
 before you ship an obfuscated build — it explains what does and does not work,
 and how to avoid finding out the hard way.
 
@@ -387,7 +387,7 @@ and how to avoid finding out the hard way.
 Version `0.1.0`. The Dart-side behaviour is unit-tested in detail; delivery has
 not yet been confirmed against a live Tracer project, because that needs
 credentials this repository does not have.
-[status.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/status.md)
+[status.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/status.md)
 lists exactly what is proven and what is not. The version stays below `1.0.0`
 until a real project has confirmed end-to-end delivery on each platform.
 
@@ -405,4 +405,4 @@ until a real project has confirmed end-to-end delivery on each platform.
 ## License
 
 MIT. The vendor SDKs are licensed separately; see
-[legal.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/legal.md).
+[legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).

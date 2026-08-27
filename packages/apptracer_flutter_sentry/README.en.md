@@ -1,7 +1,7 @@
 # apptracer_flutter_sentry
 
 A pure-Dart Sentry-protocol transport for
-[`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter),
+[`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter),
 the unofficial Flutter integration with [Tracer](https://apptracer.ru).
 
 > Not affiliated with, endorsed by, or supported by VK or OK.TECH.
@@ -53,4 +53,4 @@ the paths disagree, symbolication simply does not apply, silently.
 Envelope and event construction are unit-tested and follow the documented Sentry
 ingest format, but this transport has **not** been verified against a live
 Tracer project: that needs one created through VK Cloud. See
-[status.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/status.md).
+[status.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/status.md).

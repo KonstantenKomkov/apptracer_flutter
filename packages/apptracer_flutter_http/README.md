@@ -1,7 +1,7 @@
 # apptracer_flutter_http
 
 Транспорт на чистом Dart к HTTP-приёму [Tracer](https://apptracer.ru) для
-[`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) —
+[`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) —
 неофициальной интеграции Flutter.
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.
@@ -11,7 +11,7 @@ English version: [README.en.md](README.en.md).
 Пакет шлёт `POST /api/crash/uploadBatch`, авторизуясь тем же `appToken`, что и
 Android-плагин. Формат восстановлен перехватом живого запроса JS-SDK вендора и
 описан в
-[web-protocol.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/web-protocol.md).
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 > Раньше пакет назывался `apptracer_flutter_sentry` и говорил по протоколу
 > Sentry. Для web это оказалось неверно: там у Tracer есть собственный SDK,
@@ -54,4 +54,4 @@ Android и iOS правильный выбор — нативные реализ
 Формат принят живым сервером 26.08.2026: событие, собранное по этой схеме,
 получило `200 {"success":true}` и появилось в консоли проекта. Что осталось
 неизвестным — перечислено в
-[web-protocol.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/web-protocol.md).
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).

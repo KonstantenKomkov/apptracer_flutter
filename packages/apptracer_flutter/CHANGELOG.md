@@ -9,28 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Fixed
-
-- The verbatim stack trace now renders in Tracer's log table. The console
-  scans the log for the next record marker in sequence — `#3` after `#2` — and
-  expects `#0 timestamp | text` where it finds one; a Dart stack trace hands it
-  frame numbers that look exactly like that, so the table view showed
-  `Match line error` and nothing else. Frame numbers in a readable trace are
-  now written `[0]`, `[1]`. An obfuscated AOT trace is untouched byte for byte,
-  so `flutter symbolize` still accepts it, and the console never mistook its
-  `#00`-style frames for records anyway.
-
-### Fixed
-
-- Grouping on Android. Measured against a live Tracer project on 2026-08-26,
-  Tracer keys a group on the top frame's class and method alone: a `StateError`
-  and a `TimeoutException` thrown from two closures inside one `build` landed in
-  the same group. When the caller supplies no `issueKey`, one is now synthesised
-  from the error type and the innermost named frame — the rule iOS already used,
-  moved into Dart so both platforms share it. Neither file nor line goes into
-  the key, so editing code does not scatter a group.
-
-## [0.1.0] - 2026-08-25
+## [0.1.0] - 2026-08-27
 
 ### Added
 
@@ -55,5 +34,24 @@ as pub.dev expects.
   truncated at a line boundary, keeping the `build_id` header and the frames
   nearest the throw.
 
-[Unreleased]: https://github.com/komkovkonstantin/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/komkovkonstantin/apptracer_flutter/releases/tag/v0.1.0
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+
+### Fixed
+
+- The verbatim stack trace now renders in Tracer's log table. The console
+  scans the log for the next record marker in sequence — `#3` after `#2` — and
+  expects `#0 timestamp | text` where it finds one; a Dart stack trace hands it
+  frame numbers that look exactly like that, so the table view showed
+  `Match line error` and nothing else. Frame numbers in a readable trace are
+  now written `[0]`, `[1]`. An obfuscated AOT trace is untouched byte for byte,
+  so `flutter symbolize` still accepts it, and the console never mistook its
+  `#00`-style frames for records anyway.
+
+- Grouping on Android. Measured against a live Tracer project on 2026-08-26,
+  Tracer keys a group on the top frame's class and method alone: a `StateError`
+  and a `TimeoutException` thrown from two closures inside one `build` landed in
+  the same group. When the caller supplies no `issueKey`, one is now synthesised
+  from the error type and the innermost named frame — the rule iOS already used,
+  moved into Dart so both platforms share it. Neither file nor line goes into
+  the key, so editing code does not scatter a group.

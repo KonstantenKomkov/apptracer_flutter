@@ -1,6 +1,6 @@
 # apptracer_flutter_web
 
-Реализация [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) под web — неофициальной интеграции Flutter
+Реализация [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) под web — неофициальной интеграции Flutter
 с [Tracer](https://apptracer.ru).
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.
@@ -16,12 +16,12 @@ JavaScript SDK Tracer поставляется npm-пакетом `@apptracer/sd
 Flutter не умеет включать в себя npm-пакеты. При этом Tracer принимает события
 по протоколу Sentry на всех платформах, и этому пути не нужно ничего, кроме
 HTTP-клиента, — поэтому реализация отправляет конверты Sentry из чистого Dart
-через [`apptracer_flutter_http`](https://github.com/komkovkonstantin/apptracer_flutter/tree/main/packages/apptracer_flutter_http).
+через [`apptracer_flutter_http`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_http).
 
 Из этого следует:
 
 * Перехватываются только ошибки Dart. Падение в постороннем `<script>` не
   видно.
 * Кадры — это кадры `dart2js`, а сорсмапы Tracer сопоставляет **по пути файла,
-  а не по Debug ID**. См. [symbolication.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/symbolication.md).
+  а не по Debug ID**. См. [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
 * `TracerOptions.dsn` обязателен; `appToken` на этом пути не используется.

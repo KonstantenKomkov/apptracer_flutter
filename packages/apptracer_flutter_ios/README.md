@@ -1,6 +1,6 @@
 # apptracer_flutter_ios
 
-Реализация [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) под iOS — неофициальной интеграции Flutter
+Реализация [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) под iOS — неофициальной интеграции Flutter
 с [Tracer](https://apptracer.ru).
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.

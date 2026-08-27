@@ -9,7 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-08-25
+## [0.1.0] - 2026-08-27
 
 ### Added
 
@@ -18,5 +18,5 @@ as pub.dev expects.
   Tracer's JavaScript SDK ships only as an npm package, which a Flutter web
   build cannot bundle, and Tracer ingests Sentry events on every platform.
 
-[Unreleased]: https://github.com/komkovkonstantin/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/komkovkonstantin/apptracer_flutter/releases/tag/v0.1.0
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

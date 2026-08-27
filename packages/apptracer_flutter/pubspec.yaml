@@ -4,9 +4,9 @@ description: >-
   errors, Flutter framework errors and breadcrumbs that the native Tracer SDKs
   cannot see on their own.
 version: 0.1.0
-repository: https://github.com/komkovkonstantin/apptracer_flutter
-issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
-documentation: https://github.com/komkovkonstantin/apptracer_flutter#readme
+repository: https://github.com/KonstantenKomkov/apptracer_flutter
+issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
+documentation: https://github.com/KonstantenKomkov/apptracer_flutter#readme
 
 topics:
   - crash-reporting

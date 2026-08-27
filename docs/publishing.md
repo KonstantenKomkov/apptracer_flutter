@@ -22,22 +22,23 @@ crash reporter nobody has watched report a crash. Work through
 [live-verification-plan.md](live-verification-plan.md) and close its results
 table before anything below.
 
-## Set the repository URL first
+## The repository URL — done 2026-08-27
 
-Every `pubspec.yaml` currently points `repository`, `issue_tracker` and
-`documentation` at `https://github.com/komkovkonstantin/apptracer_flutter`, and
-the README files link to `docs/` through the same URL. **That URL is a
-placeholder.** Publishing with links that 404 costs pub.dev points and, worse,
-sends users nowhere when they hit a problem.
+Every `pubspec.yaml` used to point `repository`, `issue_tracker` and
+`documentation` at `https://github.com/komkovkonstantin/apptracer_flutter`,
+which was a placeholder: the real remote is
+`https://github.com/KonstantenKomkov/apptracer_flutter`. Publishing with links
+that 404 costs pub.dev points and, worse, sends users nowhere when they hit a
+problem. Replaced across 28 files, along with the placeholder author in
+`packages/apptracer_flutter_ios/ios/apptracer_flutter_ios.podspec`
+(`noreply@example.com` → the address the commits already carry).
+
+If the repository ever moves:
 
 ```sh
-# From the repository root, once the real remote exists:
-git grep -l 'github.com/komkovkonstantin/apptracer_flutter' \
-  | xargs sed -i '' 's|github.com/komkovkonstantin/apptracer_flutter|github.com/<owner>/<repo>|g'
+git grep -l 'github.com/KonstantenKomkov/apptracer_flutter' \
+  | xargs sed -i '' 's|github.com/KonstantenKomkov/apptracer_flutter|github.com/<owner>/<repo>|g'
 ```
-
-Also replace the placeholder author in
-`packages/apptracer_flutter_ios/ios/apptracer_flutter_ios.podspec`.
 
 ## Order
 

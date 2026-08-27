@@ -1,7 +1,7 @@
 # apptracer_flutter_http
 
 A pure-Dart transport to the HTTP ingest of [Tracer](https://apptracer.ru), for
-[`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter),
+[`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter),
 the unofficial Flutter integration.
 
 > Not affiliated with, endorsed by, or supported by VK or OK.TECH.
@@ -11,7 +11,7 @@ the unofficial Flutter integration.
 It posts `POST /api/crash/uploadBatch`, authenticating with the same `appToken`
 the Android plugin uses. The wire format was recovered by capturing a live
 request from the vendor's JS SDK and is written down in
-[web-protocol.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/web-protocol.md).
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 > This package used to be called `apptracer_flutter_sentry` and spoke the Sentry
 > protocol, on the belief that Tracer ingests that way everywhere. For web that
@@ -52,4 +52,4 @@ SDK.
 The format was accepted by the live server on 2026-08-26: an event built to this
 shape came back `200 {"success":true}` and appeared in the project's console.
 What remains unknown is listed in
-[web-protocol.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/web-protocol.md).
+[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).

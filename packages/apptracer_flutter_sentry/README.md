@@ -1,7 +1,7 @@
 # apptracer_flutter_sentry
 
 Транспорт по протоколу Sentry на чистом Dart для
-[`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter) —
+[`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) —
 неофициальной интеграции Flutter с [Tracer](https://apptracer.ru).
 
 > Не связан с VK и OK.TECH, не одобрен и не поддерживается ими.
@@ -53,4 +53,4 @@ void main() {
 Сборка конвертов и событий покрыта юнит-тестами и следует документированному
 формату приёма Sentry, но на живом проекте Tracer этот транспорт **не
 проверялся**: для этого нужен проект, заведённый через VK Cloud. См.
-[status.md](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/status.md).
+[status.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/status.md).

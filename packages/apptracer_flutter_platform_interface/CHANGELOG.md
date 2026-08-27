@@ -9,17 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Fixed
-
-- Grouping on Android. Measured against a live Tracer project on 2026-08-26,
-  Tracer keys a group on the top frame's class and method alone: a `StateError`
-  and a `TimeoutException` thrown from two closures inside one `build` landed in
-  the same group. When the caller supplies no `issueKey`, one is now synthesised
-  from the error type and the innermost named frame — the rule iOS already used,
-  moved into Dart so both platforms share it. Neither file nor line goes into
-  the key, so editing code does not scatter a group.
-
-## [0.1.0] - 2026-08-25
+## [0.1.0] - 2026-08-27
 
 ### Added
 
@@ -37,5 +27,15 @@ as pub.dev expects.
   verbatim text whole — trimming that would destroy the only artefact an
   obfuscated trace can be decoded from.
 
-[Unreleased]: https://github.com/komkovkonstantin/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/komkovkonstantin/apptracer_flutter/releases/tag/v0.1.0
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+
+### Fixed
+
+- Grouping on Android. Measured against a live Tracer project on 2026-08-26,
+  Tracer keys a group on the top frame's class and method alone: a `StateError`
+  and a `TimeoutException` thrown from two closures inside one `build` landed in
+  the same group. When the caller supplies no `issueKey`, one is now synthesised
+  from the error type and the innermost named frame — the rule iOS already used,
+  moved into Dart so both platforms share it. Neither file nor line goes into
+  the key, so editing code does not scatter a group.

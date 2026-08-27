@@ -4,8 +4,8 @@ description: >-
   errors to Tracer (apptracer.ru) on platforms where Tracer has no SDK of its
   own and documents the Sentry route instead.
 version: 0.1.0
-repository: https://github.com/komkovkonstantin/apptracer_flutter
-issue_tracker: https://github.com/komkovkonstantin/apptracer_flutter/issues
+repository: https://github.com/KonstantenKomkov/apptracer_flutter
+issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 
 topics:
   - crash-reporting

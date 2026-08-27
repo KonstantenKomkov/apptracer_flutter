@@ -1,6 +1,6 @@
 # apptracer_flutter_ios
 
-The iOS implementation of [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter), an unofficial Flutter
+The iOS implementation of [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter), an unofficial Flutter
 integration with [Tracer](https://apptracer.ru).
 
 > Not affiliated with, endorsed by, or supported by VK or OK.TECH.

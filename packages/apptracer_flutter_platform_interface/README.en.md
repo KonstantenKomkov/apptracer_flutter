@@ -1,6 +1,6 @@
 # apptracer_flutter_platform_interface
 
-The common platform interface for [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter), an unofficial
+The common platform interface for [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter), an unofficial
 Flutter integration with [Tracer](https://apptracer.ru).
 
 > Not affiliated with, endorsed by, or supported by VK or OK.TECH.
@@ -30,4 +30,4 @@ It contains:
 Extend `TracerPlatform` — never implement it — so that new members can be added
 without a breaking change, and register the implementation in `registerWith`.
 
-See the [platform matrix](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/docs/platform-matrix.md).
+See the [platform matrix](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).

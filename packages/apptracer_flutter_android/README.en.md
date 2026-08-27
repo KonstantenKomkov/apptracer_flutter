@@ -1,6 +1,6 @@
 # apptracer_flutter_android
 
-The Android implementation of [`apptracer_flutter`](https://github.com/komkovkonstantin/apptracer_flutter), an unofficial
+The Android implementation of [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter), an unofficial
 Flutter integration with [Tracer](https://apptracer.ru).
 
 > Not affiliated with, endorsed by, or supported by VK or OK.TECH.
@@ -25,7 +25,7 @@ issue.
 
 The Tracer SDK is a `compileOnly` dependency here, so the host application adds
 it — along with the `ru.ok.tracer` Gradle plugin, which is where `appToken`
-comes from. See the [README](https://github.com/komkovkonstantin/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
+comes from. See the [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
 
 Two things this plugin will tell you about at runtime, rather than failing
 silently:
