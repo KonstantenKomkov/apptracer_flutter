@@ -110,11 +110,14 @@ androidPluginToken=...
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Укажите `Application` из пакета — одной строкой в
-`android/app/src/main/AndroidManifest.xml`:
+Добавьте один атрибут к уже существующему тегу `<application>` в
+`android/app/src/main/AndroidManifest.xml` — остальные его атрибуты не трогайте:
 
 ```xml
-<application android:name="ru.apptracer.flutter.TracerApplication" … >
+<application
+    android:name="ru.apptracer.flutter.TracerApplication"
+    android:label="my_app"
+    android:icon="@mipmap/ic_launcher">
 ```
 
 Он включает мягкий рейт-лимит на нефатальные, и это не мелочь: жёсткий дефолт

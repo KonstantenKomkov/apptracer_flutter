@@ -113,11 +113,14 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Name the package's `Application` — one line in
-`android/app/src/main/AndroidManifest.xml`:
+Add one attribute to the `<application>` tag you already have in
+`android/app/src/main/AndroidManifest.xml`, leaving its other attributes alone:
 
 ```xml
-<application android:name="ru.apptracer.flutter.TracerApplication" … >
+<application
+    android:name="ru.apptracer.flutter.TracerApplication"
+    android:label="my_app"
+    android:icon="@mipmap/ic_launcher">
 ```
 
 It turns on the softer non-fatal rate limit, which matters more than it sounds:
