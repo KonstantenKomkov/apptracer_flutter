@@ -28,8 +28,10 @@ That is where the difference between platforms comes from, and where the token
 comes from too. Not skippable: without it the package starts, prints that it is
 disabled, and sends nothing.
 
-**Android.** In `android/settings.gradle.kts` — the plugin lives on Maven
-Central, not on the Gradle Plugin Portal:
+### Android
+
+In `android/settings.gradle.kts` — the plugin lives on Maven Central, not on
+the Gradle Plugin Portal:
 
 ```kotlin
 pluginManagement {
@@ -65,7 +67,12 @@ android {
 
 tracer {
     create("defaultConfig") {
-        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
+        // The appToken is not a secret — the plugin bakes it into the APK
+        // anyway, so a literal here reveals nothing. Reading it from the
+        // environment or from gradle.properties is equally fine.
+        appToken = "your-app-token"
+        // The pluginToken is a secret: it signs the upload of mappings and
+        // symbols and never reaches the application.
         pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
@@ -80,12 +87,14 @@ dependencies {
 }
 ```
 
-On Android the token comes from here, not from Dart. Details and pitfalls are
-in the [Android](#android) section.
+On Android the token comes from here, not from Dart. Pitfalls and optional
+settings are in [Android: the rest of it](#android-the-rest-of-it).
 
-**iOS.** In `ios/Podfile` — `OKTracer` lives in the vendor's own spec repository
-and ships as a static `xcframework`, so both a source line and a change of
-linkage are needed:
+### iOS
+
+In `ios/Podfile` — `OKTracer` lives in the vendor's own spec repository and
+ships as a static `xcframework`, so both a source line and a change of linkage
+are needed:
 
 ```ruby
 source 'https://github.com/odnoklassniki/tracer-ios.git'
@@ -100,22 +109,26 @@ end
 ```
 
 Then `pod install`. The token is passed from Dart, one step below. Details are
-in the [iOS](#ios) section.
+in [iOS: the rest of it](#ios-the-rest-of-it).
 
-**Web.** Nothing to add: the pure-Dart implementation is already inside the
-package. The token comes from Dart too, one step below.
+### Web
+
+Nothing to add: the pure-Dart implementation is already inside the package. The
+token comes from Dart too, one step below.
 
 **3. Wrap the application's start.**
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      // The iOS or web project's appToken. On Android it comes from the
-      // Gradle plugin and this field is ignored.
-      appToken: 'your-app-token',
+      // A build always targets one platform, so there is one field, holding
+      // the token of the project being built for. On Android the field is
+      // ignored: the token comes from the Gradle plugin there.
+      appToken: kIsWeb ? 'js-project-token' : 'ios-project-token',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -123,6 +136,9 @@ void main() {
   );
 }
 ```
+
+If the application ships on only one of those platforms, drop the condition and
+put its token in as a string.
 
 **The `appToken` is not a secret**, and there is little point hiding it: the
 Gradle plugin bakes it into the APK — it sits in `resources.arsc` and
@@ -258,70 +274,20 @@ On a platform with no implementation the package is inert: `isEnabled` is
 `false`, one diagnostic line is printed, nothing throws, and your app still
 starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
-## Platform setup
+## Platform setup: the rest of it
 
-Step 2 of the quick start, in full. Not optional: without it the package starts,
-reports that it is disabled, and sends nothing.
+The code to paste is in the [quick start](#quick-start). This section holds what
+did not fit: pitfalls, optional settings, and how things behave on the platforms
+this release does not support.
 
-### Android
+### Android: the rest of it
 
-The Tracer Android SDK reads its `appToken` from a resource generated at build
-time, so the Gradle plugin has to be applied. There is no runtime alternative.
+The code to paste is in the [quick start](#android). This is what did not
+fit into it.
 
-`android/settings.gradle.kts` — the plugin lives on Maven Central, not on the
-Gradle Plugin Portal:
-
-```kotlin
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-plugins {
-    id("ru.ok.tracer") version "1.4.0" apply false
-}
-```
-
-`android/app/build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-    id("ru.ok.tracer")
-}
-
-android {
-    buildFeatures {
-        // Tracer relies on resources generated at build time. AGP 9 turns this
-        // off by default, and without it the SDK fails at runtime.
-        resValues = true
-    }
-}
-
-tracer {
-    create("defaultConfig") {
-        // Not System.getenv: this runs in the Gradle daemon, which inherits the
-        // environment of the shell that started it and is reused across builds,
-        // so a token exported afterwards stays invisible.
-        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
-        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
-        uploadMapping = true
-        uploadNativeSymbols = true
-    }
-}
-
-dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
-    implementation("ru.ok.tracer:tracer-crash-report")
-    // Optional, for native crashes:
-    implementation("ru.ok.tracer:tracer-crash-report-native")
-}
-```
+Tracer's Android SDK reads the `appToken` from a resource generated at build
+time, which is why the Gradle plugin is required. There is no runtime
+alternative.
 
 Read the `pluginToken` from the environment: it never reaches the application
 and stays a secret, and a secret committed to a repository is a secret that has
@@ -389,31 +355,13 @@ Three things worth knowing:
   the Gradle plugin, defaulting to the build variant name. Set it in the
   `tracer { }` block.
 
-### iOS
+### iOS: the rest of it
 
-The `OKTracer` pod lives in the vendor's own spec repository, so `ios/Podfile`
-has to declare it as a source. Once you add one custom source you must also
-declare the CDN explicitly:
-
-```ruby
-source 'https://github.com/odnoklassniki/tracer-ios.git'
-source 'https://cdn.cocoapods.org/'
-
-platform :ios, '13.0'
-```
+The code to paste is in the [quick start](#ios). This is what did not fit.
 
 `OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
-target using dynamic frameworks pull a static binary in transitively. Change the
-linkage inside `target 'Runner'`:
-
-```ruby
-target 'Runner' do
-  use_frameworks! :linkage => :static   # was: use_frameworks!
-  ...
-end
-```
-
-Without this, `pod install` fails with *"The 'Pods-Runner' target has transitive
+target using dynamic frameworks pull a static binary in transitively — hence the
+change of linkage. Without it, `pod install` fails with *"The 'Pods-Runner' target has transitive
 dependencies that include statically linked binaries"*. It is the same
 requirement Firebase's static frameworks impose, and Flutter supports it.
 

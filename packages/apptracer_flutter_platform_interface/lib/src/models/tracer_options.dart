@@ -50,10 +50,16 @@ class TracerOptions {
         ),
         assert(maxStackFrames >= 0, 'maxStackFrames must not be negative');
 
-  /// The Tracer application token, found under *Настройки* in the Tracer UI.
+  /// The Tracer application token, found under *Настройки → Проект → API*.
   ///
-  /// Used by the iOS and web implementations, which configure the native SDK
-  /// at runtime, and by the Sentry-protocol transport when [dsn] is absent.
+  /// Each platform is a separate Tracer project with a token of its own, and a
+  /// build targets one platform, so this holds the token of whichever project
+  /// is being built for. An application shipping on both iOS and web picks
+  /// between them, `kIsWeb ? … : …`, which is a constant expression and keeps
+  /// the options `const`.
+  ///
+  /// Used by the iOS and web implementations, which configure the SDK at
+  /// runtime, and by the pure-Dart transports.
   ///
   /// **Android ignores this value.** The Android SDK reads its token from
   /// resources generated at build time by the `ru.ok.tracer` Gradle plugin,

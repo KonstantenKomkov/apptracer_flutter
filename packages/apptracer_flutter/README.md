@@ -26,8 +26,10 @@ English version: [README.en.md](README.en.md).
 между платформами, и то, откуда берётся токен. Пропустить шаг нельзя — без него
 пакет запустится, напечатает, что выключен, и ничего не отправит.
 
-**Android.** В `android/settings.gradle.kts` — плагин лежит на Maven Central,
-а не в Gradle Plugin Portal:
+### Android
+
+В `android/settings.gradle.kts` — плагин лежит на Maven Central, а не в Gradle
+Plugin Portal:
 
 ```kotlin
 pluginManagement {
@@ -63,7 +65,12 @@ android {
 
 tracer {
     create("defaultConfig") {
-        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
+        // appToken не секрет — плагин всё равно вшивает его в APK, так что
+        // строка прямо здесь ничего не раскрывает. Читать его из окружения
+        // или из gradle.properties тоже никто не мешает.
+        appToken = "ваш-app-token"
+        // А вот pluginToken секрет: он подписывает загрузку маппингов и
+        // символов и в приложение не попадает.
         pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
@@ -78,12 +85,15 @@ dependencies {
 }
 ```
 
-Токен на Android приходит отсюда, а не из Dart. Подробности и подводные камни —
-в разделе [Android](#android).
+Токен на Android приходит отсюда, а не из Dart. Подводные камни и
+необязательные настройки — в разделе
+[Android: что ещё стоит знать](#android-что-ещё-стоит-знать).
 
-**iOS.** В `ios/Podfile` — `OKTracer` лежит в spec-репозитории вендора, а
-поставляется статическим `xcframework`, поэтому нужны и свой источник, и смена
-типа линковки:
+### iOS
+
+В `ios/Podfile` — `OKTracer` лежит в spec-репозитории вендора, а поставляется
+статическим `xcframework`, поэтому нужны и свой источник, и смена типа
+линковки:
 
 ```ruby
 source 'https://github.com/odnoklassniki/tracer-ios.git'
@@ -98,22 +108,26 @@ end
 ```
 
 Затем `pod install`. Токен передаётся из Dart, шагом ниже. Подробности — в
-разделе [iOS](#ios).
+разделе [iOS: что ещё стоит знать](#ios-что-ещё-стоит-знать).
 
-**Web.** Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен —
-тоже из Dart, шагом ниже.
+### Web
+
+Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен — тоже из
+Dart, шагом ниже.
 
 **3. Оберните запуск приложения.**
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      // appToken проекта iOS или web. На Android он приходит из
-      // Gradle-плагина, и это поле там игнорируется.
-      appToken: 'ваш-app-token',
+      // Сборка всегда идёт под одну платформу, поэтому поле одно, а значение
+      // в нём — токен того проекта, под который собираемся. На Android это
+      // поле игнорируется: там токен приходит из Gradle-плагина.
+      appToken: kIsWeb ? 'токен-JS-проекта' : 'токен-iOS-проекта',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -121,6 +135,9 @@ void main() {
   );
 }
 ```
+
+Если приложение выходит только на одной из этих платформ, условие не нужно —
+поставьте её токен строкой.
 
 **`appToken` — не секрет,** и прятать его особого смысла нет: Gradle-плагин
 вшивает его в APK (он лежит в `resources.arsc` и `classes.dex` — можно
@@ -256,70 +273,19 @@ Dart у Tracer есть, загрузка проходит — но символ
 стартует. Подробности — в
 [platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
-## Платформенная настройка
+## Платформенная настройка: подробности
 
-Шаг 2 быстрого старта целиком. Обязателен: без него пакет стартует, сообщает,
-что выключен, и ничего не отправляет.
+Код для вставки — в [быстром старте](#быстрый-старт). Здесь то, что в него не
+поместилось: подводные камни, необязательные настройки и
+поведение на платформах, которых этот релиз не поддерживает.
 
-### Android
+### Android: что ещё стоит знать
+
+Код для вставки — в [быстром старте](#android). Здесь то, что в него не
+поместилось.
 
 Android SDK Tracer читает `appToken` из ресурса, который генерируется во время
 сборки, поэтому Gradle-плагин обязателен. Альтернативы в рантайме нет.
-
-`android/settings.gradle.kts` — плагин лежит на Maven Central, а не в Gradle
-Plugin Portal:
-
-```kotlin
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-plugins {
-    id("ru.ok.tracer") version "1.4.0" apply false
-}
-```
-
-`android/app/build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-    id("ru.ok.tracer")
-}
-
-android {
-    buildFeatures {
-        // Tracer опирается на ресурсы, встраиваемые при сборке. Начиная с
-        // AGP 9 фича по умолчанию выключена, и без неё SDK падает в рантайме.
-        resValues = true
-    }
-}
-
-tracer {
-    create("defaultConfig") {
-        // Не System.getenv: код исполняется в демоне Gradle, который наследует
-        // окружение запустившего его шелла и живёт между сборками, поэтому
-        // экспортированный позже токен останется невидимым.
-        appToken = providers.environmentVariable("TRACER_APP_TOKEN").orNull
-        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
-        uploadMapping = true
-        uploadNativeSymbols = true
-    }
-}
-
-dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
-    implementation("ru.ok.tracer:tracer-crash-report")
-    // По желанию, для нативных крашей:
-    implementation("ru.ok.tracer:tracer-crash-report-native")
-}
-```
 
 `pluginToken` читайте из окружения: он не попадает в приложение и остаётся
 секретом, а секрет, попавший в репозиторий, — это утёкший секрет. С `appToken`
@@ -385,31 +351,13 @@ class MyApplication : Application(), HasTracerConfiguration {
   Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
   `tracer { }`.
 
-### iOS
+### iOS: что ещё стоит знать
 
-Под `OKTracer` лежит в собственном spec-репозитории вендора, поэтому
-`ios/Podfile` должен объявить его источником. Как только добавлен один
-кастомный источник, CDN тоже нужно указать явно:
-
-```ruby
-source 'https://github.com/odnoklassniki/tracer-ios.git'
-source 'https://cdn.cocoapods.org/'
-
-platform :ios, '13.0'
-```
+Код для вставки — в [быстром старте](#ios). Здесь то, что в него не поместилось.
 
 `OKTracer` поставляется **статическим** `xcframework`, а CocoaPods не позволяет
-таргету с динамическими фреймворками получить статический бинарник транзитивно.
-Поменяйте тип линковки внутри `target 'Runner'`:
-
-```ruby
-target 'Runner' do
-  use_frameworks! :linkage => :static   # было: use_frameworks!
-  ...
-end
-```
-
-Без этого `pod install` падает с ошибкой *«The 'Pods-Runner' target has
+таргету с динамическими фреймворками получить статический бинарник транзитивно
+— отсюда и смена типа линковки. Без неё `pod install` падает с ошибкой *«The 'Pods-Runner' target has
 transitive dependencies that include statically linked binaries»*. То же самое
 требуют статические фреймворки Firebase; Flutter это поддерживает.
 
