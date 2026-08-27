@@ -178,9 +178,16 @@ end
 Then `pod install`. The `appToken` is passed from Dart, one step below.
 
 The iOS project's `pluginToken` plays no part here: it is needed when uploading
-the `dSYM`, without which native crashes stay unreadable in the console. The
-vendor ships a Fastlane plugin and an Xcode Run Script for that, and by hand it
-is one request — a zip of the `.dSYM` bundles the build leaves behind:
+the `dSYM`, without which native crashes stay unreadable in the console.
+
+**This is not meant to be done by hand.** The vendor ships a Fastlane plugin and
+an Xcode Run Script phase that fires when a release is archived, after which
+there is nothing to remember — the same way the Gradle plugin handles it on
+Android. Set it up from Tracer's documentation, not from here: this package has
+no part in uploading symbols.
+
+The request below is for when there is no pipeline of your own, or when an
+already-archived build needs its symbols re-sent:
 
 ```sh
 archive=build/ios/archive/Runner.xcarchive
