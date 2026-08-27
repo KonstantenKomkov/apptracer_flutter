@@ -182,17 +182,26 @@ the `dSYM`, without which native crashes stay unreadable in the console.
 
 They upload themselves. At `pod install` the package adds a build phase to
 `Runner.xcodeproj`, and it ships the `dSYM` on every **release** build — the same
-thing Firebase Crashlytics does. Nothing to call; all it needs is the token:
+thing Firebase Crashlytics does. Nothing to call; all it needs is the token, and
+it looks for it in two places.
 
-```sh
-# ios/tracer_plugin_token — next to the Podfile, and in .gitignore
-echo IOS_PLUGIN_TOKEN > ios/tracer_plugin_token
+First, a file at `ios/tracer_plugin_token`, next to the `Podfile`. Create it and
+put one line inside: the iOS project's `pluginToken` from the Tracer console.
+The whole file is this:
+
+```
+e4f1b0c2-8a7d-4c19-9f3e-2b6d5a0c7e18
 ```
 
-CI needs no file: the phase reads `TRACER_IOS_PLUGIN_TOKEN` (or
-`TRACER_PLUGIN_TOKEN`) from the build environment. With no token it warns and
-skips; when an upload fails it warns and carries on, because failing an archive
-over a network hiccup is worse than producing one without symbols.
+It holds a secret, so add it to `.gitignore`.
+
+Second, an environment variable, which is what CI usually supplies: the phase
+reads `TRACER_IOS_PLUGIN_TOKEN`, or `TRACER_PLUGIN_TOKEN` if that is unset. Then
+no file is needed.
+
+With no token the phase warns and skips; when an upload fails it warns and
+carries on, because failing an archive over a network hiccup is worse than
+producing one without symbols.
 
 To turn it off, delete the phase in Xcode — it is labelled `[apptracer_flutter]`
 — or set `TRACER_SKIP_IOS_PHASE=1`, and `pod install` will leave the project
