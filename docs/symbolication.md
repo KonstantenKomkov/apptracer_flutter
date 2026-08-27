@@ -84,6 +84,18 @@ is set from whether any frame is address-only — that is, whether the event nee
 `flutter symbolize` — so it reads `true` for a `--split-debug-info` build that
 was never obfuscated. Read it as "needs symbolication".
 
+Narrowing it to genuinely obfuscated builds would be a mistake, and not for want
+of a way to tell. A trace cannot tell (finding 4), but the runtime can: measured
+2026-08-27, `_ObfuscationProbeClass().runtimeType` prints `_ObfuscationProbeClass`
+in a `--split-debug-info` build and `_Lp` with `--obfuscate` on top. The reason
+to keep the flag as it is comes from what it is for. An event from an
+unobfuscated `--split-debug-info` build needs the archived symbol file exactly as
+much as an obfuscated one does, so hiding the flag there would remove the hint
+precisely where it is needed. The fact worth carrying is "this event needs
+`flutter symbolize`", which is what the flag measures; whether a release really
+was obfuscated is a build-time assertion, and it belongs next to
+`tool/verify_build_id.sh` rather than on every event.
+
 ## Tracer's symbol channels
 
 Tracer documents three, and none of them is for Dart:

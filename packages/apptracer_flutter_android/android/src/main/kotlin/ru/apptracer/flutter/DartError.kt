@@ -82,7 +82,7 @@ internal class DartError(message: String) : RuntimeException(message) {
                     val symbol = frame["symbol"] as? String
                     elements.add(
                         StackTraceElement(
-                            "dart.obfuscated",
+                            "dart.unsymbolized",
                             symbol ?: "frame",
                             "virt $virt",
                             0

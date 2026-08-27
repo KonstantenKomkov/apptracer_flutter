@@ -73,7 +73,7 @@ class DartErrorTest {
 
         val element = DartError.toStackTrace(frames).single()
 
-        assertEquals("dart.obfuscated", element.className)
+        assertEquals("dart.unsymbolized", element.className)
         assertEquals("_kDartIsolateSnapshotInstructions+0x24b2f0", element.methodName)
         assertTrue(element.fileName!!.contains("00000000002cc2f0"))
     }

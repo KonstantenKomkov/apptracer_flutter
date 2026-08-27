@@ -161,8 +161,8 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             }
         }
         properties["dart.exception_type"] = exceptionType
-        if stack?["obfuscated"] as? Bool == true {
-            properties["dart.obfuscated"] = "true"
+        if stack?["needsSymbolication"] as? Bool == true {
+            properties["dart.needs_symbolication"] = "true"
             if let buildId = stack?["buildId"] as? String {
                 properties["dart.build_id"] = buildId
             }

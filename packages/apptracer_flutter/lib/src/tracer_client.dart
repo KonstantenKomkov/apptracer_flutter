@@ -260,9 +260,9 @@ class TracerClient {
     final buffer = StringBuffer()
       ..writeln('--- apptracer_flutter: verbatim Dart stack trace ---')
       ..writeln(event.title);
-    if (event.stackTrace.isObfuscated) {
+    if (event.stackTrace.needsSymbolication) {
       buffer.writeln(
-        'obfuscated build; decode with: flutter symbolize '
+        'address-only trace; decode with: flutter symbolize '
         '-d app.<platform>-<arch>.symbols',
       );
     }
@@ -271,7 +271,7 @@ class TracerClient {
     // flutter symbolize, и он же единственный, ради которого вся эта запись
     // существует. Читаемый трейс symbolize не нужен, поэтому его номера
     // кадров можно обезвредить.
-    final raw = event.stackTrace.isObfuscated
+    final raw = event.stackTrace.needsSymbolication
         ? event.stackTrace.raw
         : defuseFrameNumbers(event.stackTrace.raw);
     if (maxBytes <= 0) {

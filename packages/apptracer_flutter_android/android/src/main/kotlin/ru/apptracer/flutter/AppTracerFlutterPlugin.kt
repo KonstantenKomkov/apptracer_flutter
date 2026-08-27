@@ -180,8 +180,8 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         customKeys?.forEach { (key, value) -> Tracer.setCustomProperty(key, value) }
 
         Tracer.setCustomProperty(KEY_DART_EXCEPTION_TYPE, exceptionType)
-        if (stack?.get("obfuscated") == true) {
-            Tracer.setCustomProperty(KEY_DART_OBFUSCATED, "true")
+        if (stack?.get("needsSymbolication") == true) {
+            Tracer.setCustomProperty(KEY_DART_NEEDS_SYMBOLICATION, "true")
             (stack["buildId"] as? String)?.let {
                 Tracer.setCustomProperty(KEY_DART_BUILD_ID, it)
             }
@@ -257,7 +257,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         const val TAG = "apptracer_flutter"
         const val CHANNEL_NAME = "ru.apptracer.flutter/tracer"
         const val KEY_DART_EXCEPTION_TYPE = "dart.exception_type"
-        const val KEY_DART_OBFUSCATED = "dart.obfuscated"
+        const val KEY_DART_NEEDS_SYMBOLICATION = "dart.needs_symbolication"
         const val KEY_DART_BUILD_ID = "dart.build_id"
     }
 }

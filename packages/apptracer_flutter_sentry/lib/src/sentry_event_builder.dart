@@ -53,7 +53,8 @@ Map<String, Object?> buildSentryEvent({
       // nowhere better to put it, and `extra` is shown in Tracer under
       // «Данные» → «Context».
       'dart.stack_trace': event.stackTrace.raw,
-      if (event.stackTrace.isObfuscated) 'dart.obfuscated': 'true',
+      if (event.stackTrace.needsSymbolication)
+        'dart.needs_symbolication': 'true',
       if (event.stackTrace.buildId != null)
         'dart.build_id': event.stackTrace.buildId,
     },

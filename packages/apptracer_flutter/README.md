@@ -64,7 +64,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "ANDROID_APP_TOKEN"
-        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+        pluginToken = providers.environmentVariable("ANDROID_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -91,7 +91,7 @@ dependencies {
 
 ```sh
 # .env
-TRACER_PLUGIN_TOKEN=ANDROID_PLUGIN_TOKEN
+ANDROID_PLUGIN_TOKEN=...
 ```
 
 ```sh
@@ -107,7 +107,7 @@ set -a && . ./.env && set +a && flutter build apk --release
 ```
 
 В CI файла нет и не нужно: значение приходит из секретов сборочной системы,
-например `TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}` в GitHub
+например `ANDROID_PLUGIN_TOKEN: ${{ secrets.ANDROID_PLUGIN_TOKEN }}` в GitHub
 Actions.
 
 Если возиться с окружением не хочется, есть путь короче: положить токен в

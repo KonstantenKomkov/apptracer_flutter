@@ -65,7 +65,7 @@ android {
 tracer {
     create("defaultConfig") {
         appToken = "ANDROID_APP_TOKEN"
-        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+        pluginToken = providers.environmentVariable("ANDROID_PLUGIN_TOKEN").orNull
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -92,7 +92,7 @@ Put it in a `.env` at the project root, next to `pubspec.yaml`:
 
 ```sh
 # .env
-TRACER_PLUGIN_TOKEN=ANDROID_PLUGIN_TOKEN
+ANDROID_PLUGIN_TOKEN=...
 ```
 
 ```sh
@@ -108,7 +108,7 @@ set -a && . ./.env && set +a && flutter build apk --release
 ```
 
 CI needs no file: the value comes from the build system's secrets, say
-`TRACER_PLUGIN_TOKEN: ${{ secrets.TRACER_PLUGIN_TOKEN }}` in GitHub Actions.
+`ANDROID_PLUGIN_TOKEN: ${{ secrets.ANDROID_PLUGIN_TOKEN }}` in GitHub Actions.
 
 If you would rather not deal with the environment at all, there is a shorter
 way: put the token in `~/.gradle/gradle.properties`, which is outside the

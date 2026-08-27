@@ -72,7 +72,12 @@ class DartStackTrace {
 
   /// Whether any frame is address-only and therefore unreadable without the
   /// `--split-debug-info` symbol file.
-  bool get isObfuscated =>
+  ///
+  /// Not a statement about `--obfuscate`. `--split-debug-info` alone turns
+  /// traces into addresses, and obfuscation on top changes nothing that is
+  /// visible in one — measured 2026-08-27, see `docs/symbolication.md`,
+  /// finding 4.
+  bool get needsSymbolication =>
       frames.any((DartStackFrame frame) => frame.needsSymbolication);
 
   /// Whether the trace carries no frames at all.
@@ -297,7 +302,7 @@ class DartStackTrace {
     return <String, Object?>{
       'raw': raw,
       'frames': frames.map((DartStackFrame f) => f.toMap()).toList(),
-      'obfuscated': isObfuscated,
+      'needsSymbolication': needsSymbolication,
       if (buildId != null) 'buildId': buildId,
       if (os != null) 'os': os,
       if (architecture != null) 'arch': architecture,

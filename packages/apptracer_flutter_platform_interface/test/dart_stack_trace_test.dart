@@ -45,7 +45,7 @@ void main() {
     test('parses VM frames with member, uri, line and column', () {
       final trace = DartStackTrace.parse(_vmTrace);
 
-      expect(trace.isObfuscated, isFalse);
+      expect(trace.needsSymbolication, isFalse);
       expect(trace.frames, hasLength(5));
 
       final first = trace.frames.first;
@@ -82,7 +82,7 @@ void main() {
     test('parses obfuscated frames and the symbolication header', () {
       final trace = DartStackTrace.parse(_obfuscatedTrace);
 
-      expect(trace.isObfuscated, isTrue);
+      expect(trace.needsSymbolication, isTrue);
       expect(trace.buildId, 'b71885097a7ebc4d1ab80642f606c4be');
       expect(trace.os, 'android');
       expect(trace.architecture, 'arm64');
@@ -164,7 +164,7 @@ void main() {
     test('round-trips through toMap', () {
       final map = DartStackTrace.parse(_obfuscatedTrace).toMap();
 
-      expect(map['obfuscated'], isTrue);
+      expect(map['needsSymbolication'], isTrue);
       expect(map['buildId'], 'b71885097a7ebc4d1ab80642f606c4be');
       expect((map['frames']! as List<Object?>), hasLength(3));
       expect(map['raw'], _obfuscatedTrace);
