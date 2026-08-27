@@ -34,6 +34,8 @@ tool/
   check.sh                  format + analyze + test + publish dry-run
   verify_build_id.sh        валит релиз, к которому не подходят символы Dart
   prepare_dart_symbols.sh   готовит символы Dart AOT для загрузчика Tracer
+                            (загрузка проходит, но Tracer их не применяет —
+                            см. symbolication.md, находка 2)
   upload_web_sourcemaps.sh  загрузка сорсмап, падающая при любой осечке
   elf_build_id.py           чтение GNU build id без зависимостей
 ```

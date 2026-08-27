@@ -4,7 +4,7 @@ What happens to a Dart stack trace in a release build, what Tracer can and
 cannot do about it, and what to do so you are not left holding an undecodable
 crash six months from now.
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-27.
 
 ## The problem
 
@@ -119,9 +119,13 @@ app.android-arm64.symbols build id: dbcf9df94217e8627e98f3eecfd3d7d7
 Identical. That is what makes `flutter symbolize` work — and, as the next
 finding shows, rather more than that.
 
-### 2. Tracer's own `dump_syms` reads the Dart symbol file — confirmed
+### 2. Tracer's own `dump_syms` reads the Dart symbol file — confirmed, but the symbols are never applied
 
-This is the useful one.
+The upload half of this works and is worth understanding. The other half does
+not: measured 2026-08-27, the SDK's crash reporter records `libapp.so` with a
+zero build id, so nothing the backend holds can be matched to it. The measurement
+and its cause are at the end of this finding; read to there before acting on any
+of it.
 
 The `ru.ok.tracer` Gradle plugin ships breakpad `dump_syms` binaries for macOS,
 Linux and Windows inside `tracer-plugin-1.4.0.jar`. Its
@@ -158,7 +162,17 @@ accident, comes from the plugin itself. One of its own warning messages reads:
 > different copies..." warnings with `dontWarnAboutLibraryConflicts = true`
 
 `libapp.so` is a library packaged into the application, and better symbols for
-it are exactly a symbol override.
+it are exactly a symbol override. The vendor confirmed on 2026-08-27 that this
+is what the feature was built for:
+
+> да, можно положить libapp.so в папку, скормить ее в additionalLibrariesPath и
+> оно возьмёт символы с бонусной папочной либы […] вообще все это делалось для
+> сложных запросов вида «мы очень не хотим чтоб агп в принципе никогда не видел
+> unstripped-либы, поэтому мы хотим способ перекрыть stripped-либы в билде
+> unstripped-либами снаружи»
+
+Which is this case exactly, with the Dart symbol file standing in for the
+unstripped library.
 
 The plugin also grades what it parses. `ParsedSymbolFile.Quality` has three
 values — `BROKEN`, `CFI_ONLY`, `FULL` — and libraries without usable symbols are
@@ -167,8 +181,28 @@ will be incomplete". The measurements above map straight onto that: the stripped
 `libapp.so`, with only `PUBLIC` and `STACK CFI` records, is `CFI_ONLY`; the Dart
 symbol file, with 7 545 `FUNC` entries and line tables, is `FULL`.
 
-So the vendor's existing native-symbol channel can carry Dart AOT symbols. Two
-details have to be handled first.
+So the vendor's existing native-symbol channel can carry Dart AOT symbols. What
+follows is how the plugin actually handles the collision, read out of the 1.4.0
+bytecode, because those details decide whether the upload happens at all.
+
+**The staged file displaces the real one; it does not join it.**
+`CollectSymbolsTask.collect()` walks `merged_native_libs` first and
+`additionalLibrariesPath` second, keying every file it parses by (file name,
+build id). When the second walk lands on a key the first already produced, the
+earlier entry is removed from the upload list and the newcomer takes its place,
+with its `.sym` copied over the old one. Exactly one `libapp.so` per build id is
+ever uploaded, and with staging on it is the Dart symbol file.
+
+**No conflict warning fires, and `dontWarnOnLibraryConflicts` is unnecessary.**
+Before replacing, `handleSameSymbols` compares the two: a `FULL` newcomer over a
+non-`FULL` incumbent is logged "assuming symbol upgrade" at debug level and
+returns. The "Multiple different copies…" warning is only for two copies that
+are not ordered by quality — as the vendor puts it, «потому там варнинги на
+случай конфликтов только если ожни символы не-очевидно-лучше других». Nor has
+the flag disappeared, contrary to their recollection: `TracerConfig` and
+`MergedTracerConfig` in 1.4.0 both carry `dontWarnOnLibraryConflicts`. Only the
+warning text above spells it `dontWarnAboutLibraryConflicts`, which is the typo
+reported back to them.
 
 **The module name.** `dump_syms` takes the `MODULE` name from the file name, so
 as shipped the upload would be called `app.android-arm64.symbols` rather than
@@ -177,16 +211,40 @@ the name and the build id match — confirmed by re-running `dump_syms` on the
 renamed copy. `ParsedSymbolFile` exposes `moduleName`, `buildId` and
 `isProperBuildId`, so both are read and checked.
 
-**The existence check.** Before uploading, the plugin asks the API whether
-symbols for the build already exist (`nativesymbol/exists`) and skips the upload
-if they do — and an ordinary build will already have uploaded the stripped
-`libapp.so`. `forceUploadNativeSymbols = true` is therefore **required**, not
-optional; without it the Dart symbols are silently never sent and the experiment
-measures nothing. The plugin says as much when forced: "Uploading them anyway
-due to forced upload".
+**`forceUploadNativeSymbols` is not needed.** It gates two separate things in
+`collect()`, in this order:
 
-`tool/prepare_dart_symbols.sh` does that, keyed by build id so a multi-ABI build
-does not collide:
+1. Entries whose quality is not `FULL` are gathered into a "no usable symbols"
+   list. Without the flag they are removed from the upload list; with it, the
+   plugin logs "Uploading them anyway due to forced upload" and keeps them.
+2. Only afterwards, and only when the flag is off, `checkSymbolsExistAtApi` asks
+   `nativesymbol/exists` and drops whatever the backend already holds.
+
+The staged Dart `libapp.so` is `FULL`, so step 1 never touches it, and nothing
+else carries its (name, build id) into step 2 — the stripped copy was displaced
+by the walk, and in an unstaged build step 1 would have dropped it anyway for
+being `CFI_ONLY`. An unforced build uploads the Dart symbols exactly once, which
+is also the vendor's advice:
+
+> forceUpload лучше не включать, он отключает только проверку на наличие
+> такихто символов на бекенде (оно по дефолту не загружает если уже есть либа с
+> таким же именем и build id, ибо натив обычно нечасто пересобирают)
+
+This corrects an earlier reading in this document. The live run of 2026-08-26
+forced the upload and printed "Uploading them anyway due to forced upload", and
+that line was taken here as proof that `nativesymbol/exists` would otherwise
+have skipped the Dart symbols. It is not: the line belongs to step 1, and it was
+about the other, genuinely symbol-less libraries in the build.
+
+One case still wants the flag: repair. If some `libapp.so` already reached the
+backend under a given build id — a forced run that sent the stripped copy, say —
+the exists check will skip the good symbols and say nothing about it. Staging
+from the first build of that build id avoids the situation entirely. Whether a
+forced re-upload then replaces what the backend holds is not visible from the
+client.
+
+`tool/prepare_dart_symbols.sh` does the staging, keyed by build id so a
+multi-ABI build does not collide:
 
 ```sh
 flutter build apk --release --obfuscate --split-debug-info=build/symbols
@@ -199,43 +257,110 @@ then point the Gradle plugin at it:
 ```groovy
 tracer {
     create('defaultConfig') {
-        additionalLibrariesPath = "$projectDir/../build/symbols/tracer-upload/<build-id>"
+        additionalLibrariesPath = "$projectDir/../build/symbols/tracer-upload"
     }
 }
 ```
 
+The parent directory is enough for a build covering several architectures: the
+walk is recursive and the entries are keyed by (name, build id), so the three
+staged copies stay apart.
+
 The example wires this up behind an environment variable:
 
 ```sh
-DART_SPLIT_DEBUG_INFO=$PWD/build/symbols/tracer-upload/<build-id> \
+DART_SPLIT_DEBUG_INFO=$PWD/build/symbols/tracer-upload \
 flutter build apk --release -Ptracer.enabled=true \
   --obfuscate --split-debug-info=build/symbols
 ```
 
-The example's `tracer.gradle` sets `forceUploadNativeSymbols = true` whenever
-that variable is present, for the reason given above.
-
 **Upload confirmed 2026-08-26.** Against a live project the plugin logged
 `Uploading libapp.so:<build-id>` for all three staged architectures, with ids
-matching the staged files, and the build succeeded. The same run printed
-`Uploading them anyway due to forced upload`, which confirms the
-`nativesymbol/exists` check would have skipped them otherwise.
+matching the staged files, and the build succeeded.
 
-**What is still unconfirmed.** That the upload is *applied*.
-Everything above was measured locally with the vendor's own tooling; whether
-Tracer's backend then resolves Dart frames against those symbols needs a real
-project and a real crash. Question 1 in
-[questions-for-vendor.md](questions-for-vendor.md) asks exactly this.
+**Matching is by build id — answered 2026-08-27.** This was the open question,
+and the way the scenario was most likely to fail quietly: `ParsedSymbolFile`
+carries an `originalLibHash`, and the staged file is not the shipped library, so
+that hash differs. The vendor:
 
-One specific thing to watch. `ParsedSymbolFile` also carries an
-`originalLibHash` — a hash of the file the symbols were generated from. The
-staged file is the Dart symbol file, not the real `libapp.so`, so that hash
-differs from the shipped library's. If the backend matches on the build id it
-does not matter; if it matches on the hash, the upload will land under an
-identity nothing looks up. That is the most likely way for this to fail
-quietly.
+> сопоставление как у minidump-stackwalk - по этим типаууидам от
+> .note.gnu.build-id, сценарий должен сработать
 
-Two caveats before turning it on:
+The bytecode closes the rest of it. `originalLibHash` is a SHA-1 of the file
+`dump_syms` read, it is computed only inside `handleSameSymbols` to decide
+whether two copies are the same file, and it is never part of the upload.
+Nothing derived from the file's contents reaches Tracer at all; the identity is
+the `MODULE` id, which both files carry identically because both carry the same
+`.note.gnu.build-id`.
+
+**And they are still not applied. Measured 2026-08-27 — the scenario does not
+work today.** «Сценарий должен сработать» was the vendor's considered opinion;
+this is the measurement, and it disagrees. The cause is on the client, in the
+SDK's own crash reporter, and it makes the whole channel unusable for Dart no
+matter what is uploaded.
+
+The test needed a crash whose faulting instruction is *inside* Dart AOT code —
+the example's `crashInsideDartCode` stores through a `dart:ffi` pointer to an
+unmapped address, which compiles to a plain instruction in
+`_kDartIsolateSnapshotInstructions`. A signal raised from Kotlin does not do:
+it unwinds through libc and ART, and its report carries no `libapp.so` frame to
+symbolicate.
+
+Three runs, one build id, symbols uploaded before all of them:
+
+| run | module in the report | offset | debug id |
+|---|---|---|---|
+| default packaging | `base.apk` | `0xa5234` | `000…0` |
+| `useLegacyPackaging = true` | `libapp.so` | `0xa5234` | `000…0` |
+| the same, plus the first `PT_LOAD` patched to `r-x` | `libapp.so` | `0xa5234` | `000…0` |
+
+None can match: the upload is keyed `libapp.so` / `F99DCFDB6338…30`. Packaging
+fixes the module *name* and nothing else.
+
+Both symptoms have one cause. Tracer's reporter identifies a module by **the
+mapping the faulting address falls in**, and reads the ELF identity from that
+mapping's start. `libapp.so` is mapped in pieces, one per `PT_LOAD`, and the
+code lives at file offset `0xb0000`; the mapping holding the crash therefore
+begins in the middle of the file, where there is neither an ELF header nor a
+`.note.gnu.build-id`. Hence the zero id, and hence a module base short by
+exactly the code segment's offset: `0x155234 - 0xb0000 = 0xa5234`, the number in
+the report.
+
+The program headers say which libraries this hits:
+
+| library | code at file offset | build-id note |
+|---|---|---|
+| `libapp.so` | `0xb0000` | `0x1c8` — in a different mapping |
+| `libflutter.so` | `0x454080` | `0x270` — in a different mapping |
+| `libtracernative.so` | `0x0` | `0x238` — in the same mapping as the code |
+
+Any library whose code is not at file offset 0 loses its identity, which is why
+`libapp.so` and `libflutter.so` are the two zero-id modules in the report while
+the vendor's own `libtracernative.so` is fine.
+
+**There is no workaround on the application's side; this was measured, not
+assumed.** The obvious candidate was the segment layout: make the first
+`PT_LOAD` executable, so that the lowest executable mapping of the file starts
+at offset 0 and carries the ELF header. Patching `p_flags` from `r--` to `r-x`
+in the shipped `libapp.so`, re-zipping and re-signing produced an app that runs
+normally — and a report byte for byte identical to the one before it, zeros and
+`0xa5234` included. The reporter never looks at the file's other mappings. Upstream
+breakpad handles this by subtracting the mapping's file offset before reading
+the ELF; whatever Tracer's reporter is built from does not.
+
+So even a matching id would not be enough: every address is `0xb0000` short,
+and the names resolved would be the wrong ones.
+
+**What this means in practice.** Staging Dart symbols has no effect today. The
+upload works, the vendor's matching rule is the right one, and the client never
+produces anything to match — so `flutter symbolize` on the archived symbol file
+remains the only way to read an obfuscated Dart trace on Android. This is
+reported back to the vendor as a defect in
+[questions-for-vendor.md](questions-for-vendor.md); if it is fixed, check 16 in
+[live-verification-plan.md](live-verification-plan.md) re-runs in minutes,
+because everything else in the chain is already proven.
+
+Two caveats, if you enable the staging anyway:
 
 * Even if it works, it helps **native** crashes and minidumps whose addresses
   land inside `libapp.so`. A Dart error reported through
@@ -303,13 +428,13 @@ certainty rather than a check.
    does nothing for Dart frames, but it is what makes the Kotlin and Java halves
    of a native crash readable.
 
-5. **Optionally, stage the Dart symbols for upload too** (finding 2), if a
-   native crash inside `libapp.so` is something you expect to have to read and
-   you are comfortable with the caveats:
-
-   ```sh
-   tool/prepare_dart_symbols.sh build/symbols
-   ```
+5. **Do not bother staging the Dart symbols for upload.** The channel accepts
+   them (finding 2) but the SDK's crash reporter records `libapp.so` with a zero
+   build id and a shifted base, so nothing is ever matched against them —
+   measured 2026-08-27. `tool/prepare_dart_symbols.sh` and the wiring around it
+   are kept because the defect is on the vendor's side and may be fixed; until
+   it is, staging only sends your source paths and Dart symbol names to a server
+   for no return.
 
 ## Not obfuscating
 

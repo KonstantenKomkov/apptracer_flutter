@@ -71,19 +71,25 @@ tracer {
         // build id. Measured locally: the plugin's own dump_syms turns that file
         // into 7545 named FUNC entries, against 0 for the stripped libapp.so.
         //
-        // Whether Tracer applies them to Dart frames is not confirmed, and the
-        // symbol file carries absolute build-machine paths. Read
-        // docs/symbolication.md before enabling this.
+        // The plugin walks additionalLibrariesPath after the merged native libs
+        // and keys entries by (name, build id), so the staged file *replaces*
+        // the stripped libapp.so rather than joining it — which is why
+        // forceUploadNativeSymbols is deliberately left off: the staged file
+        // parses as FULL, so neither of the two things that flag gates — the
+        // drop of non-FULL libraries, then the `nativesymbol/exists` check —
+        // can touch it (docs/symbolication.md, finding 2).
+        //
+        // Measured 2026-08-27: the upload works and is still pointless. The
+        // SDK's crash reporter records libapp.so with a zero build id and a
+        // base shifted by the executable segment's offset, so nothing is ever
+        // matched against these symbols. Kept wired up because the defect is
+        // the vendor's and may be fixed; see finding 2 before enabling it.
+        //
+        // The symbol file carries absolute build-machine paths and every Dart
+        // symbol name. Read docs/symbolication.md before enabling this.
         def splitDebugInfo = providers.environmentVariable('DART_SPLIT_DEBUG_INFO').getOrNull()
         if (splitDebugInfo) {
             additionalLibrariesPath = splitDebugInfo
-            // Required, not optional. The plugin asks the API whether symbols
-            // for this build already exist (`nativesymbol/exists`) and skips
-            // the upload if they do — and the ordinary build has usually
-            // uploaded the stripped libapp.so already. Without forcing, the
-            // Dart symbols are silently never sent and the experiment quietly
-            // measures nothing.
-            forceUploadNativeSymbols = true
         }
     }
 }

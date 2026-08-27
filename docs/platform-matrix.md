@@ -178,9 +178,15 @@ bytecode:
   [symbolication.md](symbolication.md) first: mappings apply only to events
   received after the upload, and there is no re-symbolication, so a late upload
   does not rescue crashes already collected.
-* **`forceUploadNativeSymbols`** overrides the plugin's `nativesymbol/exists`
-  check. Required for the Dart symbol experiment; see
+* **`forceUploadNativeSymbols`** does two things, in this order: it keeps
+  libraries the plugin graded as unusable (`quality != FULL`) in the upload
+  list, and it skips the `nativesymbol/exists` check. Left **off** here,
+  including for the Dart symbol upload, which needs neither; see
   [symbolication.md](symbolication.md).
+* **`additionalLibrariesPath`** carries Dart AOT symbols into the native-symbol
+  channel, and the upload works — but as of 2026-08-27 nothing is ever matched
+  against them, because the SDK records `libapp.so` with a zero build id. Same
+  document, finding 2.
 * **`isDisabled`** switches the SDK off for a build variant entirely. This
   package handles it gracefully: `Tracer.isDisabled` is checked at startup and
   the integration reports "collection is off" rather than failing.

@@ -21,10 +21,21 @@
 # directory makes the name match too, so the uploaded symbols line up with the
 # library they describe on both name and build id.
 #
+# The plugin walks additionalLibrariesPath *after* the merged native libs and
+# keys every entry by (file name, build id), so the staged file replaces the
+# stripped libapp.so instead of joining it. Leave forceUploadNativeSymbols off:
+# the staged file parses as FULL, so it is never dropped as unusable, and
+# nothing else claims its (name, build id) at the `nativesymbol/exists` check.
+# The vendor confirmed on 2026-08-27 that the backend matches on the build id
+# from .note.gnu.build-id, the way minidump-stackwalk does.
+#
 # Caveats worth reading before you turn this on
 # ---------------------------------------------
-# * Whether Tracer's backend then applies these symbols to Dart frames has NOT
-#   been confirmed end to end; see docs/symbolication.md.
+# * MEASURED 2026-08-27: the upload works and buys nothing. Tracer's crash
+#   reporter records libapp.so with a zero build id and a base shifted by the
+#   executable segment's offset, so these symbols are never matched to a frame.
+#   Kept because the defect is the vendor's and may be fixed; until then use
+#   `flutter symbolize`. See docs/symbolication.md, finding 2.
 # * The symbol file embeds absolute source paths from the build machine and the
 #   full set of Dart symbol names. Uploading it sends both to Tracer.
 #
@@ -69,6 +80,7 @@ fi
 if [ "$staged" -gt 1 ]; then
   echo
   echo "Note: $staged architectures staged in separate directories. Point"
-  echo "additionalLibrariesPath at the one matching the variant you are"
-  echo "building, or upload them in separate builds."
+  echo "additionalLibrariesPath at $staging_dir to cover them all — the walk is"
+  echo "recursive and entries are keyed by name and build id — or at a single"
+  echo "subdirectory to upload one variant."
 fi

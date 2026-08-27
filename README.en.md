@@ -32,6 +32,7 @@ tool/
   check.sh                  format + analyze + test + publish dry-run
   verify_build_id.sh        fail a release whose Dart symbols do not match it
   prepare_dart_symbols.sh   stage Dart AOT symbols for the Tracer uploader
+                            (accepted, but never applied — symbolication.md)
   upload_web_sourcemaps.sh  fail-closed source-map upload
   elf_build_id.py           dependency-free GNU build-id reader
 ```
