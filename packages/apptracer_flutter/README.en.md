@@ -109,6 +109,37 @@ This package hooks those three Dart entry points and forwards what it finds to
 the native SDK, which keeps handling native crashes, ANRs and the crash-free
 metric itself.
 
+## How this differs from firebase_crashlytics
+
+A fair question: Crashlytics is free, official, and does the same job.
+
+| | apptracer_flutter | firebase_crashlytics |
+|---|---|---|
+| Who makes it | an independent wrapper, unaffiliated with VK or OK.TECH | Google, the official plugin |
+| Platforms | Android, iOS, web | Android, iOS, macOS |
+| Where reports go | Tracer's servers (VK / OK.TECH) | Google's infrastructure |
+| Dart error capture | `FlutterError.onError`, `PlatformDispatcher.onError`, a guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
+| Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | `firebase crashlytics:symbols:upload` on Android, automatic on Apple |
+
+**About the data.** Little can be said with certainty, and it is better said
+without legal phrasing: Crashlytics sends reports into Google's infrastructure,
+Tracer into its own. If keeping data inside a particular jurisdiction matters
+to you — which for Russian applications is usually the reason Tracer is on the
+table at all — that is the difference. A crash log is not anonymous by nature,
+either: what makes it personal data is what you put in it — `userId`, custom
+keys, breadcrumbs, the exception message. Exactly what leaves the device from
+this package, and what the vendor's SDK adds on its own, is listed in
+[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Whether that satisfies your
+jurisdiction's rules is a question for your lawyer, not for a README.
+
+**About obfuscation, honestly.** Crashlytics is plainly better here. It reads an
+obfuscated release by itself; here that is manual work. Tracer has a channel for
+Dart symbols and the upload goes through, but the symbols are never applied,
+because the native reporter records `libapp.so` with a zero build id. Measured
+2026-08-27, written up in [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
+Until the vendor fixes that, there is one working route: archive the build's
+symbol file and decode traces with `flutter symbolize`.
+
 ## What you get beyond Dart errors
 
 The list of platforms is on the package page itself, so there is no point

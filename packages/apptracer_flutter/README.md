@@ -111,6 +111,36 @@ Android SDK ставит `Thread.UncaughtExceptionHandler`, нативный о�
 SDK, который продолжает сам заниматься нативными крашами, ANR и метрикой
 crash-free.
 
+## Чем это отличается от firebase_crashlytics
+
+Вопрос законный: Crashlytics бесплатен, официален и делает то же самое.
+
+| | apptracer_flutter | firebase_crashlytics |
+|---|---|---|
+| Кто делает | независимая обёртка, с VK и OK.TECH не связана | Google, официальный плагин |
+| Платформы | Android, iOS, web | Android, iOS, macOS |
+| Куда уходят отчёты | серверы Tracer (VK / OK.TECH) | инфраструктура Google |
+| Перехват ошибок Dart | `FlutterError.onError`, `PlatformDispatcher.onError`, guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
+| Обфусцированный Dart | вручную: `flutter symbolize` по сохранённому файлу символов | `firebase crashlytics:symbols:upload` на Android, на Apple автоматически |
+
+**Про данные.** Утверждать можно немногое, и лучше без юридических формулировок:
+Crashlytics отправляет отчёты в инфраструктуру Google, Tracer — в свою. Если
+важно, чтобы данные не уходили за пределы российского периметра, это и есть
+причина смотреть в сторону Tracer. При этом крашлог не обезличен сам по себе —
+персональные данные в него кладёте вы: `userId`, кастомные ключи, breadcrumbs,
+текст исключения. Что именно уходит с устройства из этого пакета и что
+добавляет от себя SDK вендора, перечислено в
+[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Подходит ли это под 152-ФЗ в вашем
+случае — вопрос к вашему юристу, а не к README.
+
+**Про обфускацию, честно.** Здесь Crashlytics объективно лучше. Он читает
+обфусцированный релиз сам, а тут это ручная работа: канал загрузки символов
+Dart у Tracer есть, загрузка проходит — но символы не применяются, потому что
+нативный репортёр пишет `libapp.so` с нулевым build id. Измерено 27.08.2026,
+разбор в [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md). Пока это не
+починят на стороне вендора, рабочий путь один: хранить файл символов сборки и
+разбирать трейс через `flutter symbolize`.
+
 ## Что вы получите, кроме ошибок Dart
 
 Список платформ есть на самой странице пакета, повторять его тут незачем.
