@@ -13,6 +13,16 @@ as pub.dev expects.
 
 ### Added
 
+- `dart run apptracer_flutter:upload_symbols ios|web`, which uploads iOS dSYMs
+  and web source maps. Android needs none of it — the Gradle plugin does it
+  during the build — and on iOS the vendor's Fastlane plugin does the same on
+  archive; web had no tool at all. It reads the version from `pubspec.yaml`,
+  takes the token from `--token` or `TRACER_PLUGIN_TOKEN`, and exits non-zero
+  unless the server confirms, because an ingest that answers 200 to a body it
+  did not understand cannot be trusted on the status code alone. No new
+  dependency: the archive is built with `dart:io`'s raw deflate rather than
+  `package:archive`, which would otherwise ship in every application.
+
 - Initial release.
 - `Tracer.initialize` runs the application inside a guarded zone and calls
   `appRunner` exactly once in every scenario, including disabled collection, a

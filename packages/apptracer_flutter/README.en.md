@@ -186,8 +186,22 @@ there is nothing to remember — the same way the Gradle plugin handles it on
 Android. Set it up from Tracer's documentation, not from here: this package has
 no part in uploading symbols.
 
-The request below is for when there is no pipeline of your own, or when an
-already-archived build needs its symbols re-sent:
+If Fastlane is not in the picture, the package carries a command that does the
+same:
+
+```sh
+flutter build ipa
+dart run apptracer_flutter:upload_symbols ios --token=IOS_PLUGIN_TOKEN
+```
+
+It finds the `.dSYM`s in the archive, takes the version from `pubspec.yaml`,
+zips them and sends them — and exits non-zero if the server refuses, so a
+release pipeline stops rather than shipping a build whose crashes cannot be
+read. Directory, version and build number can be given explicitly with `--dir=…`,
+`--version=…`, `--build=…`, and `TRACER_PLUGIN_TOKEN` is read when `--token` is
+absent.
+
+The same request by hand, for a build with no pipeline at all:
 
 ```sh
 archive=build/ios/archive/Runner.xcarchive
@@ -228,7 +242,19 @@ Nothing to add: the pure-Dart implementation is already inside the package. The
 token is the JS project's `appToken`, passed one step below.
 
 The JS project's `pluginToken`, as on iOS, is not for events but for uploading
-source maps — without them a release build's stack traces stay minified:
+source maps — without them a release build's stack traces stay minified. The
+vendor has no tool for this, so the package's command is the route:
+
+```sh
+flutter build web --release --source-maps
+dart run apptracer_flutter:upload_symbols web --token=WEB_PLUGIN_TOKEN
+```
+
+It takes only the `.js` and `.map` files out of `build/web`, packs them so their
+paths match the paths in the frames, and uses the version from `pubspec.yaml` —
+which has to match the `release` in `TracerOptions`.
+
+The same request by hand:
 
 ```sh
 flutter build web --release --source-maps
