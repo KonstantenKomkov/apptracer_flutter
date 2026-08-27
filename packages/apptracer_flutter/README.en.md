@@ -108,22 +108,34 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Turn on the softer non-fatal rate limit. Tracer's hard default is **8
-non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
-error this package reports is a non-fatal, so that ceiling is the one your app
-will meet first. Enabling the rate limit raises it to 10 per hour and is what
-the vendor recommends:
+Name the package's `Application` — one line in
+`android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<application android:name="ru.apptracer.flutter.TracerApplication" … >
+```
+
+It turns on the softer non-fatal rate limit, which matters more than it sounds:
+Tracer's hard default is **8 non-fatals per session**
+(`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart error this package reports
+is a non-fatal — so that is the ceiling your app meets first, and it meets it
+silently. The rate limit raises it to 10 per hour, and the vendor recommends
+turning it on.
+
+If you already have an `Application` of your own, subclass this one and add to
+the list rather than replacing it:
 
 ```kotlin
-class MyApplication : Application(), HasTracerConfiguration {
+class MyApplication : TracerApplication() {
     override val tracerConfiguration: List<TracerConfiguration>
-        get() = listOf(
-            CrashReportConfiguration.build {
-                setExperimentalNonFatalRateLimitEnabled(true)
-            },
-        )
+        get() = super.tracerConfiguration + CoreTracerConfiguration.build {
+            setDebugUpload(true)
+        }
 }
 ```
+
+This cannot be the package's own default, unfortunately: the SDK reads its
+configuration from the `Application` object and a plugin is not one.
 
 Four more things that are easy to trip over:
 

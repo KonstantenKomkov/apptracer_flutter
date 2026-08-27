@@ -106,22 +106,33 @@ androidPluginToken=...
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Включите мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
-нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
-Dart, которую отправляет этот пакет, — нефатальная, так что упрётесь вы именно
-в этот потолок. Рейт-лимит поднимает его до 10 в час, и вендор сам рекомендует
-его включать:
+Укажите `Application` из пакета — одной строкой в
+`android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<application android:name="ru.apptracer.flutter.TracerApplication" … >
+```
+
+Он включает мягкий рейт-лимит на нефатальные, и это не мелочь: жёсткий дефолт
+Tracer — **8 нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а
+каждая ошибка Dart, которую шлёт этот пакет, — нефатальная. То есть упрётесь вы
+именно в этот потолок, и упрётесь молча. Рейт-лимит поднимает его до 10 в час,
+и вендор сам рекомендует его включать.
+
+Если свой `Application` уже есть — наследуйтесь и дополняйте список, а не
+заменяйте его:
 
 ```kotlin
-class MyApplication : Application(), HasTracerConfiguration {
+class MyApplication : TracerApplication() {
     override val tracerConfiguration: List<TracerConfiguration>
-        get() = listOf(
-            CrashReportConfiguration.build {
-                setExperimentalNonFatalRateLimitEnabled(true)
-            },
-        )
+        get() = super.tracerConfiguration + CoreTracerConfiguration.build {
+            setDebugUpload(true)
+        }
 }
 ```
+
+Поведением пакета по умолчанию это, к сожалению, быть не может: SDK читает
+конфигурацию только у объекта `Application`, а плагин — не он.
 
 Ещё четыре момента, о которые легко споткнуться:
 
