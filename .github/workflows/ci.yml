@@ -46,27 +46,34 @@ jobs:
         working-directory: packages/${{ matrix.package }}
         run: flutter analyze --fatal-infos
 
-      # `id` is what makes the outputs reachable below. Without it,
-      # `steps.setup-chrome.outputs.chrome-path` is an empty string, and
-      # `flutter test --platform chrome` fails with `Failed to find "" in the
-      # search path` — an error that reads like a missing browser rather than
-      # a missing id.
       - name: Set up Chrome
         id: setup-chrome
         if: matrix.package == 'apptracer_flutter_web'
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
 
       - name: Test
         working-directory: packages/${{ matrix.package }}
-        env:
-          # The web package's tests exercise browser-only code paths, so they
-          # have to run in a real browser rather than on the Dart VM.
-          CHROME_EXECUTABLE: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
           if [ ! -d test ]; then
             echo "no tests in this package"
           elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
-            flutter test --platform chrome --reporter=expanded
+            # The web package's tests exercise browser-only code paths, so they
+            # need a real browser. CHROME_EXECUTABLE is set here rather than in
+            # `env:` because an *empty* value is worse than an absent one:
+            # flutter then tries to launch "" and reports `Failed to find ""
+            # in the search path`, which reads like a missing browser rather
+            # than a missing path. The runner image ships Chrome too, so a
+            # setup step that produced no path is not fatal.
+            chrome='${{ steps.setup-chrome.outputs.chrome-path }}'
+            if [ -z "$chrome" ]; then
+              chrome="$(command -v google-chrome || command -v chromium || true)"
+            fi
+            if [ -z "$chrome" ]; then
+              echo "::error::no Chrome available for the web tests"
+              exit 1
+            fi
+            echo "browser: $chrome"
+            CHROME_EXECUTABLE="$chrome" flutter test --platform chrome --reporter=expanded
           else
             flutter test --reporter=expanded --coverage
           fi
