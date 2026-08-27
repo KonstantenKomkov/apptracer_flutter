@@ -427,11 +427,21 @@ this package, and what the vendor's SDK adds on its own, is listed in
 [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md). Whether that satisfies your
 jurisdiction's rules is a question for your lawyer, not for a README.
 
-**Both upload symbols on every release.** That is not a difference between the
-two: each build's `dSYM`s carry their own UUIDs, so last version's symbols do
-not fit this one. What differs is which platform is handled for you — Android
-for Tracer, Apple for Crashlytics. What is left over is one command in CI for
-either.
+**Both upload symbols on every release.** That is a property of building, not a
+vendor's choice: each build's `dSYM`s carry their own UUIDs, so last version's
+symbols do not fit this one.
+
+If it feels like Crashlytics never asked you to upload anything, that is true —
+but not because it does not happen. On Apple the plugin writes an Xcode build
+phase that ships the `dSYM` on every build by itself, and since Flutter 3.12 with
+plugin 3.3.4 you do not even add the phase by hand. The other side of it is
+Android: build with `--obfuscate` and the Dart symbols go up through the
+Firebase CLI, which is a thing to remember.
+
+Tracer's automation falls the other way round: Android is covered end to end by
+the Gradle plugin, while on iOS the equivalent phase, or the Fastlane plugin,
+has to be wired up by you — nothing writes it for a Flutter project. Whatever is
+left over is one command in CI, for either of them.
 
 **About Dart symbols, honestly.** Crashlytics is plainly better here. It reads
 such a release by itself; here that is manual work. Tracer has no channel for
