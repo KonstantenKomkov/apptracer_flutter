@@ -19,13 +19,7 @@ fuller version further down.
 **1. Create a project in Tracer.** One per platform: Android, iOS and web each
 have their own `appToken`, and there is no shared one.
 
-**2. Add the package.**
-
-```sh
-flutter pub add apptracer_flutter
-```
-
-**3. Set up the platform.** Not skippable: the token is delivered differently on
+**2. Set up the platform.** Not skippable: the token is delivered differently on
 each platform, and without this step the package starts, prints that it is
 disabled, and sends nothing.
 
@@ -35,7 +29,7 @@ disabled, and sends nothing.
 | iOS | a `source` line in the `Podfile` and static linkage | [iOS](#ios) |
 | Web | nothing beyond the token in `TracerOptions` | [Web](#web-and-other-platforms) |
 
-**4. Wrap the application's start.**
+**3. Wrap the application's start.**
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
@@ -58,7 +52,7 @@ Everything thrown from here on — uncaught exceptions, failures inside `build()
 asynchronous errors nobody awaited — reaches Tracer on its own. There is nothing
 else to call.
 
-**5. Confirm it is alive.** Put one line behind a button and press it:
+**4. Confirm it is alive.** Put one line behind a button and press it:
 
 ```dart
 onPressed: () => throw StateError('apptracer_flutter check'),
@@ -137,7 +131,7 @@ starts. Full details in [platform-matrix.md](https://github.com/KonstantenKomkov
 
 ## Platform setup
 
-Step 3 of the quick start, in full. Not optional: without it the package starts,
+Step 2 of the quick start, in full. Not optional: without it the package starts,
 reports that it is disabled, and sends nothing.
 
 ### Android
