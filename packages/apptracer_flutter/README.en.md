@@ -680,18 +680,6 @@ vendor confirmed as much on 2026-08-27 — so decoding stays a manual step. Read
 before you ship such a build — it explains what does and does not work, and how
 to avoid finding out the hard way.
 
-## Maturity
-
-Version `0.1.0`. Delivery was confirmed against live Tracer projects on
-26–27 August 2026 on all three platforms: Android (device and emulator,
-including a native crash and an ANR), iOS (a release build on an iPhone, with no
-debugger attached) and web (Chrome). Not only that events arrive — grouping,
-breadcrumbs, custom keys and stopping collection were checked too.
-[status.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/status.md)
-lists every item and what proves it, and what is still unproven.
-The version is below `1.0.0` not because something is unverified, but because
-the public API may still change.
-
 ## License
 
 MIT. The vendor SDKs are licensed separately; see
