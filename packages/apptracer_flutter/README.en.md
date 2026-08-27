@@ -64,13 +64,8 @@ android {
 
 tracer {
     create("defaultConfig") {
-        // The appToken is not a secret — the plugin bakes it into the APK
-        // anyway, so a literal here reveals nothing. Reading it from the
-        // environment or from gradle.properties is equally fine.
         appToken = "your-app-token"
-        // The pluginToken is a secret: it signs the upload of mappings and
-        // symbols and never reaches the application.
-        pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+        pluginToken = "your-plugin-token"
         uploadMapping = true
         uploadNativeSymbols = true
     }
@@ -88,13 +83,18 @@ On Android the token comes from here, not from Dart: the SDK reads it from a
 resource the Gradle plugin generates at build time. There is no runtime
 alternative — which is why the plugin is required.
 
-Read the `pluginToken` from the environment: it never reaches the application
-and stays a secret, and a secret committed to a repository is a secret that has
-leaked. There is no need to be stricter with the `appToken` than suits you —
-the plugin bakes it into the APK regardless.
+Both are literals above for the sake of showing them, and they are not
+equivalent. The `appToken` can stay one: the plugin bakes it into the APK
+anyway, so there is nothing to hide. The `pluginToken` is a secret — it signs
+the upload of mappings and symbols and never reaches the application — so a
+repository is the wrong place for it:
 
-The environment itself is your business. Locally a file outside the repository
-is usually enough:
+```kotlin
+pluginToken = providers.environmentVariable("TRACER_PLUGIN_TOKEN").orNull
+```
+
+Where that environment comes from is your business. Locally a file outside the
+repository is usually enough:
 
 ```sh
 # ~/.tracer-env — outside any git repository, chmod 600
