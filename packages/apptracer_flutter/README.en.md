@@ -24,8 +24,6 @@ three pairs. Both values live under
 
 **2. Wire the Tracer SDK into your build.** This package is a wrapper: it
 neither ships the vendor's SDKs nor pulls them in — your application adds them.
-That is where the difference between platforms comes from, and where the token
-comes from too.
 
 ### Android
 
