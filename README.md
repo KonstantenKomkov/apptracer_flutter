@@ -1,4 +1,9 @@
-# apptracer_flutter
+# apptracer_flutter — репозиторий
+
+> **Это README монорепозитория: сборка, документация, внутреннее устройство.**
+> Если вы хотите просто подключить пакет к своему приложению, вам не сюда, а в
+> [packages/apptracer_flutter/README.md](packages/apptracer_flutter/README.md)
+> — это же и есть страница пакета на pub.dev, и там есть быстрый старт.
 
 Неофициальная интеграция Flutter с [Tracer](https://apptracer.ru) — сервисом
 мониторинга ошибок от OK.TECH / VK.
@@ -14,9 +19,6 @@ English version: [README.en.md](README.en.md).
 роняет процесс и не попадает в JVM, поэтому мимо него проходят и
 `UncaughtException`-обработчик, и обработчик сигналов, и ANR-watchdog. Для
 Flutter-приложения это большинство ошибок. Репозиторий закрывает этот пробел.
-
-**Начинать отсюда:
-[packages/apptracer_flutter/README.md](packages/apptracer_flutter/README.md).**
 
 ## Структура репозитория
 

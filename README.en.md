@@ -1,4 +1,9 @@
-# apptracer_flutter
+# apptracer_flutter — the repository
+
+> **This is the monorepo's README: building, documentation, internals.** If
+> you only want to add the package to an application, you want
+> [packages/apptracer_flutter/README.en.md](packages/apptracer_flutter/README.en.md)
+> instead — the same file pub.dev renders, and it opens with a quick start.
 
 Unofficial Flutter integration with [Tracer](https://apptracer.ru), the
 error-monitoring service by OK.TECH / VK.
@@ -13,8 +18,6 @@ handler, the signal handler and the ANR watchdog all miss it. For a Flutter
 application that is most of the errors. This repository closes that gap.
 
 Русская версия: [README.md](README.md).
-
-**Start here: [packages/apptracer_flutter/README.en.md](packages/apptracer_flutter/README.en.md).**
 
 ## Repository layout
 
