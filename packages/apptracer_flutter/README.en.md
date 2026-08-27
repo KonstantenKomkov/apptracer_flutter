@@ -37,9 +37,9 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      // iOS and web. On Android the token comes from the Gradle plugin and
-      // this is ignored.
-      appToken: String.fromEnvironment('TRACER_APP_TOKEN'),
+      // The iOS or web project's appToken. On Android it comes from the
+      // Gradle plugin and this field is ignored.
+      appToken: 'your-app-token',
       release: '1.0.0',
       environment: 'prod',
     ),
@@ -48,15 +48,24 @@ void main() {
 }
 ```
 
-`String.fromEnvironment` reads the **build-time** environment rather than the
-shell's, so the token goes in through a flag:
+**The `appToken` is not a secret**, and there is little point hiding it: the
+Gradle plugin bakes it into the APK — it sits in `resources.arsc` and
+`classes.dex`, unzip one and see — and on web it is in the JavaScript bundle
+anyway. It identifies the project rather than granting access to it. So use
+whichever of these suits you:
 
-```sh
-flutter build ipa --dart-define=TRACER_APP_TOKEN=$TRACER_APP_TOKEN
-```
+* a string in the code, or in a settings file next to your sources — the same
+  shape as Firebase's `firebase_options.dart`;
+* `--dart-define=TRACER_APP_TOKEN=…` together with
+  `appToken: String.fromEnvironment('TRACER_APP_TOKEN')`, if you would rather
+  it stayed out of git;
+* from your own configuration at runtime — `TracerOptions` takes an ordinary
+  string and does not care where you got it.
 
-On Android the flag is neither needed nor read: the token comes from the Gradle
-plugin there.
+**The `pluginToken` is a secret.** It signs the upload of mappings and symbols,
+only the build needs it, and it never reaches the application: it is not in the
+APK. It belongs in the build environment and in CI secrets, not in a
+repository.
 
 Everything thrown from here on — uncaught exceptions, failures inside `build()`,
 asynchronous errors nobody awaited — reaches Tracer on its own. There is nothing
@@ -90,9 +99,10 @@ It is almost always one of four things:
   — without it, it fails at runtime.
 * **Android: the token was passed in `TracerOptions`.** It is ignored there; on
   Android the token comes only from the `tracer { }` block in Gradle.
-* **iOS or web: `--dart-define` was forgotten.** Without the build flag
-  `String.fromEnvironment` returns an empty string, the package says plainly
-  that no `appToken` was given, and stays disabled.
+* **iOS or web: the `appToken` arrived empty.** Usually the `--dart-define`
+  route with the flag missing from the build: without it
+  `String.fromEnvironment` returns an empty string. The package says plainly
+  that no `appToken` was given and stays disabled.
 
 ### Where to go next
 
@@ -237,8 +247,10 @@ dependencies {
 }
 ```
 
-Read the tokens from the environment. A token committed to a repository is a
-token that has leaked.
+Read the `pluginToken` from the environment: it never reaches the application
+and stays a secret, and a secret committed to a repository is a secret that has
+leaked. There is no need to be stricter with the `appToken` than suits you —
+the plugin bakes it into the APK regardless.
 
 The environment itself is your business. Locally a file outside the repository
 is usually enough:
