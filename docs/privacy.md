@@ -1,115 +1,117 @@
-# What data leaves the device
+# Какие данные уходят с устройства
 
-This package is aimed at applications that have to answer for every field they
-transmit, so the default is deliberately austere: **this package adds no
-personal data of its own.** Everything it sends is either a property of the
-error or something the application explicitly handed it.
+Пакет рассчитан на приложения, которым приходится отвечать за каждое
+передаваемое поле, поэтому умолчания намеренно скудные: **сам пакет не
+добавляет никаких персональных данных.** Всё, что он отправляет, — это либо
+свойство самой ошибки, либо то, что приложение передало ему явно.
 
-That is only half the picture, though. On Android and iOS the vendor's native
-SDK collects its own metadata, and it does so whether or not this package is
-installed. Both halves are listed below.
+Это, впрочем, лишь половина картины. На Android и iOS нативный SDK вендора
+собирает собственные метаданные, и делает это независимо от того, установлен ли
+этот пакет. Ниже перечислены обе половины.
 
-## What this package sends
+## Что отправляет пакет
 
-| Field | Contents | When | Off by |
+| Поле | Содержимое | Когда | Чем отключается |
 |---|---|---|---|
-| Exception type | Dart runtime type, e.g. `FormatException` | every event | — |
-| Message | `error.toString()` minus the duplicated type prefix | every event | `beforeSend` |
-| Stack trace | parsed Dart frames: member, file URI, line, column | every event | `beforeSend` |
-| Verbatim stack trace | the same trace as unmodified text, in the log buffer | every event | `attachRawStackTraceAsLog: false` |
-| Severity, fatal flag, timestamp | — | every event | — |
-| `issueKey` | supplied by the caller, or synthesised on iOS from type + top frame | every event | — |
-| Breadcrumbs | free text written by the application | events, plus mirrored to the native log as they happen | `maxBreadcrumbs: 0`, `beforeBreadcrumb` |
-| Custom keys | key/value pairs written by the application | every event | do not set them |
-| `dart.exception_type`, `dart.needs_symbolication`, `dart.build_id` | diagnostics for symbolication | every event | — |
-| User id | whatever the application passed to `Tracer.setUserId` | only after that call | never call it |
+| Тип исключения | тип Dart в рантайме, например `FormatException` | каждое событие | — |
+| Сообщение | `error.toString()` без продублированного префикса типа | каждое событие | `beforeSend` |
+| Стектрейс | разобранные кадры Dart: член, URI файла, строка, колонка | каждое событие | `beforeSend` |
+| Дословный стектрейс | тот же трейс неизменённым текстом, в буфере лога | каждое событие | `attachRawStackTraceAsLog: false` |
+| Уровень, признак фатальности, отметка времени | — | каждое событие | — |
+| `issueKey` | передан вызывающим кодом или синтезирован на iOS из типа и верхнего кадра | каждое событие | — |
+| Breadcrumbs | свободный текст, который пишет приложение | в событиях, плюс дублируются в нативный лог по мере появления | `maxBreadcrumbs: 0`, `beforeBreadcrumb` |
+| Кастомные ключи | пары ключ-значение, которые пишет приложение | каждое событие | не задавать их |
+| `dart.exception_type`, `dart.needs_symbolication`, `dart.build_id` | диагностика для символизации | каждое событие | — |
+| Идентификатор пользователя | то, что приложение передало в `Tracer.setUserId` | только после этого вызова | не вызывать его |
 
-Nothing on that list is populated automatically from the device, the install or
-the user. A message or a file path can of course contain personal data if the
-application put it there — `beforeSend` exists for exactly that case:
+Ничто в этом списке не заполняется автоматически из устройства, установки или
+пользователя. Сообщение или путь к файлу, разумеется, могут содержать
+персональные данные, если приложение их туда положило, — `beforeSend`
+существует ровно для этого случая:
 
 ```dart
 TracerOptions(
   beforeSend: (event) => event.message.contains('@')
-      ? event.copyWith(message: '<redacted>')
+      ? event.copyWith(message: '<скрыто>')
       : event,
 )
 ```
 
-`beforeSend` runs before anything is handed to the platform. A hook that throws
-is logged and ignored, and the original event is still sent — dropping errors
-because a redaction rule has a bug would be the worse failure.
+`beforeSend` выполняется до того, как что-либо передаётся платформе. Хук,
+который бросил исключение, логируется и игнорируется, а исходное событие всё
+равно отправляется: терять ошибки из-за бага в правиле очистки — отказ хуже.
 
-## A note on debug logging
+## Замечание про отладочное логирование
 
-With `TracerOptions.debug` the iOS SDK writes its own log to the console, and
-that log contains the upload URL **including the `crashToken` query parameter**.
-Observed 2026-08-26. Keep debug builds' console output out of shared logs and
-screen recordings, or treat the token as disclosed. This package's own
-diagnostics print at most the first six characters of a token.
+При `TracerOptions.debug` iOS SDK пишет собственный лог в консоль, и в этом логе
+есть URL загрузки **вместе с query-параметром `crashToken`**. Наблюдалось
+26.08.2026. Держите консольный вывод debug-сборок подальше от общих логов и
+записей экрана — либо считайте токен раскрытым. Собственная диагностика пакета
+печатает не более первых шести символов токена.
 
-## What the native Android SDK sends on its own
+## Что нативный Android SDK отправляет сам
 
-Collected by `ru.ok.tracer` itself, documented by the vendor, and **not
-controllable from Dart**:
+Собирается самим `ru.ok.tracer`, задокументировано вендором и **не управляется
+из Dart**:
 
 `date`, `board` (`Build.BOARD`), `brand`, `cpuABI` (`Build.SUPPORTED_ABIS`),
 `device`, `manufacturer`, `model`, `osVersionSdkInt`, `osVersionRelease`,
-`cpuCount`, `operatorName` (mobile operator, when available), `installer`
-(installing package).
+`cpuCount`, `operatorName` (мобильный оператор, если доступен), `installer`
+(пакет-установщик).
 
-Since SDK 1.4.0 each crash also carries **the free space remaining on the
-device's storage**, which the vendor added because a full store turns out to be
-a common cause of failures.
+Начиная с SDK 1.4.0 каждый краш дополнительно несёт **свободное место в
+хранилище устройства** — вендор добавил это, потому что заполненное хранилище
+оказалось частой причиной сбоев.
 
-Observed live on 2026-08-26, on SDK 1.4.0, in the "Data" tab of a real event:
-the report also carries **the free RAM** at the moment of the crash. The vendor
-does not list it among the collected fields, so treat the list above as a
-lower bound rather than an exhaustive one.
+Замечено вживую 26.08.2026 на SDK 1.4.0, во вкладке «Данные» реального события:
+отчёт несёт ещё и **свободную оперативную память** на момент краша. Среди
+собираемых полей вендор её не перечисляет, так что относитесь к списку выше как
+к нижней границе, а не как к исчерпывающему перечню.
 
-Together these form a reasonably distinctive device fingerprint. The crash-free
-metric additionally requires a per-installation identity: the vendor states that
-the same user on two devices, or after a reinstall, counts as two units, which
-means an install-scoped identifier exists.
+Вместе это образует довольно различимый отпечаток устройства. Метрике crash-free
+дополнительно нужна идентичность на уровне установки: вендор пишет, что один и
+тот же пользователь на двух устройствах — или после переустановки — считается
+двумя единицами, а значит идентификатор, привязанный к установке, существует.
 
-To avoid all of it, do not add the Tracer Android SDK; the package degrades to
-reporting nothing on Android rather than failing.
+Чтобы не было ничего из этого, не добавляйте Android SDK Tracer: пакет
+деградирует до «на Android не отправляется ничего», а не падает.
 
-## What the native iOS SDK sends on its own
+## Что нативный iOS SDK отправляет сам
 
-The OKTracer SDK collects system information through
-`TracerSystemInfoProviderProtocol`. An application that needs to constrain it
-can supply its own implementation — but only from native code, since this
-package does not expose that hook.
+SDK OKTracer собирает системную информацию через
+`TracerSystemInfoProviderProtocol`. Приложение, которому нужно это ограничить,
+может подставить собственную реализацию — но только из нативного кода, потому
+что этот пакет такой хук наружу не отдаёт.
 
-## The Sentry-protocol transport
+## Транспорт на чистом Dart
 
-The pure-Dart transport (web, desktop, Aurora) sends exactly the table in the
-first section and nothing else. In particular it does not attach a device
-context, an IP-derived location or an automatically generated user id. It has no
-access to a device identifier and does not create one.
+Транспорт на чистом Dart (web, десктоп, Аврора) отправляет ровно то, что
+перечислено в таблице первого раздела, и ничего сверх. В частности, он не
+прикрепляет контекст устройства, местоположение по IP и автоматически
+сгенерированный идентификатор пользователя. Доступа к идентификатору устройства
+у него нет, и он его не создаёт.
 
-Note that any HTTP request reveals the client IP address to the receiving
-server. That is a property of the network, not of this package.
+Учтите, что любой HTTP-запрос раскрывает принимающему серверу IP-адрес клиента.
+Это свойство сети, а не этого пакета.
 
-## Consent is not optional
+## Согласие не опционально
 
-The Tracer License Agreement puts this on you, not on the vendor and not on this
-package. Two clauses, in the edition dated 29 May 2025:
+Лицензионное соглашение Tracer возлагает это на вас, а не на вендора и не на
+этот пакет. Два пункта редакции от 29.05.2025:
 
-* **1.2** — you are the data controller for your end users' personal data, and
-  you *entrust* its processing to VK as processor for the purposes of the
-  agreement.
-* **1.3** — you **undertake to obtain the end-user consents required by
-  applicable law** for that processing.
+* **1.2** — вы являетесь оператором персональных данных своих конечных
+  пользователей и *поручаете* их обработку VK как обработчику в целях
+  соглашения.
+* **1.3** — вы **обязуетесь получить согласия конечных пользователей, требуемые
+  применимым правом**, для такой обработки.
 
-So shipping Tracer in an application means having a consent story before the
-first event is sent. That is why this package has two separate switches rather
-than one, and why stopping actually stops.
+То есть поставлять Tracer в приложении — значит иметь ответ про согласие до
+того, как уйдёт первое событие. Поэтому у пакета два отдельных переключателя, а
+не один, и поэтому остановка действительно останавливает.
 
-Two switches, for two different situations.
+Два переключателя — для двух разных ситуаций.
 
-**Before the first frame** — the user has already declined:
+**До первого кадра** — пользователь уже отказался:
 
 ```dart
 Tracer.initialize(
@@ -118,35 +120,35 @@ Tracer.initialize(
 );
 ```
 
-No native SDK is started and nothing is transmitted. `appRunner` still runs
-exactly once.
+Нативный SDK не запускается, не передаётся ничего. `appRunner` при этом
+вызывается ровно один раз.
 
-**During the session** — the user withdraws consent:
+**Во время сессии** — пользователь отзывает согласие:
 
 ```dart
 await Tracer.stopCollection();
 ```
 
-The Dart error handlers are removed and whatever handlers were installed before
-are restored. On Android this also calls `Tracer.disable()`, which the native
-SDK cannot undo before the process restarts — deliberately, since a withdrawal
-of consent should not be quietly reversible.
+Обработчики ошибок Dart снимаются, и восстанавливаются те, что стояли до них. На
+Android дополнительно вызывается `Tracer.disable()`, который нативный SDK не
+отменит до перезапуска процесса, — и это намеренно: отзыв согласия не должен
+тихо откатываться.
 
-## Data residency and retention
+## Где хранятся данные и сколько
 
-Tracer states that data is stored in Russia and that events are kept for the
-last 90 days. Both are properties of the service, not of this package; verify
-them against your own agreement with the vendor rather than against this file.
+Tracer заявляет, что данные хранятся в России, а события держатся последние 90
+дней. И то и другое — свойства сервиса, а не этого пакета; проверяйте их по
+своему договору с вендором, а не по этому файлу.
 
-## Where the vendor's obligations end
+## Где заканчиваются обязательства вендора
 
-Worth reading before you decide how much to send. Under the agreement the
-Library is provided **"как есть" (as is)**, clause 2.1: the Licensor gives no
-warranty that it fits any particular purpose and promises no specific results.
-Clause 6.2.2 lets the Licensor suspend or terminate a Licensee's access at any
-time without explanation or notice, and the closing clause 4.1 lets the
-agreement itself change without prior notice.
+Стоит прочитать до того, как решать, сколько данных отправлять. По соглашению
+Библиотека предоставляется **«как есть» (as is)**, пункт 2.1: Лицензиар не
+гарантирует пригодности для конкретной цели и не обещает определённых
+результатов. Пункт 6.2.2 позволяет Лицензиару приостановить или прекратить
+доступ Лицензиата в любой момент без объяснений и уведомления, а заключительный
+пункт 4.1 разрешает менять само соглашение без предварительного уведомления.
 
-None of that is unusual for a free service, and none of it is this package's
-doing. It does mean that diagnostics you cannot afford to lose should not live
-only in Tracer.
+Ничего необычного для бесплатного сервиса в этом нет, и к этому пакету оно
+отношения не имеет. Но означает вот что: диагностика, потерять которую вы не
+можете себе позволить, не должна жить только в Tracer.
