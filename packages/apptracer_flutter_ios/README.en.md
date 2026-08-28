@@ -25,14 +25,25 @@ SDK's own logging verbosity untouched.
 
 ## Setup
 
-`OKTracer` lives in the vendor's own CocoaPods spec repository, so `ios/Podfile`
-must declare it:
+`OKTracer` lives in the vendor's own CocoaPods spec repository and ships as a
+static `xcframework`, so `ios/Podfile` needs both the source and static
+linkage:
 
 ```ruby
 source 'https://github.com/odnoklassniki/tracer-ios.git'
 source 'https://cdn.cocoapods.org/'
 
 platform :ios, '13.0'
+
+target 'Runner' do
+  use_frameworks! :linkage => :static
+  # ...
+end
 ```
+
+At `pod install` the podspec adds a build phase to `Runner.xcodeproj` that
+uploads the `dSYM` on every release build; `TRACER_SKIP_IOS_PHASE=1` keeps it
+away from the project file. The phase reads its token from
+`ios/tracer_plugin_token` or from `TRACER_IOS_PLUGIN_TOKEN`.
 
 Unlike Android, `TracerOptions.appToken` **is** used on iOS.

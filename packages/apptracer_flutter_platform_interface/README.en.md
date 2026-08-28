@@ -22,8 +22,11 @@ It contains:
   `dart2js` frames in V8 and SpiderMonkey notation, and async markers. The
   verbatim text is always preserved, because an obfuscated trace can only be
   decoded by `flutter symbolize` and that needs the original bytes.
+* `SyntheticIssueKey` — builds an `issueKey` from the error type and the
+  innermost named frame, for backends whose own grouping cannot tell two Dart
+  errors apart. Both native implementations use the same one.
 * The data models: `TracerOptions`, `TracerEvent`, `TracerBreadcrumb`,
-  `TracerSeverity`.
+  `TracerSeverity`, `DartStackFrame`.
 
 ## Implementing a platform
 

@@ -26,14 +26,25 @@ Breadcrumbs доставляются через `TracerLogProviderProtocol`, к�
 
 ## Подключение
 
-`OKTracer` лежит в собственном spec-репозитории вендора для CocoaPods, поэтому
-его надо объявить в `ios/Podfile`:
+`OKTracer` лежит в собственном spec-репозитории вендора для CocoaPods и
+поставляется статическим `xcframework`, поэтому в `ios/Podfile` нужны и
+источник, и статическая линковка:
 
 ```ruby
 source 'https://github.com/odnoklassniki/tracer-ios.git'
 source 'https://cdn.cocoapods.org/'
 
 platform :ios, '13.0'
+
+target 'Runner' do
+  use_frameworks! :linkage => :static
+  # ...
+end
 ```
+
+При `pod install` подспек добавляет в `Runner.xcodeproj` фазу сборки, которая
+отправляет `dSYM` при каждой release-сборке; `TRACER_SKIP_IOS_PHASE=1`
+запрещает трогать файл проекта. Токен фаза берёт из
+`ios/tracer_plugin_token` или из `TRACER_IOS_PLUGIN_TOKEN`.
 
 В отличие от Android, `TracerOptions.appToken` на iOS **используется**.

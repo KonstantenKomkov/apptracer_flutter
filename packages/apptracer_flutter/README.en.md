@@ -19,16 +19,15 @@ fuller version further down.
 **1. Create a project in the [Tracer console](https://apptracer.ru).** One per
 platform. Each project issues **its own pair** — an `appToken` and a
 `pluginToken`: an application on Android, iOS and web means three projects and
-three pairs. Both values live under
+three pairs. Both values live under **Settings → Project → API**.
 
 They are needed at different times. The `appToken` belongs to the application,
 which sends events with it and does nothing without it. The `pluginToken`
 belongs to the build, which uploads symbols with it — and until the first
 release it is not needed at all.
-**Настройки → Проект → API**.
 
-**2. Wire the Tracer SDK into your build.** This package is a wrapper: it
-neither ships the vendor's SDKs nor pulls them in — your application adds them.
+**2. Wire the Tracer SDK into your build.** The package does not pull the SDKs
+in — your application adds them.
 
 ### Android
 
@@ -84,9 +83,8 @@ dependencies {
 }
 ```
 
-On Android the token comes from here, not from Dart: the SDK reads it from a
-resource the Gradle plugin generates at build time. There is no runtime
-alternative — which is why the plugin is required.
+On Android the token comes from here only: there is no runtime alternative,
+which is why the Gradle plugin is required.
 
 The two keys arrive differently for a reason. The plugin bakes the `appToken`
 into the APK regardless, so there is nothing to hide — a literal is fine. The
@@ -113,61 +111,25 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-That is all Android needs: the one setting without which this package loses
-errors silently, it applies to itself.
-
-The setting is the softer non-fatal rate limit. Tracer's hard default is **8
-non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
-error this package reports is a non-fatal — so that is the ceiling your app
-meets first, and it meets it silently. The rate limit raises it to 10 per hour,
-and the vendor recommends turning it on.
-
-A `ContentProvider` of ours applies it: the system creates providers in
-`android:initOrder`, ours runs ahead of Tracer's own and gets the configuration
-in place before the SDK reads it. Neither the manifest nor Gradle needs
-touching. How that works, and what happens if the vendor closes the seam, is
-written down in `TracerAutoConfig` — along with the fallback for that day,
-naming `ru.apptracer.flutter.TracerApplication` in `android:name`, which has the
-same effect.
-
-**If you already have an `Application`**, it cancels the package's
-configuration: the SDK reads configuration off the `Application` object and
-takes its list whole rather than adding ours to it. So subclass
-`TracerApplication` and add to the list rather than replacing it:
-
-```kotlin
-class MyApplication : TracerApplication() {
-    override val tracerConfiguration: List<TracerConfiguration>
-        get() = super.tracerConfiguration + CoreTracerConfiguration.build {
-            setDebugUpload(true)
-        }
-}
-```
-
-Your class is wired in the usual way — through `android:name` on
-`<application>`, where Flutter's template leaves `"${applicationName}"` and
-**only that value** changes, the attributes next to it being yours; or through
-the placeholder, which is the easier one when the manifest is shared by builds
-with and without Tracer:
-
-```kotlin
-android {
-    defaultConfig {
-        manifestPlaceholders["applicationName"] = "my.package.MyApplication"
-    }
-}
-```
-
-This repository's example takes the placeholder.
+That is all Android needs: the one setting without which the package loses
+errors silently, it applies to itself. That setting is the softer non-fatal rate
+limit. Tracer's hard default is **8 non-fatals per session**
+(`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart error the package reports
+is a non-fatal — so that is the ceiling your app meets first, and it meets it
+silently. The rate limit raises it to 10 per hour, and the vendor recommends
+turning it on.
 
 Four more things that are easy to trip over:
 
 * **`TracerOptions.appToken` is ignored on Android.** The token comes from the
   Gradle plugin. The plugin logs a warning if you pass one anyway rather than
   pretending it took effect.
-* By default the SDK does not upload from debug builds. Enable it through
-  `CoreTracerConfiguration.Builder.setDebugUpload` in an `Application` that
-  implements `HasTracerConfiguration`.
+* By default the SDK does not upload from debug builds. The only way to turn
+  that on is an `Application` of your own implementing
+  `HasTracerConfiguration` (`setDebugUpload`) — and such an `Application`
+  replaces the package's settings whole. To keep the rate limit, subclass
+  `ru.apptracer.flutter.TracerApplication` and add yours to
+  `super.tracerConfiguration`.
 * `Tracer.stopCollection()` calls the SDK's `Tracer.disable()`, which cannot be
   undone before the process restarts. That is deliberate; see
   [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
@@ -250,23 +212,12 @@ curl --location --http1.1 \
 
 `{"success":true}` means accepted.
 
-**This happens for every release.** Each build has its own `dSYM`s with their
-own UUIDs, so last version's symbols do not fit this one. The version is read
-out of the built `Info.plist` rather than typed: it has to match what the
-application reports, or the symbols land against a different version — silently.
-
-And it has to happen **before the first crashes arrive**: Tracer applies symbols
-only to events received after the upload, and it has no re-symbolication. So
-this command belongs in the release pipeline or in an Xcode Run Script phase,
-not on a list of things to remember.
-
-`OKTracer` vends a **static** `xcframework`, and CocoaPods refuses to let a
-target using dynamic frameworks pull a static binary in transitively — hence the
-change of linkage. Without it, `pod install` fails with *"The 'Pods-Runner' target has transitive
-dependencies that include statically linked binaries"*. It is the same
-requirement Firebase's static frameworks impose, and Flutter supports it.
-
-Then `pod install`. The `appToken` **is** passed from Dart on iOS.
+**By hand, this happens for every release and before the first crashes
+arrive.** Each build has its own `dSYM`s with their own UUIDs, so last version's
+symbols do not fit this one, and the version is read out of the built
+`Info.plist` rather than typed: let it drift from what the application reports
+and the symbols land against a different version, silently. Tracer has no
+re-symbolication — symbols apply only to events received after the upload.
 
 ### Web
 
@@ -298,10 +249,6 @@ curl --location \
   -F file=@/tmp/sourcemaps.zip \
   https://plugin-api.apptracer.ru/api/sourcemap/upload
 ```
-
-The archive is zipped from **inside** `build/web` so that the paths in it match
-the paths in the frames: Tracer matches source maps by file path, not by Debug
-ID. `versionName` has to match the `release` passed in `TracerOptions`.
 
 As on iOS: every release, and before the deploy — source maps apply only to what
 arrives after they are uploaded.
@@ -351,14 +298,14 @@ in the log tab either way.
 
 ### If nothing arrives
 
-It is almost always one of four things:
+It is almost always one of five things:
 
 * **The platform setup was skipped.** At startup the package prints a line
   saying it is disabled and why, and `Tracer.isEnabled` is `false` at that
   moment. Read the log first.
 * **It is a debug build.** The native SDK sends nothing from debug builds by
   default, on either platform. Test on release, or turn on `setDebugUpload`
-  (Android, below).
+  (Android, above).
 * **Android: `resValues = true` is missing.** AGP 9 turns the feature off by
   default, and the SDK reads `appToken` out of exactly that generated resource
   — without it, it fails at runtime.
@@ -397,25 +344,23 @@ This package hooks those three Dart entry points and forwards what it finds to
 the native SDK, which keeps handling native crashes, ANRs and the crash-free
 metric itself.
 
-## How this differs from firebase_crashlytics
+## Comparison with Firebase Crashlytics
 
-A fair question: Crashlytics is free, official, and does the same job.
+A fair question: Firebase Crashlytics is free, official, and does the same job.
 
 | | apptracer_flutter | firebase_crashlytics |
 |---|---|---|
-| Whose SDKs, and where reports go | native SDKs by VK / OK.TECH; ingest on `*.apptracer.ru`, in the "Odnoklassniki Services" and "VK Services" networks, RU, AS47764 | Google's SDKs, ingest in Google's infrastructure |
+| Whose SDKs, and where reports go | native SDKs by VK / OK.TECH, ingest in their infrastructure | Google's SDKs, ingest in Google's infrastructure |
 | Platforms | Android, iOS, web | Android, iOS, macOS |
-| Where reports go | Tracer's servers (VK / OK.TECH) | Google's infrastructure |
 | Dart error capture | `FlutterError.onError`, `PlatformDispatcher.onError`, a guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
-| Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | `firebase crashlytics:symbols:upload` on Android, automatic on Apple |
-| Native symbols, every build | Android — the Gradle plugin itself; iOS — a build phase the package writes for you; web — the package's command | Apple — by itself, through an Xcode build phase; Android — through the Firebase CLI |
+| Obfuscated Dart | by hand: `flutter symbolize` against the archived symbol file | Android — `firebase crashlytics:symbols:upload`; iOS — automatic |
+| Native symbols, every build | Android — the Gradle plugin itself; iOS — a build phase the package writes for you; web — the package's command | Android — through the Firebase CLI; iOS — through an Xcode build phase |
 
-**About the data.** This is the main reason to pick Tracer: Crashlytics means
-Google's SDKs and Google's ingest, Tracer means VK / OK.TECH's, with an ingest
-whois puts in Russian networks (AS47764, Moscow), so no report
-crosses the border — which does not make a crash log anonymous, since what makes
-it personal data is what you put in it, and exactly what leaves the device is
-listed in
+**About the data.** This is the main reason to pick Tracer: Firebase
+Crashlytics means Google's SDKs and Google's ingest, Tracer means VK /
+OK.TECH's, with an ingest in Russian networks, so no report crosses the border
+— which does not make a crash log anonymous, since what makes it personal data
+is what you put in it, and exactly what leaves the device is listed in
 [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 
 ## What you get beyond Dart errors
@@ -550,9 +495,15 @@ TracerOptions(reportUnhandledErrorsAsFatal: true)
 
 ## What data is transmitted
 
-This package adds **no personal data of its own**: no install id, no device id,
-no user id, no automatic context. Everything it sends is a property of the error
-or something you handed it explicitly.
+On Android and iOS this package adds **no personal data of its own**: no
+install id, no device id, no user id, no automatic context. Everything it sends
+is a property of the error or something you handed it explicitly.
+
+Web is different. The wire format is copied from the vendor's JS SDK, which
+always sends a `deviceId`, so the implementation creates one — a UUID in
+`localStorage`, the same one until site data is cleared — and sends `host`,
+screen size, orientation angle and `visibilityState` alongside it. There is no
+way to turn that off.
 
 The native SDKs are a separate matter — the Android SDK collects device model,
 manufacturer, ABI, OS version, mobile operator and installer package on its own,
@@ -604,10 +555,8 @@ only the surviving frames decode, and the cap is
 `TracerOptions.maxRawStackTraceLogBytes`.
 
 **Tracer has no upload channel for Dart `--split-debug-info` files** — the
-vendor confirmed as much — so decoding stays a manual step. Read
-[symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md)
-before you ship such a build — it explains what does and does not work, and how
-to avoid finding out the hard way.
+vendor confirmed as much — so decoding stays a manual step. Details in
+[symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
 
 ## License
 

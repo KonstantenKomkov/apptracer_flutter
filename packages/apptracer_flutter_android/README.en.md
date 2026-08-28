@@ -35,11 +35,14 @@ provider. An `Application` implementing `HasTracerConfiguration` cancels it,
 which is what `TracerApplication` is for: subclass it. Why it works this way,
 and where it is fragile, is documented on `TracerAutoConfig`.
 
-Two things this plugin will tell you about at runtime, rather than failing
-silently:
+Four things this plugin will tell you about at runtime, rather than failing
+silently. The first two also disable it:
 
 * the Tracer SDK missing from the runtime classpath;
 * the `ru.ok.tracer` Gradle plugin not applied, detected by the absence of the
-  generated `tracer_app_token` resource.
+  generated `tracer_app_token` resource;
+* a `TracerOptions.appToken` that was passed — it is ignored on Android;
+* a `TracerOptions.environment` that was passed — also ignored, the value comes
+  from the Gradle plugin.
 
 Requires `minSdk 21`, matching `ru.ok.tracer:tracer-commons`.

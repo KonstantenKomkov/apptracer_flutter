@@ -133,7 +133,7 @@ class UnsupportedTracerPlatform extends TracerPlatform {
       'Android and iOS are covered by the bundled native plugins. On any '
       'other target, register the pure-Dart transport yourself: '
       'TracerPlatform.instance = TracerHttpTracer(...) from '
-      'package:apptracer_flutter_http, with TracerOptions.dsn set. '
+      'package:apptracer_flutter_http, with TracerOptions.appToken set. '
       'See docs/platform-matrix.md.',
     );
   }

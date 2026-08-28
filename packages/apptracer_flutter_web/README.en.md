@@ -34,3 +34,7 @@ Consequences:
   not by Debug ID**. See [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
 * There is no such thing as a native crash on web, and no crash-free metric:
   the vendor SDK's `trackSession` is not sent.
+* The ingest requires a `deviceId`, so the implementation creates one: a UUID in
+  `localStorage` under `apptracer_flutter.deviceId`, surviving a reload. In a
+  private window, or with site data blocked, it lives as long as the tab. It is
+  the only identifier this package invents.

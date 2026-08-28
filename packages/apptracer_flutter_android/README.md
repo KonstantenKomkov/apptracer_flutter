@@ -34,10 +34,14 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 `TracerApplication`, от которого наследуются. Почему так и чем это рискованно —
 в `TracerAutoConfig`.
 
-О двух вещах плагин скажет в рантайме, а не промолчит:
+О четырёх вещах плагин скажет в рантайме, а не промолчит. Первые две его
+выключают:
 
 * SDK Tracer отсутствует в classpath рантайма;
 * Gradle-плагин `ru.ok.tracer` не применён — определяется по отсутствию
-  сгенерированного ресурса `tracer_app_token`.
+  сгенерированного ресурса `tracer_app_token`;
+* передан `TracerOptions.appToken` — на Android он игнорируется;
+* передан `TracerOptions.environment` — тоже игнорируется, значение берётся из
+  Gradle-плагина.
 
 Требует `minSdk 21` — как и `ru.ok.tracer:tracer-commons`.

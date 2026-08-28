@@ -23,8 +23,11 @@ English version: [README.en.md](README.en.md).
   маркеры. Исходный текст сохраняется всегда: обфусцированный трейс
   расшифровывается только через `flutter symbolize`, а тому нужны исходные
   байты.
+* `SyntheticIssueKey` — синтез `issueKey` из типа ошибки и внутреннего
+  именованного кадра, для бэкендов, чья группировка не различает две ошибки
+  Dart. Обеими нативными реализациями используется один и тот же.
 * Модели данных: `TracerOptions`, `TracerEvent`, `TracerBreadcrumb`,
-  `TracerSeverity`.
+  `TracerSeverity`, `DartStackFrame`.
 
 ## Как реализовать платформу
 

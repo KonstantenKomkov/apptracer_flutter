@@ -18,7 +18,9 @@ request from the vendor's JS SDK and is written down in
 > was wrong: Tracer has its own JavaScript SDK, an ordinary JS project is issued
 > no DSN, and events go to Tracer's own ingest. Sentry ingest does exist — for
 > platforms with no Tracer SDK, with a DSN issued when the project is created
-> through VK Cloud. Renamed 2026-08-26, before the first release.
+> through VK Cloud — and it stayed a package of its own,
+> [`apptracer_flutter_sentry`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_sentry).
+> Split 2026-08-26, before the first release.
 
 On **web** it is used automatically by `apptracer_flutter_web`. On **desktop and
 Aurora OS** register it yourself:

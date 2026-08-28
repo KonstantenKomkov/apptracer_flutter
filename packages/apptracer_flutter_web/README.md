@@ -34,3 +34,8 @@ Flutter не умеет включать в себя npm-пакеты. Поэт�
   а не по Debug ID**. См. [symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
 * Нативных крашей на web не бывает, и метрику crash-free пакет не считает:
   `trackSession` вендорского SDK он не шлёт.
+* Приём требует `deviceId`, поэтому реализация заводит его сама: UUID в
+  `localStorage` под ключом `apptracer_flutter.deviceId`, переживающий
+  перезагрузку страницы. В приватном окне или при запрете хранилища он живёт
+  столько же, сколько вкладка. Это единственный идентификатор, который пакет
+  создаёт от себя.
