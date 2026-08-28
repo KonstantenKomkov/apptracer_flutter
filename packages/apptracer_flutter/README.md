@@ -110,57 +110,25 @@ androidPluginToken=...
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Класс `TracerApplication` из пакета подключается одним из двух способов —
-результат одинаковый, выберите любой.
+Дальше на Android делать нечего: настройку, без которой этот пакет молча теряет
+ошибки, он ставит себе сам.
 
-**А. В манифесте.** У тега `<application>` в
-`android/app/src/main/AndroidManifest.xml` уже есть `android:name` — в шаблоне
-Flutter он равен `"${applicationName}"`. Поменяйте **только это значение**,
-соседние атрибуты ваши и остаются как были:
+Речь про мягкий рейт-лимит на нефатальные. Жёсткий дефолт Tracer — **8
+нефатальных за сессию** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка
+Dart, которую шлёт этот пакет, — нефатальная. То есть упрётесь вы именно в этот
+потолок, и упрётесь молча. Рейт-лимит поднимает его до 10 в час, и вендор сам
+рекомендует его включать.
 
-```xml
-<application
-    android:name="ru.apptracer.flutter.TracerApplication"
-    android:label="my_app"
-    android:icon="@mipmap/ic_launcher">
-```
+Ставит его `ContentProvider` пакета: система создаёт провайдеры в порядке
+`android:initOrder`, наш идёт раньше провайдера Tracer и успевает положить
+конфигурацию до того, как SDK её прочитает. Ни манифест, ни Gradle трогать не
+надо. Как это устроено и что будет, если вендор закроет лазейку, написано в
+`TracerAutoConfig` — там же страховка на этот случай: указать
+`ru.apptracer.flutter.TracerApplication` в `android:name`, результат тот же.
 
-**Б. Плейсхолдером из Gradle**, если манифест трогать не хочется. В
-`android/app/build.gradle.kts`:
-
-```kotlin
-android {
-    defaultConfig {
-        manifestPlaceholders["applicationName"] =
-            "ru.apptracer.flutter.TracerApplication"
-    }
-}
-```
-
-В Groovy-файле (`android/app/build.gradle`) тот же вызов пишется иначе:
-
-```groovy
-android {
-    defaultConfig {
-        manifestPlaceholders += [
-            applicationName: "ru.apptracer.flutter.TracerApplication",
-        ]
-    }
-}
-```
-
-Способ Б удобнее, когда манифест общий для сборок с Tracer и без него. В примере
-этого репозитория взят он — только подставляется собственный наследник,
-`TracerHostApplication`.
-
-`TracerApplication` включает мягкий рейт-лимит на нефатальные, и это не
-мелочь: жёсткий дефолт Tracer — **8 нефатальных за сессию**
-(`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка Dart, которую шлёт этот
-пакет, — нефатальная. То есть упрётесь вы именно в этот потолок, и упрётесь
-молча. Рейт-лимит поднимает его до 10 в час, и вендор сам рекомендует его
-включать.
-
-Если свой `Application` уже есть — наследуйтесь и дополняйте список, а не
+**Если своё `Application` уже есть**, конфигурацию пакета оно отменяет: SDK
+читает её у объекта `Application` и берёт его список целиком, а не дополняет
+нашим. Поэтому наследуйтесь от `TracerApplication` и дополняйте список, а не
 заменяйте его:
 
 ```kotlin
@@ -172,8 +140,20 @@ class MyApplication : TracerApplication() {
 }
 ```
 
-Поведением пакета по умолчанию это, к сожалению, быть не может: SDK читает
-конфигурацию только у объекта `Application`, а плагин — не он.
+Свой класс указывается как обычно — в `android:name` у `<application>` (в
+шаблоне Flutter там стоит `"${applicationName}"`, менять надо **только это
+значение**, соседние атрибуты ваши) либо плейсхолдером, если манифест общий для
+сборок с Tracer и без него:
+
+```kotlin
+android {
+    defaultConfig {
+        manifestPlaceholders["applicationName"] = "мой.пакет.MyApplication"
+    }
+}
+```
+
+В примере этого репозитория взят плейсхолдер.
 
 Ещё четыре момента, о которые легко споткнуться:
 

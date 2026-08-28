@@ -25,7 +25,10 @@ import ru.ok.tracer.crash.report.CrashReportConfiguration
  *
  * The non-fatal rate limit is deliberately left at its default: changing it
  * mid-verification would make it unclear whether a missing event was dropped
- * by the limiter or never sent.
+ * by the limiter or never sent. Note that leaving it out is an active choice
+ * here — the SDK takes this list whole, so it also drops the limit that
+ * `ru.apptracer.flutter.TracerAutoConfigProvider` installs for every
+ * integration that writes no configuration of its own.
  */
 class TracerHostApplication : Application(), HasTracerConfiguration {
 

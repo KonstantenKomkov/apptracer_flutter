@@ -51,7 +51,7 @@ ANR dialog complained.
 | `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.4.0.aar` |
 | Permissions added | `INTERNET`, `ACCESS_NETWORK_STATE` | same manifest |
 | Initialisation | automatic, through `ru.ok.tracer.startup.InitializationProvider` (a content provider) plus `TracerInitializer` | same manifest |
-| Configuration | `Application` implementing `ru.ok.tracer.HasTracerConfiguration` | `javap` on `tracer-commons` |
+| Configuration | `Application` implementing `ru.ok.tracer.HasTracerConfiguration`, or `Tracer.runtimeConfigs` seeded before `Tracer.init` runs | `javap` on `tracer-commons` |
 | Generated resources | `tracer_app_token`, `tracer_environment`, `tracer_is_disabled`, `tracer_mapping_uuid` | bytecode of `ru.ok.tracer.mapping_plugin.TracerUploadMappingPlugin` |
 | Log buffer | circular, **65536 bytes** by default (`maxLogsLength`), oldest entries evicted first | default value read from `CrashReportConfiguration` bytecode |
 | License | Tracer's License Agreement, <https://apptracer.ru/license/> | `<licenses>` in `tracer-crash-report-1.4.0.pom` |
@@ -138,10 +138,14 @@ took effect.
 `TracerOptions.appToken` is **ignored on Android**. The SDK reads its token from
 the `tracer_app_token` string resource that the Gradle plugin generates at build
 time. The only documented runtime override is
-`CoreTracerConfiguration.Builder.setOverrideAppToken`, which is reachable solely
-through an `Application` subclass implementing `HasTracerConfiguration` — a
-Flutter plugin cannot install one. The plugin logs a warning when a token is
-passed anyway, rather than pretending it took effect.
+`CoreTracerConfiguration.Builder.setOverrideAppToken`, and it lives in the
+configuration the SDK settles at start-up — from an `Application` implementing
+`HasTracerConfiguration`, or from the seam `TracerAutoConfig` uses before
+`Tracer.init`. Both happen inside a content provider, before
+`Application.onCreate` and long before Dart runs; replacing that map afterwards
+would discard whatever configuration the application put there. The plugin logs
+a warning when a token is passed anyway, rather than pretending it took
+effect.
 
 ### Limits, with their actual values
 

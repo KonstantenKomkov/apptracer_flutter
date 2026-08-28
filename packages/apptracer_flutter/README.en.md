@@ -113,58 +113,27 @@ properties — or as `-PandroidPluginToken=…`. In GitHub Actions:
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-The package's `TracerApplication` is wired in one of two ways — same result,
-take either.
+That is all Android needs: the one setting without which this package loses
+errors silently, it applies to itself.
 
-**A. In the manifest.** The `<application>` tag in
-`android/app/src/main/AndroidManifest.xml` already has an `android:name`;
-Flutter's template sets it to `"${applicationName}"`. Change **only that
-value** — the attributes next to it are yours and stay as they are:
+The setting is the softer non-fatal rate limit. Tracer's hard default is **8
+non-fatals per session** (`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart
+error this package reports is a non-fatal — so that is the ceiling your app
+meets first, and it meets it silently. The rate limit raises it to 10 per hour,
+and the vendor recommends turning it on.
 
-```xml
-<application
-    android:name="ru.apptracer.flutter.TracerApplication"
-    android:label="my_app"
-    android:icon="@mipmap/ic_launcher">
-```
+A `ContentProvider` of ours applies it: the system creates providers in
+`android:initOrder`, ours runs ahead of Tracer's own and gets the configuration
+in place before the SDK reads it. Neither the manifest nor Gradle needs
+touching. How that works, and what happens if the vendor closes the seam, is
+written down in `TracerAutoConfig` — along with the fallback for that day,
+naming `ru.apptracer.flutter.TracerApplication` in `android:name`, which has the
+same effect.
 
-**B. Through a Gradle placeholder**, if you would rather not touch the manifest.
-In `android/app/build.gradle.kts`:
-
-```kotlin
-android {
-    defaultConfig {
-        manifestPlaceholders["applicationName"] =
-            "ru.apptracer.flutter.TracerApplication"
-    }
-}
-```
-
-In a Groovy file (`android/app/build.gradle`) the same call reads differently:
-
-```groovy
-android {
-    defaultConfig {
-        manifestPlaceholders += [
-            applicationName: "ru.apptracer.flutter.TracerApplication",
-        ]
-    }
-}
-```
-
-B is the easier one when the manifest is shared by builds with and without
-Tracer. This repository's example takes it — substituting a subclass of its own,
-`TracerHostApplication`.
-
-`TracerApplication` turns on the softer non-fatal rate limit, which matters
-more than it sounds: Tracer's hard default is **8 non-fatals per session**
-(`LIMIT_MAX_NON_FATALS_PER_SESSION`), and every Dart error this package reports
-is a non-fatal — so that is the ceiling your app meets first, and it meets it
-silently. The rate limit raises it to 10 per hour, and the vendor recommends
-turning it on.
-
-If you already have an `Application` of your own, subclass this one and add to
-the list rather than replacing it:
+**If you already have an `Application`**, it cancels the package's
+configuration: the SDK reads configuration off the `Application` object and
+takes its list whole rather than adding ours to it. So subclass
+`TracerApplication` and add to the list rather than replacing it:
 
 ```kotlin
 class MyApplication : TracerApplication() {
@@ -175,8 +144,21 @@ class MyApplication : TracerApplication() {
 }
 ```
 
-This cannot be the package's own default, unfortunately: the SDK reads its
-configuration from the `Application` object and a plugin is not one.
+Your class is wired in the usual way — through `android:name` on
+`<application>`, where Flutter's template leaves `"${applicationName}"` and
+**only that value** changes, the attributes next to it being yours; or through
+the placeholder, which is the easier one when the manifest is shared by builds
+with and without Tracer:
+
+```kotlin
+android {
+    defaultConfig {
+        manifestPlaceholders["applicationName"] = "my.package.MyApplication"
+    }
+}
+```
+
+This repository's example takes the placeholder.
 
 Four more things that are easy to trip over:
 

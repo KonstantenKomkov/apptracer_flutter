@@ -9,6 +9,24 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- The non-fatal rate limit is now applied by the package itself, so an
+  integration no longer has to name `ru.apptracer.flutter.TracerApplication` in
+  its manifest. `TracerAutoConfigProvider`, a `ContentProvider` ordered ahead of
+  the SDK's own by `android:initOrder`, writes the configuration into
+  `Tracer.runtimeConfigs` before `Tracer.init` reads it; `Tracer.init` keeps
+  what it finds there unless the `Application` implements
+  `HasTracerConfiguration`, which preserves the precedence an application
+  expects. Verified on a device: a default `Application` now gets a token bucket
+  of 10 per hour instead of the SDK's one-shot 8, and the example's own
+  `Application` still overrides it. Costs one call into a non-public SDK setter,
+  which fails as a caught `NoSuchMethodError` if a future version removes it —
+  see `TracerAutoConfig`.
+- `TracerApplication` is now optional, and carries the same list through
+  `TracerAutoConfig.defaultConfigurations()`. It stays for applications with an
+  `Application` of their own, whose configuration replaces the package's.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

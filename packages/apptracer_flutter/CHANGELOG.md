@@ -9,6 +9,16 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Android setup no longer asks for a line of manifest. The non-fatal rate limit
+  that `ru.apptracer.flutter.TracerApplication` used to carry is applied by
+  `apptracer_flutter_android` itself, at process start, so an application
+  without an `Application` class of its own gets 10 non-fatals per hour instead
+  of the SDK's silent 8 per session with nothing to configure. Applications that
+  do have one still override it, and still subclass `TracerApplication` to keep
+  the limit.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

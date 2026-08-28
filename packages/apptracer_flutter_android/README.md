@@ -26,6 +26,14 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
 `appToken`. См. [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
 
+Настройку SDK пакет ставит себе сам, без строчки в манифесте: рейт-лимит на
+нефатальные (10 в час вместо жёстких 8 за сессию — а каждая ошибка Dart здесь
+нефатальная). Кладёт её `TracerAutoConfigProvider`, который система создаёт
+раньше провайдера Tracer. `Application`, реализующий `HasTracerConfiguration`,
+эту конфигурацию отменяет — на такой случай в пакете есть
+`TracerApplication`, от которого наследуются. Почему так и чем это рискованно —
+в `TracerAutoConfig`.
+
 О двух вещах плагин скажет в рантайме, а не промолчит:
 
 * SDK Tracer отсутствует в classpath рантайма;

@@ -1,1 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- initOrder puts this ahead of ru.ok.tracer's own
+             InitializationProvider, which leaves the default 0. See
+             TracerAutoConfigProvider. -->
+        <provider
+            android:name="ru.apptracer.flutter.TracerAutoConfigProvider"
+            android:authorities="${applicationId}.apptracer-flutter-init"
+            android:exported="false"
+            android:initOrder="100" />
+    </application>
+
+</manifest>
