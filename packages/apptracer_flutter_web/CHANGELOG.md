@@ -9,15 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Fixed
-
-- Documented the `deviceId` this package creates: a UUID in `localStorage`
-  under `apptracer_flutter.deviceId`, sent with every event and surviving until
-  the viewer clears site data. In a private window, or with site data blocked,
-  it lives as long as the tab. Nothing about the behaviour changed; the README
-  simply did not mention it.
-
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -28,9 +20,19 @@ as pub.dev expects.
   whatever the options said still stands.
 
 - Initial release.
-- Registers the pure-Dart Sentry-protocol transport as the web implementation.
-  Tracer's JavaScript SDK ships only as an npm package, which a Flutter web
-  build cannot bundle, and Tracer ingests Sentry events on every platform.
+- Registers the pure-Dart transport as the web implementation. Tracer's
+  JavaScript SDK ships only as an npm package, which a Flutter web build cannot
+  bundle, so this speaks the same ingest that SDK speaks —
+  `POST /api/crash/uploadBatch`, authenticated by the project's `appToken` —
+  from Dart.
+
+### Fixed
+
+- Documented the `deviceId` this package creates: a UUID in `localStorage`
+  under `apptracer_flutter.deviceId`, sent with every event and surviving until
+  the viewer clears site data. In a private window, or with site data blocked,
+  it lives as long as the tab. Nothing about the behaviour changed; the README
+  simply did not mention it.
 
 [Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

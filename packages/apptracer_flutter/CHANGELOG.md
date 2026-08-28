@@ -9,28 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Changed
-
-- Android setup no longer asks for a line of manifest. The non-fatal rate limit
-  that `ru.apptracer.flutter.TracerApplication` used to carry is applied by
-  `apptracer_flutter_android` itself, at process start, so an application
-  without an `Application` class of its own gets 10 non-fatals per hour instead
-  of the SDK's silent 8 per session with nothing to configure. Applications that
-  do have one still override it, and still subclass `TracerApplication` to keep
-  the limit.
-
-### Fixed
-
-- The documentation said the package adds no device identifier of its own.
-  That was never true of the web path: the implementation mints a UUID, keeps
-  it in `localStorage` under `apptracer_flutter.deviceId` and sends it as
-  `deviceId` on every event, together with the page host, screen metrics and
-  visibility state. The README and `docs/privacy.md` now say what actually
-  goes out, and name `deviceId` as the install identifier it is. Whether the
-  ingest would take an event without it is left unclaimed — the server answers
-  `200` to a malformed body, so its absence cannot be tested.
-
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -65,8 +44,15 @@ as pub.dev expects.
   truncated at a line boundary, keeping the `build_id` header and the frames
   nearest the throw.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+### Changed
+
+- Android setup no longer asks for a line of manifest. The non-fatal rate limit
+  that `ru.apptracer.flutter.TracerApplication` used to carry is applied by
+  `apptracer_flutter_android` itself, at process start, so an application
+  without an `Application` class of its own gets 10 non-fatals per hour instead
+  of the SDK's silent 8 per session with nothing to configure. Applications that
+  do have one still override it, and still subclass `TracerApplication` to keep
+  the limit.
 
 ### Fixed
 
@@ -86,3 +72,15 @@ as pub.dev expects.
   from the error type and the innermost named frame — the rule iOS already used,
   moved into Dart so both platforms share it. Neither file nor line goes into
   the key, so editing code does not scatter a group.
+
+- The documentation said the package adds no device identifier of its own.
+  That was never true of the web path: the implementation mints a UUID, keeps
+  it in `localStorage` under `apptracer_flutter.deviceId` and sends it as
+  `deviceId` on every event, together with the page host, screen metrics and
+  visibility state. The README and `docs/privacy.md` now say what actually
+  goes out, and name `deviceId` as the install identifier it is. Whether the
+  ingest would take an event without it is left unclaimed — the server answers
+  `200` to a malformed body, so its absence cannot be tested.
+
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

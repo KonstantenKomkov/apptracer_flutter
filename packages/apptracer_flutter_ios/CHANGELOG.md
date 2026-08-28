@@ -9,15 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Fixed
-
-- The README's `Podfile` snippet omitted `use_frameworks! :linkage => :static`,
-  so following it verbatim failed `pod install`: `OKTracer` ships as a static
-  `xcframework`. The snippet is complete now, and the README also says that
-  `pod install` writes a `dSYM` upload phase into `Runner.xcodeproj` and that
-  `TRACER_SKIP_IOS_PHASE=1` keeps it away from the project file.
-
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -42,22 +34,9 @@ as pub.dev expects.
 - Delivers breadcrumbs through `TracerLogProviderProtocol`, which leaves the
   SDK's own logging verbosity untouched.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
-
 - `TracerOptions.debug` now wires the SDK's own console log and a
   `TracerServiceDelegate`, so a rejected or failed upload says so instead of
   vanishing. Note that the SDK's log includes the upload URL with its token.
-
-### Fixed
-
-- A non-fatal must carry a non-empty `callStackAddresses`, or the SDK drops it
-  before any network call — its delegate answers `callStackAddresses is empty`
-  from `CrashReporterService.getThreadInfo`, and nothing whatsoever reaches the
-  project. A Dart stack trace has no native addresses, so the native stack of
-  the reporting call is passed instead; it is the same for every Dart error,
-  which is why grouping relies on the `issueKey` synthesised on the Dart
-  side.
 
 ### Changed
 
@@ -77,3 +56,22 @@ as pub.dev expects.
   new group. Those events sit under
   `Missing Binary image with UUID = … - <message>`, these under
   `+ 0 - <message>`.
+
+### Fixed
+
+- A non-fatal must carry a non-empty `callStackAddresses`, or the SDK drops it
+  before any network call — its delegate answers `callStackAddresses is empty`
+  from `CrashReporterService.getThreadInfo`, and nothing whatsoever reaches the
+  project. A Dart stack trace has no native addresses, so the native stack of
+  the reporting call is passed instead; it is the same for every Dart error,
+  which is why grouping relies on the `issueKey` synthesised on the Dart
+  side.
+
+- The README's `Podfile` snippet omitted `use_frameworks! :linkage => :static`,
+  so following it verbatim failed `pod install`: `OKTracer` ships as a static
+  `xcframework`. The snippet is complete now, and the README also says that
+  `pod install` writes a `dSYM` upload phase into `Runner.xcodeproj` and that
+  `TRACER_SKIP_IOS_PHASE=1` keeps it away from the project file.
+
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

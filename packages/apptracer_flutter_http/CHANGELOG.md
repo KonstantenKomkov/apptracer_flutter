@@ -9,7 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -35,6 +35,12 @@ as pub.dev expects.
   2.6.9 uses, and the one the console's log table insists on.
 - `TracerLogBuffer`, holding that log, with the row format pinned by tests.
 
+### Changed
+
+- Custom keys are sent both as `uploadBean.properties` and as
+  `uploadBean.tags`. The vendor's SDK sends only tags, but the console's data
+  tab reads only properties; measured 2026-08-27 by sending one event each way.
+
 ### Note on the name
 
 Released as `apptracer_flutter_http`. It was written as
@@ -46,9 +52,3 @@ the first release.
 
 [Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
-
-### Changed
-
-- Custom keys are sent both as `uploadBean.properties` and as
-  `uploadBean.tags`. The vendor's SDK sends only tags, but the console's data
-  tab reads only properties; measured 2026-08-27 by sending one event each way.

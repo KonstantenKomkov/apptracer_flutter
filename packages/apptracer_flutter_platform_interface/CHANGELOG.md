@@ -9,14 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Fixed
-
-- The diagnostic `UnsupportedTracerPlatform` prints on an unsupported platform
-  told the reader to register `TracerHttpTracer` "with `TracerOptions.dsn`
-  set". That transport authenticates with `appToken`; `dsn` belongs to the
-  Sentry one, and following the message would have left collection off.
-
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -47,9 +40,6 @@ as pub.dev expects.
   verbatim text whole — trimming that would destroy the only artefact an
   obfuscated trace can be decoded from.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
-
 ### Fixed
 
 - Grouping on Android. Measured against a live Tracer project on 2026-08-26,
@@ -59,3 +49,11 @@ as pub.dev expects.
   from the error type and the innermost named frame — the rule iOS already used,
   moved into Dart so both platforms share it. Neither file nor line goes into
   the key, so editing code does not scatter a group.
+
+- The diagnostic `UnsupportedTracerPlatform` prints on an unsupported platform
+  told the reader to register `TracerHttpTracer` "with `TracerOptions.dsn`
+  set". That transport authenticates with `appToken`; `dsn` belongs to the
+  Sentry one, and following the message would have left collection off.
+
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

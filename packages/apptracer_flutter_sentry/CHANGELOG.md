@@ -9,15 +9,7 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-### Changed
-
-- Not published to pub.dev for now (`publish_to: none`). The platforms this
-  transport exists for — desktop and Aurora OS — are outside the 0.1.0 release
-  and have never been run against a live Tracer project, so publishing it would
-  offer a package nobody has watched deliver an error. Depend on it from git
-  until that changes.
-
-## [0.1.0] - 2026-08-27
+## [0.1.0] - 2026-08-28
 
 ### Added
 
@@ -33,6 +25,14 @@ as pub.dev expects.
   propagates into the host application.
 - A malformed DSN disables collection loudly at startup rather than swallowing
   every event afterwards.
+
+### Changed
+
+- Not published to pub.dev for now (`publish_to: none`). The platforms this
+  transport exists for — desktop and Aurora OS — are outside the 0.1.0 release
+  and have never been run against a live Tracer project, so publishing it would
+  offer a package nobody has watched deliver an error. Depend on it from git
+  until that changes.
 
 ### Note on web
 
