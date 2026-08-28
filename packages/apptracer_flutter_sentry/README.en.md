@@ -17,8 +17,8 @@ For Flutter that means desktop, and Aurora OS, where the vendor's C/C++ SDK with
 system minidumps cannot be reached from Dart.
 
 > **Neither platform is supported by the 0.1.0 release**, and neither has ever
-> been run against a live project. This package is published because it is
-> finished, not because a verified scenario stands behind it. The DSN, too, is
+> been run against a live project. That is why this package is not on pub.dev:
+> depend on it from git. The DSN, too, is
 > issued only for a project created through VK Cloud — an ordinary Tracer
 > project has none, measured 2026-08-26.
 

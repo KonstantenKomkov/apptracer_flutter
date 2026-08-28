@@ -31,7 +31,8 @@ packages/
   apptracer_flutter_web/                реализация для web
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
   apptracer_flutter_sentry/             протокол Sentry; только для платформ,
-                                        которые этот релиз не поддерживает
+                                        которые этот релиз не поддерживает,
+                                        и потому не публикуется на pub.dev
 docs/
 tool/
   bootstrap.sh              pub get во всех пакетах

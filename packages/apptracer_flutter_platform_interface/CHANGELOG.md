@@ -9,6 +9,13 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Fixed
+
+- The diagnostic `UnsupportedTracerPlatform` prints on an unsupported platform
+  told the reader to register `TracerHttpTracer` "with `TracerOptions.dsn`
+  set". That transport authenticates with `appToken`; `dsn` belongs to the
+  Sentry one, and following the message would have left collection off.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

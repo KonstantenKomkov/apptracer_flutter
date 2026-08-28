@@ -27,6 +27,12 @@ as pub.dev expects.
   `TracerAutoConfig.defaultConfigurations()`. It stays for applications with an
   `Application` of their own, whose configuration replaces the package's.
 
+### Fixed
+
+- The README promised two runtime warnings where the plugin emits four: it also
+  reports a `TracerOptions.appToken` and a `TracerOptions.environment` that
+  were passed but are ignored on Android.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

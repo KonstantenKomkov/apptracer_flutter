@@ -52,6 +52,13 @@ has to be on pub.dev before the next resolves.
 5. `apptracer_flutter_web`
 6. `apptracer_flutter`
 
+`apptracer_flutter_sentry` is **not** in that list and carries
+`publish_to: none`. The platforms it exists for — desktop and Aurora OS — are
+outside this release and have never been run against a live Tracer project, so
+there is nothing to publish it on the strength of. Anyone who needs it can
+depend on it from git. Remove the line and add it to the list, after
+`apptracer_flutter_platform_interface`, when that changes.
+
 `dart pub publish --dry-run` fails for a package whose siblings are not yet
 published. Before the first release that is expected, which is why the CI job
 is `continue-on-error`. Make it required once 0.1.0 is out.

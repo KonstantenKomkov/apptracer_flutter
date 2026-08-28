@@ -9,6 +9,14 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Fixed
+
+- The README's `Podfile` snippet omitted `use_frameworks! :linkage => :static`,
+  so following it verbatim failed `pod install`: `OKTracer` ships as a static
+  `xcframework`. The snippet is complete now, and the README also says that
+  `pod install` writes a `dSYM` upload phase into `Runner.xcodeproj` and that
+  `TRACER_SKIP_IOS_PHASE=1` keeps it away from the project file.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

@@ -30,7 +30,8 @@ packages/
   apptracer_flutter_web/                web implementation
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
   apptracer_flutter_sentry/             the Sentry protocol; only for platforms
-                                        this release does not support
+                                        this release does not support, and so
+                                        not published to pub.dev
 docs/
 tool/
   bootstrap.sh              pub get in every package

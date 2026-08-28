@@ -19,6 +19,17 @@ as pub.dev expects.
   do have one still override it, and still subclass `TracerApplication` to keep
   the limit.
 
+### Fixed
+
+- The documentation said the package adds no device identifier of its own.
+  That was never true of the web path: the implementation mints a UUID, keeps
+  it in `localStorage` under `apptracer_flutter.deviceId` and sends it as
+  `deviceId` on every event, together with the page host, screen metrics and
+  visibility state. The README and `docs/privacy.md` now say what actually
+  goes out, and name `deviceId` as the install identifier it is. Whether the
+  ingest would take an event without it is left unclaimed — the server answers
+  `200` to a malformed body, so its absence cannot be tested.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

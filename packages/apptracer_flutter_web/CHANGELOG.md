@@ -9,6 +9,14 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Fixed
+
+- Documented the `deviceId` this package creates: a UUID in `localStorage`
+  under `apptracer_flutter.deviceId`, sent with every event and surviving until
+  the viewer clears site data. In a private window, or with site data blocked,
+  it lives as long as the tab. Nothing about the behaviour changed; the README
+  simply did not mention it.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added
