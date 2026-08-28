@@ -183,10 +183,8 @@ jobs:
   publish-dry-run:
     name: pub publish --dry-run
     runs-on: ubuntu-latest
-    # Until the first release, the packages are not on pub.dev and every
-    # dry-run that resolves a sibling dependency necessarily fails. Turn this
-    # job required once 0.1.0 is out; see docs/publishing.md.
-    continue-on-error: true
+    # Required since 0.1.0 went out on 2026-08-28: every sibling dependency now
+    # resolves from pub.dev, so a failure here is a real one.
     strategy:
       fail-fast: false
       matrix:

@@ -59,9 +59,9 @@ there is nothing to publish it on the strength of. Anyone who needs it can
 depend on it from git. Remove the line and add it to the list, after
 `apptracer_flutter_platform_interface`, when that changes.
 
-`dart pub publish --dry-run` fails for a package whose siblings are not yet
-published. Before the first release that is expected, which is why the CI job
-is `continue-on-error`. Make it required once 0.1.0 is out.
+0.1.0 went out on 2026-08-28, in that order. Every package now resolves its
+siblings from pub.dev, so the `publish-dry-run` CI job is required rather than
+`continue-on-error` — a failure there is a real one.
 
 ## Checklist per package
 

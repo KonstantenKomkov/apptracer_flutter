@@ -878,7 +878,8 @@ void recurse(int n) => recurse(n + 1);   // StackOverflowError
 - [x] `tool/check.sh` зелёный — 28.08.2026: формат, `analyze --fatal-infos` и
   тесты чисты во всех восьми модулях, `dart pub publish --dry-run` — без
   предупреждений.
-- [ ] дальше — порядок публикации из [publishing.md](publishing.md)
+- [x] дальше — порядок публикации из [publishing.md](publishing.md) — 28.08.2026,
+  шесть пакетов leaves-first. `apptracer_flutter_sentry` не публиковался.
 
 ---
 
