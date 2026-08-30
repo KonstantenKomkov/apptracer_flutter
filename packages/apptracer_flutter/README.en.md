@@ -139,6 +139,18 @@ Four more things that are easy to trip over:
 
 ### iOS
 
+Both dependency managers work. On **Swift Package Manager** there is nothing to
+set up: the package's `Package.swift` declares `OKTracer` as a dependency on the
+vendor's repository itself. The one difference is the `dSYM` upload phase, which
+no `pod install` is there to add, so it is installed once with:
+
+```sh
+dart run apptracer_flutter:install_ios_dsym_phase
+```
+
+The token section below applies either way; the rest of this section is about
+**CocoaPods**.
+
 In `ios/Podfile` — `OKTracer` lives in the vendor's own spec repository and
 ships as a static `xcframework`, so both a source line and a change of linkage
 are needed:

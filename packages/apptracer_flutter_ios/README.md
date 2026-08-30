@@ -26,6 +26,41 @@ Breadcrumbs доставляются через `TracerLogProviderProtocol`, к�
 
 ## Подключение
 
+Пакет поддерживает оба менеджера зависимостей Flutter для iOS: Swift Package
+Manager и CocoaPods. Flutter выбирает тот, который включён в приложении.
+
+### Swift Package Manager
+
+Ничего настраивать не нужно: `Package.swift` объявляет `OKTracer`
+зависимостью от [репозитория вендора](https://github.com/odnoklassniki/tracer-ios)
+по версии, и Xcode забирает SDK сам.
+
+`Package.swift` не зависит ни от чего, что генерирует сам Flutter: `import
+Flutter` резолвится через framework search paths, которые Flutter передаёт
+сборке. Поэтому SPM-путь работает на любой версии, где SPM вообще есть, и
+констрейнт пакета остаётся `>=3.22.0` для обоих путей. Так же устроены
+`url_launcher_ios` из `flutter/packages` и `vkid_flutter_sdk`.
+
+Единственное отличие от CocoaPods — фазу выгрузки `dSYM` придётся добавить
+руками, потому что подспека, которая делает это при `pod install`, здесь никто
+не выполняет. В Xcode: цель `Runner` → **Build Phases** → **+** → **New Run
+Script Phase**, назовите её `[apptracer_flutter] Upload dSYMs to Tracer` и
+вставьте содержимое
+[`ios/tracer_dsym_upload_phase.sh`](ios/tracer_dsym_upload_phase.sh).
+
+То же самое делает команда пакета — она сама находит скрипт и правит проект,
+если в системе есть Ruby с gem `xcodeproj` (та же пара, на которой работает
+CocoaPods):
+
+```sh
+dart run apptracer_flutter:install_ios_dsym_phase
+```
+
+Повторный запуск безопасен: существующая фаза обновляется на месте, а не
+дублируется.
+
+### CocoaPods
+
 `OKTracer` лежит в собственном spec-репозитории вендора для CocoaPods и
 поставляется статическим `xcframework`, поэтому в `ios/Podfile` нужны и
 источник, и статическая линковка:
@@ -42,8 +77,8 @@ target 'Runner' do
 end
 ```
 
-При `pod install` подспек добавляет в `Runner.xcodeproj` фазу сборки, которая
-отправляет `dSYM` при каждой release-сборке; `TRACER_SKIP_IOS_PHASE=1`
+При `pod install` подспек добавляет в `Runner.xcodeproj` ту же фазу сборки,
+которая отправляет `dSYM` при каждой release-сборке; `TRACER_SKIP_IOS_PHASE=1`
 запрещает трогать файл проекта. Токен фаза берёт из
 `ios/tracer_plugin_token` или из `TRACER_IOS_PLUGIN_TOKEN`.
 

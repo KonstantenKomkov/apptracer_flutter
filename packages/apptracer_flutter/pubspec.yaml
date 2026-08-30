@@ -3,7 +3,7 @@ description: >-
   Unofficial Flutter integration with Tracer (apptracer.ru): reports Dart
   errors, Flutter framework errors and breadcrumbs that the native Tracer SDKs
   cannot see on their own.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/KonstantenKomkov/apptracer_flutter
 issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 documentation: https://github.com/KonstantenKomkov/apptracer_flutter#readme
@@ -20,7 +20,9 @@ environment:
 
 dependencies:
   apptracer_flutter_android: ^0.1.0
-  apptracer_flutter_ios: ^0.1.0
+  # ^0.1.1: install_ios_dsym_phase runs a script that only 0.1.1 exposes as a
+  # command; against 0.1.0 it would define a method and exit silently.
+  apptracer_flutter_ios: ^0.1.1
   apptracer_flutter_platform_interface: ^0.1.0
   apptracer_flutter_web: ^0.1.0
   flutter:

@@ -9,6 +9,29 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-30
+
+### Added
+
+- `dart run apptracer_flutter:install_ios_dsym_phase`, which adds the dSYM
+  upload build phase to `Runner.xcodeproj`. On CocoaPods the podspec does this
+  at `pod install`; an application on Swift Package Manager evaluates no
+  podspec, so the step has to be run once by hand. The command finds
+  `apptracer_flutter_ios` through the package config and runs the script that
+  ships there, so nobody has to dig a path out of the pub cache. Running it
+  again refreshes the existing phase instead of adding a second one.
+
+  It needs Ruby with the `xcodeproj` gem — the pair CocoaPods itself runs on —
+  and says so when they are missing, along with the file to paste into Xcode
+  instead.
+
+### Changed
+
+- Requires `apptracer_flutter_ios` `^0.1.1`, which is where the script the new
+  command runs became runnable as a command. Under `^0.1.0` a resolution could
+  pick 0.1.0, where that file only defines a method, and the command would
+  report success having done nothing.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added
@@ -82,5 +105,6 @@ as pub.dev expects.
   ingest would take an event without it is left unclaimed — the server answers
   `200` to a malformed body, so its absence cannot be tested.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...HEAD
+[0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

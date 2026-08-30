@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'apptracer_flutter_ios'
-  s.version          = '0.1.0'
+  s.version          = '0.1.1'
   s.summary          = 'iOS implementation of apptracer_flutter.'
   s.description      = <<-DESC
 Unofficial Flutter integration with Tracer (apptracer.ru). Forwards Dart errors,
@@ -17,7 +17,10 @@ own spec repository. Add this line to your Podfile:
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Константин Комков' => 'fireandmight@gmail.com' }
   s.source           = { :path => '.' }
-  s.source_files     = 'Classes/**/*'
+  # The Swift Package Manager layout, shared with Package.swift so that a
+  # CocoaPods application and a Swift Package Manager one build the same
+  # files.
+  s.source_files     = 'apptracer_flutter_ios/Sources/apptracer_flutter_ios/**/*'
   s.dependency 'Flutter'
   s.dependency 'OKTracer', '>= 1.4.0'
 
@@ -33,6 +36,10 @@ own spec repository. Add this line to your Podfile:
   # firebase_crashlytics does: a phase declared here would belong to this pod
   # and run before the application is even linked, when Runner.app.dSYM does
   # not exist yet.
+  #
+  # The work is in `tracer_add_upload_phase`, a standalone script, because on
+  # Swift Package Manager nothing evaluates this podspec and the step has to be
+  # runnable by hand. See the package README.
   #
   # Set TRACER_SKIP_IOS_PHASE=1 to keep pod install away from the project file.
   if ENV['TRACER_SKIP_IOS_PHASE'].to_s.empty?

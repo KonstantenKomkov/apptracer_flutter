@@ -63,6 +63,14 @@ depend on it from git. Remove the line and add it to the list, after
 siblings from pub.dev, so the `publish-dry-run` CI job is required rather than
 `continue-on-error` — a failure there is a real one.
 
+Only the packages that changed go out after that, in the same leaves-first
+order. `apptracer_flutter_android` 0.1.1 went out alone on 2026-08-30.
+
+The `vX.Y.Z` tag numbers the **release event**, not any one package: packages
+version independently, and after 0.1.0 they no longer share a number. The
+CHANGELOG links compare two event tags, which is why an entry for 0.1.1 can sit
+between `v0.1.1` and `v0.1.2`.
+
 ## Checklist per package
 
 - [ ] `CHANGELOG.md` has an entry for the version, dated, in Keep a Changelog form

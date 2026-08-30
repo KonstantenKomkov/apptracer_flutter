@@ -227,6 +227,75 @@ Kotlin Gradle Plugin из подпроекта-библиотеки больше
 класслоадером самого расширения: в buildscript этого файла лежит своя копия KGP,
 и под Built-in Kotlin это был бы другой класс с тем же именем.
 
+## iOS собирается и Swift Package Manager, и CocoaPods
+
+Flutter на каждой iOS-сборке пишет, что плагин с одним подспеком «does not
+support Swift Package Manager» и что это «will become an error in a future
+version of Flutter» — проверка живёт в `DarwinDependencyManagement`
+(`darwin_dependency_management.dart`) и печатается независимо от того, включён
+SPM в приложении или нет. Поэтому рядом с подспеком лежит `Package.swift`, а
+исходники переехали в раскладку, которую ждёт SPM
+(`ios/apptracer_flutter_ios/Sources/apptracer_flutter_ios`); подспек собирает
+те же файлы, так что расхождению между двумя путями взяться неоткуда.
+
+`OKTracer` объявлен там ровно так же, как в подспеке: зависимостью от
+репозитория вендора по версии. Вендор публикует SDK бинарными таргетами в том
+же `github.com/odnoklassniki/tracer-ios`, который служит его CocoaPods spec
+repo, — значит принцип «ничего вендорского не редистрибутится и версия SDK не
+фиксируется в чужой сборке» соблюдён и здесь. Имя продукта — `apptracer-flutter-ios`
+через дефисы: SPM подставляет имя библиотеки в `CFBundleIdentifier`, где
+подчёркивание недопустимо, и Flutter ищет продукт именно под этим именем.
+
+Зависимости на `FlutterFramework` в манифесте нет — и это главное решение
+здесь, потому что шаблон Flutter 3.44 её ставит, а `validatePluginSupportsSwiftPackageManager`
+ругается на её отсутствие.
+
+`FlutterFramework` — пакет, который Flutter генерирует для собственного
+фреймворка. По исходникам flutter_tools его нет в 3.35 и 3.38, константа и
+`flutterFrameworkSwiftPackageDirectory` появляются в 3.41, полностью он
+генерируется в 3.44. Манифест, который на него ссылается, тем самым требует
+3.41+, и приложение, включившее SPM раньше, упало бы на резолве
+`../FlutterFramework`. Констрейнт `flutter:` один на оба пути, а CocoaPods
+работает на всём `>=3.22.0`, так что выразить эту границу в pubspec нечем —
+она осталась бы ловушкой в документации.
+
+Проверено экспериментом, а не рассуждением: чистое приложение (`flutter create`
+на 3.44.9, Podfile отсутствует, то есть search paths от CocoaPods исключены)
+собирается обоими вариантами манифеста одинаково — плагин компилируется и
+линкуется, в `Runner.debug.dylib` есть `AppTracerFlutterPlugin`, `DartLogProvider`
+и `GeneratedPluginRegistrant`, рядом `TracerResources.framework` вендора.
+Значит `import Flutter` резолвится через framework search paths, которые Flutter
+передаёт сборке, и объявлять зависимость не обязательно.
+
+Выбран вариант без неё: он резолвится на любой версии, где SPM вообще есть, и
+не создаёт регресса для тех, кто включил SPM до 3.41. Цена — опора на поведение,
+которое Flutter нигде не обещает: если он перестанет передавать search paths,
+сборка сломается, и тогда зависимость придётся вернуть вместе с честным подъёмом
+`flutter:`. Так же поставляются `url_launcher_ios` из самого `flutter/packages`
+и `vkid_flutter_sdk`.
+
+Продукт объявлен статическим: `OKTracer` — статический xcframework, и это то же
+требование, которое на CocoaPods выражено через `use_frameworks! :linkage => :static`.
+
+Само предупреждение при этом уходит: на 3.44.9 с включённым SPM Flutter вместо
+него пишет «All plugins found for ios are Swift Packages». CocoaPods-путь
+пересобран без изменений.
+
+## Фаза выгрузки dSYM вынесена в отдельный скрипт
+
+На CocoaPods фазу в `Runner.xcodeproj` добавляет подспек при `pod install`. На
+SPM подспек не выполняется вообще, поэтому вставку фазы пришлось сделать
+запускаемой отдельно — как у `firebase_crashlytics`, где это самостоятельный
+`crashlytics_add_upload_symbols`, вызываемый подспеком.
+
+Сам текст фазы теперь лежит файлом `ios/tracer_dsym_upload_phase.sh`, а не
+heredoc-ом внутри Ruby: это единственный источник правды сразу для трёх
+потребителей — подспека, ручной вставки в Xcode и README. Поверх скрипта есть
+команда `dart run apptracer_flutter:install_ios_dsym_phase`, которая находит
+пакет через package config и запускает его, чтобы никто не выуживал путь из
+pub-cache руками. Ruby с gem `xcodeproj` она требует — той же парой пользуется
+CocoaPods, — и говорит об этом, если их нет.
+
 ## Версия — ниже `1.0.0`
 
 Доставка событий не подтверждена на живом проекте Tracer, потому что для этого
