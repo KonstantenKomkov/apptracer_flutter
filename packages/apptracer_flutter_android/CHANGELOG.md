@@ -9,6 +9,32 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-30
+
+### Changed
+
+- The Kotlin Gradle Plugin is now applied only under AGP 8 and older, so an
+  application no longer gets Flutter's "plugins that apply Kotlin Gradle Plugin
+  (KGP)" warning because of this package. Under AGP 9 the Android plugin
+  compiles Kotlin itself (Built-in Kotlin) and a library subproject applying KGP
+  is what future Flutter releases will fail on. The plugin is applied through
+  `pluginManager.apply` rather than `apply plugin:`, because flutter_tools reads
+  the text of `android/build.gradle` and would otherwise keep reporting this
+  package as unmigrated from a branch that never runs on AGP 9. The Kotlin JVM
+  target is set through whichever DSL the toolchain offers, since
+  `android.kotlinOptions` no longer exists under Built-in Kotlin.
+
+  The minimum Flutter version is unchanged: the alternative — dropping KGP
+  outright, as the migration guide suggests — works only from Flutter 3.44,
+  which is where flutter_tools began applying KGP for plugins that declare none.
+
+  Verified in an application on Flutter 3.44.9 with AGP 9.1.1, Kotlin 2.3.20 and
+  `android.builtInKotlin=false`: this package is gone from the warning's list,
+  the build succeeds, and the plugin's classes still come out at JVM target 1.8.
+  Not verified under `android.builtInKotlin=true`, which no plugin can pass on
+  Flutter 3.44.x: that version applies KGP to every plugin subproject that does
+  not declare one, migrated or not.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added
@@ -58,5 +84,6 @@ as pub.dev expects.
   reports a `TracerOptions.appToken` and a `TracerOptions.environment` that
   were passed but are ignored on Android.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

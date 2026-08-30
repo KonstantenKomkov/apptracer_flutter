@@ -1,5 +1,5 @@
 group = 'ru.apptracer.flutter'
-version = '0.1.0'
+version = '0.1.1'
 
 buildscript {
     ext.kotlin_version = '1.9.24'
@@ -21,7 +21,23 @@ rootProject.allprojects {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+
+// Built-in Kotlin, https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin.
+//
+// Under AGP 9 the Android plugin compiles Kotlin itself and applying the Kotlin
+// Gradle Plugin from a library subproject is no longer supported; on AGP 8 and
+// older nothing applies it for this package, so it still has to. Flutter 3.41+
+// applies it for plugins that declare none, but this package also supports
+// Flutter releases that predate that, hence the branch rather than nothing.
+//
+// Applied through the Gradle API on purpose: flutter_tools decides whether a
+// plugin is migrated by matching `apply plugin: 'kotlin-android'` against the
+// text of this file, so the literal form would keep reporting this package as
+// unmigrated from a branch that never runs on AGP 9.
+def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
+if (agpMajor < 9) {
+    project.pluginManager.apply('kotlin-android')
+}
 
 android {
     namespace = 'ru.apptracer.flutter'
@@ -30,10 +46,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
     }
 
     sourceSets {
@@ -52,6 +64,27 @@ android {
 
     testOptions {
         unitTests.returnDefaultValues = true
+    }
+}
+
+// The Kotlin JVM target, in whichever DSL the current toolchain offers.
+// `android.kotlinOptions` is gone under built-in Kotlin, and the top-level
+// `kotlin.compilerOptions` is absent in Kotlin Gradle Plugin 1.x, which an
+// application on an older Flutter may still put on the class path.
+def kotlinExtension = project.extensions.findByName('kotlin')
+if (kotlinExtension?.hasProperty('compilerOptions')) {
+    // Loaded from the extension's own class loader: the buildscript class path
+    // of this file carries its own Kotlin Gradle Plugin, and under built-in
+    // Kotlin that is a different copy of this enum than the one the extension
+    // expects.
+    def jvmTarget = kotlinExtension.getClass().getClassLoader()
+        .loadClass('org.jetbrains.kotlin.gradle.dsl.JvmTarget')
+        .getMethod('fromTarget', String)
+        .invoke(null, '1.8')
+    kotlinExtension.compilerOptions.jvmTarget.set(jvmTarget)
+} else if (android.hasProperty('kotlinOptions')) {
+    android.kotlinOptions {
+        jvmTarget = '1.8'
     }
 }
 
