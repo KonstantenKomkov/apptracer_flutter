@@ -9,6 +9,16 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Removed
+
+- The `meta` dependency, which nothing used. The only annotation in this
+  package is `@visibleForTesting`, and it arrives through
+  `package:flutter/foundation.dart`, which re-exports it — there is no
+  `import 'package:meta/meta.dart'` anywhere here. Resolution is unaffected:
+  `meta` stays in the lockfile as a transitive dependency of Flutter itself.
+  What goes away is a `^1.12.0` constraint this package had no business
+  stating.
+
 ## [0.1.1] - 2026-08-30
 
 ### Added
