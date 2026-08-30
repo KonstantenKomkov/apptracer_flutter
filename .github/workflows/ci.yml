@@ -96,8 +96,10 @@ jobs:
             os: ubuntu-latest
           - target: web
             os: ubuntu-latest
-          - target: ios
-            os: macos-latest
+          # iOS is not here: a macOS runner bills at ten times a Linux one, and
+          # that single job was two thirds of this repository's Actions spend
+          # while the iOS half of the package changes a few times a year. It
+          # lives in ios.yml, which runs when iOS files actually change.
     steps:
       - uses: actions/checkout@v4
 
@@ -174,27 +176,15 @@ jobs:
           path: packages/apptracer_flutter/example/build/web/*.map
           retention-days: 90
 
-      # No code signing in CI, so the simulator build is what can be proven.
-      - name: Build iOS
-        if: matrix.target == 'ios'
-        working-directory: packages/apptracer_flutter/example
-        run: flutter build ios --simulator --debug
-
   publish-dry-run:
     name: pub publish --dry-run
     runs-on: ubuntu-latest
     # Required since 0.1.0 went out on 2026-08-28: every sibling dependency now
     # resolves from pub.dev, so a failure here is a real one.
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          - apptracer_flutter_platform_interface
-          - apptracer_flutter_http
-          - apptracer_flutter_android
-          - apptracer_flutter_ios
-          - apptracer_flutter_web
-          - apptracer_flutter
+    #
+    # One job rather than a six-way matrix: the command is identical bar the
+    # directory, and each matrix leg was paying for a runner and a Flutter
+    # install to run something that takes half a minute.
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -203,6 +193,24 @@ jobs:
           channel: stable
           cache: true
 
+      # Every package is tried even after one fails, which is what the matrix's
+      # fail-fast: false used to give.
       - name: Dry run
-        working-directory: packages/${{ matrix.package }}
-        run: dart pub publish --dry-run
+        run: |
+          failed=0
+          for package in \
+            apptracer_flutter_platform_interface \
+            apptracer_flutter_http \
+            apptracer_flutter_android \
+            apptracer_flutter_ios \
+            apptracer_flutter_web \
+            apptracer_flutter
+          do
+            echo "::group::$package"
+            (cd "packages/$package" && dart pub publish --dry-run) || {
+              failed=1
+              echo "::error::dry run failed for $package"
+            }
+            echo "::endgroup::"
+          done
+          exit "$failed"

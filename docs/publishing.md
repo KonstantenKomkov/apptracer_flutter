@@ -66,6 +66,15 @@ siblings from pub.dev, so the `publish-dry-run` CI job is required rather than
 Only the packages that changed go out after that, in the same leaves-first
 order. `apptracer_flutter_android` 0.1.1 went out alone on 2026-08-30.
 
+CI does not build iOS on every push any more. That job needs a macOS runner,
+which bills at ten times a Linux one, and it was two thirds of this
+repository's Actions spend while the iOS half of the package changed a few
+times a year. It lives in `.github/workflows/ios.yml` and runs when files under
+`packages/apptracer_flutter_ios/` or the example's `ios/` change — a release of
+that package always edits its `pubspec.yaml`, so a release commit still builds
+it. Run the workflow by hand (Actions → iOS → Run workflow) if you want it
+against a change it does not match.
+
 The `vX.Y.Z` tag numbers the **release event**, not any one package: packages
 version independently, and after 0.1.0 they no longer share a number. The
 CHANGELOG links compare two event tags, which is why an entry for 0.1.1 can sit

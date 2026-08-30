@@ -1,0 +1,53 @@
+# The iOS half of the example, on its own trigger.
+#
+# A macOS runner bills at ten times a Linux one, and this three-minute job was
+# two thirds of what this repository spends on Actions while running on every
+# push — including the many that touch nothing but Dart, Gradle or prose. The
+# paths filter below turns it into what it should have been: a check that runs
+# when the iOS half of the package changes.
+#
+# A release of apptracer_flutter_ios always edits its pubspec.yaml, so a
+# release commit still runs this. Markdown is excluded, so editing a README
+# does not book a macOS runner.
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/apptracer_flutter_ios/**"
+      - "packages/apptracer_flutter/example/ios/**"
+      - ".github/workflows/ios.yml"
+      - "!**/*.md"
+  pull_request:
+    paths:
+      - "packages/apptracer_flutter_ios/**"
+      - "packages/apptracer_flutter/example/ios/**"
+      - ".github/workflows/ios.yml"
+      - "!**/*.md"
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.35.7"
+
+jobs:
+  example:
+    name: Example (ios)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: packages/apptracer_flutter/example
+        run: flutter pub get
+
+      # No code signing in CI, so the simulator build is what can be proven.
+      - name: Build iOS
+        working-directory: packages/apptracer_flutter/example
+        run: flutter build ios --simulator --debug
