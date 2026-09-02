@@ -27,7 +27,7 @@ Last updated: 2026-08-27.
 | The Tracer Licence Agreement does not prohibit publishing this wrapper | read in full (edition 29 May 2025); clause-by-clause reading in `legal.md` |
 | The Kotlin plugin compiles against the real `ru.ok.tracer` 1.4.0 artefacts | `compileReleaseKotlin` in the example's Android build |
 | A minified release build of an app *without* the Tracer SDK succeeds | required adding consumer ProGuard rules; R8 failed before them |
-| The Swift plugin compiles and links against the real `OKTracer` 1.5.1 xcframework | `flutter build ios --simulator` on the example |
+| The Swift plugin compiles and links against the real `OKTracer` 1.5.1 xcframework, and since 2026-09-02 against 1.5.2, the first release served from `nexus-external.vkteam.ru` | `flutter build ios --simulator` on the example |
 | The host `Podfile` needs `use_frameworks! :linkage => :static` | `pod install` failed without it |
 | `app.android-arm64.symbols` and the shipped `libapp.so` carry the same GNU build id | measured on a real obfuscated release build |
 | Tracer's own bundled `dump_syms` reads the Dart symbol file and emits 7 545 named `FUNC` entries, against 0 for the stripped `libapp.so`, under the same module id | ran the binary extracted from `tracer-plugin-1.4.0.jar` |

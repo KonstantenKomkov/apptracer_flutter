@@ -9,6 +9,24 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-02
+
+### Changed
+
+- `apptracer_flutter_ios` is now required at `^0.1.2` rather than `^0.1.1`.
+  On 2026-08-31 the vendor moved the `OKTracer` binaries to
+  `nexus-external.vkteam.ru` and took the old host down, so every SDK release
+  before 1.5.2 fails to download. `apptracer_flutter_ios` 0.1.2 is the version
+  that requires `OKTracer >= 1.5.2`; with the looser constraint an application
+  that upgraded this package would keep its locked 0.1.1, whose floor still
+  admits the versions that no longer exist. See that package's changelog for
+  the migration step (`pod update OKTracer`).
+- `apptracer_flutter_android` is now required at `^0.1.1` rather than `^0.1.0`.
+  0.1.1 is the version that stopped applying the Kotlin Gradle Plugin, and with
+  the looser constraint an application that upgraded this package kept its
+  locked 0.1.0 — and with it Flutter's "plugins that apply Kotlin Gradle Plugin
+  (KGP)" warning naming `apptracer_flutter_android`.
+
 ### Removed
 
 - The `meta` dependency, which nothing used. The only annotation in this
@@ -115,6 +133,7 @@ as pub.dev expects.
   ingest would take an event without it is left unclaimed — the server answers
   `200` to a malformed body, so its absence cannot be tested.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...HEAD
+[0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

@@ -169,6 +169,17 @@ end
 
 Then `pod install`. The `appToken` is passed from Dart, one step below.
 
+`OKTracer` **1.5.2 or newer** is required: it is the first version the vendor
+serves from `nexus-external.vkteam.ru`. The old host went down on 2026-08-31,
+and every version up to and including 1.5.1 downloads from it, which is to say
+fails with a 404. If the application already had Tracer wired in and its
+`Podfile.lock` pins 1.5.1, `pod install` alone will not move it: it stops at
+"could not find compatible versions for pod OKTracer". Run `pod update
+OKTracer`, which also refreshes the vendor's spec repository — a git clone
+cached on the machine that has not heard of 1.5.2 yet. On Swift Package
+Manager, resolving the packages again is enough (in Xcode: File → Packages →
+Update to Latest Package Versions).
+
 The iOS project's `pluginToken` plays no part here: it is needed when uploading
 the `dSYM`, without which native crashes stay unreadable in the console.
 

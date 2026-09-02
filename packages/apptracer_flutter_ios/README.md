@@ -33,7 +33,11 @@ Manager и CocoaPods. Flutter выбирает тот, который включ
 
 Ничего настраивать не нужно: `Package.swift` объявляет `OKTracer`
 зависимостью от [репозитория вендора](https://github.com/odnoklassniki/tracer-ios)
-по версии, и Xcode забирает SDK сам.
+по версии, и Xcode забирает SDK сам. Нижняя граница — **1.5.2**: это первая
+версия, бинарники которой лежат на `nexus-external.vkteam.ru`; прежний хост
+вендор выключил 31.08.2026, и манифесты всех тегов до 1.5.2 ссылаются на него.
+Если `Package.resolved` приложения ещё держит 1.5.1, разрешите зависимости
+заново (File → Packages → Update to Latest Package Versions).
 
 `Package.swift` не зависит ни от чего, что генерирует сам Flutter: `import
 Flutter` резолвится через framework search paths, которые Flutter передаёт
@@ -76,6 +80,13 @@ target 'Runner' do
   # ...
 end
 ```
+
+Подспек требует `OKTracer >= 1.5.2` по той же причине, что и `Package.swift`
+выше: спеки всех версий до 1.5.1 включительно скачивают архив с выключенного
+хоста. Если Tracer уже был подключён и `Podfile.lock` держит 1.5.1, `pod
+install` остановится на «could not find compatible versions for pod OKTracer»
+— выполните `pod update OKTracer`, он заодно обновит закешированный
+spec-репозиторий вендора.
 
 При `pod install` подспек добавляет в `Runner.xcodeproj` ту же фазу сборки,
 которая отправляет `dSYM` при каждой release-сборке; `TRACER_SKIP_IOS_PHASE=1`

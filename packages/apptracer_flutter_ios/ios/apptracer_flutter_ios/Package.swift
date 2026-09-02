@@ -31,7 +31,13 @@ let package = Package(
         .library(name: "apptracer-flutter-ios", type: .static, targets: ["apptracer_flutter_ios"])
     ],
     dependencies: [
-        .package(url: "https://github.com/odnoklassniki/tracer-ios.git", from: "1.4.0"),
+        // 1.5.2 is the first tag whose binary targets point at
+        // nexus-external.vkteam.ru; the manifests at every earlier tag download
+        // from artifactory-external.vkpartner.ru, which the vendor shut down
+        // on 2026-08-31. With the floor, a Package.resolved that still pins
+        // 1.5.1 fails to resolve against a named constraint instead of on a
+        // dead download URL.
+        .package(url: "https://github.com/odnoklassniki/tracer-ios.git", from: "1.5.2"),
     ],
     targets: [
         .target(

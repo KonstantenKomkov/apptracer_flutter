@@ -9,6 +9,30 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-02
+
+### Changed
+
+- `OKTracer` is now required at `>= 1.5.2`, in both the podspec and
+  `Package.swift`, rather than `>= 1.4.0`. On 2026-08-31 the vendor moved its
+  binaries from `artifactory-external.vkpartner.ru` to
+  `nexus-external.vkteam.ru` and took the old host down; 1.5.2 is the release
+  that points at the new one and, by the vendor's own announcement, differs
+  from 1.5.1 in nothing else. Every spec and tag before it still downloads
+  from the old host and fails with a 404, so the old floor had become a promise
+  the package could not keep.
+
+  An application whose `Podfile.lock` still pins 1.5.1 does not move on its
+  own: CocoaPods keeps the locked version and now stops at "could not find
+  compatible versions for pod OKTracer", naming this constraint, where before
+  it stopped at a 404 from the download. The step is `pod update OKTracer`,
+  which also refreshes the vendor's spec repository — a git clone cached on the
+  machine that has not heard of 1.5.2 until then; a plain `pod install`, even
+  with `--repo-update`, does not touch a locked pod. Verified on the example:
+  `pod install` reported exactly that, `pod update OKTracer` installed 1.5.2
+  ("was 1.5.1"). On Swift Package Manager, resolve the packages again (File →
+  Packages → Update to Latest Package Versions in Xcode).
+
 ## [0.1.1] - 2026-08-30
 
 ### Added
@@ -117,6 +141,7 @@ as pub.dev expects.
   `pod install` writes a `dSYM` upload phase into `Runner.xcodeproj` and that
   `TRACER_SKIP_IOS_PHASE=1` keeps it away from the project file.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...HEAD
+[0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

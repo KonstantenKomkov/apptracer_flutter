@@ -210,13 +210,28 @@ To never start in the first place, use `TracerOptions.isCollectionEnabled`.
 |---|---|---|
 | Pod | `OKTracer` | `github.com/odnoklassniki/tracer-ios`, `Specs/OKTracer/*` |
 | Spec repository | `https://github.com/odnoklassniki/tracer-ios.git` — a custom source that the host `Podfile` must declare | podspec layout |
-| Latest version | `1.5.1` | `Specs/OKTracer/` listing |
-| Distribution | binary `OKTracer.xcframework` downloaded from `artifactory-external.vkpartner.ru`, plus an `OKTracer.bundle` holding a root CA certificate | podspec `:http` source, zip listing |
+| Latest version | `1.5.2` — and the **floor** this package declares, see below | `Specs/OKTracer/` listing |
+| Distribution | binary `OKTracer.xcframework` downloaded from `nexus-external.vkteam.ru`, plus an `OKTracer.bundle` holding a root CA certificate | podspec `:http` source, zip listing |
 | Architectures | `ios-arm64`, `ios-arm64_x86_64-simulator`, `tvos-arm64`, `tvos-arm64_x86_64-simulator` | `Info.plist` of the xcframework |
 | Deployment target | iOS **12.4** for the binary; this package declares **13.0** to match Flutter | `-target arm64-apple-ios12.4` in the `.swiftinterface` |
 | Required linker flag | `-weak-lswiftDemangle` | podspec `xcconfig`; also needed for SPM |
 | Linkage | the xcframework is **static**, so the host `Podfile` needs `use_frameworks! :linkage => :static` | `pod install` fails otherwise with "transitive dependencies that include statically linked binaries"; reproduced and fixed in the example |
 | License | "Tracer's License Agreement"; the repository `LICENSE` file is one line pointing at <https://apptracer.ru/license> | repository |
+
+### Why 1.5.2 is the floor
+
+Not a feature threshold. On 2026-08-31 the vendor moved its binaries from
+`artifactory-external.vkpartner.ru` to `nexus-external.vkteam.ru` and took the
+old host down; the announcement of 1.5.2 (2026-09-02) says it differs from
+1.5.1 only in the version number and the host. Every podspec in
+`Specs/OKTracer/` up to 1.5.1, and the `Package.swift` at every tag up to
+1.5.1, still point at the old host — checked 2026-09-02: the 1.5.1 archive
+answers `404`, the 1.5.2 archives `200`. A floor of 1.4.0 would therefore
+promise three versions that cannot be installed. A `Podfile.lock` that pins
+1.5.1 still has to be moved by hand — `pod update OKTracer`, since `pod
+install` keeps a locked pod even with `--repo-update` — but with the floor it
+stops at a resolver message naming the constraint rather than at a 404 from
+the download.
 
 The API this package uses, taken from the shipped `arm64-apple-ios.swiftinterface`:
 

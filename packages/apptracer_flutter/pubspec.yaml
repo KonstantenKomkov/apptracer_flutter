@@ -3,7 +3,7 @@ description: >-
   Unofficial Flutter integration with Tracer (apptracer.ru): reports Dart
   errors, Flutter framework errors and breadcrumbs that the native Tracer SDKs
   cannot see on their own.
-version: 0.1.1
+version: 0.1.2
 repository: https://github.com/KonstantenKomkov/apptracer_flutter
 issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 documentation: https://github.com/KonstantenKomkov/apptracer_flutter#readme
@@ -19,10 +19,16 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter_android: ^0.1.0
-  # ^0.1.1: install_ios_dsym_phase runs a script that only 0.1.1 exposes as a
-  # command; against 0.1.0 it would define a method and exit silently.
-  apptracer_flutter_ios: ^0.1.1
+  # ^0.1.1: 0.1.0 applies the Kotlin Gradle Plugin, which makes flutter_tools
+  # report this plugin in its "plugins that apply KGP" warning. A looser
+  # constraint leaves an application that upgrades this package with 0.1.0
+  # still locked, and the warning still there.
+  apptracer_flutter_android: ^0.1.1
+  # ^0.1.2: the version that requires OKTracer >= 1.5.2, the first SDK release
+  # served from the vendor's new host; every earlier one downloads from a host
+  # shut down on 2026-08-31. (0.1.1 was needed for install_ios_dsym_phase,
+  # which only 0.1.1 exposes as a command.)
+  apptracer_flutter_ios: ^0.1.2
   apptracer_flutter_platform_interface: ^0.1.0
   apptracer_flutter_web: ^0.1.0
   flutter:
