@@ -11,8 +11,8 @@ as pub.dev expects.
 
 ### Changed
 
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
+- Align the local version with `0.2.0`; this package remains unpublished
+  (`publish_to: none`) pending live desktop/Aurora verification.
 - Update the platform-interface constraint for the lifecycle contract and remove the direct meta dependency. Native deferred lifecycle operations remain unsupported.
 
 ## [0.1.0] - 2026-08-28

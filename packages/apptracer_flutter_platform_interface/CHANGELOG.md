@@ -9,16 +9,26 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-- Preserve URL/line/column for anonymous V8 frames in minified web stacks, so
-  source-map lookup receives real coordinates instead of `null:0:0`.
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- Native initialization mode, collection result/state models, and source-compatible
+  lifecycle methods. Existing platform implementations report unsupported operations.
 
 ### Changed
 
-- Parse browser debug compiler (DDC) stack frames and skip Dart runtime throw frames when deriving grouping keys.
+- Parse browser debug compiler (DDC) stack frames and skip Dart runtime throw
+  frames when deriving grouping keys.
 
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Add native initialization mode, collection result/state models, and source-compatible lifecycle methods. Existing platform implementations report unsupported operations. Use Flutter annotation exports instead of a direct meta dependency.
+### Fixed
+
+- Preserve URL/line/column for anonymous V8 frames in minified web stacks, so
+  source-map lookup receives real coordinates instead of `null:0:0`.
+
+### Removed
+
+- Direct dependency on `meta`; use Flutter's annotation exports.
 
 ## [0.1.0] - 2026-08-28
 
@@ -66,5 +76,6 @@ as pub.dev expects.
   set". That transport authenticates with `appToken`; `dsn` belongs to the
   Sentry one, and following the message would have left collection off.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

@@ -179,8 +179,8 @@ jobs:
   publish-dry-run:
     name: pub publish --dry-run
     runs-on: ubuntu-latest
-    # Required since 0.1.0 went out on 2026-08-28: every sibling dependency now
-    # resolves from pub.dev, so a failure here is a real one.
+    # Required archive and metadata check, using local sibling overrides.
+    # Hosted dependency resolution is checked separately at release.
     #
     # One job rather than a six-way matrix: the command is identical bar the
     # directory, and each matrix leg was paying for a runner and a Flutter

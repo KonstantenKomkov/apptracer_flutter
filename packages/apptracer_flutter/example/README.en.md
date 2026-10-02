@@ -162,4 +162,6 @@ env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
 Omit `tracer.enabled` for the SDK-absent variant: it needs no tokens and returns
 `unsupported/sdk_missing`. Git ignores `.env.tracer`. See the
 [verification plan](../../../docs/native-collection-consent.md#device-verification-harness--2026-10-02)
-for scenarios and evidence limits. Full device/server acceptance remains pending.
+for scenarios and evidence limits. Collection, revocation and delivery verification
+is complete for Android, iOS and Web. The evidence ledger records remaining
+symbolication limits for Android native and optimized Web frames.

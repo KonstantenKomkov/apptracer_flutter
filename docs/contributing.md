@@ -2,17 +2,18 @@
 
 ## Layout
 
-Six published packages under `packages/`, plus an example application at
-`packages/apptracer_flutter/example`.
+Six publishable packages under `packages/`, an unpublished Sentry transport,
+and an example application at `packages/apptracer_flutter/example`.
 
 The packages depend on each other by **version**, exactly as a consumer would,
-and are wired together locally through `pubspec_overrides.yaml`. That file is
-ignored by `dart pub publish`, so what CI resolves and what a user resolves are
-the same graph — a local path override cannot mask a version constraint that
-would be wrong once published.
+and are wired together locally through `pubspec_overrides.yaml`. Pub omits that
+file from the package archive, but local checks and CI still use its overrides.
+They can therefore hide invalid hosted version constraints. Publication checks
+must also resolve without overrides, after the required sibling versions are
+available on pub.dev; see [publishing.md](publishing.md).
 
 `pubspec_overrides.yaml` has to cover the whole transitive path, not just direct
-dependencies, for as long as none of the packages exist on pub.dev.
+dependencies, while new sibling versions are not yet available on pub.dev.
 
 ## Commands
 

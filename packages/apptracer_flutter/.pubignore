@@ -1,0 +1,3 @@
+# Keep monorepo wiring in Git, but out of the package and its example.
+# Ancestor and nested .gitignore rules still exclude generated files and secrets.
+pubspec_overrides.yaml

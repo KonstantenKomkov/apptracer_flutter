@@ -9,7 +9,9 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-- Preserve anonymous release web frame coordinates in JS_STACKTRACE payloads.
+## [0.2.0] - 2026-10-03
+
+### Added
 
 - Support explicit start and stop-with-cleanup for HTTP/Web. Discard logs, keys,
   user ID and token at stop; reject diagnostics while off. Recreate an owned HTTP
@@ -17,11 +19,19 @@ as pub.dev expects.
 
 ### Changed
 
-- Normalize symbolic Dart debug/VM frames to JavaScript V8 syntax for the Tracer stack parser, retaining the original event trace.
+- Normalize symbolic Dart debug/VM frames to JavaScript V8 syntax for the Tracer
+  stack parser, retaining the original event trace.
+- Require platform interface `^0.2.0` for the lifecycle contract. Native deferred
+  lifecycle operations remain unsupported by this HTTP transport.
 
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Update the platform-interface constraint for the lifecycle contract and remove the direct meta dependency. Native deferred lifecycle operations remain unsupported.
+### Fixed
+
+- Preserve anonymous release web frame coordinates in `JS_STACKTRACE` payloads.
+- Log only the type of an upload failure to avoid exposing tokens in request URLs.
+
+### Removed
+
+- Direct dependency on `meta`; use Flutter's annotation exports.
 
 ## [0.1.0] - 2026-08-28
 
@@ -64,5 +74,6 @@ live project on 2026-08-26, no project is issued a DSN and the vendor's own SDKs
 post to their own API, so both the name and the protocol were replaced before
 the first release.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

@@ -13,8 +13,10 @@ are now preserved. Source maps were uploaded before the corrected release probe;
 the user confirmed a readable anonymous Dart application frame in the dashboard.
 Historical sections retain earlier failures and their subsequent fixes.
 
-Versions/internal constraints are prepared at `0.2.0-dev.1`. No package has been
-published and no Garden application migration or release flag change was made.
+The six publishable packages and internal constraints are prepared for stable
+`0.2.0`; the local Sentry transport remains `publish_to: none`. This preparation
+does not publish packages or migrate Garden applications. Earlier `0.2.0-dev.1`
+references below describe the verification builds.
 
 ## Dart contract
 

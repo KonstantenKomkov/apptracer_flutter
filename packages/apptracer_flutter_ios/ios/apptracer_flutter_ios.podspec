@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'apptracer_flutter_ios'
-  s.version          = '0.2.0-dev.1'
+  s.version          = '0.2.0'
   s.summary          = 'iOS implementation of apptracer_flutter.'
   s.description      = <<-DESC
 Unofficial Flutter integration with Tracer (apptracer.ru). Forwards Dart errors,

@@ -9,13 +9,15 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
 ### Changed
 
-- Use synthetic grouping keys for Dart errors and report the matching prerelease SDK version.
+- Use synthetic grouping keys for Dart errors and report SDK version `0.2.0`.
+- Require HTTP transport and platform interface `^0.2.0`, including diagnostic
+  cleanup on stop, client recreation on re-consent, and anonymous frame coordinates
+  for release source maps. Native deferred lifecycle operations remain unsupported.
 
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Update HTTP and platform-interface constraints for the lifecycle contract. Native deferred lifecycle operations remain unsupported.
 
 ## [0.1.0] - 2026-08-28
 
@@ -42,5 +44,6 @@ as pub.dev expects.
   it lives as long as the tab. Nothing about the behaviour changed; the README
   simply did not mention it.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

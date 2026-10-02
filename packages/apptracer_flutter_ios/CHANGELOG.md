@@ -9,8 +9,19 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- Explicit deferred collection with a storage adapter pinned to OKTracer 1.5.2.
+  Persist revocation before stopping and refuse automatic restart after revocation.
+  Require process restart after active stop, purge before re-consent, and keep
+  collection off on cleanup errors. Share lifecycle state across plugin instances.
+
 ### Changed
 
+- Pin OKTracer to exactly 1.5.2 in CocoaPods and Swift Package Manager; the storage
+  adapter relies on the verified SDK layout. Require platform interface `^0.2.0`.
 - Provide an opt-in DWARF-4 build override verified with Xcode 27, including
   source-level Runner and Flutter frames in the Tracer dashboard.
 
@@ -27,10 +38,6 @@ as pub.dev expects.
 - Preserve automatic crash/assert collection when OKTracer 1.5.2 reports
   `noNeedToStart` for features omitted from its configuration. Other start
   failures still revoke collection.
-
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Support explicit deferred collection with a storage adapter pinned to OKTracer 1.5.2. Persist revocation before stopping; refuse automatic restart after revocation. Require process restart after active stop, purge before re-consent, and keep collection off on cleanup errors. Share lifecycle state across plugin instances.
 
 ## [0.1.2] - 2026-09-02
 
@@ -164,7 +171,8 @@ as pub.dev expects.
   `pod install` writes a `dSYM` upload phase into `Runner.xcodeproj` and that
   `TRACER_SKIP_IOS_PHASE=1` keeps it away from the project file.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

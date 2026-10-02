@@ -59,9 +59,9 @@ there is nothing to publish it on the strength of. Anyone who needs it can
 depend on it from git. Remove the line and add it to the list, after
 `apptracer_flutter_platform_interface`, when that changes.
 
-0.1.0 went out on 2026-08-28, in that order. Every package now resolves its
-siblings from pub.dev, so the `publish-dry-run` CI job is required rather than
-`continue-on-error` — a failure there is a real one.
+0.1.0 went out on 2026-08-28, in that order. The required `publish-dry-run` CI
+job checks archive contents and package metadata using local overrides. It does
+not prove that a consumer can resolve the new versions from pub.dev.
 
 Only the packages that changed go out after that, in the same leaves-first
 order. `apptracer_flutter_android` 0.1.1 went out alone on 2026-08-30.
@@ -88,6 +88,8 @@ between `v0.1.1` and `v0.1.2`.
 - [ ] `flutter test` passes
 - [ ] `dart format --set-exit-if-changed .` is clean
 - [ ] `dart pub publish --dry-run` reports no warnings
+- [ ] hosted dependencies resolve without `pubspec_overrides.yaml`, after the
+      required sibling versions have been published
 - [ ] `LICENSE`, `README.md`, `CHANGELOG.md` present
 - [ ] `README.md` is the Russian one (pub.dev renders exactly this file);
       `README.en.md` carries the same content in English and the two link
@@ -98,10 +100,39 @@ between `v0.1.1` and `v0.1.2`.
       file list, not just the source
 
 ```sh
-cd packages/<package>
+# Use an export of the release commit so local overrides cannot affect resolution.
+release_checkout="$(mktemp -d)"
+git archive HEAD | tar -x -C "$release_checkout"
+find "$release_checkout/packages" -name pubspec_overrides.yaml -delete
+cd "$release_checkout/packages/<package>"
+flutter pub get
 dart pub publish --dry-run
 dart pub publish
 ```
+
+Repeat the package commands in the order above, waiting until each dependency
+is available from pub.dev. Do not add overrides to work around a missing release.
+The facade's `.pubignore` also excludes the example's monorepo overrides from
+the archive; ignore rules are described in the
+[Dart publishing documentation](https://dart.dev/tools/pub/publishing#what-files-are-published).
+
+## Stable 0.2.0 — 2026-10-03
+
+All six packages in the publication order use `0.2.0` and matching `^0.2.0`
+internal constraints. This is a stable minor release, with no prerelease suffix.
+The local Sentry transport is version-aligned but remains `publish_to: none`.
+
+The release adds explicit collection start and revocation with cleanup, backed
+by Android Tracer 1.4.0 and OKTracer 1.5.2. Automatic startup remains the default;
+applications opting into deferred Android startup must remove both startup
+providers. After native collection has been stopped, re-consent requires a
+process restart. iOS symbol uploads now require `--app-name`; `--build` is no
+longer accepted. See each package's dated CHANGELOG for the full migration notes.
+
+Device/browser verification and remaining symbolication limits are recorded in
+[native-collection-consent.md](native-collection-consent.md). A release commit or
+tag records the prepared source; publication is complete only once all six
+versions are available on pub.dev.
 
 ## Secrets
 

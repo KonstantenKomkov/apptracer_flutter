@@ -30,7 +30,7 @@ void main() {
   if (_needsDartTransport && _appToken.isNotEmpty) {
     TracerPlatform.instance = TracerHttpTracer(
       facts: PlatformClientFacts(),
-      sdkVersion: '0.2.0-dev.1',
+      sdkVersion: '0.2.0',
     );
   }
 

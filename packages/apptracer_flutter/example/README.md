@@ -168,4 +168,6 @@ env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
 возвращают `unsupported/sdk_missing`. Файл `.env.tracer` игнорируется Git.
 Подробные сценарии и ограничения проверки — в
 [плане проверки](../../../docs/native-collection-consent.md#device-verification-harness--2026-10-02).
-Полная приёмка на устройстве, включая доставку в Tracer, ещё не завершена.
+Проверка сбора, отзыва и доставки в Tracer завершена для Android, iOS и Web.
+Ограничения расшифровки Android native и оптимизированных Web-кадров описаны
+в журнале проверки.

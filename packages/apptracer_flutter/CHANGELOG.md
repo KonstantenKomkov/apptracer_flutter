@@ -9,17 +9,26 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- Explicit deferred collection start, lifecycle results, and stop with cleanup.
+  Bootstrap invokes `appRunner` once; revocation immediately discards Dart
+  diagnostics and rejects late start results.
+
 ### Changed
 
+- Require the matching `^0.2.0` platform adapters and interface.
 - Correct iOS symbol upload metadata to match the vendor: app name in
   `versionName`, marketing version in `versionCode`. The CLI now requires
   `--app-name` for iOS; the obsolete `--build` option is rejected.
 - Upload only dSYM bundle contents from an iOS build directory and refuse
   uploads without DWARF files; exclude application binaries and other build files.
 
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Add explicit deferred collection start, actual lifecycle results, and stop with cleanup. Bootstrap invokes appRunner once; revocation immediately discards Dart diagnostics and rejects late start results.
+### Fixed
+
+- Exclude the example's monorepo dependency overrides from the published archive.
 
 ## [0.1.2] - 2026-09-02
 
@@ -145,7 +154,8 @@ as pub.dev expects.
   ingest would take an event without it is left unclaimed — the server answers
   `200` to a malformed body, so its absence cannot be tested.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

@@ -9,13 +9,25 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
+### Added
+
+- An opt-in deferred adapter pinned to Android Tracer 1.4.0, with controlled
+  startup, revocable work admission, diagnostic cleanup, and shared process state.
+  After active collection is stopped, re-consent requires a process restart.
+  The host must remove both startup providers for deferred mode; automatic mode
+  remains the default. Release/R8 verification covers offline and in-flight
+  requests, account changes, cleanup failures, and native/JVM/ANR recovery.
+
 ### Changed
 
-- Fix R8 release builds without the optional vendor SDK by tolerating its absent
+- Require platform interface `^0.2.0` for the collection lifecycle contract.
+
+### Fixed
+
+- Allow R8 release builds without the optional vendor SDK by tolerating its absent
   `javax.inject.Provider` type; absence still returns `sdk_missing` at runtime.
-- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
-  or published release.
-- Add an opt-in deferred adapter pinned to Android Tracer 1.4.0, with controlled startup, revocable work admission, diagnostic cleanup, and process-scoped restart-required state. Automatic mode remains the default. APK/device/network/fatal-recovery acceptance is pending.
 
 ## [0.1.1] - 2026-08-30
 
@@ -92,6 +104,7 @@ as pub.dev expects.
   reports a `TracerOptions.appToken` and a `TracerOptions.environment` that
   were passed but are ignored on Android.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

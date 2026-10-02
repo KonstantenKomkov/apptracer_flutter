@@ -35,7 +35,7 @@ class SentryProtocolTracer extends TracerPlatform {
   static const String clientName = 'apptracer_flutter';
 
   /// Version reported in `X-Sentry-Auth`.
-  static const String clientVersion = '0.2.0-dev.1';
+  static const String clientVersion = '0.2.0';
 
   http.Client _client;
   final bool _ownsClient;
