@@ -166,4 +166,6 @@ The displayed line 147 differs from the capture line 144; this confirms restored
 source lookup, not exact coordinate fidelity for every optimized frame.
 The tested collection/revocation acceptance is complete. See
 [dated evidence and symbolication limits](native-collection-consent.md).
-No packages have been published or downstream apps migrated.
+All six Android/iOS/Web packages were published to pub.dev as stable `0.2.0`
+on 2026-10-03 from tag `v0.2.0`. Sentry remains unpublished, and downstream
+applications have not been migrated.

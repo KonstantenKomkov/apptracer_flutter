@@ -13,10 +13,10 @@ are now preserved. Source maps were uploaded before the corrected release probe;
 the user confirmed a readable anonymous Dart application frame in the dashboard.
 Historical sections retain earlier failures and their subsequent fixes.
 
-The six publishable packages and internal constraints are prepared for stable
-`0.2.0`; the local Sentry transport remains `publish_to: none`. This preparation
-does not publish packages or migrate Garden applications. Earlier `0.2.0-dev.1`
-references below describe the verification builds.
+All six Android/iOS/Web packages were published to pub.dev as stable `0.2.0`
+on 2026-10-03 from tag `v0.2.0`. The local Sentry transport remains
+`publish_to: none`; Garden applications have not been migrated. Earlier
+`0.2.0-dev.1` references below describe the verification builds.
 
 ## Dart contract
 

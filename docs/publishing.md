@@ -105,13 +105,15 @@ release_checkout="$(mktemp -d)"
 git archive HEAD | tar -x -C "$release_checkout"
 find "$release_checkout/packages" -name pubspec_overrides.yaml -delete
 cd "$release_checkout/packages/<package>"
-flutter pub get
+flutter pub get --no-example
 dart pub publish --dry-run
 dart pub publish
 ```
 
 Repeat the package commands in the order above, waiting until each dependency
 is available from pub.dev. Do not add overrides to work around a missing release.
+Resolve the example with `flutter pub get` after the facade is published: it
+depends on that same version, so resolving it before publication would fail.
 The facade's `.pubignore` also excludes the example's monorepo overrides from
 the archive; ignore rules are described in the
 [Dart publishing documentation](https://dart.dev/tools/pub/publishing#what-files-are-published).
@@ -121,6 +123,15 @@ the archive; ignore rules are described in the
 All six packages in the publication order use `0.2.0` and matching `^0.2.0`
 internal constraints. This is a stable minor release, with no prerelease suffix.
 The local Sentry transport is version-aligned but remains `publish_to: none`.
+
+Published to pub.dev on 2026-10-03 from `v0.2.0` (`4345873`), in the order above.
+Each package passed hosted dependency resolution without local overrides and a
+dry run with zero warnings or hints before upload. CI and iOS builds passed for
+the release commit.
+The downloaded archives' SHA-256 hashes matched pub.dev metadata, and every
+packaged file matched the release tag. The example resolved all six `0.2.0`
+packages from pub.dev without overrides and passed `flutter analyze --fatal-infos`.
+The entry point is [apptracer_flutter 0.2.0](https://pub.dev/packages/apptracer_flutter/versions/0.2.0).
 
 The release adds explicit collection start and revocation with cleanup, backed
 by Android Tracer 1.4.0 and OKTracer 1.5.2. Automatic startup remains the default;
