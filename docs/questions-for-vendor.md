@@ -351,3 +351,23 @@ debug-файлов» снята, не отложена.
 | Условный про web-протокол | закрыт 27.08.2026 своими силами, см. `web-protocol.md` |
 
 Ответы записывайте прямо сюда, под вопросом.
+
+## Native consent lifecycle — open questions
+
+For Android 1.4.0 and OKTracer 1.5.2: which API stops all senders/retries, removes all persisted reports and diagnostic state, and cancels active requests? Can collection restart after stop? Android disable bytecode only sets a flag; OKTracer public service interface has no purge. Please distinguish already active requests from later sends. See [local artifact audit](native-collection-consent.md). These questions have not been sent to the vendor.
+
+
+Physical iPhone reproduction (2026-10-02, OKTracer 1.5.2): retaining the service
+after `stop()` allowed an upload retry; releasing it stopped the observed
+retries. A Swift `fatalError` three seconds after stop/release still wrote
+`live_report.okcrash` (95,631 bytes); the next automatic service uploaded it to
+our loopback server. Which supported API unregisters the native crash writer
+and purges reports across process restarts before any uploader starts?
+This reproduction has not been sent to the vendor.
+
+
+Local mitigation subsequently implemented for pinned OKTracer 1.5.2: persist
+revocation, release the service, purge and seal report directories, and gate
+future automatic startup. This prevents persisted post-stop reports in the
+physical test. A supported vendor disable/purge API would remove dependence on
+its private storage layout; the vendor question remains unsent.

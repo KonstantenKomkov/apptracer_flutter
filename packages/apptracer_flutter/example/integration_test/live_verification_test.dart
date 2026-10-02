@@ -22,6 +22,7 @@
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_example/main.dart' as app;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -34,15 +35,22 @@ void main() {
     app.main();
     await tester.pumpAndSettle();
 
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      // This test explicitly authorizes a new session after a previous run
+      // revoked collection. Automatic bootstrap must not clear that marker.
+      await Tracer.startCollection(Tracer.client.options.copyWith(
+        nativeInitialization: TracerNativeInitialization.deferred,
+      ));
+    }
+
     // Инициализация асинхронная: `main` её не ждёт, а нативная сторона
     // отвечает через канал. Проверять `isEnabled` сразу после `pumpAndSettle`
     // — это гонка, которая падает через раз.
     await _waitUntil(
       tester,
       () => Tracer.isEnabled,
-      reason: 'Сбор так и не включился. На Android это почти всегда значит, '
-          'что сборку запустили без -Ptracer.enabled=true, и SDK Tracer нет в '
-          'classpath. См. docs/live-verification-plan.md, шаг 3.3.',
+      reason: 'Сбор так и не включился. См. нативное состояние ниже; '
+          'сетевая ошибка прогрева сама по себе не объясняет отказ SDK.',
     );
 
     // Breadcrumbs и кастомный ключ — до ошибки: в событие попадает то, что
@@ -117,6 +125,30 @@ void main() {
           'покрывать.',
     );
 
+    if (kIsWeb) {
+      // Exercise a real browser Client after stop closed the previous one.
+      // Payload isolation and exact HTTP counts are checked separately in the
+      // HTTP package's Chrome lifecycle tests.
+      expect(Tracer.client.customKeys, isEmpty);
+      expect(Tracer.breadcrumbs, isEmpty);
+      final restarted = await Tracer.startCollection(
+        Tracer.client.options.copyWith(
+          nativeInitialization: TracerNativeInitialization.deferred,
+          debug: true,
+        ),
+      );
+      expect(restarted.state, TracerCollectionState.enabled);
+      await Tracer.setUserId('web-consent-restarted');
+      await Tracer.recordError(
+        StateError('web-consent-restarted'),
+        StackTrace.current,
+        issueKey: 'web-consent-restarted',
+      );
+      final stopped = await Tracer.stopAndClearCollection();
+      expect(stopped.state, TracerCollectionState.disabled);
+      expect(Tracer.isEnabled, isFalse);
+    }
+
     _printChecklist();
   });
 }
@@ -176,6 +208,11 @@ Future<void> _waitUntil(
   final Stopwatch elapsed = Stopwatch()..start();
   while (!condition() && elapsed.elapsed < timeout) {
     await tester.pump(const Duration(milliseconds: 100));
+  }
+  if (!condition()) {
+    final native = await Tracer.getCollectionState();
+    reason = '$reason Backend: ${Tracer.client.platform.backendName}; '
+        'state: ${native.state.name}; reason: ${native.reason ?? "none"}.';
   }
   expect(condition(), isTrue, reason: reason);
 }

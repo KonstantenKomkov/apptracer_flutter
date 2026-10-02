@@ -615,3 +615,107 @@ TRACER_PLUGIN_TOKEN=... tool/upload_web_sourcemaps.sh 1.0.0
 Сорсмапы применяются только к ошибкам, полученным **после** загрузки, поэтому
 загружайте до выкладки — и помните, что пересимволизации нет, так что всё
 собранное в промежутке останется нечитаемым.
+
+
+## iOS physical verification — 2026-10-02
+
+For the physical iPhone release probe, all three dSYM UUIDs match the installed
+binaries: Runner `F3347D74-E8D4-35F8-AC2D-7F7119410A5A`, Flutter
+`4C4C445A-5555-3144-A141-95D0651E6A46`, App
+`CC19E63B-C587-6340-D46F-6A2AF50002BC`. The Dart uploader accepted 8 symbol
+files (38.6 MB multipart upload), using the iOS plugin token from local environment.
+Log: `/tmp/apptracer-ios-symbol-upload.log`. Runner/App symbols were retained
+locally under `/tmp/apptracer-ios-symbols-F3347D74` for comparison.
+
+The uploader previously archived every file under its directory argument, which
+is unsafe when Xcode passes its build-products directory. It now selects only
+dSYM bundle contents and refuses an archive without DWARF files. Regression
+tests verify app binaries, signing material and unrelated config are excluded.
+All 10 uploader tests passed. This does not change Web upload behavior.
+
+A new Swift fatal was generated **after** symbol upload at 23:41:47 Moscow time,
+and its server upload succeeded at 23:42:38, event tag
+`41F9C84B-C4D4-4430-8B9E-8FCDA38E8FBE`. Dashboard stack rendering is being checked
+against that event; prior events cannot establish this upload's symbolication.
+The vendor documents [dSYM-based iOS symbolication](https://apptracer.ru/doc/ios/symbolication/)
+and [application of mappings only to new events](https://apptracer.ru/doc/intro/crashid/).
+
+
+The user's exported report `41F9C84B…` confirms this upload did **not**
+symbolicate Runner or Flutter: both say `Missing Binary image with UUID`.
+`crash_entry_1` contains a file/line from Swift's fatal message, which is not
+proof of symbolication. Local `atos` with the matching Runner dSYM resolves
+`+18176` to the closure in `AppDelegate.swift:42`.
+
+A mismatch with the vendor upload contract was found in our uploader:
+[official Fastlane action](https://apptracer.ru/doc/ios/fastlane/) and
+[Xcode script](https://apptracer.ru/doc/ios/bash/) send the product/app name as
+`versionName`, and the marketing version as `versionCode`. We sent marketing
+version/build number instead. Corrected the CLI to require `--app-name` for iOS
+and use `--version` (or pubspec's version before `+`) for the marketing version.
+The Xcode phase passes `PRODUCT_NAME` and `FLUTTER_BUILD_NAME` (fallback:
+`MARKETING_VERSION`), with the token in the environment, not argv.
+
+Corrected upload accepted: `/tmp/apptracer-ios-symbol-upload-fixed.log`.
+Runner UUID for this build is `1EAF9447-742D-350F-AE51-58987459B958`.
+The subsequent native fatal occurred at 23:55:13 and was uploaded at 23:55:47,
+incident `53CE5F37-212C-4ABD-8D9C-79436A768571`. Dashboard symbolication for
+this second incident remains pending user confirmation; an accepted upload
+alone is not evidence that the backend applied the symbols.
+
+
+The second exported report confirms Flutter now resolves to function names and
+source lines (e.g. `FlutterChannels.mm:324`), while Runner UUID `1EAF9447…`
+still says `Missing Binary image`. Local `atos` resolves Runner's `+20536` to
+`AppDelegate.swift:75`, and `dwarfdump --verify` passes. Runner's dSYM contains
+101 DWARF-4 and 93 DWARF-5 compilation units; Flutter contains 2772 DWARF-4
+units. The DWARF-5 units are imported Clang modules produced by Xcode 27.
+
+A control upload of Runner alone using a standard ZIP (with directory entries,
+`application/octet-stream`) was accepted. A subsequent control event occurred
+03.10 at 00:03:21, uploaded at 00:04:12, incident
+`D37EC2A6-91CD-4642-8E66-D0498F5E8C8C`.
+
+A separate diagnostic build with `OTHER_SWIFT_FLAGS = $(inherited)
+-dwarf-version=4 -Xfrontend -no-clang-module-breadcrumbs` and
+`OTHER_CFLAGS = $(inherited) -gdwarf-4` removed all DWARF-5 units. Runner's UUID
+and locally symbolicated code location remained identical. The resulting
+Runner-only symbols are in `/tmp/apptracer-ios-dwarf4-symbols`, upload log
+`/tmp/apptracer-ios-symbol-upload-dwarf4.log`. This is a compatibility hypothesis
+until a subsequent dashboard report verifies it; no application code or SDK
+version was changed for the comparison.
+
+
+Post-DWARF-4-upload event: crash at 03.10 00:06:11, delivery at 00:06:35,
+incident `74895A7E-E5DB-4822-802B-5DC2E4B2F8E6`. Recovery completed stopped and
+the phone was returned to the idle verification screen (SDK not initialized).
+Dashboard comparison requested for this incident and the standard-ZIP control.
+
+
+**Confirmed by the user's exported dashboard report, 2026-10-03:** incident
+`74895A7E-E5DB-4822-802B-5DC2E4B2F8E6` resolves Runner frame 1 to
+`closure #1 in AppDelegate.application(_:didFinishLaunchingWithOptions:)`,
+`AppDelegate.swift:75:11`; Flutter frames resolve to `FlutterChannels.mm:324:3`
+and `platform_message_handler_ios.mm:70:9`. Runner's crash-handler frames also
+resolve. The native symbolication acceptance gate is closed for this build.
+The standard-ZIP control report has not been inspected, so this establishes a
+working DWARF-4 recipe rather than proving which backend parser rejects DWARF-5.
+
+The reproducible compatibility settings are shipped in
+[`tracer_dwarf4.xcconfig`](../packages/apptracer_flutter_ios/ios/tracer_dwarf4.xcconfig).
+With Xcode 27, set `XCODE_XCCONFIG_FILE` to its absolute path **during the build**:
+
+```sh
+XCODE_XCCONFIG_FILE=/absolute/path/to/tracer_dwarf4.xcconfig flutter build ipa
+# TRACER_PLUGIN_TOKEN must contain the iOS project's plugin token.
+dart run apptracer_flutter:upload_symbols ios --app-name=Runner --version=1.0.0
+```
+
+The override applies to the application and its dependencies, not only Runner.
+It preserves function names and source lines while omitting imported Clang module
+debug types. It is opt-in and does not modify host project flags on installation.
+The repository's iOS profile verification target uses it. Upload these symbols
+before delivering crashes from the corresponding binary; retain matching UUIDs.
+Uploader/ZIP tests: 16 passed. Analyzer, Swift storage checks, Xcode phase argument
+check and shell uploader loopback check also passed. No direct `meta` dependency
+was introduced.

@@ -15,11 +15,22 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
     /// Documented by Tracer; writing to them silently loses data.
     private static let reservedPropertyKeys: Set<String> = ["message", "file", "issueKey"]
 
-    private var service: TracerServiceProtocol?
-    private var serviceDelegate: DebugServiceDelegate?
-    private var logProvider: DartLogProvider?
-    private var enabled = false
+    private static var service: TracerServiceProtocol?
+    // SDK startup work uses unowned references. Releasing immediately after
+    // start can crash the host; keep the terminal stopped object alive. Sealed
+    // report paths below prevent its retry tasks from reading queued payloads.
+    private static var stoppedService: TracerServiceProtocol?
+    private static var serviceDelegate: DebugServiceDelegate?
+    private static var logProvider: DartLogProvider?
+    private static var enabled = false
     private var debug = false
+    private static var stopped = false
+    private static var lifecycleError: String?
+    private static var didStart = false
+    private static let storage = CollectionStorage(
+        library: FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0],
+        bundleID: Bundle.main.bundleIdentifier ?? ""
+    )
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
@@ -33,6 +44,19 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "initialize":
             result(initialize(arguments))
+        case "startCollection":
+            if arguments["isCollectionEnabled"] as? Bool == false {
+                stopCollection()
+                result(collectionState())
+            } else {
+                _ = initialize(arguments, explicitStart: true)
+                result(collectionState())
+            }
+        case "stopAndClearCollection":
+            stopCollection()
+            result(collectionState())
+        case "getCollectionState":
+            result(collectionState())
         case "stopCollection":
             stopCollection()
             result(nil)
@@ -41,7 +65,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             result(nil)
         case "recordLog":
             if let message = arguments["message"] as? String {
-                logProvider?.append(message)
+                if Self.enabled { Self.logProvider?.append(message) }
             }
             result(nil)
         case "setCustomKey":
@@ -58,8 +82,8 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             }
             result(nil)
         case "setUserId":
-            if let userId = arguments["userId"] as? String {
-                service?.setUserId(userId)
+            if Self.enabled {
+                Self.service?.setUserId(arguments["userId"] as? String ?? "")
             }
             result(nil)
         default:
@@ -67,18 +91,36 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func initialize(_ arguments: [String: Any]) -> Bool {
+    private func initialize(_ arguments: [String: Any], explicitStart: Bool = false) -> Bool {
         debug = arguments["debug"] as? Bool ?? false
+        guard !Self.stopped, Self.lifecycleError == nil else { return false }
+        let deferred = arguments["nativeInitialization"] as? String == "deferred"
+        guard arguments["isCollectionEnabled"] as? Bool != false,
+              !deferred || explicitStart else { return false }
+        if Self.enabled { return true }
+        // Legacy automatic bootstrap cannot undo a durable revocation.
+        guard !Self.storage.isRevoked || (deferred && explicitStart) else { return false }
 
         guard let appToken = arguments["appToken"] as? String, !appToken.isEmpty else {
             NSLog("[apptracer_flutter] TracerOptions.appToken is required on iOS; collection is off.")
-            enabled = false
+            Self.enabled = false
+            Self.lifecycleError = "app_token_missing"
+            return false
+        }
+
+        do {
+            let purge = Self.storage.isRevoked ||
+                (deferred && arguments["preservePreviousReports"] as? Bool != true)
+            if purge { Self.clearSDKPreferences() }
+            try Self.storage.prepare(purge: purge)
+        } catch {
+            Self.lifecycleError = "native_cleanup_failed"
             return false
         }
 
         let maxBreadcrumbs = arguments["maxBreadcrumbs"] as? Int ?? 100
         let provider = DartLogProvider(maxLines: maxBreadcrumbs)
-        logProvider = provider
+        Self.logProvider = provider
 
         let endpoint = EndpointConfiguration(token: appToken, url: arguments["apiUrl"] as? String)
         // Под `debug` SDK получает вывод в консоль, а его результаты —
@@ -98,14 +140,21 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             logDestinations: destinations
         )
 
-        let delegate = debug ? DebugServiceDelegate() : nil
-        serviceDelegate = delegate
+        let delegate = DebugServiceDelegate(debug: debug, onStart: { result in
+            if case .failure(let error) = result,
+               !Self.isUnconfiguredFeature(error) {
+                Self.enabled = false
+                Self.lifecycleError = "native_start_failed"
+            }
+        })
+        Self.serviceDelegate = delegate
         let created = TracerFactory.tracerService(
             configuration: configuration,
             delegate: delegate
         )
+        Self.service = created
+        Self.didStart = true
         created.start()
-        service = created
 
         if let environment = arguments["environment"] as? String {
             created.setEnvironment(environment)
@@ -117,9 +166,25 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             }
         }
 
-        enabled = true
-        logDebug("started, token \(appToken.prefix(6))…")
-        return true
+        Self.enabled = Self.lifecycleError == nil
+        logDebug("started")
+        return Self.enabled
+    }
+
+    /// OKTracer 1.5.2 emits noNeedToStart for each feature omitted from
+    /// Configuration.features. Those callbacks do not fail the configured
+    /// crash/assert reporters. Unknown errors and configured-feature failures
+    /// remain fatal to our collection state.
+    private static func isUnconfiguredFeature(_ error: CustomNSError) -> Bool {
+        let ns = error as NSError
+        guard ns.userInfo[TracerErrorPathKey] as? String == "TracerService.noNeedToStart",
+              let infos = ns.userInfo[TracerUserInfosKey] as? [[AnyHashable: Any]],
+              infos.count == 1,
+              let feature = infos[0]["feature"] as? FeatureType else { return false }
+        switch feature {
+        case .diskUsage, .systrace, .metricKit, .performance, .otlp: return true
+        case .assertReporter, .crashReporter: return false
+        }
     }
 
     /// Diagnostics behind `TracerOptions.debug`.
@@ -132,19 +197,52 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         NSLog("[apptracer_flutter] \(message)")
     }
 
+    private func collectionState() -> [String: String] {
+        if let reason = Self.lifecycleError { return ["state": "error", "reason": reason] }
+        if Self.stopped {
+            return ["state": "restartRequired", "reason": "native_restart_required"]
+        }
+        if !Self.enabled && Self.storage.isRevoked {
+            return ["state": "disabled", "reason": "consent_required"]
+        }
+        return ["state": Self.enabled ? "enabled" : "disabled"]
+    }
+
     private func stopCollection() {
-        enabled = false
-        service?.stop()
-        logProvider?.clear()
+        Self.enabled = false
+        Self.stopped = Self.didStart
+        do { try Self.storage.markRevoked() }
+        catch { Self.lifecycleError = "native_cleanup_failed" }
+        Self.service?.stop()
+        Self.service?.delegate = nil
+        if let service = Self.service { Self.stoppedService = service }
+        Self.service = nil
+        Self.logProvider?.clear()
+        Self.logProvider = nil
+        Self.serviceDelegate = nil
+        Self.clearSDKPreferences()
+        do {
+            try Self.storage.revoke()
+        } catch {
+            Self.lifecycleError = "native_cleanup_failed"
+        }
+    }
+
+    private static func clearSDKPreferences() {
+        // Audited 1.5.2 task metadata and cached system-info domains. Never
+        // remove the host application's preferences or unrelated files.
+        UserDefaults.standard.removePersistentDomain(forName: "ru.ok.tracer.crashes")
+        UserDefaults.standard.removeObject(forKey: "ru.ok.tracer.uploadtasks")
+        UserDefaults.standard.removeObject(forKey: "TracerSystemInfoProvider.lastValueKey")
     }
 
     private func setCustomKey(key: String, value: String) {
-        guard enabled, !Self.reservedPropertyKeys.contains(key) else { return }
-        service?.update(properties: [key: value])
+        guard Self.enabled, !Self.reservedPropertyKeys.contains(key) else { return }
+        Self.service?.update(properties: [key: value])
     }
 
     private func recordError(_ arguments: [String: Any]) {
-        guard enabled, let service = service else { return }
+        guard Self.enabled, let service = Self.service else { return }
 
         let exceptionType = arguments["exceptionType"] as? String ?? "DartError"
         let message = arguments["message"] as? String ?? ""
@@ -311,9 +409,19 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
 /// Держится плагином за сильную ссылку: делегат в `TracerFactory` слабый, и без
 /// этого он умер бы сразу после `initialize`.
 private final class DebugServiceDelegate: TracerServiceDelegate {
+    private let debug: Bool
+    private let onStart: (TracerResult<FeatureType>) -> Void
+
+    init(debug: Bool, onStart: @escaping (TracerResult<FeatureType>) -> Void) {
+        self.debug = debug
+        self.onStart = onStart
+    }
 
     func tracerDidRegister(result: TracerResult<FeatureType>) { log("register", result) }
-    func tracerDidStart(result: TracerResult<FeatureType>) { log("start", result) }
+    func tracerDidStart(result: TracerResult<FeatureType>) {
+        onStart(result)
+        log("start", result)
+    }
     func tracerDidStop(result: TracerResult<FeatureType>) { log("stop", result) }
     func tracerDidEvent(feature: FeatureType, result: TracerResult<String>) {
         log("event \(feature.rawValue)", result)
@@ -326,10 +434,12 @@ private final class DebugServiceDelegate: TracerServiceDelegate {
     func tracerDidStopObject(result: TracerResult<FeatureObject>) {}
     func tracerDidRemoveObject(result: TracerResult<FeatureObject>) {}
     func tracerDidAllUpload(feature: FeatureType) {
+        guard debug else { return }
         NSLog("[apptracer_flutter] OKTracer upload queue drained: \(feature.rawValue)")
     }
 
     private func log<T>(_ what: String, _ result: TracerResult<T>) {
+        guard debug else { return }
         switch result {
         case .success(let value):
             NSLog("[apptracer_flutter] OKTracer \(what): ok \(value)")

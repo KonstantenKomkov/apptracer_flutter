@@ -1,8 +1,8 @@
 name: apptracer_flutter_web
 description: >-
   Web implementation of apptracer_flutter, the unofficial Flutter integration
-  with Tracer (apptracer.ru). Delivers Dart errors over the Sentry protocol.
-version: 0.1.0
+  with Tracer (apptracer.ru). Delivers Dart errors over Tracer's HTTP ingest.
+version: 0.2.0-dev.1
 repository: https://github.com/KonstantenKomkov/apptracer_flutter
 issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 
@@ -17,8 +17,8 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter_http: ^0.1.0
-  apptracer_flutter_platform_interface: ^0.1.0
+  apptracer_flutter_http: ^0.2.0-dev.1
+  apptracer_flutter_platform_interface: ^0.2.0-dev.1
   flutter:
     sdk: flutter
   flutter_web_plugins:

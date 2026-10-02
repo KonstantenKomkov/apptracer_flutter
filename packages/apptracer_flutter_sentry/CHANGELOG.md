@@ -9,6 +9,12 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Update the platform-interface constraint for the lifecycle contract and remove the direct meta dependency. Native deferred lifecycle operations remain unsupported.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added

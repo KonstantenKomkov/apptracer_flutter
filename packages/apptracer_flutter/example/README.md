@@ -33,7 +33,7 @@ export TRACER_JS_PLUGIN_TOKEN=...  # web, загрузка сорсмап
 в строковый ресурс, — `--dart-define` там игнорируется:
 
 ```sh
-flutter run --release -Ptracer.enabled=true
+env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter run --release
 ```
 
 На iOS и web токен передаётся из Dart, каждый свой:
@@ -57,11 +57,11 @@ Gradle-плагин Tracer здесь подключается по флагу, 
 данных продолжал собираться:
 
 ```sh
-flutter build apk --release -Ptracer.enabled=true \
+env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
   --obfuscate --split-debug-info=build/symbols
 ```
 
-`android/app/tracer.gradle` валит сборку, если `-Ptracer.enabled=true` передан
+`android/app/tracer.gradle` валит сборку, если `tracer.enabled=true` передан
 без обоих токенов, — вместо того чтобы выпустить релиз, чьи краши уходят в
 никуда. Настоящее приложение применяет плагин безусловно, см.
 [README](../README.md#android).
@@ -78,6 +78,8 @@ flutter build apk --release -Ptracer.enabled=true \
 [symbolication.md](../../../docs/symbolication.md), находка 3.
 
 ## iOS
+
+Этот пример требует iOS 15 или новее для сборки установленным Xcode 27. Минимальная версия платформы самого плагина остаётся iOS 13.
 
 Сборка на устройство требует вашего Team ID. В проекте его нет намеренно:
 он привязан к конкретному разработчику, а не к примеру. Скопируйте шаблон и
@@ -142,3 +144,28 @@ Android-устройстве: нажимает кнопки в порядке, �
 Последние две кнопки видны только на Android и завершают сеанс: после них
 приложение надо запускать заново. Под ними лежит `MainActivity` примера, а не
 код пакета.
+
+
+## Проверка отложенного сбора
+
+Отдельный пример `lib/consent_main.dart` позволяет явно запустить сбор, запросить
+состояние, отозвать разрешение с очисткой и вызвать тестовые Dart/JVM/native/ANR
+события. Flavor `consent` использует отдельный пакет `.consent` и удаляет оба
+startup provider. Обычный пример сохраняет автоматический режим.
+
+Из корня репозитория загрузите локальные токены Android-проекта Tracer:
+
+```sh
+source .env.tracer
+cd packages/apptracer_flutter/example
+env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
+    'ORG_GRADLE_PROJECT_tracer.enabled=true' \
+    flutter run --flavor consent --target lib/consent_main.dart \
+    --dart-define=TRACER_TEST_USER=consent-test-A
+```
+
+Для варианта без SDK уберите `tracer.enabled`: токены не нужны, операции
+возвращают `unsupported/sdk_missing`. Файл `.env.tracer` игнорируется Git.
+Подробные сценарии и ограничения проверки — в
+[плане проверки](../../../docs/native-collection-consent.md#device-verification-harness--2026-10-02).
+Полная приёмка на устройстве, включая доставку в Tracer, ещё не завершена.

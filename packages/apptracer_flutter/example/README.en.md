@@ -31,7 +31,7 @@ On Android the token comes from the Gradle plugin, which writes it into a
 string resource at build time — `--dart-define` is ignored there:
 
 ```sh
-flutter run --release -Ptracer.enabled=true
+env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter run --release
 ```
 
 On iOS and web the token is passed from Dart, a different one each:
@@ -55,11 +55,11 @@ The Tracer Gradle plugin is opt-in here so that a checkout without credentials
 still builds:
 
 ```sh
-flutter build apk --release -Ptracer.enabled=true \
+env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
   --obfuscate --split-debug-info=build/symbols
 ```
 
-`android/app/tracer.gradle` fails the build when `-Ptracer.enabled=true` is
+`android/app/tracer.gradle` fails the build when `tracer.enabled=true` is
 passed without both tokens, rather than producing a release whose crashes go
 nowhere. A real application applies the plugin unconditionally; see the
 [README](../README.md#android).
@@ -75,6 +75,8 @@ regenerate the symbol file — see
 [symbolication.md](../../../docs/symbolication.md), finding 3.
 
 ## iOS
+
+This example requires iOS 15 or later for the installed Xcode 27 toolchain. The plugin itself retains its iOS 13 deployment requirement.
 
 A device build needs your Team ID. The project deliberately does not carry one:
 it belongs to a person, not to the example. Copy the template and fill it in:
@@ -137,3 +139,27 @@ documented at the top of the test.
 The last two are Android-only and end the session: the app has to be started
 again afterwards. They are backed by the example's `MainActivity`, not by
 package code.
+
+
+## Deferred collection verification
+
+`lib/consent_main.dart` exposes explicit start, state query, revoke with cleanup,
+and Dart/JVM/native/ANR probes. The `consent` flavor uses a separate `.consent`
+application ID and removes both startup providers. Ordinary example builds retain
+automatic mode.
+
+Load the local Android Tracer project tokens from the repository root:
+
+```sh
+source .env.tracer
+cd packages/apptracer_flutter/example
+env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
+    'ORG_GRADLE_PROJECT_tracer.enabled=true' \
+    flutter run --flavor consent --target lib/consent_main.dart \
+    --dart-define=TRACER_TEST_USER=consent-test-A
+```
+
+Omit `tracer.enabled` for the SDK-absent variant: it needs no tokens and returns
+`unsupported/sdk_missing`. Git ignores `.env.tracer`. See the
+[verification plan](../../../docs/native-collection-consent.md#device-verification-harness--2026-10-02)
+for scenarios and evidence limits. Full device/server acceptance remains pending.

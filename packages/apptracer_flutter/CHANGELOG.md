@@ -9,6 +9,18 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Correct iOS symbol upload metadata to match the vendor: app name in
+  `versionName`, marketing version in `versionCode`. The CLI now requires
+  `--app-name` for iOS; the obsolete `--build` option is rejected.
+- Upload only dSYM bundle contents from an iOS build directory and refuse
+  uploads without DWARF files; exclude application binaries and other build files.
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Add explicit deferred collection start, actual lifecycle results, and stop with cleanup. Bootstrap invokes appRunner once; revocation immediately discards Dart diagnostics and rejects late start results.
+
 ## [0.1.2] - 2026-09-02
 
 ### Changed

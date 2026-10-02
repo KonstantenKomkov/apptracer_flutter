@@ -37,7 +37,8 @@ let package = Package(
         // on 2026-08-31. With the floor, a Package.resolved that still pins
         // 1.5.1 fails to resolve against a named constraint instead of on a
         // dead download URL.
-        .package(url: "https://github.com/odnoklassniki/tracer-ios.git", from: "1.5.2"),
+        // Revocation uses the audited storage layout of this exact version.
+        .package(url: "https://github.com/odnoklassniki/tracer-ios.git", exact: "1.5.2"),
     ],
     targets: [
         .target(

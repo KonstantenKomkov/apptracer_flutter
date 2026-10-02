@@ -16,6 +16,37 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate {
 
   private static let channelName = "ru.apptracer.flutter.example/native"
+  private var verificationEngine: FlutterEngine?
+  private var verificationChannel: FlutterMethodChannel?
+
+  private func checkSecondaryEngine(result: @escaping FlutterResult) {
+    guard verificationEngine == nil else {
+      result(FlutterError(code: "probe_busy", message: nil, details: nil))
+      return
+    }
+    let engine = FlutterEngine(name: "consent-verification", project: nil, allowHeadlessExecution: true)
+    verificationEngine = engine
+    guard engine.run(withEntrypoint: "secondaryConsentProbe") else {
+      verificationEngine = nil
+      result(FlutterError(code: "probe_start_failed", message: nil, details: nil))
+      return
+    }
+    GeneratedPluginRegistrant.register(with: engine)
+    let channel = FlutterMethodChannel(
+      name: "ru.apptracer.flutter.example/secondary", binaryMessenger: engine.binaryMessenger)
+    verificationChannel = channel
+    channel.setMethodCallHandler { [weak self] call, reply in
+      guard call.method == "result" else { reply(FlutterMethodNotImplemented); return }
+      reply(nil)
+      result(call.arguments)
+      DispatchQueue.main.async {
+        channel.setMethodCallHandler(nil)
+        engine.destroyContext()
+        self?.verificationChannel = nil
+        self?.verificationEngine = nil
+      }
+    }
+  }
 
   override func application(
     _ application: UIApplication,
@@ -30,6 +61,18 @@ import UIKit
       )
       channel.setMethodCallHandler { call, result in
         switch call.method {
+        case "checkSecondaryEngine":
+          self.checkSecondaryEngine(result: result)
+        case "verificationContext":
+          // Used only by the standalone acceptance entrypoint. No credentials
+          // or other process environment values are exposed.
+          result([
+            "scenario": ProcessInfo.processInfo.environment["APPTRACER_VERIFY_SCENARIO"] ?? "inspect",
+            "libraryPath": FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].path
+          ])
+        case "crashForConsentVerification":
+          result(nil)
+          fatalError("apptracer consent verification native crash")
         case "crashNatively":
           // Answer first: after this the process is gone, and an unanswered
           // call would leave the Dart side waiting on a reply that can never

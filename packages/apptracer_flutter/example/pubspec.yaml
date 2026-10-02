@@ -8,10 +8,10 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter: ^0.1.0
+  apptracer_flutter: ^0.2.0-dev.1
   # Only needed on targets without a native Tracer SDK (desktop, Aurora).
   # Android, iOS and web work without it.
-  apptracer_flutter_http: ^0.1.0
+  apptracer_flutter_http: ^0.2.0-dev.1
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter

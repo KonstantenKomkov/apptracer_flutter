@@ -102,7 +102,7 @@ void main() {
     test('is safe before start', () async {
       final platform = FakeTracerPlatform();
       await _client(platform).stop();
-      expect(platform.stopCalls, 0);
+      expect(platform.stopCalls, 1);
     });
   });
 
@@ -477,12 +477,14 @@ void main() {
   });
 
   group('custom keys', () {
-    test('are remembered before start and applied on start', () async {
+    test('discard values before start; apply only explicit initial keys',
+        () async {
       final platform = FakeTracerPlatform();
       final client = _client(platform);
 
       await client.setCustomKey(key: 'flavor', value: 'beta');
       expect(platform.keys, isEmpty);
+      expect(client.customKeys, isEmpty);
 
       await client.start(
         const TracerOptions(initialCustomKeys: <String, String>{'a': 'b'}),

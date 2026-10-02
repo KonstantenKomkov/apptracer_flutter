@@ -1,0 +1,6 @@
+// Opt-in compatibility settings for Tracer symbol ingestion with Xcode 27.
+// Apply to the whole build via XCODE_XCCONFIG_FILE so Pods are covered too.
+// Verified on a physical iPhone: Runner and Flutter resolve to source lines.
+// Keeps function/line information; omits imported Clang module debug types.
+OTHER_SWIFT_FLAGS = $(inherited) -dwarf-version=4 -Xfrontend -no-clang-module-breadcrumbs
+OTHER_CFLAGS = $(inherited) -gdwarf-4

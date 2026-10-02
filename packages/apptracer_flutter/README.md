@@ -109,13 +109,6 @@ androidPluginToken=...
     ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
 ```
 
-Дальше на Android делать нечего: настройку, без которой пакет молча теряет
-ошибки, он ставит себе сам. Это мягкий рейт-лимит на нефатальные. Жёсткий
-дефолт Tracer — **8 нефатальных за сессию**
-(`LIMIT_MAX_NON_FATALS_PER_SESSION`), а каждая ошибка Dart, которую шлёт пакет,
-— нефатальная: упрётесь вы именно в этот потолок и молча. Рейт-лимит поднимает
-его до 10 в час, вендор сам рекомендует его включать.
-
 Ещё четыре момента, о которые легко споткнуться:
 
 * **`TracerOptions.appToken` на Android игнорируется.** Токен приходит из
@@ -166,23 +159,10 @@ end
 
 Затем `pod install`. `appToken` передаётся из Dart, шагом ниже.
 
-Нужен `OKTracer` **1.5.2 или новее** — это первая версия, которую вендор
-раздаёт с `nexus-external.vkteam.ru`; старый хост выключен 31.08.2026, и все
-версии до 1.5.1 включительно скачиваются с него, то есть падают с 404. Если
-приложение уже подключало Tracer и в `Podfile.lock` зафиксирована 1.5.1, сам
-`pod install` её не сдвинет — он остановится на «could not find compatible
-versions for pod OKTracer». Выполните `pod update OKTracer`: команда заодно
-обновит закешированный spec-репозиторий вендора, который про 1.5.2 ещё не
-знает. На Swift Package Manager достаточно разрешить зависимости заново (в
-Xcode: File → Packages → Update to Latest Package Versions).
-
-`pluginToken` iOS-проекта здесь не участвует: он нужен при загрузке `dSYM`, без
-которой нативные краши в консоли остаются нечитаемыми.
-
-Загружаются они сами. При `pod install` пакет добавляет в `Runner.xcodeproj`
-фазу сборки, и она отправляет `dSYM` при каждой **release**-сборке — так же, как
-это делает Firebase Crashlytics. Вызывать ничего не нужно, нужен только токен, и
-взять его фаза может из двух мест.
+Для читаемых стектрейсов нативных крашей нужна загрузка `dSYM`. При
+`pod install` пакет добавляет в `Runner.xcodeproj` фазу их автоматической
+загрузки при каждой **release**-сборке. Укажите `pluginToken` iOS-проекта
+одним из двух способов:
 
 Первое — файл `ios/tracer_plugin_token`, рядом с `Podfile`. Создайте его и
 положите внутрь одну строку: `pluginToken` iOS-проекта из консоли Tracer.
@@ -211,20 +191,23 @@ e4f1b0c2-8a7d-4c19-9f3e-2b6d5a0c7e18
 
 ```sh
 flutter build ipa
-dart run apptracer_flutter:upload_symbols ios --token=IOS_PLUGIN_TOKEN
+export TRACER_PLUGIN_TOKEN=IOS_PLUGIN_TOKEN
+dart run apptracer_flutter:upload_symbols ios --app-name=Runner
 ```
+
+Xcode 27: [проверенная настройка DWARF 4](../apptracer_flutter_ios/README.md#символы-при-сборке-xcode-27).
 
 Наконец, тот же запрос вручную — если ничего ставить не хочется:
 
 ```sh
-archive=build/ios/archive/Runner.xcarchive
-plist=$archive/Products/Applications/Runner.app/Info.plist
+archive="$(pwd)/build/ios/archive/Runner.xcarchive"
+plist="$archive/Products/Applications/Runner.app/Info.plist"
 
-cd $archive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+(cd "$archive/dSYMs" && zip -qry /tmp/dsym.zip ./*.dSYM)
 
 curl --location --http1.1 \
-  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
-  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" \
+  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" \
+  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
   --form file=@/tmp/dsym.zip \
   "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
 ```
@@ -445,22 +428,44 @@ Breadcrumbs копятся в Dart **и** сразу дублируются в �
 
 ### Согласие пользователя
 
+Для Android сначала удалите оба startup provider из manifest приложения,
+сохранив metadata инициализаторов и Gradle-ресурсы. Точная настройка и ограничения
+описаны в [контракте нативного сбора](../../docs/native-collection-consent.md).
+Одного `isCollectionEnabled: false` недостаточно для предотвращения запуска SDK
+до Flutter.
+
 ```dart
-// До первого кадра:
-Tracer.initialize(
-  options: TracerOptions(isCollectionEnabled: consent.isGranted),
+// Bootstrap: приложение запускается, сбор пока выключен.
+await Tracer.initialize(
+  options: const TracerOptions(
+    nativeInitialization: TracerNativeInitialization.deferred,
+  ),
   appRunner: () => runApp(const MyApp()),
 );
 
-// Отзыв согласия во время сессии:
-await Tracer.stopCollection();
+// После проверки согласия и его применимости к текущему аккаунту:
+final started = await Tracer.startCollection();
+if (started.state == TracerCollectionState.restartRequired) {
+  // Для возобновления нужен новый процесс; повторять initialize не следует.
+}
+
+// При отзыве, logout или смене пользователя:
+final stopped = await Tracer.stopAndClearCollection();
+// error/unsupported означает, что необходимая нативная очистка не подтверждена.
 ```
 
-`stopCollection` снимает установленные обработчики ошибок Dart и восстанавливает
-те, что стояли раньше, — включая ваши собственные. Восстановление происходит
-только если текущий обработчик всё ещё тот, который поставил пакет; если после
-него встроился кто-то третий, пакет сообщает об этом и оставляет чужой
-обработчик на месте, а не удаляет чужую работу.
+`startCollection` не вызывает `appRunner` повторно. Остановка сразу запрещает
+новые Dart-события, очищает breadcrumbs и custom keys и снимает установленные
+обработчики, если они всё ещё принадлежат пакету. Результат нативной операции
+приходит асинхронно; уже отправленные серверу данные она не удаляет.
+
+Android-адаптер 1.4.0 прошёл проверки устройства, сети и release/R8 на API 35.
+На iOS отложенный режим поддерживается с OKTracer строго 1.5.2: явный старт
+после согласия, очистка и блокировка файлов отчётов после отзыва. После активного
+сбора остановка возвращает `restartRequired`; автоматический запуск в новом
+процессе не отменяет отзыв. Новое согласие требует явного deferred-старта.
+Проверка жизненного цикла завершена для указанных SDK; публикация пакетов и
+миграция нативного канала согласия приложения «Сад» остаются отдельными шагами.
 
 ### Фильтрация данных
 
@@ -582,3 +587,14 @@ flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 
 MIT. SDK вендора лицензируются отдельно, см.
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
+
+## Native consent lifecycle
+
+See [the lifecycle contract and migration notes](../../docs/native-collection-consent.md) for deferred bootstrap,
+the Android manifest setup, explicit start, stop with purge, and restart handling.
+Android deferred collection uses a version-bound 1.4.0 adapter, verified with
+release/R8 on API 35. iOS uses OKTracer 1.5.2, verified on a physical iPhone.
+See the dated lifecycle evidence for tested scenarios and symbolication limits.
+`isCollectionEnabled=false` alone cannot prevent Android provider startup.
+`stopCollection` does not prove native report deletion or cancellation of uploads.
+Package publication and downstream application migration are separate steps.

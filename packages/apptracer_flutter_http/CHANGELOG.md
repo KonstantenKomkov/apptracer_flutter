@@ -9,6 +9,20 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Preserve anonymous release web frame coordinates in JS_STACKTRACE payloads.
+
+- Support explicit start and stop-with-cleanup for HTTP/Web. Discard logs, keys,
+  user ID and token at stop; reject diagnostics while off. Recreate an owned HTTP
+  client at the next start so re-consent can send events again.
+
+### Changed
+
+- Normalize symbolic Dart debug/VM frames to JavaScript V8 syntax for the Tracer stack parser, retaining the original event trace.
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Update the platform-interface constraint for the lifecycle contract and remove the direct meta dependency. Native deferred lifecycle operations remain unsupported.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added

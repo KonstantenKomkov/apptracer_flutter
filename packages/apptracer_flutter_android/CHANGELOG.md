@@ -9,6 +9,14 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Fix R8 release builds without the optional vendor SDK by tolerating its absent
+  `javax.inject.Provider` type; absence still returns `sdk_missing` at runtime.
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Add an opt-in deferred adapter pinned to Android Tracer 1.4.0, with controlled startup, revocable work admission, diagnostic cleanup, and process-scoped restart-required state. Automatic mode remains the default. APK/device/network/fatal-recovery acceptance is pending.
+
 ## [0.1.1] - 2026-08-30
 
 ### Changed

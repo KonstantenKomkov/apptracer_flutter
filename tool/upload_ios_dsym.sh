@@ -16,12 +16,12 @@
 # does not leak into process listings or CI logs.
 #
 # Usage:
-#   TRACER_PLUGIN_TOKEN=... tool/upload_ios_dsym.sh <dsym-dir> <version-name> [version-code]
+#   TRACER_PLUGIN_TOKEN=... tool/upload_ios_dsym.sh <dsym-dir> <app-name> <marketing-version>
 set -euo pipefail
 
-dsym_dir="${1:?usage: TRACER_PLUGIN_TOKEN=... upload_ios_dsym.sh <dsym-dir> <version-name> [version-code]}"
-version_name="${2:?version name is required}"
-version_code="${3:-1}"
+dsym_dir="${1:?usage: TRACER_PLUGIN_TOKEN=... upload_ios_dsym.sh <dsym-dir> <app-name> <marketing-version>}"
+app_name="${2:?app name (Xcode PRODUCT_NAME) is required}"
+marketing_version="${3:?marketing version is required}"
 endpoint="${TRACER_SYMBOL_ENDPOINT:-https://plugin-api.apptracer.ru/api/symbol/upload}"
 
 if [ -z "${TRACER_PLUGIN_TOKEN:-}" ]; then
@@ -50,18 +50,20 @@ archive="$workdir/dsym.zip"
 # them would double the archive and confuse the server about what it received.
 (cd "$dsym_dir" && zip -qry "$archive" ./*.dSYM)
 
-echo "upload_ios_dsym: $count bundle(s), $(du -h "$archive" | cut -f1), version $version_name ($version_code)"
+echo "upload_ios_dsym: $count bundle(s), $(du -h "$archive" | cut -f1), app $app_name, version $marketing_version"
 
-response="$(curl --silent --show-error --location --http1.1 \
-  --form "versionName=$version_name" \
-  --form "versionCode=$version_code" \
-  --form "file=@$archive" \
-  "$endpoint?symbolToken=$TRACER_PLUGIN_TOKEN")" || {
+# Feed the authenticated URL through stdin, outside the process argument list.
+tracer_url="$endpoint?symbolToken=$TRACER_PLUGIN_TOKEN"
+tracer_url="${tracer_url//\\/\\\\}"
+tracer_url="${tracer_url//\"/\\\"}"
+response="$(printf 'url = "%s"\n' "$tracer_url" | curl --config - --fail --silent --show-error --location --http1.1 \
+  --form "versionName=$app_name" \
+  --form "versionCode=$marketing_version" \
+  --form "file=@$archive")" || {
   echo "upload_ios_dsym: the request failed." >&2
   exit 1
 }
 
-echo "upload_ios_dsym: server said: $response"
 
 case "$response" in
   *'"success":true'*|*'"success": true'*) ;;

@@ -215,20 +215,23 @@ do not make it, call the upload explicitly; this command exits non-zero:
 
 ```sh
 flutter build ipa
-dart run apptracer_flutter:upload_symbols ios --token=IOS_PLUGIN_TOKEN
+export TRACER_PLUGIN_TOKEN=IOS_PLUGIN_TOKEN
+dart run apptracer_flutter:upload_symbols ios --app-name=Runner
 ```
+
+Xcode 27: [verified DWARF 4 configuration](../apptracer_flutter_ios/README.en.md#symbols-with-xcode-27).
 
 Finally, the same request by hand, if you would rather install nothing:
 
 ```sh
-archive=build/ios/archive/Runner.xcarchive
-plist=$archive/Products/Applications/Runner.app/Info.plist
+archive="$(pwd)/build/ios/archive/Runner.xcarchive"
+plist="$archive/Products/Applications/Runner.app/Info.plist"
 
-cd $archive/dSYMs && zip -qry /tmp/dsym.zip ./*.dSYM
+(cd "$archive/dSYMs" && zip -qry /tmp/dsym.zip ./*.dSYM)
 
 curl --location --http1.1 \
-  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
-  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" \
+  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" \
+  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
   --form file=@/tmp/dsym.zip \
   "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
 ```
@@ -448,22 +451,43 @@ with the trail attached.
 
 ### Consent
 
+On Android, first remove both startup providers from the application's manifest,
+retaining initializer metadata and Gradle resources. See the
+[native lifecycle contract](../../docs/native-collection-consent.md) for the exact
+setup and limitations. `isCollectionEnabled: false` alone cannot prevent SDK startup
+before Flutter.
+
 ```dart
-// Before the first frame:
-Tracer.initialize(
-  options: TracerOptions(isCollectionEnabled: consent.isGranted),
+// Bootstrap runs the application while collection remains off.
+await Tracer.initialize(
+  options: const TracerOptions(
+    nativeInitialization: TracerNativeInitialization.deferred,
+  ),
   appRunner: () => runApp(const MyApp()),
 );
 
-// Withdrawn mid-session:
-await Tracer.stopCollection();
+// After verifying consent and its applicability to the current account:
+final started = await Tracer.startCollection();
+if (started.state == TracerCollectionState.restartRequired) {
+  // Resuming requires a new process; do not loop initialize.
+}
+
+// On withdrawal, logout or account change:
+final stopped = await Tracer.stopAndClearCollection();
+// error/unsupported means the required native cleanup is not confirmed.
 ```
 
-`stopCollection` removes the Dart error handlers and restores whatever was
-installed before — including your own. It only restores when the currently
-installed handler is still the one this package installed; if something else
-took over afterwards, it says so and leaves that handler alone rather than
-deleting a third party's work.
+`startCollection` never calls `appRunner` again. Stop immediately rejects new Dart
+events, clears breadcrumbs and custom keys, and restores error handlers still owned
+by the package. The native result arrives asynchronously; this operation cannot delete
+data already received by the server.
+
+The Android 1.4.0 adapter passed device, network and R8 checks on API 35.
+iOS deferred collection uses exactly OKTracer 1.5.2. Stop purges and seals report
+storage, returning `restartRequired` after an active session. Automatic startup
+in a new process cannot undo revocation; new consent requires explicit deferred start.
+The tested lifecycle acceptance is complete; publication and migration of the
+Garden application's native consent channel remain separate steps.
 
 ### Redacting
 
@@ -585,3 +609,14 @@ vendor confirmed as much — so decoding stays a manual step. Details in
 
 MIT. The vendor SDKs are licensed separately; see
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
+
+## Native consent lifecycle
+
+See [the lifecycle contract and migration notes](../../docs/native-collection-consent.md) for deferred bootstrap,
+the Android manifest setup, explicit start, stop with purge, and restart handling.
+Android deferred collection uses a version-bound 1.4.0 adapter, verified with
+release/R8 on API 35. iOS uses OKTracer 1.5.2, verified on a physical iPhone.
+See the dated lifecycle evidence for tested scenarios and symbolication limits.
+`isCollectionEnabled=false` alone cannot prevent Android provider startup.
+`stopCollection` does not prove native report deletion or cancellation of uploads.
+Package publication and downstream application migration are separate steps.

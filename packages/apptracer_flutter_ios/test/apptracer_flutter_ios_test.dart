@@ -14,7 +14,14 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall call) async {
       calls.add(call);
-      return call.method == 'initialize' ? true : null;
+      return switch (call.method) {
+        'initialize' => true,
+        'stopAndClearCollection' => <String, String>{
+            'state': 'error',
+            'reason': 'native_stop_and_cleanup_unverified',
+          },
+        _ => null,
+      };
     });
   });
 
@@ -39,5 +46,31 @@ void main() {
     expect(tracer.isEnabled, isTrue);
     expect(calls.map((MethodCall c) => c.method),
         <String>['initialize', 'recordLog']);
+  });
+
+  test('revocation blocks new Dart events before the native channel', () async {
+    final tracer = AppTracerIos();
+    await tracer.initialize(const TracerOptions(appToken: 'required-on-ios'));
+
+    final stopped = await tracer.stopAndClearCollection();
+    expect(stopped.state, TracerCollectionState.error);
+    expect(stopped.reason, 'native_stop_and_cleanup_unverified');
+    expect(tracer.isEnabled, isFalse);
+
+    final event = TracerEvent(
+      exceptionType: 'StateError',
+      message: 'after revocation',
+      stackTrace: DartStackTrace.parse(''),
+    );
+    await tracer.recordError(event);
+    await tracer.recordLog('after revocation');
+    await tracer.setUserId('after-revocation');
+    await tracer.setCustomKey(key: 'after', value: 'revocation');
+    await tracer.removeCustomKey('before');
+
+    expect(
+      calls.map((MethodCall c) => c.method),
+      <String>['initialize', 'stopAndClearCollection'],
+    );
   });
 }

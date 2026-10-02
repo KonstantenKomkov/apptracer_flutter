@@ -313,7 +313,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# The body of the \"[apptracer_flutter] Upload dSYMs to Tracer\" build phase.\n#\n# Added to Runner.xcodeproj automatically at `pod install`; on Swift Package\n# Manager nothing evaluates the podspec, so this file is what you paste into a\n# Run Script phase by hand. See the package README.\n#\n# Safe to delete: without it, upload dSYMs yourself with\n#   dart run apptracer_flutter:upload_symbols ios --token=…\n[ \"$CONFIGURATION\" = \"Release\" ] || exit 0\n\nTOKEN=\"${TRACER_IOS_PLUGIN_TOKEN:-${TRACER_PLUGIN_TOKEN:-}}\"\nif [ -z \"$TOKEN\" ] && [ -f \"$SRCROOT/tracer_plugin_token\" ]; then\n  TOKEN=\"$(cat \"$SRCROOT/tracer_plugin_token\")\"\nfi\nif [ -z \"$TOKEN\" ]; then\n  echo \"warning: apptracer_flutter: no iOS pluginToken, skipping dSYM upload.\"\n  echo \"warning: set TRACER_IOS_PLUGIN_TOKEN, or put the token in ios/tracer_plugin_token.\"\n  exit 0\nfi\n\n# The phase runs in `ios/`; the package and pubspec.yaml live one level up.\ncd \"$SRCROOT/..\" || exit 0\n\n\"$FLUTTER_ROOT/bin/dart\" run apptracer_flutter:upload_symbols ios \\\n  --dir=\"$DWARF_DSYM_FOLDER_PATH\" --token=\"$TOKEN\" ||\n  echo \"warning: apptracer_flutter: dSYM upload failed; crashes of this build will be unreadable.\"\n";
+			shellScript = "# The body of the \"[apptracer_flutter] Upload dSYMs to Tracer\" build phase.\n#\n# Added to Runner.xcodeproj automatically at `pod install`; on Swift Package\n# Manager nothing evaluates the podspec, so this file is what you paste into a\n# Run Script phase by hand. See the package README.\n#\n# Safe to delete: without it, upload dSYMs yourself with\n#   dart run apptracer_flutter:upload_symbols ios --app-name=Runner\n[ \"$CONFIGURATION\" = \"Release\" ] || exit 0\n\nTOKEN=\"${TRACER_IOS_PLUGIN_TOKEN:-${TRACER_PLUGIN_TOKEN:-}}\"\nif [ -z \"$TOKEN\" ] && [ -f \"$SRCROOT/tracer_plugin_token\" ]; then\n  TOKEN=\"$(cat \"$SRCROOT/tracer_plugin_token\")\"\nfi\nif [ -z \"$TOKEN\" ]; then\n  echo \"warning: apptracer_flutter: no iOS pluginToken, skipping dSYM upload.\"\n  echo \"warning: set TRACER_IOS_PLUGIN_TOKEN, or put the token in ios/tracer_plugin_token.\"\n  exit 0\nfi\n\n# The phase runs in `ios/`; the package and pubspec.yaml live one level up.\ncd \"$SRCROOT/..\" || exit 0\n\nTRACER_PLUGIN_TOKEN=\"$TOKEN\" \"$FLUTTER_ROOT/bin/dart\" run apptracer_flutter:upload_symbols ios \\\n  --dir=\"$DWARF_DSYM_FOLDER_PATH\" --app-name=\"$PRODUCT_NAME\" \\\n  --version=\"${FLUTTER_BUILD_NAME:-$MARKETING_VERSION}\" ||\n  echo \"warning: apptracer_flutter: dSYM upload failed; crashes of this build will be unreadable.\"\n";
 			showEnvVarsInLog = 0;
 		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
@@ -484,7 +484,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -613,7 +613,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -664,7 +664,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;

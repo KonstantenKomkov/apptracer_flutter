@@ -82,3 +82,14 @@ make check      # analyze + test + publish dry-run
 
 MIT, см. [LICENSE](LICENSE). SDK вендора лицензируются отдельно, см.
 [docs/legal.md](docs/legal.md).
+
+## Native consent lifecycle
+
+See [the lifecycle contract and migration notes](docs/native-collection-consent.md) for deferred bootstrap,
+the Android manifest setup, explicit start, stop with purge, and restart handling.
+Android deferred collection uses a version-bound 1.4.0 adapter, verified with
+release/R8 on API 35. iOS uses OKTracer 1.5.2, verified on a physical iPhone.
+See the dated lifecycle evidence for tested scenarios and symbolication limits.
+`isCollectionEnabled=false` alone cannot prevent Android provider startup.
+`stopCollection` does not prove native report deletion or cancellation of uploads.
+Package publication and downstream application migration are separate steps.

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'apptracer_flutter_ios'
-  s.version          = '0.1.2'
+  s.version          = '0.2.0-dev.1'
   s.summary          = 'iOS implementation of apptracer_flutter.'
   s.description      = <<-DESC
 Unofficial Flutter integration with Tracer (apptracer.ru). Forwards Dart errors,
@@ -28,7 +28,8 @@ own spec repository. Add this line to your Podfile:
   # a 404. For an application with 1.5.1 in its Podfile.lock the floor turns
   # that 404 into a resolver message naming the constraint; `pod update
   # OKTracer` is what moves it on.
-  s.dependency 'OKTracer', '>= 1.5.2'
+  # Revocation seals the audited 1.5.2 storage paths; re-audit before upgrading.
+  s.dependency 'OKTracer', '= 1.5.2'
 
   # Matches the deployment target of the OKTracer xcframework (iOS 12.4).
   s.platform = :ios, '13.0'

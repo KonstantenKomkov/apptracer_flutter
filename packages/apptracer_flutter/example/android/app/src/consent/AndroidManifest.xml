@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+    <!-- The loopback probe also runs in builds without the vendor manifest. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:usesCleartextTraffic="true">
+        <!-- Remove the providers, retaining vendor application metadata/resources. -->
+        <provider android:name="ru.ok.tracer.startup.InitializationProvider"
+                  tools:node="remove" />
+        <provider android:name="ru.apptracer.flutter.TracerAutoConfigProvider"
+                  tools:node="remove" />
+    </application>
+</manifest>

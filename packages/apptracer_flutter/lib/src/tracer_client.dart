@@ -36,6 +36,24 @@ class TracerClient {
   final Map<String, String> _customKeys = <String, String>{};
   ErrorHandlerChain? _chain;
   bool _started = false;
+  int _generation = 0;
+  Future<void> _lifecycleTail = Future<void>.value();
+
+  Future<TracerCollectionResult> _serialize(
+      Future<TracerCollectionResult> Function() action) {
+    final next = _lifecycleTail.then((_) => action());
+    _lifecycleTail = next.then<void>((_) {}, onError: (Object _) {});
+    return next;
+  }
+
+  void _disableDart() {
+    _started = false;
+    _chain?.restore();
+    _chain = null;
+    _deduplicator.clear();
+    _breadcrumbs.clear();
+    _customKeys.clear();
+  }
 
   /// The platform implementation in use.
   TracerPlatform get platform => _platformOverride ?? TracerPlatform.instance;
@@ -63,38 +81,85 @@ class TracerClient {
   /// disabled; the host application keeps running either way.
   Future<void> start(TracerOptions options) async {
     _options = options;
-    _breadcrumbs = BreadcrumbBuffer(maxLength: options.maxBreadcrumbs);
-    _customKeys
-      ..clear()
-      ..addAll(options.initialCustomKeys);
-
-    if (!options.isCollectionEnabled) {
-      _log('collection disabled by TracerOptions.isCollectionEnabled');
-      _started = false;
+    if (options.nativeInitialization == TracerNativeInitialization.deferred ||
+        !options.isCollectionEnabled) {
+      ++_generation;
+      _disableDart();
       return;
     }
+    await startCollection(options);
+  }
 
-    try {
-      await platform.initialize(options);
-    } catch (error, stackTrace) {
-      _log('platform initialization failed: $error');
-      _log('$stackTrace');
-      _started = false;
-      return;
+  /// Starts transport without re-running appRunner or creating a guarded zone.
+  Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
+    final requested = options ?? _options;
+    if (!requested.isCollectionEnabled) {
+      ++_generation;
+      _disableDart();
+      return _serialize(() async {
+        try {
+          await platform.stopCollection();
+          return await platform.getCollectionState();
+        } catch (error) {
+          return TracerCollectionResult(TracerCollectionState.error,
+              reason: 'stop_failed: $error');
+        }
+      });
     }
-
-    _started = true;
-
-    if (_customKeys.isNotEmpty) {
-      for (final entry in _customKeys.entries) {
-        await _guard(
-          () => platform.setCustomKey(key: entry.key, value: entry.value),
-        );
+    final generation = _generation;
+    return _serialize(() async {
+      if (generation != _generation) {
+        return const TracerCollectionResult(TracerCollectionState.disabled,
+            reason: 'superseded');
       }
-    }
+      if (!requested.isCollectionEnabled) {
+        _disableDart();
+        return const TracerCollectionResult(TracerCollectionState.disabled);
+      }
+      if (isEnabled) return platform.getCollectionState();
+      _options = requested;
+      _disableDart();
+      try {
+        final result = await platform.startCollection(requested);
+        if (generation != _generation) {
+          return const TracerCollectionResult(TracerCollectionState.disabled,
+              reason: 'superseded');
+        }
+        if (!result.isEnabled) return result;
+        if (!platform.isEnabled) {
+          return const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'enabled_state_not_confirmed');
+        }
+        _breadcrumbs = BreadcrumbBuffer(maxLength: requested.maxBreadcrumbs);
+        _customKeys.addAll(requested.initialCustomKeys);
+        _started = true;
+        for (final entry in _customKeys.entries.toList()) {
+          if (generation != _generation) break;
+          await _guard(
+            () => platform.setCustomKey(key: entry.key, value: entry.value),
+          );
+        }
+        if (generation == _generation) _installHandlers();
+        return generation == _generation
+            ? result
+            : const TracerCollectionResult(TracerCollectionState.disabled,
+                reason: 'superseded');
+      } catch (error) {
+        _disableDart();
+        return TracerCollectionResult(TracerCollectionState.error,
+            reason: 'start_failed: $error');
+      }
+    });
+  }
 
-    _installHandlers();
-    _log('started with backend "${platform.backendName}"');
+  /// Observes transport; never grants permission to emit Dart events.
+  Future<TracerCollectionResult> getCollectionState() async {
+    try {
+      return await platform.getCollectionState();
+    } catch (error) {
+      return TracerCollectionResult(TracerCollectionState.error,
+          reason: 'state_failed: $error');
+    }
   }
 
   void _installHandlers() {
@@ -117,16 +182,41 @@ class TracerClient {
   /// Stops collection, removes the installed handlers and restores whatever
   /// was there before.
   ///
-  /// Idempotent: calling it when not started does nothing.
+  /// Always reaches the platform, including before a successful Dart start.
   Future<void> stop() async {
-    _chain?.restore();
-    _chain = null;
-    _deduplicator.clear();
-    _breadcrumbs.clear();
-    if (_started) {
-      await _guard(platform.stopCollection);
-    }
-    _started = false;
+    ++_generation;
+    _disableDart();
+    _options = _options.copyWith(
+      initialCustomKeys: const <String, String>{},
+      preservePreviousReports: false,
+    );
+    await _serialize(() async {
+      try {
+        await platform.stopCollection();
+        return await platform.getCollectionState();
+      } catch (error) {
+        return TracerCollectionResult(TracerCollectionState.error,
+            reason: 'stop_failed: $error');
+      }
+    });
+  }
+
+  /// Revokes Dart collection synchronously, then stops and purges transport.
+  Future<TracerCollectionResult> stopAndClearCollection() {
+    ++_generation;
+    _disableDart();
+    _options = _options.copyWith(
+      initialCustomKeys: const <String, String>{},
+      preservePreviousReports: false,
+    );
+    return _serialize(() async {
+      try {
+        return await platform.stopAndClearCollection();
+      } catch (error) {
+        return TracerCollectionResult(TracerCollectionState.error,
+            reason: 'cleanup_failed: $error');
+      }
+    });
   }
 
   /// Reports an error raised by the guarded zone.
@@ -201,6 +291,8 @@ class TracerClient {
   }
 
   Future<void> _dispatch(TracerEvent event) async {
+    final generation = _generation;
+    if (!isEnabled) return;
     var outgoing = event;
     final beforeSend = _options.beforeSend;
     if (beforeSend != null) {
@@ -231,6 +323,7 @@ class TracerClient {
       outgoing = outgoing.copyWith(issueKey: key);
     }
 
+    if (!isEnabled || generation != _generation) return;
     if (_options.attachRawStackTraceAsLog &&
         outgoing.stackTrace.raw.isNotEmpty) {
       await _guard(
@@ -240,6 +333,7 @@ class TracerClient {
       );
     }
 
+    if (!isEnabled || generation != _generation) return;
     final limited = outgoing.stackTrace.limitFrames(_options.maxStackFrames);
     await _guard(
       () => platform.recordError(
@@ -361,6 +455,8 @@ class TracerClient {
   /// only present in such a report if they were written to the native log as
   /// they happened.
   void addBreadcrumb(TracerBreadcrumb breadcrumb) {
+    if (!isEnabled) return;
+    final generation = _generation;
     var incoming = breadcrumb;
     final beforeBreadcrumb = _options.beforeBreadcrumb;
     if (beforeBreadcrumb != null) {
@@ -374,6 +470,7 @@ class TracerClient {
         _log('beforeBreadcrumb threw, keeping the original: $error');
       }
     }
+    if (!isEnabled || generation != _generation) return;
     _breadcrumbs.add(incoming);
     if (isEnabled && platform.mirrorsBreadcrumbsToLog) {
       unawaited(_guard(() => platform.recordLog(incoming.toLogLine())));
@@ -393,7 +490,7 @@ class TracerClient {
     required String key,
     required String value,
   }) async {
-    if (key.isEmpty) {
+    if (!isEnabled || key.isEmpty) {
       return;
     }
     _customKeys[key] = value;

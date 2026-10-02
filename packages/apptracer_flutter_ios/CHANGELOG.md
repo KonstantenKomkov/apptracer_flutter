@@ -9,6 +9,29 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Provide an opt-in DWARF-4 build override verified with Xcode 27, including
+  source-level Runner and Flutter frames in the Tracer dashboard.
+
+- Pass Xcode product name and marketing version to the dSYM uploader, with
+  the plugin token in the child environment instead of command arguments.
+
+- Stop and detach OKTracer, retaining one terminal service to avoid the SDK's
+  unowned-reference crash during immediate start/stop.
+  Physical iPhone tests cover failed and in-flight requests through revocation.
+  Purge and seal 1.5.2 report directories to prevent the surviving crash handler
+  from persisting new reports after revocation.
+- Remove the app-token prefix from native debug logging.
+
+- Preserve automatic crash/assert collection when OKTracer 1.5.2 reports
+  `noNeedToStart` for features omitted from its configuration. Other start
+  failures still revoke collection.
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Support explicit deferred collection with a storage adapter pinned to OKTracer 1.5.2. Persist revocation before stopping; refuse automatic restart after revocation. Require process restart after active stop, purge before re-consent, and keep collection off on cleanup errors. Share lifecycle state across plugin instances.
+
 ## [0.1.2] - 2026-09-02
 
 ### Changed

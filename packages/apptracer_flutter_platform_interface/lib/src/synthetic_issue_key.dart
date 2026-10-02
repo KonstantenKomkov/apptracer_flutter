@@ -47,6 +47,13 @@ abstract final class SyntheticIssueKey {
     required List<DartStackFrame> frames,
   }) {
     for (final DartStackFrame frame in frames) {
+      // DDC errors begin at throw_, and dart2js errors at wrapException.
+      // Those runtime frames describe every throw, not its application site.
+      if (frame.uri?.startsWith('dart-sdk/') == true ||
+          frame.uri?.startsWith('dart:') == true ||
+          frame.member == 'Object.wrapException') {
+        continue;
+      }
       final String? member = frame.member;
       if (member != null) {
         return _bounded('dart/$exceptionType/$member', member);

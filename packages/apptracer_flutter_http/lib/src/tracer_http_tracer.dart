@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'tracer_client_facts.dart';
 import 'tracer_batch_item.dart';
@@ -43,7 +43,8 @@ class TracerHttpTracer extends TracerPlatform {
   /// Reported as `tracerSdkVersion`; this package's version, not the vendor's.
   final String sdkVersion;
 
-  final http.Client _client;
+  http.Client _client;
+  bool _clientClosed = false;
   final bool _ownsClient;
   final String _backendName;
 
@@ -77,17 +78,21 @@ class TracerHttpTracer extends TracerPlatform {
   Future<void> initialize(TracerOptions options) async {
     _debug = options.debug;
     if (!options.isCollectionEnabled) {
-      _enabled = false;
+      await stopCollection();
       return;
     }
 
     final String? token = options.resolvedAppToken;
     if (token == null || token.isEmpty) {
       _log('TracerOptions.appToken is required on web; collection is off.');
-      _enabled = false;
+      await stopCollection();
       return;
     }
 
+    if (_ownsClient && _clientClosed) {
+      _client = http.Client();
+      _clientClosed = false;
+    }
     _appToken = token;
     _host = hostFrom(options.apiUrl) ?? defaultHost;
     _environment = options.resolvedEnvironment;
@@ -103,9 +108,27 @@ class TracerHttpTracer extends TracerPlatform {
   @override
   Future<void> stopCollection() async {
     _enabled = false;
-    if (_ownsClient) {
+    _appToken = null;
+    _logs.clear();
+    _customKeys.clear();
+    _userId = null;
+    if (_ownsClient && !_clientClosed) {
       _client.close();
+      _clientClosed = true;
     }
+  }
+
+  @override
+  Future<TracerCollectionResult> startCollection(TracerOptions options) async {
+    // This transport has no native service or disk-backed report queue.
+    await initialize(options);
+    return getCollectionState();
+  }
+
+  @override
+  Future<TracerCollectionResult> stopAndClearCollection() async {
+    await stopCollection();
+    return const TracerCollectionResult(TracerCollectionState.disabled);
   }
 
   @override
@@ -152,7 +175,7 @@ class TracerHttpTracer extends TracerPlatform {
       }
     } catch (error) {
       // A crash reporter that throws is worse than one that misses an event.
-      _log('upload failed: $error');
+      _log('upload failed: ${error.runtimeType}');
     }
   }
 
@@ -169,17 +192,17 @@ class TracerHttpTracer extends TracerPlatform {
     required String key,
     required String value,
   }) async {
-    _customKeys[key] = value;
+    if (_enabled) _customKeys[key] = value;
   }
 
   @override
   Future<void> removeCustomKey(String key) async {
-    _customKeys.remove(key);
+    if (_enabled) _customKeys.remove(key);
   }
 
   @override
   Future<void> setUserId(String? userId) async {
-    _userId = userId;
+    if (_enabled) _userId = userId;
   }
 
   /// Accepts either a bare host or a full URL, because both look reasonable to

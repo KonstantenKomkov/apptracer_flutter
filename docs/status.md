@@ -3,7 +3,23 @@
 An honest ledger of what has actually been exercised, so that nothing here is
 mistaken for a guarantee.
 
-Last updated: 2026-08-27.
+Last updated: 2026-10-03.
+
+**iOS revocation fix:** the adapter now pins OKTracer 1.5.2, persists revocation,
+purges and seals its report paths, and requires explicit deferred consent in a
+new process before starting again. Physical fatal-after-stop no longer produces
+a report; automatic recovery is blocked; a new consent session does not replay
+old reports. Both offline and in-flight retry tests pass, as do immediate/repeated stop and
+re-consent with one fresh upload and no replay. Full release acceptance still has
+other platform gates; see [current evidence](native-collection-consent.md#ios-revocation-remediation--2026-10-02-late-evening).
+
+Physical iOS follow-up is complete for the tested OKTracer 1.5.2 build:
+account separation, secondary engines, missing token and cleanup failures pass.
+The user confirmed native Runner and Flutter source frames in incident
+`74895A7E-E5DB-4822-802B-5DC2E4B2F8E6`; the verified Xcode 27 symbol recipe
+uses the optional DWARF-4 override. See [symbolication](symbolication.md).
+Android/Web follow-up results and remaining dashboard confirmations are recorded
+in the lifecycle section below; publication remains a separate step.
 
 ## Verified
 
@@ -86,7 +102,7 @@ Last updated: 2026-08-27.
 | `trackSession` is not needed for events to be accepted | read from the SDK bundle, 2026-08-27: `SessionUploader` is a separate module posting `RUNNING`/`CRASH`/`BLANK`, unrelated to `/api/crash/uploadBatch`. It feeds the crash-free metric, which this package does not report |
 | `stopCollection` stops delivery on web | live run 2026-08-27: after the button, an error that would have uploaded produced no request at all |
 | `issueKey` groups web events | live run 2026-08-27: three events sent from three separate `flutter run` sessions with `issueKey: EXAMPLE-PARSE` landed in one issue, count 3. The key rides in `uploadBean.properties.issueKey`, and the console shows it in the issue title as `[EXAMPLE-PARSE]` |
-| A debug web run renders as `Stacktrace not available` — and that is expected | same run. `flutter run -d chrome` compiles with DDC, whose frames read `dart-sdk/lib/… 274:3  throw_`, and Tracer parses only V8-shaped frames (`at name (url:line:col)`), which is what `dart2js` emits in a release build. Measured 2026-08-26 as a difference between two probes; now seen from the other side. Breadcrumbs, custom keys and `issueKey` are unaffected, being independent of the frame shape |
+| Debug web frames render after conversion to V8 syntax | Reconfirmed 2026-10-02 from the user's expanded `[dart/StateError/build]` event: runtime `throw_` is followed by `build (package:apptracer_flutter_example/main.dart:386:5)` and Flutter framework frames. The application frame matches the intentional throw in the current example. Older events still show `Stacktrace not available`; the original 2026-08-27 observation predates conversion of DDC frames. This confirms this debug event only; release/source-map verification remains open. See [web-protocol.md](web-protocol.md). |
 | On web, one browser can count as several devices | same run: three events, three devices. `deviceId` lives in `localStorage` under `apptracer_flutter.deviceId`, so it is per origin, and `flutter run` serves each session from a fresh random port. Anything that clears site storage does the same. The same shape as the iOS reinstall observation above |
 | Dart errors reach the project from a real browser | live run in Chrome, 2026-08-26, on the rewritten transport: the event arrives, the platform is recognised (`Chrome 151`, `Mac OS`), and under `flutter run -d chrome` the frames read straight against Dart sources — `package:apptracer_flutter_example/main.dart 190:21` — because DDC keeps that mapping at runtime. A release build compiles through dart2js and will need source maps instead |
 | Tracer accepts the rewritten web payload | live probe into the real JS project, 2026-08-26: `200 {"success":true}`, and the event appears in the console. A second probe differing only in stack-trace shape showed that JavaScript-style frames (`at name (url:line:col)`) are parsed into a structured stack, while Dart VM frames (`#0 name (package:…)`) are only stored as text — which costs nothing, since `dart2js` produces the former |
@@ -119,11 +135,35 @@ Full checklist: [live-verification-plan.md](live-verification-plan.md). The shor
    `-Ptracer.enabled=true`; on Android `--dart-define` does nothing, the token
    comes from the Gradle plugin).
 3. `make example-live-check` drives the buttons on the device and prints what
-   is left to confirm by eye. Tracer has no read API, so the console half stays
-   manual: the event appears, the title reads
+   is left to confirm by eye. The available project tokens are ingest/upload credentials; console verification
+   remains manual in this checkout: the event appears, the title reads
    `DartError: <DartType>: <message>`, the stack is readable, the breadcrumbs
    are in the log tab, and the custom keys are in the data tab.
 4. Record what happened in this file and in `symbolication.md`.
 
 Until step 4 is done for a platform, treat that platform as unproven and keep
 the version below `1.0.0`.
+
+## Native consent lifecycle — 2026-10-02
+
+Android SDK 1.4.0 release/R8 on API 35 passed cold start, offline and held-response
+revocation, account separation, three secondary engines, Activity recreation,
+SIGSEGV/JVM/ANR after revocation, preserved re-consent without replay, missing
+SDK/token and initial/stop cleanup failures. Authorized ANR, SIGSEGV and JVM
+recovery are confirmed in Tracer. JVM/ANR names are readable; native minidump
+symbolication remains partial (zero-ID modules and no full vendor symbols). The
+optional-SDK APK build exposed and fixed a missing javax.inject.Provider R8 rule.
+All 22 native Gradle tests pass. iOS physical acceptance for pinned OKTracer 1.5.2
+is complete, including Runner/Flutter native source frames.
+
+Web/HTTP clears account buffers, discards off-state diagnostics and recreates its
+owned client after stop. VM/Chrome tests and the release live restart probe pass.
+The user's release stack exposed an anonymous V8 parsing defect (URL treated as
+member, null:0:0 serialized); parser and payload regressions now cover the fix.
+The user confirmed the fresh anonymous frame resolves to
+`integration_test/live_verification_test.dart` and `main.<anonymous function>`.
+The displayed line 147 differs from the capture line 144; this confirms restored
+source lookup, not exact coordinate fidelity for every optimized frame.
+The tested collection/revocation acceptance is complete. See
+[dated evidence and symbolication limits](native-collection-consent.md).
+No packages have been published or downstream apps migrated.

@@ -44,24 +44,25 @@ void main() {
       return file..writeAsStringSync(contents);
     }
 
-    test('a dSYM upload carries the version and the token in the query',
+    test('iOS upload uses vendor app-name and marketing-version fields',
         () async {
       write('Runner.app.dSYM/Contents/Resources/DWARF/Runner', 'symbols');
 
       final UploadResult result = await uploadDsym(
         token: 'SECRET',
         dsymDir: root,
-        versionName: '2.1.0',
-        versionCode: '17',
+        appName: 'Runner',
+        version: '2.1.0',
         endpoint: url('/api/symbol/upload'),
       );
 
       expect(result.ok, isTrue);
       expect(result.fileCount, 1);
       expect(received.single.uri.queryParameters['symbolToken'], 'SECRET');
-      expect(received.single.body, contains('name="versionName"'));
-      expect(received.single.body, contains('2.1.0'));
-      expect(received.single.body, contains('17'));
+      expect(received.single.body,
+          contains('name="versionName"\r\n\r\nRunner\r\n'));
+      expect(received.single.body,
+          contains('name="versionCode"\r\n\r\n2.1.0\r\n'));
       expect(received.single.body, contains('filename="dsym.zip"'));
     });
 
@@ -83,6 +84,42 @@ void main() {
       expect(received.single.uri.query, isEmpty);
       expect(received.single.body, contains('name="sourcemapToken"'));
       expect(received.single.body, contains('SECRET'));
+    });
+
+    test('iOS build folder uploads only dSYM bundle contents', () async {
+      write('Runner.app.dSYM/Contents/Resources/DWARF/Runner', 'symbols');
+      write('Runner.app.dSYM/Contents/Info.plist', 'metadata');
+      write('Runner.app/Runner', 'application');
+      write('Runner.app/embedded.mobileprovision', 'signing');
+      write('private-config.json', 'credentials');
+      final result = await uploadDsym(
+        token: 'T',
+        dsymDir: root,
+        appName: 'Runner',
+        version: '1',
+        endpoint: url('/symbols'),
+      );
+      expect(result.ok, isTrue);
+      expect(result.fileCount, 2);
+      expect(received.single.body,
+          contains('Runner.app.dSYM/Contents/Resources/DWARF/Runner'));
+      expect(received.single.body, isNot(contains('Runner.app/Runner')));
+      expect(received.single.body, isNot(contains('embedded.mobileprovision')));
+      expect(received.single.body, isNot(contains('private-config.json')));
+    });
+
+    test('iOS folder without DWARF never makes an upload request', () async {
+      write('Runner.app/Runner', 'application');
+      write('Runner.app.dSYM/Contents/Info.plist', 'metadata');
+      final result = await uploadDsym(
+        token: 'T',
+        dsymDir: root,
+        appName: 'Runner',
+        version: '1',
+        endpoint: url('/symbols'),
+      );
+      expect(result.ok, isFalse);
+      expect(received, isEmpty);
     });
 
     test('only .js and .map are sent, so the whole build is not uploaded',

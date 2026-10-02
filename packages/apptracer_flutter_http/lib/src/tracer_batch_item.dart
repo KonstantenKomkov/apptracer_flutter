@@ -79,9 +79,9 @@ Map<String, Object?> buildBatchItem({
     },
     // Base64 of the log buffer; absent when nothing was logged, as in the SDK.
     if (logsFile != null) 'logsFile': logsFile,
-    // The vendor's SDK sends `Error: message` followed by indented `at` lines.
-    // A Dart trace is close enough in shape that the same field carries it, and
-    // it is the only place a reader will find the real frames.
+    // Tracer parses JavaScript stacks only with JS frame syntax. Browser debug
+    // compiler and VM traces use other syntax; serialize symbolic frames as V8
+    // lines here. The event model and its attached raw-stack log stay intact.
     'stackTrace': _stackTraceText(event),
   };
 }
@@ -91,6 +91,22 @@ String _stackTraceText(TracerEvent event) {
     ..write(event.exceptionType)
     ..write(': ')
     ..writeln(event.message);
-  buffer.write(event.stackTrace.raw);
+  final frames = event.stackTrace.symbolicFrames;
+  if (frames.isEmpty || event.stackTrace.needsSymbolication) {
+    buffer.write(event.stackTrace.raw);
+  } else {
+    for (final frame in frames) {
+      buffer
+        ..write('    at ')
+        ..write(frame.member ?? '<anonymous>')
+        ..write(' (')
+        ..write(frame.uri)
+        ..write(':')
+        ..write(frame.line ?? 0)
+        ..write(':')
+        ..write(frame.column ?? 0)
+        ..writeln(')');
+    }
+  }
   return buffer.toString();
 }

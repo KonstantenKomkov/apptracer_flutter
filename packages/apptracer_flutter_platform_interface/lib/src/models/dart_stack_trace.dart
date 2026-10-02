@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'dart_stack_frame.dart';
 
@@ -12,6 +12,7 @@ import 'dart_stack_frame.dart';
 /// * JIT and non-obfuscated AOT frames — `#0 Foo.bar (package:x/y.dart:1:2)`;
 /// * obfuscated AOT frames — `#00 abs 00007f.. virt 00002c..`, together with
 ///   the `build_id` / `isolate_dso_base` header the Dart VM prints above them;
+/// * browser debug compiler frames — `packages/x/main.dart 12:5 build`;
 /// * `dart2js` frames in both V8 (`at foo (url:1:2)`) and
 ///   SpiderMonkey (`foo@url:1:2`) notation;
 /// * the `<asynchronous suspension>` marker.
@@ -105,6 +106,10 @@ class DartStackTrace {
   // `foo@http://host/main.dart.js:12:5`
   static final RegExp _jsMozillaFrame = RegExp(r'^\s*([^@\s]*)@(\S+)\s*$');
 
+  // The browser debug compiler prints URI, location, then member in columns.
+  static final RegExp _ddcFrame =
+      RegExp(r'^\s*(\S+)\s+(\d+):(\d+)\s+(\S.*?)\s*$');
+
   // `<uri>:<line>:<column>` where `<uri>` may itself contain colons.
   static final RegExp _location = RegExp(r'^(.*?)(?::(\d+))?(?::(\d+))?$');
 
@@ -149,6 +154,7 @@ class DartStackTrace {
 
       final frame = _parseObfuscated(line) ??
           _parseVm(line) ??
+          _parseDdc(line) ??
           _parseJs(line) ??
           DartStackFrame(raw: line);
       frames.add(frame);
@@ -213,18 +219,31 @@ class DartStackTrace {
     );
   }
 
+  static DartStackFrame? _parseDdc(String line) {
+    final match = _ddcFrame.firstMatch(line);
+    if (match == null) return null;
+    return DartStackFrame(
+      raw: line,
+      uri: match.group(1),
+      line: int.tryParse(match.group(2)!),
+      column: int.tryParse(match.group(3)!),
+      member: match.group(4),
+    );
+  }
+
   static DartStackFrame? _parseJs(String line) {
     final v8 = _jsV8Frame.firstMatch(line);
     if (v8 != null) {
-      final member = v8.group(1) ?? v8.group(3);
-      final location = v8.group(2);
-      if (location == null) {
-        return DartStackFrame(raw: line, member: member);
-      }
+      final location = v8.group(2) ?? v8.group(3)!;
       final parsed = _parseLocation(location);
+      if (v8.group(2) == null && parsed.line == null) {
+        // `at foo` has no location. `at URL:line:column` is instead an
+        // anonymous frame, common in minified dart2js async functions.
+        return DartStackFrame(raw: line, member: location);
+      }
       return DartStackFrame(
         raw: line,
-        member: member,
+        member: v8.group(1) ?? '<anonymous>',
         uri: parsed.uri,
         line: parsed.line,
         column: parsed.column,

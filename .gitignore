@@ -48,6 +48,7 @@ pubspec.lock
 
 # Secrets. Tokens belong in the environment, never in the repository.
 .env
+.env.tracer
 *.keystore
 *.jks
 key.properties

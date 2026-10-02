@@ -17,12 +17,76 @@ import io.flutter.plugin.common.MethodChannel
  */
 class MainActivity : FlutterActivity() {
 
+    private var verificationEngine: FlutterEngine? = null
+
+    private fun checkSecondaryEngine(result: MethodChannel.Result) {
+        if (verificationEngine != null) { result.error("busy", "probe active", null); return }
+        val engine = FlutterEngine(this)
+        verificationEngine = engine
+        val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "ru.apptracer.flutter.example/secondary")
+        channel.setMethodCallHandler { call, reply ->
+            if (call.method == "result") {
+                reply.success(null)
+                result.success(call.arguments)
+                Handler(Looper.getMainLooper()).post {
+                    channel.setMethodCallHandler(null)
+                    engine.destroy()
+                    verificationEngine = null
+                }
+            } else reply.notImplemented()
+        }
+        engine.dartExecutor.executeDartEntrypoint(io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint(
+            io.flutter.FlutterInjector.instance().flutterLoader().findAppBundlePath(), "secondaryConsentProbe"))
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "cleanupFailureFixture" -> {
+                        val root = java.io.File(cacheDir, "tracer")
+                        if (call.argument<Boolean>("enabled") == true) {
+                            root.mkdirs()
+                            java.io.File(root, "verification-undeletable").writeText("fixture")
+                            android.system.Os.chmod(root.absolutePath, 320) // 0500: no writes
+                        } else if (root.exists()) {
+                            android.system.Os.chmod(root.absolutePath, 448) // 0700
+                        }
+                        result.success(null)
+                    }
+                    "checkSecondaryEngine" -> checkSecondaryEngine(result)
+                    "recreateForVerification" -> {
+                        intent.putExtra("apptracerScenario", "cold-after-recreate")
+                        result.success(null)
+                        Handler(Looper.getMainLooper()).post { recreate() }
+                    }
+                    "verificationContext" -> result.success(mapOf(
+                        "scenario" to (intent.getStringExtra("apptracerScenario") ?: "inspect"),
+                        "cachePath" to cacheDir.absolutePath,
+                        "filesPath" to filesDir.absolutePath,
+                        "outputPath" to java.io.File(getExternalFilesDir(null), "verification").absolutePath
+                    ))
+                    "configureVerification" -> {
+                        val url = call.argument<String>("apiUrl")
+                        if (url != null && !url.startsWith("http://127.0.0.1:")) {
+                            result.error("invalid_endpoint", "Only local test endpoints are allowed", null)
+                        } else {
+                            getSharedPreferences("apptracer_verification", MODE_PRIVATE).edit()
+                                .putString("api_url", url).commit()
+                            result.success(null)
+                        }
+                    }
+                    "exitInfo" -> {
+                        if (android.os.Build.VERSION.SDK_INT >= 30) {
+                            val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+                            result.success(manager.getHistoricalProcessExitReasons(packageName, 0, 10).map {
+                                mapOf("reason" to it.reason, "timestamp" to it.timestamp,
+                                    "pid" to it.pid, "hasTrace" to (it.traceInputStream?.use { stream -> stream.read() != -1 } ?: false))
+                            })
+                        } else result.success(emptyList<Any>())
+                    }
                     "crashNatively" -> {
                         // SIGSEGV to our own process: the signal handler that
                         // tracer-crash-report-native installs catches it the
@@ -32,6 +96,15 @@ class MainActivity : FlutterActivity() {
                         // a different path, already covered elsewhere.
                         result.success(null)
                         Process.sendSignal(Process.myPid(), SIGSEGV)
+                    }
+
+                    "crashJvm" -> {
+                        // Exercise the Java uncaught-handler path separately
+                        // from SIGSEGV. This is an explicit verification action.
+                        result.success(null)
+                        Handler(Looper.getMainLooper()).post {
+                            throw IllegalStateException("Native consent JVM fatal probe")
+                        }
                     }
 
                     "blockMainThread" -> {

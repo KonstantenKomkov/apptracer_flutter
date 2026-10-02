@@ -5,7 +5,7 @@
 // plugin and Xcode Run Script phase do the same on archive, and this command is
 // for builds that have neither. On web nothing else exists.
 //
-//   dart run apptracer_flutter:upload_symbols ios --token=…
+//   dart run apptracer_flutter:upload_symbols ios --app-name=Runner
 //   dart run apptracer_flutter:upload_symbols web --token=…
 //
 // Exits non-zero unless the server confirmed the upload, so a release pipeline
@@ -22,7 +22,8 @@ Usage:
 Options:
   --token=…      Project's pluginToken. Defaults to TRACER_PLUGIN_TOKEN.
   --version=…    Version name. Defaults to the version in pubspec.yaml.
-  --build=…      Build number, iOS only. Defaults to the one in pubspec.yaml.
+  --app-name=…   Required on iOS: app name (Xcode PRODUCT_NAME).
+                 iOS sends this as versionName, --version as versionCode.
   --dir=…        Directory to upload. Defaults to
                  build/ios/archive/Runner.xcarchive/dSYMs for ios,
                  build/web for web.
@@ -79,13 +80,19 @@ Future<void> main(List<String> arguments) async {
 
   final UploadResult result;
   if (platform == 'ios') {
+    final String appName = options['app-name'] ?? '';
+    if (appName.isEmpty || options.containsKey('build')) {
+      stderr.writeln('iOS requires --app-name (Xcode PRODUCT_NAME) and uses '
+          '--version for the marketing version. --build is not supported.');
+      exit(64);
+    }
     result = await uploadDsym(
       token: token,
       dsymDir: Directory(
         options['dir'] ?? 'build/ios/archive/Runner.xcarchive/dSYMs',
       ),
-      versionName: versionName,
-      versionCode: options['build'] ?? fromPubspec?.code ?? '1',
+      appName: appName,
+      version: versionName,
       endpoint: options['endpoint'] ?? kSymbolEndpoint,
     );
   } else {
@@ -112,10 +119,9 @@ Future<void> main(List<String> arguments) async {
 }
 
 class _PubspecVersion {
-  const _PubspecVersion(this.name, this.code);
+  const _PubspecVersion(this.name);
 
   final String name;
-  final String? code;
 }
 
 /// Reads `version:` out of pubspec.yaml without a YAML dependency.
@@ -132,9 +138,9 @@ _PubspecVersion? _readPubspecVersion() {
     final String value = match.group(1)!;
     final int plus = value.indexOf('+');
     if (plus == -1) {
-      return _PubspecVersion(value, null);
+      return _PubspecVersion(value);
     }
-    return _PubspecVersion(value.substring(0, plus), value.substring(plus + 1));
+    return _PubspecVersion(value.substring(0, plus));
   }
   return null;
 }

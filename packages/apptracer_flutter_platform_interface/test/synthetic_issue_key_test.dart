@@ -11,6 +11,22 @@ DartStackFrame _frame(String? member, {String? virtualAddress, int? line}) =>
     );
 
 void main() {
+  test('browser runtime throw frames do not merge different application sites',
+      () {
+    final first = DartStackTrace.parse(
+        'dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3 throw_\n'
+        'packages/example/main.dart 100:7 <fn>');
+    final second = DartStackTrace.parse(
+        'dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3 throw_\n'
+        'packages/example/main.dart 300:7 build');
+    expect(
+      SyntheticIssueKey.forError(
+          exceptionType: 'StateError', frames: first.frames),
+      isNot(SyntheticIssueKey.forError(
+          exceptionType: 'StateError', frames: second.frames)),
+    );
+  });
+
   group('SyntheticIssueKey', () {
     test('uses the error type and the innermost named frame', () {
       final String key = SyntheticIssueKey.forError(

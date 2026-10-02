@@ -48,6 +48,21 @@ Map<String, Object?> _build(TracerEvent event) => buildBatchItem(
 
 void main() {
   group('buildBatchItem', () {
+    test('anonymous release frame keeps its source-map coordinates', () {
+      final event = TracerEvent(
+        exceptionType: 'StateError',
+        message: 'release probe',
+        stackTrace: DartStackTrace.parse(
+          '    at http://localhost:7357/main.dart.js:69562:54',
+        ),
+      );
+      expect(
+          _build(event)['stackTrace'],
+          contains(
+              'at <anonymous> (http://localhost:7357/main.dart.js:69562:54)'));
+      expect(_build(event)['stackTrace'], isNot(contains('null:0:0')));
+    });
+
     test('matches the shape captured from the vendor SDK', () {
       final Map<String, Object?> item = _build(_event());
 
@@ -157,14 +172,27 @@ void main() {
       expect(item['logsFile'], 'BASE64');
     });
 
-    test('the stack trace reads as type, message, then the verbatim frames',
+    test('browser debug frames are parsed instead of becoming the error title',
         () {
+      const raw =
+          'dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3 throw_\n'
+          'packages/example/main.dart 100:7 build';
+      final event = _event().copyWith(stackTrace: DartStackTrace.parse(raw));
+      expect(
+          _build(event)['stackTrace'],
+          'FormatException: could not parse the response\n'
+          '    at throw_ (dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart:274:3)\n'
+          '    at build (packages/example/main.dart:100:7)\n');
+      expect(event.stackTrace.raw, raw);
+    });
+
+    test('VM frames use the V8 syntax required by JS_STACKTRACE', () {
       final Map<String, Object?> item = _build(_event());
 
       expect(
         item['stackTrace'],
         'FormatException: could not parse the response\n'
-        '#0      main (package:x/x.dart:1:2)',
+        '    at main (package:x/x.dart:1:2)\n',
       );
     });
   });

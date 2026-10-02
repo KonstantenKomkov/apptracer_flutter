@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
 
 /// The interface every platform implementation of the Tracer integration
@@ -72,7 +73,9 @@ abstract class TracerPlatform extends PlatformInterface {
   /// same `build` land in one group; on iOS a Dart trace has no native
   /// addresses to group on at all. A backend that groups on richer data — the
   /// Sentry protocol, which carries the exception type and the full frame list
-  /// — leaves this `false`. See [SyntheticIssueKey].
+  /// — leaves this `false`. The Web implementation also enables this to
+  /// distinguish errors after converting browser Dart stacks to JS syntax.
+  /// See [SyntheticIssueKey].
   bool get needsSyntheticIssueKey => false;
 
   /// Starts the platform SDK with [options].
@@ -85,6 +88,33 @@ abstract class TracerPlatform extends PlatformInterface {
   ///
   /// Must be idempotent.
   Future<void> stopCollection();
+
+  /// Explicit start without bootstrapping the application. Older backends
+  /// remain source compatible but cannot claim deferred native support.
+  Future<TracerCollectionResult> startCollection(TracerOptions options) async {
+    if (options.nativeInitialization == TracerNativeInitialization.deferred) {
+      return const TracerCollectionResult(TracerCollectionState.unsupported,
+          reason: 'deferred_initialization_unsupported');
+    }
+    await initialize(options);
+    return getCollectionState();
+  }
+
+  /// Stops even before initialization. An older implementation cannot prove
+  /// that its persisted reports were removed, so the default is unsupported.
+  Future<TracerCollectionResult> stopAndClearCollection() async {
+    await stopCollection();
+    return const TracerCollectionResult(TracerCollectionState.unsupported,
+        reason: 'native_cleanup_unsupported');
+  }
+
+  /// Native implementations query their process-wide state over the channel.
+  Future<TracerCollectionResult> getCollectionState() async =>
+      TracerCollectionResult(isEnabled
+          ? TracerCollectionState.enabled
+          : backendName == 'unsupported'
+              ? TracerCollectionState.unsupported
+              : TracerCollectionState.disabled);
 
   /// Delivers [event] to Tracer.
   Future<void> recordError(TracerEvent event);

@@ -3,7 +3,7 @@ description: >-
   Pure-Dart Sentry-protocol transport for apptracer_flutter. Delivers Dart
   errors to Tracer (apptracer.ru) on platforms where Tracer has no SDK of its
   own and documents the Sentry route instead.
-version: 0.1.0
+version: 0.2.0-dev.1
 
 # Not published for now: none of the platforms this transport exists for —
 # desktop and Aurora OS — are supported by the 0.1.0 release, and none of them
@@ -25,11 +25,10 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter_platform_interface: ^0.1.0
+  apptracer_flutter_platform_interface: ^0.2.0-dev.1
   flutter:
     sdk: flutter
   http: ^1.2.0
-  meta: ^1.12.0
 
 dev_dependencies:
   flutter_lints: ^5.0.0

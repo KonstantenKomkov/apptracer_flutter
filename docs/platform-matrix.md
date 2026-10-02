@@ -197,12 +197,12 @@ bytecode:
 
 ### stopCollection is one-way
 
-`Tracer.disable()` sets a private `volatile boolean isDisabled` and there is no
-re-enabling method (verified in the bytecode of `tracer-commons-1.4.0`). Calling
-`Tracer.stopCollection()` therefore stops native collection for the remainder of
-the process. The Dart-side handlers *are* restored and a later `initialize` does
-restart Dart-side reporting, but native crashes stay off until the app restarts.
-To never start in the first place, use `TracerOptions.isCollectionEnabled`.
+`Tracer.disable()` is irreversible in a process, but its bytecode only sets a
+flag. It does not establish uploader shutdown or native report deletion.
+`isCollectionEnabled=false` only gates Dart in an automatic Android integration.
+Remove both startup providers for deferred bootstrap. The new lifecycle contract,
+its current native implementation gates, checked artifacts and backend support are
+in [native-collection-consent.md](native-collection-consent.md).
 
 ## iOS
 
@@ -325,6 +325,13 @@ shows the key as deliberately cleared rather than leaving a stale value.
 
 ## Web
 
+Collection lifecycle: explicit deferred start and stop with cleanup are supported.
+Stop clears in-memory logs, keys and user ID and returns `disabled`; a new start
+works in the same browser process with a fresh owned HTTP client. There is no
+persisted report queue or retry worker. New diagnostics while off are discarded;
+an already started request may complete. VM and Chrome regression tests cover
+account separation, client recreation and a response completing after revocation.
+
 Tracer ships a JavaScript SDK as the npm package `@apptracer/sdk`
 (latest `2.6.9`, ISC licensed — verified against the npm registry). A Flutter
 web build has no way to bundle an npm package, so the web implementation speaks
@@ -394,3 +401,14 @@ If nothing is registered, `TracerPlatform.instance` is
 `UnsupportedTracerPlatform`: every call succeeds and does nothing,
 `isEnabled` is `false`, and one diagnostic line is printed the first time the
 integration is used. `appRunner` still runs exactly once. Nothing throws.
+
+
+## iOS consent adapter (OKTracer exactly 1.5.2)
+
+Explicit deferred start is supported. Stop persists revocation, detaches the
+service, purges SDK reports/task metadata and seals the report paths. The native
+crash handler remains installed until process exit but cannot persist a new
+queued report in the sealed paths. Active stop requires process restart;
+automatic bootstrap cannot override revocation. Explicit new consent purges
+old data before constructing the next service. In-flight requests may complete.
+See the [version-specific device evidence](native-collection-consent.md).

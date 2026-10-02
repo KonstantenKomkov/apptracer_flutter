@@ -25,7 +25,6 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private var channel: MethodChannel? = null
     private var applicationContext: Context? = null
-    private var enabled = false
     private var debug = false
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -39,13 +38,15 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         channel?.setMethodCallHandler(null)
         channel = null
         applicationContext = null
-        enabled = false
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
                 "initialize" -> result.success(initialize(call))
+                "startCollection" -> result.success(startCollection(call))
+                "stopAndClearCollection" -> stopAndClearCollection(result)
+                "getCollectionState" -> result.success(collectionState())
                 "stopCollection" -> {
                     stopCollection()
                     result.success(null)
@@ -78,12 +79,78 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             // crashes the application.
             enabled = false
             logDebug("call ${call.method} failed: $error")
-            result.success(null)
+            lifecycleError = "native_call_failed"
+            if (call.method in listOf("startCollection", "stopAndClearCollection", "getCollectionState")) {
+                result.success(collectionState())
+            } else {
+                result.success(null)
+            }
         }
+    }
+
+    private fun startCollection(call: MethodCall): Map<String, String> {
+        if (call.argument<Boolean>("isCollectionEnabled") == false) {
+            return mapOf("state" to "disabled")
+        }
+        if (call.argument<String>("nativeInitialization") == "deferred") {
+            // The mode is checked before any SDK reference. Dart alone cannot
+            // undo a provider that has already run.
+            if (!hasDeferredManifest()) {
+                return mapOf("state" to "error", "reason" to "deferred_manifest_required")
+            }
+            if (!isSdkOnClasspath()) return mapOf("state" to "unsupported", "reason" to "sdk_missing")
+            if (!hasGradlePluginResources()) return mapOf("state" to "error", "reason" to "app_token_missing")
+            val context = applicationContext ?: return mapOf("state" to "error", "reason" to "context_missing")
+            val state = Sdk140ConsentRuntime.start(context, call.argument<Boolean>("preservePreviousReports") == true)
+            enabled = state["state"] == "enabled"
+            return state
+        }
+        if (stopped) return collectionState()
+        initialize(call)
+        return collectionState()
+    }
+
+    private fun collectionState(): Map<String, String> {
+        if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
+            return Sdk140ConsentRuntime.snapshot()
+        }
+        lifecycleError?.let { return mapOf("state" to "error", "reason" to it) }
+        if (!isSdkOnClasspath()) return mapOf("state" to "unsupported", "reason" to "sdk_missing")
+        if (stopped || Tracer.isDisabled) return mapOf("state" to "restartRequired")
+        return Sdk140ConsentRuntime.automaticSnapshot()
+    }
+
+    private fun hasDeferredManifest(): Boolean {
+        val context = applicationContext ?: return false
+        val info = context.packageManager.getPackageInfo(
+            context.packageName, android.content.pm.PackageManager.GET_PROVIDERS
+        )
+        val forbidden = setOf(
+            "ru.ok.tracer.startup.InitializationProvider",
+            "ru.apptracer.flutter.TracerAutoConfigProvider"
+        )
+        return info.providers.orEmpty().none { it.name in forbidden }
+    }
+
+    private fun stopAndClearCollection(result: MethodChannel.Result) {
+        enabled = false
+        if (!isSdkOnClasspath()) {
+            result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
+            return
+        }
+        val context = applicationContext
+        if (context == null) {
+            result.success(mapOf("state" to "error", "reason" to "context_missing"))
+            return
+        }
+        Sdk140ConsentRuntime.stopAndClear(context) { state -> result.success(state) }
     }
 
     private fun initialize(call: MethodCall): Boolean {
         debug = call.argument<Boolean>("debug") ?: false
+        if (stopped || lifecycleError != null) return false
+        if (call.argument<Boolean>("isCollectionEnabled") == false ||
+            call.argument<String>("nativeInitialization") == "deferred") return false
 
         if (call.argument<String>("appToken") != null) {
             Log.w(
@@ -117,6 +184,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
 
         if (!hasGradlePluginResources()) {
+            lifecycleError = "app_token_missing"
             Log.w(
                 TAG,
                 "The tracer_app_token resource is missing. Apply the " +
@@ -135,8 +203,8 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return false
         }
 
-        enabled = true
-        return true
+        enabled = Sdk140ConsentRuntime.automaticSnapshot()["state"] == "enabled"
+        return enabled
     }
 
     /**
@@ -149,6 +217,11 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
      */
     private fun stopCollection() {
         enabled = false
+        if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
+            applicationContext?.let { Sdk140ConsentRuntime.stopAndClear(it) { } }
+            return
+        }
+        stopped = true
         if (!isSdkOnClasspath()) {
             return
         }
@@ -156,7 +229,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun recordError(call: MethodCall) {
-        if (!enabled) {
+        if (!enabled || Tracer.isDisabled) {
             return
         }
 
@@ -191,14 +264,14 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun recordLog(message: String?) {
-        if (!enabled || message.isNullOrEmpty()) {
+        if (!enabled || Tracer.isDisabled || message.isNullOrEmpty()) {
             return
         }
         TracerCrashReport.log(message)
     }
 
     private fun setCustomKey(key: String?, value: String?) {
-        if (!enabled || key.isNullOrEmpty()) {
+        if (!enabled || Tracer.isDisabled || key.isNullOrEmpty()) {
             return
         }
         // setCustomProperty rather than setKey: Tracer caps a key's value at
@@ -208,7 +281,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun setUserId(userId: String?) {
-        if (!enabled) {
+        if (!enabled || Tracer.isDisabled) {
             return
         }
         Tracer.setUserId(userId)
@@ -244,7 +317,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "tracer_app_token",
             "string",
             context.packageName
-        ) != 0
+        ).let { it != 0 && context.getString(it).isNotBlank() }
     }
 
     private fun logDebug(message: String) {
@@ -254,6 +327,10 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private companion object {
+        // Engine and Activity lifetimes must not reset SDK process lifetime.
+        var enabled = false
+        var stopped = false
+        var lifecycleError: String? = null
         const val TAG = "apptracer_flutter"
         const val CHANNEL_NAME = "ru.apptracer.flutter/tracer"
         const val KEY_DART_EXCEPTION_TYPE = "dart.exception_type"

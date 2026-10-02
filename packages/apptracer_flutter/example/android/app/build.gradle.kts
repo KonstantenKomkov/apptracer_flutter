@@ -5,7 +5,21 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Enable only for the separate native-consent verification entrypoint.
+// Ordinary example builds keep their existing flavorless automatic behavior.
+val deferredCollection = providers.gradleProperty("tracer.deferred").orNull == "true"
+
 android {
+    if (deferredCollection) {
+        flavorDimensions += "collection"
+        productFlavors {
+            create("consent") {
+                dimension = "collection"
+                applicationIdSuffix = ".consent"
+            }
+        }
+    }
+
     namespace = "ru.apptracer.flutter.apptracer_flutter_example"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -46,8 +60,8 @@ flutter {
 // Tracer is opt-in for this example so that a checkout without credentials
 // still builds:
 //
-//     flutter build apk --release \
-//         -Ptracer.enabled=true \
+//     env 'ORG_GRADLE_PROJECT_tracer.enabled=true' \
+//         flutter build apk --release \
 //         --obfuscate --split-debug-info=build/symbols
 //
 // with TRACER_APP_TOKEN and TRACER_PLUGIN_TOKEN exported. A real application

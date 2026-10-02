@@ -2,16 +2,17 @@
 #
 # `make` без аргументов покажет список целей.
 #
-# Токены читаются из файла вне репозитория — по умолчанию ~/.tracer-env,
+# Токены читаются из локального .env.tracer, если он существует, иначе ~/.tracer-env,
 # см. docs/live-verification-plan.md, шаг 0.3. Другой файл:
 #
 #     make example-android TRACER_ENV=~/.tracer-env.work
 
 SHELL := /bin/bash
 
-TRACER_ENV ?= $(HOME)/.tracer-env
+TRACER_ENV ?= $(if $(wildcard .env.tracer),$(CURDIR)/.env.tracer,$(HOME)/.tracer-env)
 EXAMPLE := packages/apptracer_flutter/example
 RELEASE ?= 1.0.0
+IOS_SYMBOL_CONFIG := $(CURDIR)/packages/apptracer_flutter_ios/ios/tracer_dwarf4.xcconfig
 
 # Когда подключено больше одного устройства, flutter не выбирает сам.
 #     make example-live-check DEVICE=emulator-5554
@@ -19,13 +20,13 @@ DEVICE ?=
 DEVICE_ARG := $(if $(DEVICE),-d $(DEVICE),)
 
 # `set -a` не нужен: файл уже состоит из export-строк.
-LOAD_ENV := source $(TRACER_ENV)
+LOAD_ENV := source "$(TRACER_ENV)"
 
 .DEFAULT_GOAL := help
 
 .PHONY: help bootstrap check format analyze test tokens \
 	example-android example-android-debug example-ios example-web \
-	example-live-check example-live-check-ios \
+	example-live-check example-live-check-ios example-network-check-ios \
 	apk apk-dart-symbols ios-dsym web-release web-sourcemaps logcat pod-install clean
 
 help: ## Показать этот список
@@ -42,16 +43,13 @@ $(TRACER_ENV):
 	@echo "См. docs/live-verification-plan.md, шаг 0.3." >&2
 	@exit 1
 
-# Показывает только префикс: токен целиком в терминале — это токен в истории
-# терминала, в скриншотах и в логах записи экрана.
+# Показываем только наличие, без значений и префиксов токенов.
 tokens: $(TRACER_ENV) ## Проверить, какие токены подхватились
 	@$(LOAD_ENV) && \
-		mask() { if [ -z "$$1" ]; then echo '<пусто>'; else echo "$${1:0:6}…"; fi; }; \
-		printf '  %-24s %s\n' \
-			'TRACER_APP_TOKEN'     "$$(mask "$${TRACER_APP_TOKEN:-}")" \
-			'TRACER_PLUGIN_TOKEN'  "$$(mask "$${TRACER_PLUGIN_TOKEN:-}")" \
-			'TRACER_IOS_APP_TOKEN' "$$(mask "$${TRACER_IOS_APP_TOKEN:-}")" \
-			'TRACER_JS_PLUGIN_TOKEN' "$$(mask "$${TRACER_JS_PLUGIN_TOKEN:-}")"
+		for name in TRACER_APP_TOKEN TRACER_PLUGIN_TOKEN TRACER_IOS_APP_TOKEN TRACER_IOS_PLUGIN_TOKEN TRACER_JS_APP_TOKEN TRACER_JS_PLUGIN_TOKEN; do \
+			if [ -n "$${!name:-}" ]; then state='заполнен'; else state='пусто'; fi; \
+			printf '  %-24s %s\n' "$$name" "$$state"; \
+		done
 
 # Android-плагин Tracer валит сборку без обоих токенов — падаем раньше и понятнее.
 .PHONY: require-android-tokens
@@ -66,13 +64,13 @@ require-android-tokens: $(TRACER_ENV)
 # --- пример ------------------------------------------------------------------
 
 example-android: require-android-tokens ## Пример на Android: release, события реально уходят
-	@$(LOAD_ENV) && cd $(EXAMPLE) && flutter run $(DEVICE_ARG) --release -Ptracer.enabled=true
+	@$(LOAD_ENV) && cd $(EXAMPLE) && env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter run $(DEVICE_ARG) --release
 
 # События уходят и из debug: TracerHostApplication примера выставляет
 # CoreTracerConfiguration.setDebugUpload(true), без которого Android SDK Tracer
 # из debug-сборки не шлёт ничего. См. docs/live-verification-plan.md, шаг 3.2.
 example-android-debug: require-android-tokens ## То же в debug: hot reload и логи Dart
-	@$(LOAD_ENV) && cd $(EXAMPLE) && flutter run $(DEVICE_ARG) -Ptracer.enabled=true
+	@$(LOAD_ENV) && cd $(EXAMPLE) && env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter run $(DEVICE_ARG)
 
 # На iOS токен приходит из Dart, а не из сборочного плагина, как на Android.
 example-ios: $(TRACER_ENV) ## Пример на iOS
@@ -86,20 +84,22 @@ example-web: $(TRACER_ENV) ## Пример в Chrome (собственный API
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter run -d chrome --dart-define=TRACER_APP_TOKEN=$$TRACER_JS_APP_TOKEN
 
-# Гоняет integration_test на подключённом устройстве. Нужен именно drive, а не
-# `flutter test`: только он умеет передавать -P в Gradle.
+# Гоняет integration_test на подключённом устройстве. Gradle-свойство передаём
+# через окружение; тот же способ работает с flutter test.
 example-live-check: require-android-tokens ## Автопрогон сценариев проверок на Android
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
-		flutter drive $(DEVICE_ARG) \
+		env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter drive $(DEVICE_ARG) \
 			--driver=test_driver/integration_test.dart \
-			--target=integration_test/live_verification_test.dart \
-			-Ptracer.enabled=true
+			--target=integration_test/live_verification_test.dart
+
+example-network-check-ios: ## DNS и HTTPS на iPhone без токенов, с сохранением разрешений
+	cd $(EXAMPLE) && flutter test integration_test/network_diagnostic_test.dart --no-uninstall $(DEVICE_ARG)
 
 # На iOS токен идёт из Dart, а не из сборочного плагина, поэтому гредловых
 # флагов здесь нет и цель проще android-ной.
 example-live-check-ios: $(TRACER_ENV) ## Автопрогон сценариев проверок на iOS
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
-		flutter drive $(DEVICE_ARG) \
+		XCODE_XCCONFIG_FILE="$(IOS_SYMBOL_CONFIG)" flutter drive --profile --keep-app-running $(DEVICE_ARG) \
 			--driver=test_driver/integration_test.dart \
 			--target=integration_test/live_verification_test.dart \
 			--dart-define=TRACER_APP_TOKEN=$$TRACER_IOS_APP_TOKEN
@@ -114,7 +114,7 @@ pod-install: ## Переустановить поды примера (после
 
 apk: require-android-tokens ## Обфусцированный release-APK + сверка build id символов
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
-		flutter build apk --release -Ptracer.enabled=true \
+		env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
 			--obfuscate --split-debug-info=build/symbols && \
 		../../../tool/verify_build_id.sh
 
@@ -126,11 +126,11 @@ apk: require-android-tokens ## Обфусцированный release-APK + св
 # пути со сборочной машины и все имена символов Dart.
 apk-dart-symbols: require-android-tokens ## APK + загрузка Dart-символов через additionalLibrariesPath
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
-		flutter build apk --release -Ptracer.enabled=true \
+		env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
 			--obfuscate --split-debug-info=build/symbols && \
 		../../../tool/prepare_dart_symbols.sh build/symbols && \
 		DART_SPLIT_DEBUG_INFO="$$PWD/build/symbols/tracer-upload" \
-			flutter build apk --release -Ptracer.enabled=true \
+			env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
 				--obfuscate --split-debug-info=build/symbols
 
 ios-dsym: $(TRACER_ENV) ## Загрузить dSYM примера в Tracer (DSYM_DIR=…)
@@ -138,7 +138,7 @@ ios-dsym: $(TRACER_ENV) ## Загрузить dSYM примера в Tracer (DSY
 		TRACER_PLUGIN_TOKEN=$$TRACER_IOS_PLUGIN_TOKEN \
 			../../../tool/upload_ios_dsym.sh \
 				"$(if $(DSYM_DIR),$(DSYM_DIR),build/ios/Release-iphoneos)" \
-				$(RELEASE) 1
+				Runner $(RELEASE)
 
 # Токен нужен и здесь: без него собранное приложение молчит, а сорсмапы
 # грузятся к сборке, которой нечего отправлять.

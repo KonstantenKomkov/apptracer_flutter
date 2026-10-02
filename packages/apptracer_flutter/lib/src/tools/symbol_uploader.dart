@@ -37,13 +37,13 @@ class UploadResult {
 
 /// Uploads the `.dSYM` bundles in [dsymDir].
 ///
-/// [versionName] and [versionCode] must match what the application reports, or
-/// the symbols attach to a version nothing looks up.
+/// Matches the vendor iOS uploader: `versionName` carries [appName] and
+/// `versionCode` carries the marketing [version], not CFBundleVersion.
 Future<UploadResult> uploadDsym({
   required String token,
   required Directory dsymDir,
-  required String versionName,
-  required String versionCode,
+  required String appName,
+  required String version,
   String endpoint = kSymbolEndpoint,
   HttpClient? httpClient,
 }) async {
@@ -52,11 +52,24 @@ Future<UploadResult> uploadDsym({
         ok: false, message: 'no such directory: ${dsymDir.path}');
   }
 
-  final ZipWriter zip = ZipWriter()..addDirectory(dsymDir);
-  if (zip.isEmpty) {
+  var hasDwarf = false;
+  final ZipWriter zip = ZipWriter()
+    ..addDirectory(dsymDir, keep: (String path) {
+      final parts = path.split('/');
+      if (parts.length < 3 ||
+          !parts.first.endsWith('.dSYM') ||
+          parts[1] != 'Contents') {
+        return false;
+      }
+      if (parts.length == 5 && parts[2] == 'Resources' && parts[3] == 'DWARF') {
+        hasDwarf = true;
+      }
+      return true;
+    });
+  if (!hasDwarf) {
     return UploadResult(
       ok: false,
-      message: 'no files under ${dsymDir.path}; nothing to upload',
+      message: 'no dSYM DWARF files under ${dsymDir.path}; nothing to upload',
     );
   }
 
@@ -64,8 +77,8 @@ Future<UploadResult> uploadDsym({
   return _post(
     uri: Uri.parse('$endpoint?symbolToken=$token'),
     fields: <String, String>{
-      'versionName': versionName,
-      'versionCode': versionCode,
+      'versionName': appName,
+      'versionCode': version,
     },
     archive: archive,
     filename: 'dsym.zip',

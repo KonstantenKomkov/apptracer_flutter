@@ -9,6 +9,14 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Changed
+
+- Use synthetic grouping keys for Dart errors and report the matching prerelease SDK version.
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Update HTTP and platform-interface constraints for the lifecycle contract. Native deferred lifecycle operations remain unsupported.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added

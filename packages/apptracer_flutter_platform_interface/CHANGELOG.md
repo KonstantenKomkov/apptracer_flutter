@@ -9,6 +9,17 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Preserve URL/line/column for anonymous V8 frames in minified web stacks, so
+  source-map lookup receives real coordinates instead of `null:0:0`.
+
+### Changed
+
+- Parse browser debug compiler (DDC) stack frames and skip Dart runtime throw frames when deriving grouping keys.
+
+- Prepare `0.2.0-dev.1` for local lifecycle verification; this is not an accepted
+  or published release.
+- Add native initialization mode, collection result/state models, and source-compatible lifecycle methods. Existing platform implementations report unsupported operations. Use Flutter annotation exports instead of a direct meta dependency.
+
 ## [0.1.0] - 2026-08-28
 
 ### Added

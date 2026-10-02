@@ -51,6 +51,13 @@ SDK.
 
 ## Status
 
+`startCollection` supports explicit opt-in after deferred bootstrap.
+`stopAndClearCollection` immediately disables collection, clears logs, custom keys
+and user ID, and returns `disabled`. This transport has no disk queue or retries.
+A later start works in the same process and creates a fresh owned HTTP client;
+diagnostics supplied while disabled are discarded. An already started request
+may complete. An injected `httpClient` remains caller-owned and is not closed.
+
 The format was accepted by the live server on 2026-08-26: an event built to this
 shape came back `200 {"success":true}` and appeared in the project's console.
 What remains unknown is listed in

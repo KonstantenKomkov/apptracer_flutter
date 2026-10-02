@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
 import 'tracer_platform.dart';
 
@@ -28,6 +29,7 @@ class MethodChannelTracer extends TracerPlatform {
 
   bool _enabled = false;
   bool _debug = false;
+  int _generation = 0;
 
   @override
   bool get isEnabled => _enabled;
@@ -48,14 +50,68 @@ class MethodChannelTracer extends TracerPlatform {
       _enabled = false;
       return;
     }
+    final generation = ++_generation;
     final started = await _invoke<bool>('initialize', options.toMap());
-    _enabled = started ?? false;
+    if (generation == _generation) _enabled = started ?? false;
   }
 
   @override
   Future<void> stopCollection() async {
-    await _invoke<void>('stopCollection', null);
+    ++_generation;
     _enabled = false;
+    await _invoke<void>('stopCollection', null);
+  }
+
+  @override
+  Future<TracerCollectionResult> startCollection(TracerOptions options) async {
+    _debug = options.debug;
+    final generation = ++_generation;
+    if (!options.isCollectionEnabled) {
+      _enabled = false;
+      return const TracerCollectionResult(TracerCollectionState.disabled);
+    }
+    final result = await _lifecycle('startCollection', options.toMap());
+    if (generation != _generation) {
+      return const TracerCollectionResult(TracerCollectionState.disabled,
+          reason: 'superseded');
+    }
+    _enabled = result.isEnabled;
+    return result;
+  }
+
+  @override
+  Future<TracerCollectionResult> stopAndClearCollection() {
+    ++_generation;
+    _enabled = false;
+    return _lifecycle('stopAndClearCollection', null);
+  }
+
+  @override
+  Future<TracerCollectionResult> getCollectionState() async {
+    // Observation does not grant Dart permission or revive a stopped client.
+    final generation = _generation;
+    final result = await _lifecycle('getCollectionState', null);
+    if (!result.isEnabled && generation == _generation) _enabled = false;
+    return result;
+  }
+
+  Future<TracerCollectionResult> _lifecycle(
+      String method, Object? arguments) async {
+    try {
+      final map =
+          await _channel.invokeMapMethod<Object?, Object?>(method, arguments);
+      if (map == null) {
+        return const TracerCollectionResult(TracerCollectionState.error,
+            reason: 'invalid_native_result');
+      }
+      return TracerCollectionResult.fromMap(map);
+    } on MissingPluginException {
+      return const TracerCollectionResult(TracerCollectionState.unsupported,
+          reason: 'native_operation_missing');
+    } catch (error) {
+      return TracerCollectionResult(TracerCollectionState.error,
+          reason: '$method: $error');
+    }
   }
 
   @override

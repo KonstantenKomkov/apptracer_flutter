@@ -112,6 +112,20 @@ void main() {
       expect(last.symbol, isNull);
     });
 
+    test('preserves locations of anonymous V8 frames', () {
+      final trace = DartStackTrace.parse(
+        '    at http://localhost:7357/main.dart.js:69562:54\n'
+        '    at unresolvedFunction',
+      );
+      final frame = trace.frames.first;
+      expect(frame.member, '<anonymous>');
+      expect(frame.uri, 'http://localhost:7357/main.dart.js');
+      expect(frame.line, 69562);
+      expect(frame.column, 54);
+      expect(trace.frames.last.member, 'unresolvedFunction');
+      expect(trace.frames.last.uri, isNull);
+    });
+
     test('parses V8-style dart2js frames', () {
       final trace = DartStackTrace.parse(_v8Trace);
       final named =

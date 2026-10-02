@@ -44,6 +44,9 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerBreadcrumb,
         TracerEvent,
         TracerOptions,
+        TracerNativeInitialization,
+        TracerCollectionState,
+        TracerCollectionResult,
         TracerPlatform,
         TracerSeverity,
         UnsupportedTracerPlatform;
@@ -158,9 +161,24 @@ abstract final class Tracer {
   /// Stops collection, uninstalls the error handlers and restores whichever
   /// handlers were in place beforehand.
   ///
-  /// After this call a fresh [initialize] starts from a clean slate rather than
-  /// stacking a second set of handlers on top of the first.
+  /// Use [startCollection] to resume without bootstrapping the app again.
+  /// Native restart and cleanup capabilities depend on the platform.
   static Future<void> stopCollection() => _client.stop();
+
+  /// Explicitly starts collection after the application's decision.
+  /// Does not invoke appRunner or create another zone.
+  static Future<TracerCollectionResult> startCollection(
+          [TracerOptions? options]) =>
+      _client.startCollection(options);
+
+  /// Stops collection and clears pending reports and diagnostic buffers.
+  /// New Dart events are rejected immediately, before this future completes.
+  static Future<TracerCollectionResult> stopAndClearCollection() =>
+      _client.stopAndClearCollection();
+
+  /// Queries the actual transport without enabling Dart events.
+  static Future<TracerCollectionResult> getCollectionState() =>
+      _client.getCollectionState();
 
   /// Reports a caught error.
   ///

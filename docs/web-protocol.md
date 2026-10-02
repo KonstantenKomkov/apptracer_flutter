@@ -179,9 +179,26 @@ JS-проект:
 | `    at name (http://host/main.dart.js:98765:12)` | разобранный стек: `at` убран, кадры разложены построчно |
 | `#0      name (package:example/main.dart:190:21)` | текст как есть, `Stacktrace not available` в списке |
 
-Для нас это не требует ничего: под `dart2js` стектрейс и так приходит в первой
-форме, а транспорт передаёт его дословно. Но при попытке «улучшить» формат это
-свойство легко сломать.
+Release `dart2js` обычно выдаёт JavaScript-кадры, но debug-компилятор DDC
+выдаёт таблицу `URI line:column member`. Проверка 02.10.2026 выявила, что её
+дословная отправка даёт `Stacktrace not available` и переносит текст стека в
+заголовок. Символьные кадры теперь передаются как V8 `at member (URI:line:column)`;
+исходный `DartStackTrace.raw` не меняется и сохраняется в диагностическом логе.
+Для неизвестного/address-only стека сохраняется исходный wire-текст. На Web
+добавлены синтетические ключи группировки; Dart runtime throw/wrap кадры при
+выборе ключа пропускаются.
+
+**Отображение debug-стека подтверждено 02.10.2026.** На скриншоте консоли
+в 14:51 новые группы уже показывают верхний кадр `throw_`, тогда как старые
+события сохраняют `Stacktrace not available`. Пользователь раскрыл событие
+`[dart/StateError/build]` и передал текст стека: после runtime-кадра
+`throw_ (dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart:274:3)`
+идёт `build (package:apptracer_flutter_example/main.dart:386:5)`, затем кадры
+Flutter framework. Строка 386 текущего примера действительно выбрасывает
+`StateError('failure raised inside build()')`. Это подтверждает отображение
+кадров и места ошибки для этого debug-события; release-сборка и применение
+сорсмап этой проверкой не подтверждены. Верхний runtime-кадр остаётся частью
+реального стека; ключ группировки при этом использует прикладной `build`.
 
 27.08.2026 добавлены breadcrumbs (`logsFile`), кастомные ключи и `userId` —
 до этого `recordLog`, `setCustomKey`, `removeCustomKey` и `setUserId` в

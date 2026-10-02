@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'dart_stack_trace.dart';
 import 'tracer_breadcrumb.dart';

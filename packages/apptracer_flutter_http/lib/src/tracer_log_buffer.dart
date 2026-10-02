@@ -40,6 +40,14 @@ class TracerLogBuffer {
     }
   }
 
+  /// Discards all messages when collection is revoked.
+  void clear() {
+    _rows.clear();
+    _rowBytes.clear();
+    _index = 0;
+    _totalBytes = 0;
+  }
+
   /// The buffer as the wire wants it, or `null` when nothing has been logged.
   ///
   /// The vendor omits the field entirely rather than sending an empty string.

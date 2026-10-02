@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'tracer_breadcrumb.dart';
+import 'tracer_collection_result.dart';
 import 'tracer_event.dart';
 
 /// Inspects and optionally rewrites an event before it is delivered.
@@ -32,6 +33,8 @@ class TracerOptions {
     this.release,
     this.dist,
     this.isCollectionEnabled = true,
+    this.nativeInitialization = TracerNativeInitialization.automatic,
+    this.preservePreviousReports = false,
     this.beforeSend,
     this.beforeBreadcrumb,
     this.maxBreadcrumbs = 100,
@@ -124,10 +127,20 @@ class TracerOptions {
 
   /// Whether collection is allowed at all.
   ///
-  /// When `false`, initialization still completes and the application still
-  /// starts, but no native SDK is started and nothing is transmitted. Use this
-  /// to honour a consent decision made before the first frame.
+  /// When false, Dart collection stays off. Android automatic providers run
+  /// before Dart; use deferred mode and its manifest setup for consent gating.
   final bool isCollectionEnabled;
+
+  /// In deferred mode bootstrap runs the app without starting the native SDK.
+  /// Explicitly call Tracer.startCollection after the application's decision.
+  /// Android also requires removal of both startup providers in the manifest.
+  final TracerNativeInitialization nativeInitialization;
+
+  /// Retains reports from an earlier launch in native deferred mode.
+  /// Only enable after verifying that the earlier reporting session belongs to
+  /// the same authorized account. A recorded purge obligation overrides this.
+  /// Defaults to discarding previous reports before native senders start.
+  final bool preservePreviousReports;
 
   /// Hook invoked for every event just before delivery.
   final BeforeSendCallback? beforeSend;
@@ -228,6 +241,8 @@ class TracerOptions {
     String? release,
     String? dist,
     bool? isCollectionEnabled,
+    TracerNativeInitialization? nativeInitialization,
+    bool? preservePreviousReports,
     BeforeSendCallback? beforeSend,
     BeforeBreadcrumbCallback? beforeBreadcrumb,
     int? maxBreadcrumbs,
@@ -251,6 +266,9 @@ class TracerOptions {
       release: release ?? this.release,
       dist: dist ?? this.dist,
       isCollectionEnabled: isCollectionEnabled ?? this.isCollectionEnabled,
+      nativeInitialization: nativeInitialization ?? this.nativeInitialization,
+      preservePreviousReports:
+          preservePreviousReports ?? this.preservePreviousReports,
       beforeSend: beforeSend ?? this.beforeSend,
       beforeBreadcrumb: beforeBreadcrumb ?? this.beforeBreadcrumb,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
@@ -284,6 +302,8 @@ class TracerOptions {
       if (release != null) 'release': release,
       if (dist != null) 'dist': dist,
       'isCollectionEnabled': isCollectionEnabled,
+      'nativeInitialization': nativeInitialization.name,
+      'preservePreviousReports': preservePreviousReports,
       'maxBreadcrumbs': maxBreadcrumbs,
       'attachRawStackTraceAsLog': attachRawStackTraceAsLog,
       'maxRawStackTraceLogBytes': maxRawStackTraceLogBytes,

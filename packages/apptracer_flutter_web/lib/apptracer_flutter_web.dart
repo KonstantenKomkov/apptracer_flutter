@@ -50,7 +50,12 @@ class AppTracerWeb extends TracerHttpTracer {
   ///
   /// Ours, not the vendor's: what reaches their ingest comes from this package,
   /// and saying otherwise would make a support conversation confusing.
-  static const String packageVersion = '0.1.0';
+  static const String packageVersion = '0.2.0-dev.1';
+
+  /// Dart runtime throw frames are shared by unrelated browser errors.
+  /// Use the common Dart grouping key to distinguish their application frames.
+  @override
+  bool get needsSyntheticIssueKey => true;
 
   /// Fills in the application's version before starting.
   ///

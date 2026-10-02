@@ -81,8 +81,8 @@ target 'Runner' do
 end
 ```
 
-Подспек требует `OKTracer >= 1.5.2` по той же причине, что и `Package.swift`
-выше: спеки всех версий до 1.5.1 включительно скачивают архив с выключенного
+Подспек и `Package.swift` фиксируют `OKTracer = 1.5.2` для проверенного
+адаптера отзыва. Спеки всех версий до 1.5.1 включительно скачивают архив с выключенного
 хоста. Если Tracer уже был подключён и `Podfile.lock` держит 1.5.1, `pod
 install` остановится на «could not find compatible versions for pod OKTracer»
 — выполните `pod update OKTracer`, он заодно обновит закешированный
@@ -94,3 +94,36 @@ spec-репозиторий вендора.
 `ios/tracer_plugin_token` или из `TRACER_IOS_PLUGIN_TOKEN`.
 
 В отличие от Android, `TracerOptions.appToken` на iOS **используется**.
+
+## Native consent lifecycle
+
+Use `TracerNativeInitialization.deferred` for bootstrap, then explicitly call
+`Tracer.startCollection` after the application verifies consent. OKTracer is
+pinned to **1.5.2**: the plugin audits and manages this version's report paths.
+
+`stopAndClearCollection` (and `stopCollection`) stops and detaches the SDK, deletes pending
+reports and replaces its report directories with empty guard files. This blocks
+its surviving native crash writer from persisting new reports. Revocation is
+saved before native stop, so an automatic startup in a new process stays off
+with `consent_required`. After an active session the result is `restartRequired`;
+start again only in a new process after new consent, with explicit deferred start.
+That start purges old reports even when `preservePreviousReports` is requested.
+
+A failed cleanup keeps collection off with `native_cleanup_failed`. Requests
+already in flight may finish; reports already received by the server are not
+deleted. The native crash handler itself remains installed until process exit.
+The SDK storage paths are reserved for this plugin; do not run another OKTracer
+service independently in the same process. Updating the pinned SDK requires a
+new storage audit and the device acceptance tests.
+
+See [implementation and device evidence](../../docs/native-collection-consent.md).
+
+### Символы при сборке Xcode 27
+
+На физическом iPhone проверена расшифровка Runner и Flutter с настройками
+[`tracer_dwarf4.xcconfig`](ios/tracer_dwarf4.xcconfig). Для этой конфигурации
+передайте абсолютный путь к файлу через `XCODE_XCCONFIG_FILE` при `flutter build ipa`.
+Настройки действуют на всю сборку, включая Pods, сохраняют имена функций и строки,
+но исключают отладочные типы импортированных Clang-модулей. Это явная настройка
+сборки: установка пакета не меняет флаги чужого проекта. После сборки загрузите
+dSYM до отправки новых сбоев. [Результат проверки](../../docs/symbolication.md).

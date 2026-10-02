@@ -600,6 +600,32 @@ flutter run -d <симулятор> --dart-define=TRACER_APP_TOKEN=$TRACER_IOS_A
 
 Логи нашего плагина ищите по префиксу `[apptracer_flutter]` в консоли Xcode.
 
+Если на физическом iPhone возникает `Failed host lookup`, сначала запустите
+из корня репозитория проверку без SDK и токенов:
+
+```sh
+make example-network-check-ios DEVICE=<UDID>
+```
+
+Разрешите «WLAN + Cellular» в системном запросе приложения. Проверка повторяет
+DNS/HTTPS до двух минут; HTTP 404 у корня `sdk-api.apptracer.ru` подтверждает
+успешное соединение. Используемый Flutter 3.47.4 удаляет приложение после
+`flutter test` по умолчанию. Флаг `--no-uninstall` сохраняет установленное
+приложение для следующего прогона, чтобы не повторять цикл установки и
+запроса разрешений. Добавляйте его и при ручном запуске остальных device tests.
+
+Для `flutter drive` используйте `--keep-app-running`: этот runner также удаляет
+приложение по умолчанию. На физическом iPhone live-проверку запускайте с
+`--profile` без `--ios-profile-debugger`. При подключённом LLDB модуль
+crashReporter SDK 1.5.2 отказывается запускаться (`TracerService.isBeingDebugged`),
+и плагин возвращает `native_start_failed`. Цель `example-live-check-ios` уже
+содержит оба необходимых флага.
+
+Для live-теста пример читает `TRACER_APP_TOKEN`: ему нужен токен iOS-проекта,
+как в `make example-live-check-ios`. Передать весь файл с платформенными
+токенами без этого сопоставления недостаточно: общий `TRACER_APP_TOKEN` в нём
+может принадлежать Android. Сбой старта SDK и ошибка DNS — отдельные проверки.
+
 ### 4.3 Проверки
 
 
@@ -903,3 +929,58 @@ void recurse(int n) => recurse(n + 1);   // StackOverflowError
 6. **Токен не от того проекта.** У Android, iOS и JS проекты разные, токены
   тоже.
 
+
+## Native consent acceptance — updated 2026-10-03
+
+The current checklist is [native-collection-consent-task.md](native-collection-consent-task.md)
+and the dated results are in [the evidence ledger](native-collection-consent.md).
+iOS physical-device delivery, revocation, failure cases and native symbolication
+are complete for OKTracer 1.5.2. Android SDK 1.4.0 release/R8 on API 35 passed
+cold start, offline/in-flight purge, account separation, engines/Activity,
+SIGSEGV/JVM after revocation, cleanup failures and real ANR recovery. The user
+confirmed the authorized ANR report in Tracer. Dashboard/native edge-case and
+publication checks retain their own status; historical environment restrictions
+are resolved.
+
+Android probes: build `lib/android_native_verification.dart` in the `consent`
+flavor with `tracer.enabled=true` and `tracer.deferred=true`, release/R8 and
+Dart obfuscation. Launch the consent Activity with string extra
+`apptracerScenario`; default `inspect` starts no SDK. The scenario JSON and
+loopback captures are in the app's external `files/verification` directory.
+Use `offline`, `inflight`, `account-a` then a new-process `account-b`,
+`multi-engine`, `activity`, `initial-cleanup-failure`, `stop-cleanup-failure`,
+`native-revoked`, `jvm-revoked` and `anr-revoked`. For revoked crashes, launch
+`revoked-recovery` in a new process: no `/api/crash/upload` may occur.
+Authorized `*-enabled` crashes followed by `vendor-recovery` use the real
+project; the other scenarios use loopback. ANR requires input dispatch timeout
+and the system Close app action, with OS exit reason 6 verified before recovery.
+Token absence and SDK absence require purpose-built APKs, not changing a Dart
+option. Local tokens are read from ignored `.env.tracer`, never committed.
+
+Web: HTTP lifecycle tests must also run on Chrome. The release live test now
+restarts collection after stop and sends `web-consent-restarted`, then clears
+collection again. Check that report in Tracer after uploading source maps from
+the identical JS build. HTTP 200 alone is not dashboard confirmation.
+
+### iOS revocation regression commands (OKTracer 1.5.2)
+
+`bash tool/check_ios_storage.sh` checks purge, sealed paths, marker persistence,
+re-consent and cleanup failure on the host. On the physical iPhone run
+`ios_collection_transport_test.dart` using `flutter drive --profile
+--keep-app-running`, the integration-test driver and the iOS app token mapped to
+`TRACER_APP_TOKEN`. Repeat with `--dart-define=TRACER_TEST_INFLIGHT=true`.
+
+Run `native_consent_test.dart` with the same driver/profile settings and
+`TRACER_IOS_APP_TOKEN` to verify deferred bootstrap, cold stop, explicit start,
+active stop and refusal to restart in the same process. The live test explicitly
+authorizes a deferred session after a previous run's revocation; ordinary
+application automatic startup must not undo that marker.
+
+Build `lib/ios_native_verification.dart` in release and launch with
+`APPTRACER_VERIFY_SCENARIO=native-revoked`, then `recovery` (must refuse automatic
+start), `deferred-recovery` (must remain off), and `new-consent` (must receive zero
+old loopback requests, then exactly one fresh event). Inspect app-container
+report paths after the fatal: only empty guard files should exist. Repeat
+`native-enabled` followed by `recovery` to check authorized native crash delivery.
+No debugger should be attached. These probes use local loopback except explicit
+`recovery`/`dart-errors`; default launch initializes no SDK.
