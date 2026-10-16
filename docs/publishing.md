@@ -145,6 +145,39 @@ Device/browser verification and remaining symbolication limits are recorded in
 tag records the prepared source; publication is complete only once all six
 versions are available on pub.dev.
 
+## Stable 0.2.1 — 2026-10-16
+
+Published from `v0.2.1` (`31a4f5b`) in dependency order:
+
+1. [apptracer_flutter_android 0.2.1](https://pub.dev/packages/apptracer_flutter_android/versions/0.2.1)
+2. [apptracer_flutter 0.2.1](https://pub.dev/packages/apptracer_flutter/versions/0.2.1)
+
+Other runtime packages remain at 0.2.0. This release updates the Android build
+target and example Gradle plugin to Tracer 1.5.2, retains the vendor Nexus
+repository, and adds opt-in Android 12+ tombstones. The deferred adapter accepts
+1.4.0 and 1.5.2. See [the SDK audit](android-sdk-1.5.2.md) for the precise
+validation scope; live tombstone delivery has not been verified.
+
+Publication used a clean export of the release commit with every
+`pubspec_overrides.yaml` removed. Both packages passed hosted dependency
+resolution, analysis, tests and publication dry-runs with zero warnings.
+The facade's pre-publication analysis covered `lib` and `test`; its example
+requires the facade's own published version. Generated test output was removed
+before packing. [Release CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/38866697243)
+passed all jobs.
+
+After publication the example resolved the facade and Android implementation
+at 0.2.1 from pub.dev without overrides and passed analysis and its widget test.
+`flutter pub upgrade` refreshed cached version metadata after pub.dev indexing.
+
+Downloaded archive SHA-256 values match pub.dev metadata. Every packaged file
+matches the release commit (37 Android files and 109 facade files):
+
+| Package | Archive SHA-256 |
+|---|---|
+| `apptracer_flutter_android` | `9f56a0b62ee80f486693dd0e86473eb8389bbd79bfb86ca5810d84f39fabdc13` |
+| `apptracer_flutter` | `41e59a0fa088b31778b061ab1236dabfc225ed1f3519f046184ca2099058e472` |
+
 ## Secrets
 
 No credential of any kind belongs in this repository — not in a test fixture,

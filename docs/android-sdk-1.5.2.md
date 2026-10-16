@@ -1,8 +1,9 @@
 # Android SDK 1.5.2 update — 2026-10-16
 
 The Android package compiles against Tracer 1.5.2. The example uses the matching
-BOM and Gradle plugin. Both packages are prepared as 0.2.1; publication is a
-separate step. No Dart channel or platform-interface change is needed: Android
+BOM and Gradle plugin. Both packages were published as 0.2.1 from `v0.2.1`
+(`31a4f5b`); see [the publication record](publishing.md#stable-021--2026-10-16).
+No Dart channel or platform-interface change is needed: Android
 reads crash configuration before Flutter starts. iOS, web, HTTP and Sentry
 implementations keep their existing versions.
 
@@ -78,9 +79,10 @@ The tools accept matched audited SDK pairs. SHA-256 of extracted 1.5.2 JARs:
   The release R8 mapping retains the 12 checked reflection class names.
 - Default configuration and installation compiled against 1.5.2 also ran
   against the 1.4.0 runtime classes without linkage errors.
-- Publication dry-runs inspect both 0.2.1 archives. They report the expected
-  dirty-checkout warning and local dependency-override hints; hosted dependency
-  resolution must be checked after the Android package is published first.
+- Publication dry-runs from the release export report zero warnings for both
+  0.2.1 archives. Dependencies resolve from pub.dev without overrides, with
+  Android published first. Both downloaded archives match the release commit.
+- GitHub CI passed for release commit `31a4f5b` with Flutter 3.35.7.
 
 The local Flutter installation is 3.47.4; the repository CI is pinned to
 3.35.7. Local Gradle checks use `-PskipDependencyChecks=true` with the existing
