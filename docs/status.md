@@ -1,5 +1,10 @@
 # Verification status
 
+Android update, 2026-10-16: SDK / Gradle plugin 1.5.2 and opt-in tombstones
+are implemented. See [the upgrade audit](android-sdk-1.5.2.md) for current
+validation and remaining device acceptance. Historical results below retain
+the SDK versions on which they were obtained.
+
 An honest ledger of what has actually been exercised, so that nothing here is
 mistaken for a guarantee.
 

@@ -1,5 +1,10 @@
 # План проверки на живом проекте
 
+For new Android builds use SDK / plugin 1.5.2 and the Nexus repository in
+[the current setup](../packages/apptracer_flutter/README.md#android).
+[Tombstone verification](android-sdk-1.5.2.md) is separate from the historical
+1.4.0 results recorded below.
+
 Пошаговый чек-лист от «есть аккаунт в Tracer» до «можно публиковать».
 
 Всё, что здесь написано, проверено локально: команды запускались, сниппеты
@@ -242,22 +247,29 @@ void main() {
 
 ### 3.1 Gradle
 
-`android/settings.gradle.kts` — плагин Tracer лежит на **Maven Central**, а не в
-Gradle Plugin Portal:
+`android/settings.gradle.kts` — для Tracer 1.5.2 оставьте Nexus вендора
+в списке репозиториев плагинов:
 
 ```kotlin
 pluginManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://nexus-external.vkteam.ru/repository/maven/") {
+            content { includeGroup("ru.ok.tracer") }
+        }
         gradlePluginPortal()
     }
 }
 
 plugins {
-    id("ru.ok.tracer") version "1.4.0" apply false
+    id("ru.ok.tracer") version "1.5.2" apply false
 }
 ```
+
+Тот же `maven(...)` с фильтром `ru.ok.tracer` добавьте в репозитории
+зависимостей: `allprojects.repositories` в `android/build.gradle.kts`
+либо `dependencyResolutionManagement.repositories` в settings.
 
 `android/app/build.gradle.kts`:
 
@@ -289,7 +301,7 @@ tracer {
 }
 
 dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
+    implementation(platform("ru.ok.tracer:tracer-platform:1.5.2"))
     implementation("ru.ok.tracer:tracer-crash-report")
     implementation("ru.ok.tracer:tracer-crash-report-native")
 }

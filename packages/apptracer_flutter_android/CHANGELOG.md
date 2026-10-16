@@ -9,6 +9,22 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-16
+
+### Added
+
+- Opt-in Android 12+ tombstones through application manifest metadata
+  `ru.apptracer.flutter.experimentalTombstoneEnabled` or native configuration.
+  The default remains off; `tracer-crash-report-native` is not required.
+
+### Changed
+
+- Compile and test against Tracer Android SDK 1.5.2 using the vendor Nexus
+  repository; the SDK remains a host-supplied `compileOnly` dependency.
+- Extend the version-checked deferred adapter to 1.5.2, retaining 1.4.0 support.
+  Re-audit startup, revocation, diagnostic stores and native writer signatures;
+  preserve the separate scope of earlier 1.4.0 device verification.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added
@@ -104,7 +120,8 @@ as pub.dev expects.
   reports a `TracerOptions.appToken` and a `TracerOptions.environment` that
   were passed but are ignored on Android.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0

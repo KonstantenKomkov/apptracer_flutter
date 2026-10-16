@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Lazy;
 
-/** Terminal cleanup of inspected SDK 1.4.0 stores after all writers have stopped. */
+/** Terminal cleanup of inspected SDK 1.4.0 / 1.5.2 stores after all writers have stopped. */
 final class Sdk140DiagnosticBuffers {
     private Sdk140DiagnosticBuffers() { }
 

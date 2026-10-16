@@ -46,13 +46,32 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 
 Требует `minSdk 21` — как и `ru.ok.tracer:tracer-commons`.
 
-## Native consent lifecycle
 
-See [the lifecycle contract and migration notes](../../docs/native-collection-consent.md) for deferred bootstrap,
-the Android manifest setup, explicit start, stop with purge, and restart handling.
-Android deferred collection uses a version-bound 1.4.0 adapter, verified with
-release/R8 on API 35. iOS uses OKTracer 1.5.2, verified on a physical iPhone.
-See the dated lifecycle evidence for tested scenarios and symbolication limits.
-`isCollectionEnabled=false` alone cannot prevent Android provider startup.
-`stopCollection` does not prove native report deletion or cancellation of uploads.
-Package publication and downstream application migration are separate steps.
+## Android tombstones (SDK 1.5.2)
+
+Экспериментальные системные отчёты о нативных крэшах **выключены по умолчанию**.
+Чтобы включить их без собственного `Application`, добавьте внутрь `<application>`
+в `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<meta-data
+    android:name="ru.apptracer.flutter.experimentalTombstoneEnabled"
+    android:value="true" />
+```
+
+Нужны Tracer Android **1.5.2** и **Android 12 / API 31+**. Функция входит
+в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
+и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
+позволяют символизировать системные библиотеки, но не гарантируют символизацию
+Dart AOT. Отчёты восстанавливаются при последующем запуске SDK.
+
+Собственный `Application`, реализующий `HasTracerConfiguration`, заменяет
+настройки пакета. В его существующем `CrashReportConfiguration.Builder` вызовите
+`setExperimentalTombstoneEnabled(true)` и при необходимости сохраните лимит
+нефатальных событий. Наследник `TracerApplication` учитывает флаг манифеста.
+
+Флаг работает при автоматическом и отложенном запуске. Он задаётся на Android
+до инициализации SDK, а не через Dart `TracerOptions`. Для отложенного сбора
+по-прежнему нужны удаление провайдеров из манифеста и явный `startCollection`;
+сам флаг сбор не запускает. Сохраните `nexus-external.vkteam.ru/repository/maven/`
+в репозиториях плагинов и зависимостей и выполните чистую сборку после обновления.

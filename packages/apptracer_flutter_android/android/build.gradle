@@ -1,5 +1,5 @@
 group = 'ru.apptracer.flutter'
-version = '0.2.0'
+version = '0.2.1'
 
 buildscript {
     ext.kotlin_version = '1.9.24'
@@ -15,6 +15,10 @@ buildscript {
 
 rootProject.allprojects {
     repositories {
+        maven {
+            url = uri("https://nexus-external.vkteam.ru/repository/maven/")
+            content { includeGroup "ru.ok.tracer" }
+        }
         google()
         mavenCentral()
     }
@@ -97,10 +101,10 @@ dependencies {
     // vendor SDK version inside someone else's build and would mean this
     // package redistributes a proprietary artefact. If the SDK is absent at
     // runtime the plugin reports "disabled" instead of crashing.
-    compileOnly 'ru.ok.tracer:tracer-crash-report:1.4.0'
-    compileOnly 'ru.ok.tracer:tracer-commons:1.4.0'
+    compileOnly 'ru.ok.tracer:tracer-crash-report:1.5.2'
+    compileOnly 'ru.ok.tracer:tracer-commons:1.5.2'
 
-    testImplementation 'ru.ok.tracer:tracer-crash-report:1.4.0'
-    testImplementation 'ru.ok.tracer:tracer-commons:1.4.0'
+    testImplementation 'ru.ok.tracer:tracer-crash-report:1.5.2'
+    testImplementation 'ru.ok.tracer:tracer-commons:1.5.2'
     testImplementation 'junit:junit:4.13.2'
 }

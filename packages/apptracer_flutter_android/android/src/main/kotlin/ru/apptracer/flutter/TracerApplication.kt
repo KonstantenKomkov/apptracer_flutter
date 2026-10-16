@@ -34,5 +34,5 @@ import ru.ok.tracer.TracerConfiguration
 open class TracerApplication : Application(), HasTracerConfiguration {
 
     override val tracerConfiguration: List<TracerConfiguration>
-        get() = TracerAutoConfig.defaultConfigurations()
+        get() = TracerAutoConfig.defaultConfigurations(this)
 }

@@ -9,6 +9,16 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-16
+
+### Changed
+
+- Require `apptracer_flutter_android ^0.2.1` for Tracer Android SDK 1.5.2
+  compatibility and opt-in tombstones on Android 12+.
+- Update Android setup, vendor repositories and the example to SDK / Gradle
+  plugin 1.5.2; enable tombstones in the native example configuration.
+  Dart options and the other platform implementations are unchanged.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added
@@ -154,7 +164,8 @@ as pub.dev expects.
   ingest would take an event without it is left unclaimed — the server answers
   `200` to a malformed body, so its absence cannot be tested.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2

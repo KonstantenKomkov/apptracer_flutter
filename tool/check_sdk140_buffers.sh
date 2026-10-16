@@ -17,8 +17,14 @@ verify_hash() {
     exit 1
   fi
 }
-verify_hash "$commons" ee7964358a1385c2fc38d362e7e49aa2e61a1998a3c8992ad4f61f1f03381782
-verify_hash "$crash" aeffc371b708e60032942074603aeaa1d8aa9c77e0442e332408bf71c46bf6dd
+# Keep matched SDK pairs: a mixed classpath has not been inspected.
+case "$(shasum -a 256 "$commons" | awk '{print $1}')" in
+  ee7964358a1385c2fc38d362e7e49aa2e61a1998a3c8992ad4f61f1f03381782)
+    verify_hash "$crash" aeffc371b708e60032942074603aeaa1d8aa9c77e0442e332408bf71c46bf6dd ;;
+  9cb045087b426cc8215d00556815a5cf0560c18c96fcf91c21ddd59b53fc82ae)
+    verify_hash "$crash" d0825dfe7b270ae62b3eb7e120236aec74f07aaff862887127c7633fe923d925 ;;
+  *) echo "Unverified SDK commons artifact: re-audit before updating its hash" >&2; exit 1 ;;
+esac
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 compiled="$(mktemp -d "${TMPDIR:-/tmp}/apptracer-buffers.XXXXXX")"
 trap 'rm -rf "$compiled"' EXIT

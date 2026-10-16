@@ -165,3 +165,8 @@ Omit `tracer.enabled` for the SDK-absent variant: it needs no tokens and returns
 for scenarios and evidence limits. Collection, revocation and delivery verification
 is complete for Android, iOS and Web. The evidence ledger records remaining
 symbolication limits for Android native and optimized Web frames.
+
+Android uses SDK and Gradle plugin 1.5.2 from the vendor Nexus repository.
+`TracerHostApplication` enables experimental tombstones on Android 12+.
+The native crash module remains included to cover older Android versions.
+See [tombstone setup](../README.en.md#android-tombstones-sdk-152).

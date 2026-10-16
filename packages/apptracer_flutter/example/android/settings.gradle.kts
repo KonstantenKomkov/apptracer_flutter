@@ -11,6 +11,9 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        maven("https://nexus-external.vkteam.ru/repository/maven/") {
+            content { includeGroup("ru.ok.tracer") }
+        }
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -24,7 +27,7 @@ plugins {
 
     // Resolved here but applied in app/tracer.gradle, so that a build without
     // Tracer credentials still works. See app/build.gradle.kts.
-    id("ru.ok.tracer") version "1.4.0" apply false
+    id("ru.ok.tracer") version "1.5.2" apply false
 }
 
 include(":app")

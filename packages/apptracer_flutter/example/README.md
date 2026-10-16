@@ -171,3 +171,8 @@ env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
 Проверка сбора, отзыва и доставки в Tracer завершена для Android, iOS и Web.
 Ограничения расшифровки Android native и оптимизированных Web-кадров описаны
 в журнале проверки.
+
+Android использует SDK и Gradle-плагин 1.5.2 из Nexus вендора.
+`TracerHostApplication` включает экспериментальные tombstones на Android 12+.
+Модуль нативных крэшей сохранён для старых Android.
+См. [настройку tombstones](../README.md#android-tombstones-sdk-152).

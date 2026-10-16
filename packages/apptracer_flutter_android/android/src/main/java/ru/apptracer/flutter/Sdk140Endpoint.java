@@ -1,6 +1,6 @@
 package ru.apptracer.flutter;
 
-/** Tracer 1.4.0 catches provider exceptions and falls back to its default URL. */
+/** Tracer 1.4.0 / 1.5.2 catches provider exceptions and falls back to its default URL. */
 final class Sdk140Endpoint {
     interface Source { String get(); }
     private final RevocableExecutor permission;

@@ -31,20 +31,33 @@ in — your application adds them.
 
 ### Android
 
-In `android/settings.gradle.kts` — the plugin lives on Maven Central, not on
-the Gradle Plugin Portal:
+In `android/settings.gradle.kts`, keep the vendor repository for SDK 1.5.2
+and its Gradle plugin alongside Maven Central:
 
 ```kotlin
 pluginManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://nexus-external.vkteam.ru/repository/maven/") {
+            content { includeGroup("ru.ok.tracer") }
+        }
         gradlePluginPortal()
     }
 }
 
 plugins {
-    id("ru.ok.tracer") version "1.4.0" apply false
+    id("ru.ok.tracer") version "1.5.2" apply false
+}
+```
+
+Add the same repository to dependency resolution (`allprojects.repositories`
+in `android/build.gradle.kts`, or `dependencyResolutionManagement.repositories`
+if your project manages repositories in settings):
+
+```kotlin
+maven("https://nexus-external.vkteam.ru/repository/maven/") {
+    content { includeGroup("ru.ok.tracer") }
 }
 ```
 
@@ -76,7 +89,7 @@ tracer {
 }
 
 dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.4.0"))
+    implementation(platform("ru.ok.tracer:tracer-platform:1.5.2"))
     implementation("ru.ok.tracer:tracer-crash-report")
     // Optional, for native crashes:
     implementation("ru.ok.tracer:tracer-crash-report-native")
@@ -136,6 +149,36 @@ Four more things that are easy to trip over:
 * `TracerOptions.environment` is ignored on Android too — the SDK takes it from
   the Gradle plugin, defaulting to the build variant name. Set it in the
   `tracer { }` block.
+
+#### Android tombstones (SDK 1.5.2)
+
+Experimental system native crash reports are **off by default**. To enable
+them without a custom `Application`, add this inside `<application>` in
+`android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<meta-data
+    android:name="ru.apptracer.flutter.experimentalTombstoneEnabled"
+    android:value="true" />
+```
+
+Requires Tracer Android **1.5.2** and **Android 12 / API 31+**. The feature is
+part of `tracer-crash-report`; `tracer-crash-report-native` is optional and
+remains useful for native crashes on older Android versions. System libraries
+can be symbolicated from tombstones; this does not guarantee Dart AOT
+symbolication. Reports are recovered on a later SDK start.
+
+An `Application` implementing `HasTracerConfiguration` replaces these defaults.
+In its existing `CrashReportConfiguration.Builder`, call
+`setExperimentalTombstoneEnabled(true)` and retain the non-fatal rate limit if
+needed. A subclass of `TracerApplication` inherits the manifest setting.
+
+This setting applies to automatic and deferred startup. It is configured on
+Android before SDK initialization, not through `TracerOptions` in Dart.
+Deferred collection still requires the manifest provider removal and explicit
+`startCollection`; enabling the feature does not start collection by itself.
+Keep `nexus-external.vkteam.ru/repository/maven/` in both plugin and dependency
+repositories and perform a clean build after updating.
 
 ### iOS
 
@@ -609,14 +652,3 @@ vendor confirmed as much — so decoding stays a manual step. Details in
 
 MIT. The vendor SDKs are licensed separately; see
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
-
-## Native consent lifecycle
-
-See [the lifecycle contract and migration notes](../../docs/native-collection-consent.md) for deferred bootstrap,
-the Android manifest setup, explicit start, stop with purge, and restart handling.
-Android deferred collection uses a version-bound 1.4.0 adapter, verified with
-release/R8 on API 35. iOS uses OKTracer 1.5.2, verified on a physical iPhone.
-See the dated lifecycle evidence for tested scenarios and symbolication limits.
-`isCollectionEnabled=false` alone cannot prevent Android provider startup.
-`stopCollection` does not prove native report deletion or cancellation of uploads.
-Package publication and downstream application migration are separate steps.

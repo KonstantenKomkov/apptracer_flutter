@@ -95,7 +95,7 @@ tracer {
 }
 
 dependencies {
-    implementation platform('ru.ok.tracer:tracer-platform:1.4.0')
+    implementation platform('ru.ok.tracer:tracer-platform:1.5.2')
     implementation 'ru.ok.tracer:tracer-crash-report'
     implementation 'ru.ok.tracer:tracer-crash-report-native'
 }

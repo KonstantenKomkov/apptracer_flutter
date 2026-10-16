@@ -1,5 +1,9 @@
 # Native collection lifecycle: verified implementation
 
+Android 1.5.2 update (2026-10-16): see [the new SDK audit](android-sdk-1.5.2.md).
+The adapter also accepts 1.5.2; dated 1.4.0 runtime evidence below remains
+specific to that version.
+
 Status, 2026-10-03: the Android SDK 1.4.0 and OKTracer 1.5.2 adapters are
 implemented. Physical iOS acceptance is complete, including native symbolication.
 Android release/R8 on API 35 has passed cold/offline/in-flight/account/engine,

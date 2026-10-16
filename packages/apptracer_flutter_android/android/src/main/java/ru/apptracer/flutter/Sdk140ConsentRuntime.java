@@ -22,7 +22,8 @@ import ru.ok.tracer.base.process.ProcessUtils;
 import ru.ok.tracer.crash.report.TracerCrashReport;
 import ru.ok.tracer.startup.TracerStartup;
 
-/** Process-scoped adapter for the inspected 1.4.0 crash/native startup graph. */
+/** Process-scoped adapter for the inspected 1.4.0 and 1.5.2 startup graphs.
+ * The historical class name is retained for existing native integrations. */
 public final class Sdk140ConsentRuntime {
     public interface Completion { void complete(Map<String, String> result); }
     private static final ExecutorService cleanup = Executors.newSingleThreadExecutor();
@@ -269,7 +270,9 @@ public final class Sdk140ConsentRuntime {
 
     private static void validateVersion() throws Exception {
         Object version = Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
-        if (!"1.4.0".equals(version)) throw new IllegalStateException("unverified SDK version");
+        if (!"1.4.0".equals(version) && !"1.5.2".equals(version)) {
+            throw new IllegalStateException("unverified SDK version");
+        }
     }
 
     private static void validateInitializers(Application application) throws Exception {
@@ -290,7 +293,7 @@ public final class Sdk140ConsentRuntime {
 
     private static File root(Application application) { return new File(application.getCacheDir(), "tracer"); }
     private static void clearDiagnosticRoots(Application application) throws Exception {
-        // SDK 1.4.0 stores crash/session queues under cache/tracer and its
+        // SDK 1.4.0 and 1.5.2 store crash/session queues under cache/tracer and the
         // stable device identifier under files/tracer. Both outlive one process.
         DiagnosticFiles.clear(root(application));
         DiagnosticFiles.clear(new File(application.getFilesDir(), "tracer"));

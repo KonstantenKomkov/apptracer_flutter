@@ -13,7 +13,7 @@
 # the warning, it does not stop R8 from processing classes that do exist, and
 # ru.ok.tracer ships its own proguard.txt with whatever keeps it needs.
 -dontwarn ru.ok.tracer.**
-# SDK 1.4.0's CoreTracerConfiguration bytecode also references this optional
+# SDK 1.4.0 / 1.5.2's CoreTracerConfiguration bytecode also references this optional
 # transitive type. ConsentTracerApplication is only loaded after the SDK check.
 -dontwarn javax.inject.Provider
 
@@ -21,7 +21,7 @@
 # nothing in a static analysis proves these members are used.
 -keep class ru.apptracer.flutter.** { *; }
 
-# Deferred 1.4.0 adapter: runtime version check, watchdog shutdown and optional
+# Deferred 1.4.0 / 1.5.2 adapter: runtime version check, watchdog shutdown and optional
 # native writer uninstall use these exact verified JVM names.
 -keep class ru.ok.tracer.BuildConfig { public static java.lang.String LIBRARY_VERSION; }
 -keep class ru.ok.tracer.crash.report.AnrWatchdogThread { *; }
@@ -31,7 +31,7 @@
 -keep class ru.ok.tracer.utils.SequentialExecutor { *; }
 -keep class ru.ok.tracer.utils.SequentialExecutor$QueueRunnable { *; }
 
-# Terminal retirement of the 1.4.0 SDK's retained diagnostic stores.
+# Terminal retirement of the 1.4.0 / 1.5.2 SDK's retained diagnostic stores.
 -keep class ru.ok.tracer.Tracer { *; }
 -keep class ru.ok.tracer.CoreTracerConfiguration { *; }
 -keep class ru.ok.tracer.session.TagsStorage { *; }

@@ -1,6 +1,7 @@
 package ru.apptracer.flutter
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.ok.tracer.Tracer
@@ -26,6 +27,20 @@ class TracerAutoConfigTest {
 
         assertTrue(configuration is CrashReportConfiguration)
         assertTrue(configuration.readsRateLimitAsEnabled())
+        assertFalse(configuration.readsTombstoneAsEnabled())
+    }
+
+    @Test
+    fun `tombstone opt-in preserves the non-fatal rate limit without native module`() {
+        val configuration = TracerAutoConfig.defaultConfigurations(true).single()
+
+        assertTrue(configuration.readsRateLimitAsEnabled())
+        assertTrue(configuration.readsTombstoneAsEnabled())
+    }
+
+    @Test
+    fun `explicit false keeps tombstones disabled`() {
+        assertFalse(TracerAutoConfig.defaultConfigurations(false).single().readsTombstoneAsEnabled())
     }
 
     @Test
@@ -48,5 +63,10 @@ class TracerAutoConfigTest {
     private fun TracerConfiguration.readsRateLimitAsEnabled(): Boolean =
         javaClass
             .getMethod("getNonFatalRateLimitEnabled\$tracer_crash_report_release")
+            .invoke(this) as Boolean
+
+    private fun TracerConfiguration.readsTombstoneAsEnabled(): Boolean =
+        javaClass
+            .getMethod("getTombstoneEnabled\$tracer_crash_report_release")
             .invoke(this) as Boolean
 }

@@ -79,3 +79,7 @@ mirrors the same set for anyone launching from the editor.
 
 MIT, see [LICENSE](LICENSE). The vendor SDKs are licensed separately; see
 [docs/legal.md](docs/legal.md).
+
+Android SDK / Gradle plugin 1.5.2 and opt-in Android 12+ tombstones are supported.
+See [setup](packages/apptracer_flutter/README.en.md#android-tombstones-sdk-152)
+and the [upgrade audit](docs/android-sdk-1.5.2.md) for verification scope.

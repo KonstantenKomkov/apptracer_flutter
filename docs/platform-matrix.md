@@ -3,7 +3,8 @@
 Everything below was verified against the live artefacts on the dates shown, not
 copied from prose documentation. Where a fact could not be verified it says so.
 
-Last verified: 2026-08-25.
+Baseline verified: 2026-08-25. Android SDK 1.5.2 update: 2026-10-16;
+see [artifact audit and validation scope](android-sdk-1.5.2.md).
 
 ## Summary
 
@@ -45,18 +46,24 @@ ANR dialog complained.
 
 | Item | Value | How it was checked |
 |---|---|---|
-| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | Maven Central |
-| Latest version | `1.4.0` | `repo1.maven.org/.../tracer-platform/maven-metadata.xml` |
-| Gradle plugin | `id("ru.ok.tracer") version "1.4.0"`, resolved from **Maven Central**, not the Gradle Plugin Portal | plugin portal returns nothing for the marker artefact |
-| `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.4.0.aar` |
+| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | vendor Nexus for 1.5.2; Maven Central for earlier releases |
+| Integrated version | `1.5.2` | vendor Nexus BOM and AARs, 2026-10-16 |
+| Gradle plugin | `id("ru.ok.tracer") version "1.5.2"`; retain `https://nexus-external.vkteam.ru/repository/maven/` for plugins and dependencies | vendor Nexus marker POM |
+| Tombstones | opt-in, Android 12+; only `tracer-crash-report` required | 1.5.2 `CrashReportConfiguration.Builder` and `ExitReporter` bytecode |
+| `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.5.2.aar` |
 | Permissions added | `INTERNET`, `ACCESS_NETWORK_STATE` | same manifest |
 | Initialisation | automatic, through `ru.ok.tracer.startup.InitializationProvider` (a content provider) plus `TracerInitializer` | same manifest |
 | Configuration | `Application` implementing `ru.ok.tracer.HasTracerConfiguration`, or `Tracer.runtimeConfigs` seeded before `Tracer.init` runs | `javap` on `tracer-commons` |
 | Generated resources | `tracer_app_token`, `tracer_environment`, `tracer_is_disabled`, `tracer_mapping_uuid` | bytecode of `ru.ok.tracer.mapping_plugin.TracerUploadMappingPlugin` |
 | Log buffer | circular, **65536 bytes** by default (`maxLogsLength`), oldest entries evicted first | default value read from `CrashReportConfiguration` bytecode |
-| License | Tracer's License Agreement, <https://apptracer.ru/license/> | `<licenses>` in `tracer-crash-report-1.4.0.pom` |
+| License | Tracer's License Agreement, <https://apptracer.ru/license/> | `<licenses>` in `tracer-crash-report-1.5.2.pom` |
 
-### Why 1.4.0 is the floor
+### Why 1.4.0 remains the compatibility floor
+
+SDK 1.5.2 is the current build target. The default configuration retains support
+for hosts on 1.4.0; tombstones require 1.5.2. Deferred collection rejects any
+version outside the explicitly inspected 1.4.0 / 1.5.2 pair.
+
 
 Not arbitrary. The vendor's own release notes make the older versions a bad
 bet, and two of the fixes land squarely on this package:

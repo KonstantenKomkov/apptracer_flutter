@@ -29,7 +29,7 @@ class TracerAutoConfigProvider : ContentProvider() {
 
     override fun onCreate(): Boolean {
         try {
-            if (!TracerAutoConfig.install()) {
+            if (!TracerAutoConfig.install(requireNotNull(context))) {
                 Log.d(TAG, "Tracer was already initialized; left its configuration alone")
             }
         } catch (error: Throwable) {

@@ -1,5 +1,8 @@
 package ru.apptracer.flutter;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +26,8 @@ import ru.ok.tracer.crash.report.CrashReportConfiguration;
  * hour. An application that hits the cap loses errors silently, which is the
  * failure mode a crash reporter can least afford.
  *
- * <p>Nothing else is set. {@code setDebugUpload} would start sending from debug
+ * <p>Tombstones can be enabled explicitly through application manifest metadata.
+ * {@code setDebugUpload} would start sending from debug
  * builds, and {@code setSendAnr} costs an ANR watchdog — both are decisions for
  * the application, not for a wrapper.
  *
@@ -74,6 +78,10 @@ import ru.ok.tracer.crash.report.CrashReportConfiguration;
  */
 public final class TracerAutoConfig {
 
+    /** Application metadata opt-in; requires Tracer SDK 1.5.2 and Android 12+. */
+    public static final String EXPERIMENTAL_TOMBSTONE_ENABLED =
+            "ru.apptracer.flutter.experimentalTombstoneEnabled";
+
     private TracerAutoConfig() {
     }
 
@@ -83,11 +91,30 @@ public final class TracerAutoConfig {
      * "what the package turns on" is written down once.
      */
     public static List<TracerConfiguration> defaultConfigurations() {
+        return defaultConfigurations(false);
+    }
+
+    /** Builds defaults with an explicit tombstone opt-in for native hosts. */
+    public static List<TracerConfiguration> defaultConfigurations(boolean tombstoneEnabled) {
+        CrashReportConfiguration.Builder builder = new CrashReportConfiguration.Builder()
+                .setExperimentalNonFatalRateLimitEnabled(Boolean.TRUE);
+        // Keep the default path compatible with hosts still using SDK 1.4.0.
+        if (tombstoneEnabled) builder.setExperimentalTombstoneEnabled(true);
         return Collections.<TracerConfiguration>singletonList(
-                new CrashReportConfiguration.Builder()
-                        .setExperimentalNonFatalRateLimitEnabled(Boolean.TRUE)
-                        .build()
+                builder.build()
         );
+    }
+
+    /** Reads the manifest before either automatic or deferred SDK startup. */
+    public static List<TracerConfiguration> defaultConfigurations(Context context) {
+        try {
+            ApplicationInfo info = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA);
+            return defaultConfigurations(info.metaData != null
+                    && info.metaData.getBoolean(EXPERIMENTAL_TOMBSTONE_ENABLED, false));
+        } catch (PackageManager.NameNotFoundException impossible) {
+            throw new IllegalStateException("Application metadata unavailable", impossible);
+        }
     }
 
     /**
@@ -101,11 +128,21 @@ public final class TracerAutoConfig {
      * @return whether the configuration was written.
      */
     public static boolean install() {
+        if (isTracerInitialized()) return false;
+        return installConfigurations(defaultConfigurations());
+    }
+
+    /** Applies the manifest opt-in while preserving host configuration precedence. */
+    public static boolean install(Context context) {
+        if (isTracerInitialized()) return false;
+        return installConfigurations(defaultConfigurations(context));
+    }
+
+    private static boolean installConfigurations(List<TracerConfiguration> configurations) {
         if (isTracerInitialized()) {
             return false;
         }
 
-        List<TracerConfiguration> configurations = defaultConfigurations();
         Map<TracerFeature, TracerConfiguration> byFeature =
                 new LinkedHashMap<TracerFeature, TracerConfiguration>(configurations.size());
         for (TracerConfiguration configuration : configurations) {
