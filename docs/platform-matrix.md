@@ -5,6 +5,7 @@ copied from prose documentation. Where a fact could not be verified it says so.
 
 Baseline verified: 2026-08-25. Android SDK 1.5.2 update: 2026-10-16;
 see [artifact audit and validation scope](android-sdk-1.5.2.md).
+Unreleased macOS update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
 
 ## Summary
 
@@ -13,7 +14,8 @@ see [artifact audit and validation scope](android-sdk-1.5.2.md).
 | Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
-| macOS / Windows / Linux | Tracer's own HTTP ingest, registered by hand | yes | no | no | no | **not supported in this release** — never run |
+| macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, exact live counts/grouping pending |
+| Windows / Linux | manual HTTP transport; Windows official SDK work pending target acceptance | code only | unverified | no | no | **not supported in this release** — runtime not verified |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
@@ -368,22 +370,27 @@ Consequences worth knowing:
 
 ## Desktop and Aurora OS
 
-**Not supported in this release** — a decision taken 2026-08-27, not an
-oversight. Neither platform has a Flutter-facing Tracer SDK, and neither has
-been run against a real project even once, so nothing here is a promise. The
-transport below exists because web uses it; registering it on a desktop build
-would probably deliver Dart errors, and "probably" is the whole claim.
+**Not supported in the published release.** The exclusion dated 2026-08-27
+remains historical release scope; development reopened on 2026-10-23.
+The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
+macOS arm64 has local lifecycle and live delivery evidence, with incomplete
+expanded console acceptance and a server-native-symbolication limitation.
+Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
+[acceptance record](macos-lifecycle-acceptance.md). Windows and Aurora are still
+pending target environments; Linux is outside this iteration.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system
   `crash-dumper` package for minidumps. Binding it would mean shipping an
   Aurora-specific Flutter embedder plugin, which is out of scope for this
   release.
-* **Windows / macOS / Linux.** Tracer's documented route is a C/C++ breakpad
-  integration with `symupload.py` / `crashupload.py`.
+* **Native desktop symbols.** Tracer documents a C/C++ breakpad route with
+  `symupload.py` / `crashupload.py`; it does not establish Cocoa report
+  symbolication in the tested macOS integration.
 
-On all of these, Dart error reporting is available by registering the pure-Dart
-transport explicitly:
+The historical manual HTTP transport can be registered as below, but it is not
+the macOS SDK implementation or evidence of desktop support. Do not run it beside
+the official SDK adapter:
 
 ```dart
 import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';

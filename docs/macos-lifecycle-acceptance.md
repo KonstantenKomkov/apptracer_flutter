@@ -146,3 +146,55 @@ macOS символизация остаётся [неподдерживаемо�
 описывает уже применённый symupload и minidump-поток; нового способа символизации
 наших Cocoa-отчётов она не дала. Дополнительные live-поля/группировка остаются №11;
 Windows/Аврора — внешние проверки №3/6–8.
+
+## Повторная live-проверка после изменения lifecycle
+
+23 октября 2026, **19:46:35–19:48:00 МСК**, commit `a373234`.
+Использована та же сборка с SHA-256 выше и текущий DSN проекта `Test` из
+игнорируемого `.env.tracer`. Секреты не выведены; plugin token не читался и
+не передавался приложению. Условия запуска: release, без отладчика, отдельные
+процессы; штатные `smoke` и stdin `lifecycle` сценарии примера.
+
+| Серия | Метка probe_run | Выполненные действия |
+| --- | --- | --- |
+| Dart | `macos-check-aa68494c5c-dart` | Два запуска smoke, по handled/FlutterError/async; userId `desktop-test-user`, breadcrumb `desktop probe started` |
+| Native | `macos-check-aa68494c5c-native` | Два SIGABRT с ожидаемым exit -6, каждый с перезапуском и preserve=true; userId/account_marker `desktop-native-test-user`, breadcrumb с тем же текстом |
+
+Перед серией выполнен clear до init (`disabled`), после неё — clear
+(`restartRequired`, `macos_cleared_restart_required`). Во всех четырёх 20-секундных
+окнах приложение оставалось работоспособным, число оставшихся SDK envelopes — 0.
+HTTPS-ответы напрямую не наблюдались; пустая очередь не заменяет подтверждение
+карточек в Tracer. Локальный артефакт без секретов:
+`build/macos-acceptance/live-lifecycle-recheck.json`; ошибок драйвера нет.
+
+Пользователь прислал список отчётов в **19:47:59 МСК**: четыре группы, release
+1.0.0; SIGABRT — FATAL, handled/FlutterError/async — ERROR. Счётчики групп:
+native **2** (2 устройства), handled **3**, FlutterError **3**, async **2**
+(у Dart-групп по 1 устройству). В заголовках handled/FlutterError видны строки
+новой сборки: `_handled:45` / `_runScenario:86`, `_flutterError:55` / `_runScenario:87`.
+Таким образом, новые Dart-события видны в консоли и типы представлены ожидаемыми
+группами. Общие счётчики могут включать предыдущие запуски: точное сопоставление
+восьми новых событий и отсутствие дублей этим снимком не подтверждены.
+
+Пользователь затем подтвердил native-карточку: User ID
+`desktop-native-test-user`, `device.arch=arm64`, `os.name=macOS`,
+`os.version=27.0.1`, `handled=false`, `mechanism=signal`, release `1.0.0`.
+В логах — запись `apptracer` уровня info с текстом
+`2026-10-23T16:47:38.842417Z [info] | desktop-native-test-user`.
+Она точно соответствует identify перед вторым crash, поэтому сохранение и
+доставка native userId/breadcrumb после перезапуска подтверждены для новой сборки.
+
+В этой же карточке пользователь подтвердил custom keys:
+`probe_run=macos-check-aa68494c5c-native` и
+`account_marker=desktop-native-test-user`. Native Context содержит
+`app_start_time=2026-10-23T16:47:17Z`, `app_build=1`, `app_version=1.0.0` и
+`app_id=46441EDD-B9D5-3726-A010-E8F61FD93948`; последний сверён через
+`dwarfdump --uuid` с arm64 executable проверенной сборки. Доставка native полей
+подтверждена именно для повторной серии и новой сборки.
+
+Для точной проверки повторов остаётся сверить события этой серии по времени:
+Dart около 19:46:36/19:46:56, native около 19:47:17/19:47:40 МСК,
+а не общий счётчик группы.
+Надпись `Stacktrace not available` в списке сохраняется; сама по себе она не
+устанавливает наличие или отсутствие стека внутри карточки. Символизация не
+перезапускалась и остаётся ранее принятым ограничением.
