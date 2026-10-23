@@ -96,6 +96,10 @@ JSON manifest и диагностический журнал подготовк�
 успешен: загрузка и хеши, C++-сборка, 7 тестов. Это **не** сборка под Aurora,
 установка RPM или проверка crash-dumper.
 
+[Расширенный прогон 39996142549](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39996142549)
+также успешен: добавлена проверка exports и зависимостей реальных ELF всех трёх
+архитектур. Результат сохранён в артефакте `aurora-elf-inspection.json`.
+
 ## Что блокирует следующие этапы
 
 1. Нужны Linux build environment, Aurora SDK/PSDK, Flutter fork и embedder с
