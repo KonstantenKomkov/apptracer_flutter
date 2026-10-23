@@ -7,7 +7,7 @@
 **Release-сборка, локальная доставка и появление трёх Dart-событий в Tracer подтверждены.**
 Локальные сценарии ниже проверены собственным loopback-приёмником; отдельный
 результат live-проверки приведён далее. Полная приёмка №4/11 остаётся открытой:
-дополнительные поля карточек и native crash в Tracer ещё не подтверждены. Native purge/полный
+native crash в Tracer ещё не подтверждён. Native purge/полный
 lifecycle №8 также не завершены.
 
 ## Среда и состав
@@ -108,6 +108,27 @@ SDK envelopes того же executable:
 трёх проб подтверждены; исправление маппинга по этому наблюдению не требуется.
 Это не проверка обфусцированных AOT-стеков, native symbols или дополнительных полей.
 
+### Данные пользователя, ключ запуска и Context
+
+Пользователь прислал данные карточки FlutterError: `User ID: desktop-test-user`,
+`probe_run=macos-live-c28b9953f13e` и JSON Context. Это подтверждает точное
+соответствие карточки live-запуску, ранее сопоставленному по названиям проб.
+В `apptracer.dart_stack_trace` сохранены оба исходных кадра `_flutterError:52`
+и `_runScenario:82`, package URI и `<asynchronous suspension>`.
+Также сохранены `apptracer.fatal=false` и `apptracer.library=desktop acceptance`.
+В Context видны данные SDK о runtime Flutter/Dart AOT, locale, timezone,
+accessibility и flutter_context.
+
+В логах пользователь подтвердил строку:
+
+```text
+#0 1792759315747 | probe | desktop probe started | level=info | data={source=release-app}
+```
+
+Сообщение, категория `probe`, уровень `info` и структурированные данные
+`source=release-app` совпадают с отправленным breadcrumb. Его отображение в Tracer
+подтверждено; фильтрация, лимиты и порядок нескольких breadcrumbs этой пробой не проверены.
+
 ### Live native crash и перезапуск
 
 23 октября 2026 в `13:02:57 UTC` (`16:02:57 МСК`) тот же release executable
@@ -179,7 +200,8 @@ native crash, 80 регрессионных тестов основного па
 
 Disabled/deferred — ограниченное наблюдение текущего процесса; оно не доказывает
 очистку старых файлов, отсутствие всех фоновых запросов или поведение после logout.
-Не проверены: дополнительные поля карточек Tracer, grouping повторных событий, native ingest
+Не проверены: фильтрация/лимиты и порядок нескольких breadcrumbs в Tracer,
+grouping повторных событий, native ingest
 и символизация в Tracer, release iOS,
 runtime macOS x86_64, распространение подписанного приложения, native purge,
 offline/in-flight/account-switch и crash после stop. Эти проверки остаются в
