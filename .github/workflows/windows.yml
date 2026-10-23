@@ -81,8 +81,14 @@ jobs:
       - name: Test relocated release against loopback
         run: |
           foreach ($scenario in @('disabled', 'deferred', 'smoke')) {
-            python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario $scenario --output "build/windows-acceptance/$scenario.json"
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario $scenario --output "build/windows-acceptance/$scenario.json" 2>&1 | Tee-Object -FilePath probe.log
+            $result = $LASTEXITCODE
+            if ($result -ne 0) {
+              $detail = (Get-Content probe.log -Tail 30) -join "`n"
+              $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows $scenario probe failed::$detail"
+              exit $result
+            }
           }
       - uses: actions/upload-artifact@v4
         if: always()

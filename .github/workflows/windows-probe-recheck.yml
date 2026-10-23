@@ -1,0 +1,38 @@
+# Temporary diagnostic job reusing the exact 25fe9ca release bundle.
+name: Windows probe diagnosis
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-probe-recheck.yml'
+      - 'tool/check_*desktop.py'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 39992634203
+          name: windows-x64-preparation
+          path: build/previous
+      - name: Diagnose probes on the compiled release
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem build/previous -Recurse -Filter apptracer_desktop_example.exe | Select-Object -First 1
+          if (-not $app) { throw 'Previous release executable missing from artifact' }
+          foreach ($scenario in @('disabled', 'deferred', 'smoke')) {
+            python tool/check_windows_desktop.py --app $app.Directory.FullName --scenario $scenario --output "build/windows-acceptance/$scenario.json" 2>&1 | Tee-Object -FilePath probe.log
+            $result = $LASTEXITCODE
+            if ($result -ne 0) {
+              $detail = (Get-Content probe.log -Tail 40) -join "`n"
+              $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows $scenario probe failed::$detail"
+              exit $result
+            }
+          }
