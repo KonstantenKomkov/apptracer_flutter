@@ -135,6 +135,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--app', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--dump-dir', type=Path,
+                        help='Keep only this probe\'s validated minidumps for local symbol checks')
     parser.add_argument('--offline-restart', action='store_true',
                         help='Reject the initial upload with 503; stop the old handler before restart')
     args = parser.parse_args()
@@ -165,6 +167,13 @@ def main():
                 accepted = request_phase != 'offline-crash'
                 request = {'path': self.path, 'phase': request_phase,
                            'accepted': accepted, 'dump': inspect_dump(dump, name)}
+                if args.dump_dir:
+                    if request['dump']['runner']['codeview'] != identity:
+                        raise ValueError('refusing to retain a dump from another build')
+                    if run_id not in request['dump']['runner']['path']:
+                        raise ValueError('refusing to retain a dump from another run')
+                    args.dump_dir.mkdir(parents=True, exist_ok=True)
+                    (args.dump_dir / (request['dump']['sha256'] + '.dmp')).write_bytes(dump)
                 self.send_response(200 if accepted else 503)
                 self.send_header('Content-Length', '2')
                 self.end_headers()

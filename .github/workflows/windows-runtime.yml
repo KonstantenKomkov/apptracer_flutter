@@ -5,6 +5,10 @@ on:
     paths:
       - 'tool/check_windows_native.py'
       - 'tool/tests/test_windows_native.py'
+      - 'tool/check_windows_symbols.py'
+      - 'tool/tests/test_windows_symbols.py'
+      - 'tool/prepare_aurora_sdk.py'
+      - 'tool/aurora/sdk.lock.json'
       - '.github/workflows/windows-runtime.yml'
   workflow_run:
     workflows: ['Windows desktop preparation']
@@ -17,7 +21,7 @@ jobs:
   native:
     if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: windows-2022
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +73,7 @@ jobs:
           $app = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.exe | Select-Object -First 1
           if (-not $app) { throw 'Release executable missing from artifact' }
           foreach ($mode in @('online', 'offline-restart')) {
-            $probeArgs = @('--app', $app.Directory.FullName, '--output', "build/windows-native/$mode.json")
+            $probeArgs = @('--app', $app.Directory.FullName, '--output', "build/windows-native/$mode.json", '--dump-dir', 'build/windows-native/dumps')
             if ($mode -eq 'offline-restart') { $probeArgs += '--offline-restart' }
             python tool/check_windows_native.py @probeArgs 2>&1 | Tee-Object -FilePath native-probe.log -Append
             $result = $LASTEXITCODE
@@ -80,6 +84,33 @@ jobs:
               exit $result
             }
           }
+      - name: Prepare pinned local symbol tools
+        shell: pwsh
+        run: |
+          # The audited vendor archive also includes its Windows dump_syms.
+          # No Aurora runtime library is installed or executed on Windows.
+          python tool/prepare_aurora_sdk.py --destination build/symbol-tools/tracer
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $url = 'https://github.com/rust-minidump/rust-minidump/releases/download/v0.27.0/minidump-stackwalk-x86_64-pc-windows-msvc.zip'
+          $archive = 'build/symbol-tools/stackwalk.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne 'f6f2d7f1665843c4a270cd13fcd1458fed3b19013ea5dd909e12bc3599b959f4') { throw 'Stackwalk archive checksum mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath build/symbol-tools/stackwalk
+      - name: Match PDB and recover native runner source frames
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.exe | Select-Object -First 1
+          $pdb = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.pdb | Select-Object -First 1
+          $walker = Get-ChildItem build/symbol-tools/stackwalk -Recurse -Filter minidump-stackwalk.exe | Select-Object -First 1
+          if (-not $app -or -not $pdb -or -not $walker) { throw 'Missing executable, exact PDB or stackwalker' }
+          python tool/check_windows_symbols.py --app $app.Directory.FullName --pdb $pdb.FullName --dump-dir build/windows-native/dumps --dump-syms build/symbol-tools/tracer/symupload/dump_syms/windows/dump_syms.exe --stackwalk $walker.FullName --output build/windows-native/symbols 2>&1 | Tee-Object -FilePath symbols-probe.log
+          if ($LASTEXITCODE -ne 0) {
+            $detail = (Get-Content symbols-probe.log -Tail 30) -join "`n"
+            $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Windows symbols probe failed::$detail"
+            exit 1
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -87,4 +118,5 @@ jobs:
           path: |
             build/windows-native/
             native-probe.log
+            symbols-probe.log
           retention-days: 14
