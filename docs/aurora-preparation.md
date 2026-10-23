@@ -76,8 +76,10 @@ APPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15" \
 проверяются неполная библиотека, плохой архив, изменённый header, symlink/traversal,
 выбор архитектуры и точность установленной копии библиотеки.
 
-CI `aurora-preparation.yml` повторяет host-проверки на Ubuntu и сохраняет только
-JSON manifest. Это **не** сборка под Aurora, установка RPM или проверка crash-dumper.
+CI `aurora-preparation.yml` повторяет host-проверки на Ubuntu и сохраняет
+JSON manifest и диагностический журнал подготовки. [Прогон 39992802784](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39992802784)
+успешен: загрузка и хеши, C++-сборка, 7 тестов. Это **не** сборка под Aurora,
+установка RPM или проверка crash-dumper.
 
 ## Что блокирует следующие этапы
 
