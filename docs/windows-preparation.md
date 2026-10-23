@@ -17,10 +17,7 @@ Sentry Flutter закреплён на 9.30.1. Проверяемая архит
 Сначала выполнить [preflight](windows-preflight.md). Из корня репозитория:
 
 ```powershell
-Push-Location packages/apptracer_flutter_desktop/example
-flutter pub get
-flutter build windows --release
-Pop-Location
+./tool/build_windows_desktop.ps1
 python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario disabled --output build/windows-acceptance/disabled.json
 python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario deferred --output build/windows-acceptance/deferred.json
 python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario smoke --output build/windows-acceptance/smoke.json
@@ -32,6 +29,13 @@ python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/ex
 без SDK и сетевых запросов; smoke — отправить ровно три события с разными
 ошибками, userId, ключом запуска и breadcrumbs. GUI-приложение сообщает готовность
 через отдельный временный файл, поскольку консоль может отсутствовать.
+
+Build helper включает Git `core.longpaths` только для процесса сборки и задаёт
+короткий каталог native-зависимостей в TEMP, отдельный для этого checkout.
+Окружение восстанавливается после завершения; глобальная конфигурация Git
+не меняется. Каталог можно задать через `-NativeDepsDirectory C:\at-deps`.
+Первый Windows CI обнаружил превышение длины путей при checkout вложенных
+Sentry/Crashpad submodules; эти настройки устраняют причину этого сбоя.
 
 GitHub Actions `.github/workflows/windows.yml` выполняет эти же проверки,
 сохраняет JSON, runtime bundle, PDB и разрешённый lockfile. До получения результата

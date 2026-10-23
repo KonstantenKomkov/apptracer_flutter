@@ -25,6 +25,11 @@ jobs:
   windows:
     runs-on: windows-2022
     timeout-minutes: 35
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: 'true'
+      APPTRACER_NATIVE_DEPS_DIR: '${{ runner.temp }}/tracer-native'
     defaults:
       run:
         shell: pwsh

@@ -85,8 +85,7 @@ Use Flutter 3.47.4 and Visual Studio with Desktop development with C++.
 From this example directory:
 
 ```powershell
-flutter pub get
-flutter build windows --release
+../../../tool/build_windows_desktop.ps1
 $env:TRACER_WINDOWS_SENTRY_DSN = '<DSN of the Windows Tracer project>'
 .\build\windows\x64\runner\Release\apptracer_desktop_example.exe
 ```

@@ -55,6 +55,13 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# Native SDK submodules exceed legacy Windows path limits in a monorepo.
+# The build helper supplies a short, build-specific dependency directory.
+if(DEFINED ENV{APPTRACER_NATIVE_DEPS_DIR})
+  file(TO_CMAKE_PATH "$ENV{APPTRACER_NATIVE_DEPS_DIR}" native_deps_dir)
+  set(FETCHCONTENT_BASE_DIR "${native_deps_dir}" CACHE PATH
+    "Short path for native SDK dependencies" FORCE)
+endif()
 include(flutter/generated_plugins.cmake)
 
 

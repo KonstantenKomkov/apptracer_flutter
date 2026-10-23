@@ -153,9 +153,12 @@ class _DesktopProbeAppState extends State<DesktopProbeApp> {
                   Text('Backend: ${TracerPlatform.instance.backendName}'),
                   Text('Collection: ${Tracer.isEnabled ? "enabled" : "off"}'),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Inspect the collection result after each operation. '
-                    'Windows queue cleanup is not implemented yet.',
+                  Text(
+                    Platform.isWindows
+                        ? 'Windows queue cleanup is not implemented yet. '
+                            'Inspect the collection result after each operation.'
+                        : 'macOS: stop cancels delivery; clear deletes the adapter queue. '
+                            'Starting again requires a process restart.',
                   ),
                   const SizedBox(height: 24),
                   Wrap(
