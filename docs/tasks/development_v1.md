@@ -203,6 +203,11 @@ init/close failure, отмена старта, Unicode, AOT raw stack и сбр�
 [Команды и ограничения](../windows-preparation.md). Native crash/restart,
 live Tracer и №8 ещё не приняты; №3 остаётся открытой.
 
+Добавлена [автоматическая native-проверка](../windows-native-acceptance.md):
+намеренное падение отдельной копии release runner, multipart minidump, сверка
+CodeView с PE и повторный запуск. 7 Python-тестов приёмников/парсеров прошли;
+Windows runtime-результат ожидается, live-приёмка этим не подменяется.
+
 **Контекст.** В репозитории нет готового Windows-плагина и проверенного desktop runner.
 Поддержка нативных падений зависит от версии SDK, архитектуры и приёмника Tracer.
 
