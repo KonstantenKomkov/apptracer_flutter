@@ -39,7 +39,7 @@ void main() {
         unorderedEquals([
           'WidgetsFlutterBindingIntegration',
           'LoadReleaseIntegration',
-          'NativeSdkIntegration',
+          'MacOSLifecycleIntegration',
           'LoadNativeDebugImagesIntegration'
         ]));
     expect(sdkOptions.enableLogs, false);
@@ -50,9 +50,7 @@ void main() {
     final settings = init.arguments as Map<dynamic, dynamic>;
     expect(settings['dsn'], 'https://public@tracer.invalid/42');
     expect(settings['release'], '1.2.3');
-    expect(settings['enableAutoSessionTracking'], false);
-    expect(settings['enableAutoPerformanceTracing'], false);
-    expect(settings['enableAutoNativeBreadcrumbs'], false);
+    expect(settings['preservePreviousReports'], false);
     await client.setCustomKey(key: 'private-key', value: 'do-not-resurrect');
     await client.setUserId('account-1');
     client.addBreadcrumb(TracerBreadcrumb(message: 'secret'));
@@ -103,7 +101,9 @@ void main() {
     await client.recordError('after stop', StackTrace.current);
     expect(probe.events, hasLength(1));
     expect((await adapter.stopAndClearCollection()).state,
-        TracerCollectionState.unsupported);
+        TracerCollectionState.restartRequired);
+    expect(
+        probe.calls.where((c) => c.method == 'clearNativeSdk'), hasLength(1));
     expect(
         (await adapter.startCollection(
                 const TracerOptions(dsn: 'https://public@tracer.invalid/42')))

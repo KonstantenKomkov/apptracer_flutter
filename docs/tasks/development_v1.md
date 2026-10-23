@@ -16,7 +16,10 @@ Windows/Авроры. По уточнению пользователя лока�
 Пользователь подтвердил в Tracer три Dart/Flutter/async отчёта версии 1.0.0.
 Стек всех трёх карточек, userId, ключ запуска и Context FlutterError подтверждены
 пользователем; breadcrumb также подтверждён в логах. Native SIGABRT виден в Tracer.
-Native символизация, дополнительные поля native-карточки и lifecycle остаются открытыми.
+Дополнительные поля native-карточки и общая платформенная приёмка остаются открытыми.
+Локальная macOS-часть lifecycle №8 реализована и проверена:
+[stop/clear/offline/restart](../macos-lifecycle-acceptance.md). Для возобновления
+после native init нужен новый процесс; Windows/Аврора остаются открытыми.
 Уточнено, что первый проект с названием MacOS мог иметь тип Android. Пользователь
 создал C/C++-проект `Test`, заменил DSN/plugin token; символы загружены и новые
 Dart/native пробы выполнены. Пользователь подтвердил native SIGABRT в Test,
@@ -310,6 +313,15 @@ type/message/stack и удаления ключа; non-fatal dump требует
 <a id="task-8"></a>
 
 ## П. 8. Запуск, остановка и очистка сбора на новых платформах
+
+**Прогресс 23 октября 2026:** macOS arm64 — собственная native lifecycle integration
+с публичными Cocoa API, отмена сети перед close, сохранённый отзыв очереди и удаление
+собственного cache/async.log. Сохранение разрешённых отчётов, default purge, смена
+пользователя и crash после stop проверены в release-приложении: 55 шагов без ошибок;
+8 SDK-тестов, Foundation-проверки и четыре runtime-регрессии прошли.
+Повторный старт после native init требует нового процесса. Границы, включая
+исторические cache-каталоги, — в [протоколе](../macos-lifecycle-acceptance.md).
+№8 **не архивируется**: Windows/Аврора и их критерии не выполнены.
 
 **Входной риск из №1:** `tracer_disable_upload` в Aurora 0.1.15 не обещает
 shutdown/purge; `tracer_upload_async` использует detached thread без handle отмены.

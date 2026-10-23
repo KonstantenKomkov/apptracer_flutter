@@ -5,6 +5,8 @@ import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'lifecycle_probe.dart';
+
 const _native = MethodChannel('apptracer_desktop_example');
 
 Future<void> main() async {
@@ -21,7 +23,9 @@ Future<void> main() async {
       release: '1.0.0',
       dist: '1',
       environment: 'desktop-acceptance',
-      nativeInitialization: scenario == 'deferred'
+      preservePreviousReports:
+          Platform.environment['TRACER_PRESERVE_REPORTS'] != 'false',
+      nativeInitialization: scenario == 'deferred' || scenario == 'lifecycle'
           ? TracerNativeInitialization.deferred
           : TracerNativeInitialization.automatic,
       isCollectionEnabled: scenario != 'disabled',
@@ -68,7 +72,9 @@ Future<void> _runScenario(String scenario) async {
     'APPTRACER_READY enabled=${Tracer.isEnabled} '
     'backend=${TracerPlatform.instance.backendName} state=${state.state.name}',
   );
-  if (scenario == 'smoke') {
+  if (scenario == 'lifecycle') {
+    await runLifecycleProbe();
+  } else if (scenario == 'smoke') {
     await Tracer.setUserId('desktop-test-user');
     Tracer.addBreadcrumb(
       TracerBreadcrumb(
@@ -145,8 +151,8 @@ class _DesktopProbeAppState extends State<DesktopProbeApp> {
                   Text('Collection: ${Tracer.isEnabled ? "enabled" : "off"}'),
                   const SizedBox(height: 12),
                   const Text(
-                    'Experimental: native queue cleanup is not implemented. '
-                    'Stop requires a process restart; clear reports unsupported.',
+                    'macOS: stop cancels delivery; clear deletes the adapter queue. '
+                    'Starting again requires a process restart.',
                   ),
                   const SizedBox(height: 24),
                   Wrap(

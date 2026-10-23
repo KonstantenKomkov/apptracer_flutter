@@ -5,14 +5,16 @@ import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'event_mapping.dart';
+import 'macos_lifecycle.dart';
 import 'sdk_configuration.dart';
 
 /// Official Sentry SDK transport for desktop. Native acceptance is pending.
 ///
 /// Install explicitly before Tracer.initialize. Never initialize Sentry elsewhere
 /// in the same process. Tracer retains ownership of appRunner and error handlers.
-/// Native stop/purge is not yet accepted: after stop a restart is required, and
-/// stopAndClearCollection reports unsupported rather than claiming deletion.
+/// On macOS stop cancels native delivery and revokes replay; clear also deletes
+/// this adapter's queue. A new process is required before collection can resume.
+/// Native purge on Windows remains unsupported pending platform acceptance.
 class SentryDesktopTracer extends TracerPlatform {
   /// Creates an inert adapter; the SDK starts only after collection is allowed.
   SentryDesktopTracer();
@@ -53,7 +55,7 @@ class SentryDesktopTracer extends TracerPlatform {
   Future<void> initialize(TracerOptions options) async {
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
-      await stopCollection();
+      if (_attemptedNativeStart) await stopCollection();
       return;
     }
     await startCollection(options);
@@ -112,9 +114,12 @@ class SentryDesktopTracer extends TracerPlatform {
             // otherwise swallows with debug=false; this is not a fake transport.
             // ignore: invalid_use_of_internal_member
             options: sdk);
+        final integration = defaultTargetPlatform == TargetPlatform.macOS
+            ? 'apptracerMacOSLifecycle'
+            : 'nativeSdkIntegration';
         if (!Sentry.isEnabled ||
             sdk.failures != 0 ||
-            !sdk.sdk.integrations.contains('nativeSdkIntegration')) {
+            !sdk.sdk.integrations.contains(integration)) {
           throw StateError('native_start_not_confirmed');
         }
         if (generation != _generation) {
@@ -155,15 +160,31 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   Future<void> _close() async {
-    if (!identical(_owner, this) || _closeFailed) return;
+    if (_closeFailed || (_owner != null && !identical(_owner, this))) return;
+    if (_owner == null) {
+      if (defaultTargetPlatform == TargetPlatform.macOS) {
+        try {
+          _state = await MacOSLifecycle.invoke('closeNativeSdk');
+        } catch (_) {
+          _closeFailed = true;
+          _state = const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'sentry_close_failed');
+        }
+      }
+      return;
+    }
     final sdk = _sdkOptions;
     final failures = sdk?.failures;
     try {
+      // Cancel the native session BEFORE Dart/Cocoa close can flush its queue.
+      final nativeState = defaultTargetPlatform == TargetPlatform.macOS
+          ? await MacOSLifecycle.invoke('closeNativeSdk')
+          : null;
       await Sentry.close();
       if (sdk?.failures != failures) throw StateError('native_close_failed');
-      _state = const TracerCollectionResult(
-          TracerCollectionState.restartRequired,
-          reason: 'native_purge_unverified');
+      _state = nativeState ??
+          const TracerCollectionResult(TracerCollectionState.restartRequired,
+              reason: 'native_purge_unverified');
     } catch (_) {
       _closeFailed = true;
       _state = const TracerCollectionResult(TracerCollectionState.error,
@@ -181,12 +202,33 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   @override
-  Future<TracerCollectionResult> stopAndClearCollection() async {
-    await stopCollection();
-    if (_state.state == TracerCollectionState.error) return _state;
-    return _state = const TracerCollectionResult(
-        TracerCollectionState.unsupported,
-        reason: 'native_purge_not_implemented');
+  Future<TracerCollectionResult> stopAndClearCollection() {
+    _enabled = false;
+    ++_generation;
+    // Close and purge must occupy ONE queue slot. Otherwise a prestart clear
+    // can yield to a later start, then clear its freshly enabled native SDK.
+    return _serial(() async {
+      await _close();
+      if (_state.state == TracerCollectionState.error) return _state;
+      if (defaultTargetPlatform == TargetPlatform.macOS) {
+        if (_owner != null && !identical(_owner, this)) {
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'sentry_already_owned');
+        }
+        try {
+          return _state = await MacOSLifecycle.invoke('clearNativeSdk');
+        } catch (_) {
+          _closeFailed = true;
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'native_cleanup_failed');
+        }
+      }
+      return _state = const TracerCollectionResult(
+          TracerCollectionState.unsupported,
+          reason: 'native_purge_not_implemented');
+    });
   }
 
   @override

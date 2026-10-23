@@ -32,6 +32,10 @@ crash with confirmation, and start/stop/clear controls. Native crash terminates
 only this example; restart it to test upload. The release sandbox grants outbound
 network access and uses the SDK's normal sandbox container for persistent data.
 
+This acceptance example opts into `preservePreviousReports: true` to recover native
+crashes after restart. Set `TRACER_PRESERVE_REPORTS=false` to discard old reports.
+The library API default remains false. Stop revokes replay regardless of this flag.
+
 ## Local SDK transport acceptance
 
 From the repository root, after building the app:
@@ -54,7 +58,21 @@ items only, the expected run key, user and breadcrumb. Disabled/deferred scenari
 require a ready app and no received requests during the observation window.
 This is a bounded local transport test, not proof of all native lifecycle cases.
 
-**This receiver is not Tracer.** Console delivery/grouping, native symbolication,
-Windows runtime and complete consent/offline/restart acceptance remain separate
-backlog checks. Native purge is not implemented yet: stop-and-clear reports
-unsupported, and a fresh process may upload previously cached reports.
+For the macOS lifecycle checks:
+
+```sh
+python3 tool/check_macos_lifecycle.py \
+  --app packages/apptracer_flutter_desktop/example/build/macos/Build/Products/Release/apptracer_desktop_example.app \
+  --output build/macos-acceptance/lifecycle.json
+```
+
+The opt-in `lifecycle` scenario reads commands from inherited stdin; it opens no
+control listener. The driver checks offline/hold responses, stop/clear, persisted
+files, account change, normal and crash restarts, and default report disposal.
+Run acceptance scripts sequentially: this example has one shared sandbox/cache.
+They deliberately create synthetic crash reports in the example process.
+
+**This receiver is not Tracer.** Console delivery/grouping and Windows runtime
+remain separate checks. Native macOS server symbolication is unsupported in the
+tested integration. Local macOS stop/clear results and their limits are documented
+in [macOS lifecycle acceptance](../../../docs/macos-lifecycle-acceptance.md).

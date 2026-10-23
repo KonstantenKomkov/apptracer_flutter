@@ -3,10 +3,13 @@
 // ignore_for_file: implementation_imports, experimental_member_use
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sentry_flutter/src/integrations/native_load_debug_images_integration.dart';
 import 'package:sentry_flutter/src/integrations/native_sdk_integration.dart';
 import 'package:sentry_flutter/src/integrations/widgets_flutter_binding_integration.dart';
+
+import 'macos_lifecycle.dart';
 
 /// Configures the pinned SDK without installing a second Dart error owner.
 void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
@@ -47,6 +50,13 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
         integration is! LoadNativeDebugImagesIntegration) {
       sdk.removeIntegration(integration);
     }
+    if (defaultTargetPlatform == TargetPlatform.macOS &&
+        integration is NativeSdkIntegration) {
+      sdk.removeIntegration(integration);
+    }
+  }
+  if (defaultTargetPlatform == TargetPlatform.macOS) {
+    sdk.addIntegration(MacOSLifecycleIntegration(tracer));
   }
 }
 

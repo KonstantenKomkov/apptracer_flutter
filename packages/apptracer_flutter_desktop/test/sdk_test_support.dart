@@ -25,6 +25,21 @@ class NativeSdkProbe {
       if (onCall != null) return onCall!(call);
       return null;
     });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('apptracer_flutter_desktop/lifecycle'),
+            (call) async {
+      calls.add(call);
+      if (onCall != null) {
+        final result = await onCall!(call);
+        if (result != null) return result;
+      }
+      return <String, Object?>{
+        'state': call.method == 'initNativeSdk' ? 'enabled' : 'restartRequired',
+        if (call.method == 'clearNativeSdk')
+          'reason': 'macos_cleared_restart_required',
+      };
+    });
   }
 
   List<Map<String, dynamic>> get events =>

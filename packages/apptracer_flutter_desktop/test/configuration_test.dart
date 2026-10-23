@@ -31,7 +31,8 @@ void main() {
         nativeInitialization: TracerNativeInitialization.deferred));
     await adapter.startCollection(const TracerOptions(
         dsn: 'https://public@tracer.invalid/42', isCollectionEnabled: false));
-    expect(probe.calls, isEmpty);
+    expect(probe.calls.map((c) => c.method), ['closeNativeSdk']);
+    probe.calls.clear();
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     expect(
         (await adapter.startCollection(
