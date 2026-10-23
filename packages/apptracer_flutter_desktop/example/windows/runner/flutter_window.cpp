@@ -1,10 +1,21 @@
 #include "flutter_window.h"
 
+#include <cstdint>
 #include <optional>
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+// Keep the faulting PC in our own source rather than KERNELBASE!RaiseException.
+// The volatile address prevents constant folding; noinline preserves a named
+// frame in optimized builds. Called only by the opt-in acceptance probe.
+__declspec(noinline) void ApptracerNativeCrashProbe() {
+  volatile std::uintptr_t address = 0;
+  *reinterpret_cast<volatile int*>(address) = 1;
+}
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -33,8 +44,8 @@ bool FlutterWindow::OnCreate() {
       &flutter::StandardMethodCodec::GetInstance());
   crash_channel_->SetMethodCallHandler([](const auto& call, auto result) {
     if (call.method_name() == "nativeCrash") {
-      // An unhandled SEH exception reaches Crashpad without the CRT abort UI.
-      ::RaiseException(EXCEPTION_ACCESS_VIOLATION, EXCEPTION_NONCONTINUABLE, 0, nullptr);
+      // An actual access violation with a source location in this exact PDB.
+      ApptracerNativeCrashProbe();
       result->Error("crash_returned", "Native crash did not terminate the process");
     } else {
       result->NotImplemented();

@@ -216,7 +216,7 @@ Windows и live-приёмка обфусцированного Dart AOT в Trac
 общая задача остаётся открытой.
 
 Windows native: добавлены сверка PE/PDB/minidump GUID/age, локальное дерево
-Breakpad и проверка кадра `FlutterWindow` через `minidump-stackwalk` в CI.
+Breakpad и проверка верхнего кадра `ApptracerNativeCrashProbe` через `minidump-stackwalk` в CI.
 14 host-тестов проходят; целевой результат и границы — в
 [протоколе](../windows-symbols-acceptance.md). До успешного целевого прогона
 эта часть не архивируется; загрузка в Tracer и Dart AOT остаются открытыми.

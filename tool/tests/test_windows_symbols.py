@@ -43,13 +43,17 @@ class WindowsSymbolsTests(unittest.TestCase):
                 require_identity(IDENTITY, identity)
 
     def test_source_frame_must_belong_to_crashing_thread_and_runner(self):
-        frame = {'module': 'runner.exe', 'function': 'FlutterWindow::OnCreate',
-                 'file': 'C:\\src\\flutter_window.cpp', 'line': 44, 'trust': 'scan'}
+        frame = {'module': 'runner.exe', 'function': 'ApptracerNativeCrashProbe',
+                 'file': 'C:\\src\\flutter_window.cpp', 'line': 16, 'trust': 'context'}
         report = {'crash_info': {'crashing_thread': 0},
                   'threads': [{'frames': [frame]}, {'frames': []}]}
         self.assertEqual(runner_frames(report, 'runner.exe'), [frame])
         with self.assertRaises(ValueError):
             runner_frames(report, 'other.exe')
+        frame['trust'] = 'scan'
+        with self.assertRaises(ValueError):
+            runner_frames(report, 'runner.exe')
+        frame['trust'] = 'context'
         report['crash_info']['crashing_thread'] = 1
         with self.assertRaises(ValueError):
             runner_frames(report, 'runner.exe')

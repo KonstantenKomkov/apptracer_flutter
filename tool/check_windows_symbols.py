@@ -66,13 +66,14 @@ def runner_frames(report, executable_name):
     threads = report.get('threads') or []
     if not isinstance(thread, int) or not 0 <= thread < len(threads):
         raise ValueError('stackwalk report has no crashing thread')
-    frames = [frame for frame in threads[thread].get('frames', [])
+    frames = [frame for frame in threads[thread].get('frames', [])[:1]
               if frame.get('module') == executable_name
-              and 'FlutterWindow' in (frame.get('function') or '')
+              and 'ApptracerNativeCrashProbe' in (frame.get('function') or '')
+              and frame.get('trust') == 'context'
               and (frame.get('file') or '').replace('\\', '/').endswith('/flutter_window.cpp')
               and isinstance(frame.get('line'), int) and frame['line'] > 0]
     if not frames:
-        raise ValueError('crashing thread has no symbolized FlutterWindow source frame')
+        raise ValueError('crash context has no symbolized ApptracerNativeCrashProbe source frame')
     return frames
 
 
