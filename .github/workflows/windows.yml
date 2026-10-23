@@ -8,6 +8,7 @@ on:
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
+      - 'tool/build_windows_desktop.ps1'
       - '.github/workflows/windows.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
+      - 'tool/build_windows_desktop.ps1'
       - '.github/workflows/windows.yml'
   workflow_dispatch:
 
@@ -29,7 +31,6 @@ jobs:
       GIT_CONFIG_COUNT: '1'
       GIT_CONFIG_KEY_0: core.longpaths
       GIT_CONFIG_VALUE_0: 'true'
-      APPTRACER_NATIVE_DEPS_DIR: '${{ runner.temp }}/tracer-native'
     defaults:
       run:
         shell: pwsh
@@ -41,7 +42,12 @@ jobs:
           channel: stable
           cache: true
       - name: Record toolchain
-        run: flutter doctor -v
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD/tool/build_windows_desktop.ps1", [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -ne 0) { throw ($parseErrors -join "`n") }
+          flutter doctor -v
       - name: Resolve and analyze adapter
         working-directory: packages/apptracer_flutter_desktop
         run: |
@@ -53,6 +59,8 @@ jobs:
           exit $LASTEXITCODE
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
+        env:
+          APPTRACER_NATIVE_DEPS_DIR: '${{ runner.temp }}/tracer-native'
         run: |
           function Invoke-Flutter {
             & flutter @args 2>&1 | Tee-Object -FilePath windows-build.log
