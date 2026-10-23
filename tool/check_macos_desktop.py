@@ -19,6 +19,44 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
+def read_http_body(stream, headers):
+    """Accept both Cocoa's fixed-size and Dart HttpClient's chunked uploads."""
+    limit = 32 * 1024 * 1024
+    encoding = headers.get('Transfer-Encoding', '').lower()
+    if encoding:
+        if encoding != 'chunked':
+            raise ValueError('unsupported transfer encoding')
+        chunks = []
+        total = 0
+        while True:
+            line = stream.readline(8193)
+            if len(line) > 8192 or not line.endswith(b'\r\n'):
+                raise ValueError('invalid chunk header')
+            size = int(line.split(b';', 1)[0].strip(), 16)
+            if size < 0 or total + size > limit:
+                raise ValueError('invalid chunk size')
+            if size == 0:
+                for _ in range(100):
+                    trailer = stream.readline(8193)
+                    if trailer == b'\r\n':
+                        return b''.join(chunks)
+                    if len(trailer) > 8192 or not trailer.endswith(b'\r\n'):
+                        raise ValueError('invalid chunk trailer')
+                raise ValueError('too many chunk trailers')
+            block = stream.read(size)
+            if len(block) != size or stream.read(2) != b'\r\n':
+                raise ValueError('truncated HTTP chunk')
+            chunks.append(block)
+            total += size
+    length = int(headers['Content-Length'])
+    if length < 0 or length > limit:
+        raise ValueError('invalid content length')
+    body = stream.read(length)
+    if len(body) != length:
+        raise ValueError('truncated HTTP body')
+    return body
+
+
 def envelope_events(data):
     """Read length-delimited Sentry items; attachments can contain newlines."""
     _, _, data = data.partition(b'\n')
@@ -72,7 +110,7 @@ def main():
 
         def do_POST(self):
             try:
-                payload = self.rfile.read(int(self.headers['Content-Length']))
+                payload = read_http_body(self.rfile, self.headers)
                 if self.headers.get('Content-Encoding') == 'gzip':
                     payload = gzip.decompress(payload)
                 items = list(envelope_events(payload))
