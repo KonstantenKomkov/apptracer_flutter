@@ -36,6 +36,11 @@ function(apptracer_import_aurora_sdk SDK_ROOT)
     IMPORTED_LOCATION "${library}"
     INTERFACE_INCLUDE_DIRECTORIES "${sdk_root}/include"
     INTERFACE_COMPILE_DEFINITIONS "AURORA")
+  # A Flutter bridge can use dlopen so a missing SDK is a diagnostic rather
+  # than a loader failure before main(). This target adds no DT_NEEDED entry.
+  add_library(apptracer_aurora_headers INTERFACE)
+  target_include_directories(apptracer_aurora_headers INTERFACE "${sdk_root}/include")
+  target_compile_definitions(apptracer_aurora_headers INTERFACE AURORA)
 endfunction()
 
 function(apptracer_install_aurora_sdk DESTINATION)

@@ -36,7 +36,7 @@ python3 tool/prepare_aurora_sdk.py --verify-only
 include("/path/to/repository/tool/aurora/TracerNative.cmake")
 apptracer_import_aurora_sdk("$ENV{APPTRACER_AURORA_SDK_ROOT}")
 # После создания своего нативного target:
-target_link_libraries(my_plugin PRIVATE apptracer_aurora_sdk)
+target_link_libraries(my_plugin PRIVATE apptracer_aurora_headers ${CMAKE_DL_LIBS})
 apptracer_install_aurora_sdk("share/my_application/lib")
 ```
 
@@ -45,6 +45,9 @@ header и выбранной `.so`, включает `AURORA` и путь includ
 `aarch64` задано явно; доступны aarch64/x86_64, неизвестные ABI отклоняются.
 armv7hl из поставки проверяется как файл, но не включается в начальную матрицу.
 Названия runner, каталог RPM и loader path определяются реальным Aurora-проектом.
+Для Flutter-моста выделен headers-only target: SDK следует загружать через
+`dlopen` с обработкой ошибки, чтобы отсутствие `.so` не завершало приложение
+до `main()`. Прямой импорт `apptracer_aurora_sdk` доступен для диагностики линковки.
 Этот модуль не является готовым Flutter runner или спецификацией RPM.
 
 На macOS/Linux можно скомпилировать проверку сигнатур API и диагностическую утилиту:
