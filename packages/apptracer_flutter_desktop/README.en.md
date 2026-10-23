@@ -18,8 +18,15 @@ error integrations are disabled. Filtered keys/breadcrumbs cannot be restored by
 SDK scope merging. Original Dart stacks are retained under
 `contexts.apptracer.dart_stack_trace`; issueKey maps to fingerprint.
 
-Native crashes do not run Dart beforeSend. Native data filtering, live delivery,
-symbolication and collection revocation require separate acceptance.
+Native crashes do not run Dart beforeSend. Native data filtering and collection
+revocation require separate acceptance.
+
+**Server-side native macOS symbolication is unsupported in the tested integration**
+(sentry_flutter 9.30.1 / Cocoa 8.58.4, Tracer DESKTOP project). SIGABRT delivery is
+confirmed, but matching desktop symbols do not restore source files/lines; the
+Apple dSYM endpoint rejects DESKTOP projects. Local dSYM symbolication works.
+Ordinary symbolic Dart stacks are sent separately. See the
+[acceptance record](../../docs/macos-symbols-acceptance.md).
 
 Disabled/deferred bootstrap does not start the SDK. Stop gates Dart immediately,
 then calls SDK close; close failure is reported as error. Restart after a native
