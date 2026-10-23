@@ -403,8 +403,8 @@ ZIP с исполняемыми файлами и dSYM, SHA-256/UUID, верси
 проверок; живые ключи не нужны. Те же проверки локально прошли на macOS 27
 arm64. [Hosted run 39994869570](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994869570)
 успешен, включая runtime и загрузку артефакта. Анализ/регрессии семи общих и
-существующих платформенных пакетов прошли локально (174 passed, один browser-only
-тест пропущен на VM). [Подробный протокол](../macos-ci-consumer-acceptance.md).
+существующих платформенных пакетов прошли локально (175 passed, включая отдельный
+запуск browser-only fixture в Chrome). [Подробный протокол](../macos-ci-consumer-acceptance.md).
 Это не новая live-приёмка Tracer и не подтверждение Intel. Общая задача открыта.
 
 **Контекст.** Пример использует ручной HTTP fallback; существующие команды и CI

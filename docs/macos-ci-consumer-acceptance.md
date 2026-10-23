@@ -27,7 +27,7 @@ packages and legacy transport with Flutter 3.47.4:
 
 | Package | Passed tests |
 |---|---:|
-| platform_interface | 43 (existing browser-only fixture skipped on VM) |
+| platform_interface | 43 on VM + 1 browser-only fixture in Chrome |
 | http | 18 |
 | sentry (legacy) | 23 |
 | android | 2 |
