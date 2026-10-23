@@ -6,6 +6,14 @@
 
 Обновлено: 27.08.2026.
 
+**Дополнение desktop от 23.10.2026:** для optional desktop-пакета есть отдельная
+[проверка macOS Dart AOT](macos-dart-symbols-acceptance.md): реальные обфусцированные
+стеки восстанавливаются через `atos` с проверкой UUID точного `.symbols` и
+`App.framework`. `flutter symbolize` 3.47.4 на проверенных macOS-стеках завершился
+ошибкой; команды ниже описывают ранее проверенный Android-путь и не заменяют
+этот desktop-протокол. Windows native PDB проверяется
+[отдельно](windows-symbols-acceptance.md); live-символизация Tracer этим не подтверждается.
+
 ## Проблема
 
 Соберите со `--split-debug-info` — с `--obfuscate` или без него — и стектрейсы
