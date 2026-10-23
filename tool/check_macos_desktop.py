@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the release example outside the checkout against a loopback receiver.
+"""Run the macOS/Windows release example against a loopback receiver.
 
 This proves local SDK delivery only, not Tracer ingestion or symbolication.
 No real credentials are read. Only this script's example process is terminated.
@@ -45,9 +45,19 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
     app = args.app.resolve()
-    executable_name = subprocess.check_output(
-        ['/usr/libexec/PlistBuddy', '-c', 'Print :CFBundleExecutable', str(app / 'Contents/Info.plist')],
-        text=True).strip()
+    windows = os.name == 'nt'
+    if windows and args.scenario == 'native-crash':
+        parser.error('Windows minidump delivery requires the separate native acceptance protocol')
+    if windows:
+        executable_name = 'apptracer_desktop_example.exe'
+        for name in [executable_name, 'sentry.dll', 'flutter_windows.dll',
+                     'crashpad_handler.exe', 'crashpad_wer.dll', 'data/app.so']:
+            if not (app / name).is_file():
+                parser.error('incomplete Windows bundle: ' + name)
+    else:
+        executable_name = subprocess.check_output(
+            ['/usr/libexec/PlistBuddy', '-c', 'Print :CFBundleExecutable', str(app / 'Contents/Info.plist')],
+            text=True).strip()
     incoming = queue.Queue()
     messages = queue.Queue()
     run_id = str(uuid.uuid4())
@@ -79,8 +89,9 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     env = os.environ.copy()
-    env.update(TRACER_MACOS_SENTRY_DSN=f'http://local-probe@127.0.0.1:{server.server_port}/42',
-               TRACER_RUN_ID=run_id)
+    dsn_key = 'TRACER_WINDOWS_SENTRY_DSN' if windows else 'TRACER_MACOS_SENTRY_DSN'
+    env[dsn_key] = f'http://local-probe@127.0.0.1:{server.server_port}/42'
+    env['TRACER_RUN_ID'] = run_id
     process = None
     ready = False
     native_crashed = False
@@ -101,13 +112,21 @@ def main():
         return child
 
     try:
-        with tempfile.TemporaryDirectory(prefix='apptracer-macos-') as directory:
-            relocated = Path(directory) / 'Desktop probe Кириллица.app'
+        with tempfile.TemporaryDirectory(prefix='apptracer-desktop-') as directory:
+            relocated = Path(directory) / ('Desktop probe Кириллица' + ('' if windows else '.app'))
             shutil.copytree(app, relocated, symlinks=True)
-            executable = relocated / 'Contents/MacOS' / executable_name
+            executable = (relocated if windows else relocated / 'Contents/MacOS') / executable_name
+            ready_file = Path(directory) / 'ready.txt'
+            if windows:
+                env['TRACER_PROBE_READY_FILE'] = str(ready_file)
             process = launch(executable, args.scenario)
             try:
                 while time.monotonic() < deadline:
+                    if windows and not ready and ready_file.is_file():
+                        # Readiness is written after bootstrap; tolerate a partial write.
+                        status = ready_file.read_text(encoding='utf-8')
+                        if ' state=' in status:
+                            messages.put(status)
                     while not messages.empty():
                         message = messages.get_nowait()
                         expected_enabled = args.scenario not in ('disabled', 'deferred')
@@ -146,7 +165,13 @@ def main():
                     failures.append('timed out waiting for application/SDK')
             finally:
                 if process.poll() is None:
-                    process.terminate()
+                    if windows:
+                        # Target only this probe's process tree, including Crashpad.
+                        subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                       check=False)
+                    else:
+                        process.terminate()
                     try:
                         process.wait(timeout=5)
                     except subprocess.TimeoutExpired:

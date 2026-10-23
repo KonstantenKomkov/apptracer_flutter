@@ -1,9 +1,9 @@
-# macOS desktop acceptance example
+# Windows/macOS desktop acceptance example
 
 Separate dependency graph for `apptracer_flutter` + the optional official Sentry
-SDK adapter. The existing Android/iOS/Web example is unchanged. macOS registration
+SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS registration
 selects `SentryDesktopTracer` automatically; registration itself does not start SDK
-collection. Windows runner will be added and tested separately.
+collection. Windows native build/runtime acceptance remains pending.
 
 ## Build and launch
 
@@ -34,7 +34,9 @@ network access and uses the SDK's normal sandbox container for persistent data.
 
 This acceptance example opts into `preservePreviousReports: true` to recover native
 crashes after restart. Set `TRACER_PRESERVE_REPORTS=false` to discard old reports.
-The library API default remains false. Stop revokes replay regardless of this flag.
+The library API default remains false. On macOS, stop revokes replay regardless of
+this flag. Windows revocation and cleanup are not implemented; starting with this
+flag set to false returns `unsupported` before SDK initialization.
 
 ## Local SDK transport acceptance
 
@@ -76,3 +78,26 @@ They deliberately create synthetic crash reports in the example process.
 remain separate checks. Native macOS server symbolication is unsupported in the
 tested integration. Local macOS stop/clear results and their limits are documented
 in [macOS lifecycle acceptance](../../../docs/macos-lifecycle-acceptance.md).
+
+## Windows x64
+
+Use Flutter 3.47.4 and Visual Studio with Desktop development with C++.
+From this example directory:
+
+```powershell
+flutter pub get
+flutter build windows --release
+$env:TRACER_WINDOWS_SENTRY_DSN = '<DSN of the Windows Tracer project>'
+.\build\windows\x64\runner\Release\apptracer_desktop_example.exe
+```
+
+Copy the entire `Release` directory when moving to another machine, including
+Sentry, Flutter, Crashpad and data files. Native runner PDBs from the same build
+are retained under `build/symbols/native`. This does not upload them or establish
+Tracer symbolication. No plugin token is compiled into the application.
+
+Run `tool/check_windows_desktop.py` from the repository root, with `--app` pointing
+to that Release directory and `--scenario disabled`, `deferred` or `smoke`.
+It uses a dummy loopback DSN and relocates the complete bundle to a temporary
+path with spaces/Cyrillic. It closes only its own process tree.
+[Commands and remaining acceptance](../../../docs/windows-preparation.md).

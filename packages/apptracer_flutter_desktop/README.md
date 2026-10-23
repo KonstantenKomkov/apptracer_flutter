@@ -4,7 +4,7 @@
 Dart-код предназначен для Windows/macOS. Жизненный цикл macOS проверен локально
 на arm64; Windows и полная платформенная приёмка не завершены. Пакет не опубликован.
 
-Подключить этот пакет по path/git вместе с `apptracer_flutter`. На macOS адаптер
+Подключить этот пакет по path/git вместе с `apptracer_flutter`. На Windows/macOS адаптер
 регистрируется автоматически; при явном выборе backend до bootstrap:
 
 ```dart
@@ -80,7 +80,11 @@ SIGABRT доставляется, но файлы/строки не восста
   (в sandbox — внутри контейнера). Старые каталоги предыдущего адаптера и отдельного
   Sentry SDK не импортируются и автоматически не удаляются; миграционную очистку
   должен планировать владелец приложения. Системные crash-логи macOS не удаляются.
-- На Windows native purge пока возвращает `unsupported`; macOS-результаты нельзя
+- На Windows старт с `preservePreviousReports: false` возвращает `unsupported`
+  (`windows_previous_report_cleanup_unavailable`) до запуска SDK: удаление
+  прежних отчётов пока не реализовано. Экспериментальный пример явно сохраняет
+  отчёты для проверки доставки. Native purge возвращает `unsupported`;
+  stop/отзыв сети ещё не приняты. macOS-результаты нельзя
   переносить на Windows. Ни одна платформа пока не объявлена полностью поддержанной.
 
 Нативный мост использует публичные API Cocoa 8.58.4 и CocoaPods, сохраняя официальный
@@ -100,7 +104,8 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 `SentryProtocolTracer()` на `SentryDesktopTracer()`. Старый manual envelope transport
 остаётся неизменным; одновременно запускать его и новый SDK нельзя.
 
-Пример с macOS runner и локальной проверкой доставки: [example](example/README.md).
+Пример с Windows/macOS runners: [example](example/README.md).
+Подготовка и открытые проверки Windows: [протокол](../../docs/windows-preparation.md).
 
 ## Проверки
 

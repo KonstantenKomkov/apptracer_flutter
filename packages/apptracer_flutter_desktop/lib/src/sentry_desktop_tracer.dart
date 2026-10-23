@@ -19,7 +19,7 @@ class SentryDesktopTracer extends TracerPlatform {
   /// Creates an inert adapter; the SDK starts only after collection is allowed.
   SentryDesktopTracer();
 
-  /// Registers the optional macOS plugin without starting the native SDK.
+  /// Registers the optional Windows/macOS plugin without starting the native SDK.
   static void registerWith() {
     TracerPlatform.instance = SentryDesktopTracer();
   }
@@ -86,6 +86,15 @@ class SentryDesktopTracer extends TracerPlatform {
         return _state = const TracerCollectionResult(
             TracerCollectionState.disabled,
             reason: 'invalid_sentry_dsn');
+      }
+      // The default policy requires deleting old native reports BEFORE init.
+      // Until Windows owns that storage, refuse rather than silently replaying
+      // another account's data. The acceptance example explicitly retains it.
+      if (defaultTargetPlatform == TargetPlatform.windows &&
+          !options.preservePreviousReports) {
+        return _state = const TracerCollectionResult(
+            TracerCollectionState.unsupported,
+            reason: 'windows_previous_report_cleanup_unavailable');
       }
       if (_owner != null || Sentry.isEnabled) {
         return _state = const TracerCollectionResult(

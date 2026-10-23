@@ -20,6 +20,8 @@ flutter:
   plugin:
     implements: apptracer_flutter
     platforms:
+      windows:
+        dartPluginClass: SentryDesktopTracer
       macos:
         dartPluginClass: SentryDesktopTracer
         pluginClass: ApptracerDesktopPlugin

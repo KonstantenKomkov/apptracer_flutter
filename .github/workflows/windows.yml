@@ -1,0 +1,75 @@
+name: Windows desktop preparation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_*desktop.py'
+      - '.github/workflows/windows.yml'
+  pull_request:
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_*desktop.py'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Record toolchain
+        run: flutter doctor -v
+      - name: Resolve and analyze adapter
+        working-directory: packages/apptracer_flutter_desktop
+        run: |
+          flutter pub get
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter analyze --fatal-infos
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter test test/windows_configuration_test.dart
+          exit $LASTEXITCODE
+      - name: Build release example
+        working-directory: packages/apptracer_flutter_desktop/example
+        run: |
+          flutter pub get
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter analyze --fatal-infos
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter build windows --release
+          exit $LASTEXITCODE
+      - name: Test relocated release against loopback
+        run: |
+          foreach ($scenario in @('disabled', 'deferred', 'smoke')) {
+            python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario $scenario --output "build/windows-acceptance/$scenario.json"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-x64-preparation
+          path: |
+            build/windows-acceptance/
+            packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release/
+            packages/apptracer_flutter_desktop/example/build/symbols/native/
+            packages/apptracer_flutter_desktop/example/pubspec.lock
+          retention-days: 14

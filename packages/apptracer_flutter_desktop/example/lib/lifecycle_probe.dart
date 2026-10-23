@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:flutter/services.dart';
 
+import 'probe_configuration.dart';
+
 /// Opt-in, process-local acceptance driver. Uses only inherited stdin/stdout;
 /// there is no listener, token access or alternative telemetry transport.
 Future<void> runLifecycleProbe() async {
@@ -14,7 +16,7 @@ Future<void> runLifecycleProbe() async {
       switch (command['action']) {
         case 'start':
           await Tracer.startCollection(TracerOptions(
-            dsn: Platform.environment['TRACER_MACOS_SENTRY_DSN'],
+            dsn: probeDsn,
             release: '1.0.0',
             dist: '1',
             preservePreviousReports: command['preserve'] == true,

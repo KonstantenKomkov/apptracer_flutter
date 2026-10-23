@@ -62,3 +62,13 @@ To migrate from the git-only manual protocol package, replace
 Run `flutter pub get`, `flutter analyze`, `flutter test` on macOS. Tests exercise
 the official SDK with a mocked native channel, not live Tracer ingestion. See the
 [Russian README](README.md) for the setup example and full limitations.
+
+## Windows preparation
+
+The optional package now registers on Windows. The x64 example includes an
+explicit native crash probe, runtime DSN selection and a loopback acceptance
+driver. See [Windows preparation](../../docs/windows-preparation.md). Native
+build/runtime acceptance is still pending. Default startup (previous report
+preservation disabled) returns `unsupported` before SDK initialization, because
+Windows queue cleanup is not implemented. The experimental example explicitly
+preserves reports. Stop/clear and native replay revocation remain unverified.

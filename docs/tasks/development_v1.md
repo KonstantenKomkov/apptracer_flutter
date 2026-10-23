@@ -191,6 +191,14 @@ init/close failure, отмена старта, Unicode, AOT raw stack и сбр�
 
 ## П. 3. Подключить Windows
 
+**Прогресс 23 октября 2026:** подготовлены Windows x64 runner, автоматическая
+регистрация optional desktop-пакета, выбор Windows DSN, native crash probe,
+сохранение PDB и loopback-проверки/отдельный CI. Локально прошли analyze,
+10 тестов адаптера и тест примера. Старт с default policy удаления прежних
+отчётов явно отклоняется до SDK init, поскольку Windows purge ещё не реализован.
+[Команды и ограничения](../windows-preparation.md). Нативная Windows-сборка,
+запуск, live Tracer и №8 ещё не приняты; №3 остаётся открытой.
+
 **Контекст.** В репозитории нет готового Windows-плагина и проверенного desktop runner.
 Поддержка нативных падений зависит от версии SDK, архитектуры и приёмника Tracer.
 

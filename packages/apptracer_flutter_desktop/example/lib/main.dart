@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'lifecycle_probe.dart';
+import 'probe_configuration.dart';
 
 const _native = MethodChannel('apptracer_desktop_example');
 
@@ -13,8 +14,7 @@ Future<void> main() async {
   // Native/Dart plugin registration selects the adapter. Merely loading the
   // plugin does not initialize Sentry. Runtime env is useful when launching .app
   // outside an IDE; plugin tokens are never read by this application.
-  final dsn = Platform.environment['TRACER_MACOS_SENTRY_DSN'] ??
-      const String.fromEnvironment('TRACER_MACOS_SENTRY_DSN');
+  final dsn = probeDsn;
   final scenario = Platform.environment['TRACER_SCENARIO'] ?? '';
   final runId = Platform.environment['TRACER_RUN_ID'] ?? 'manual';
   await Tracer.initialize(
@@ -68,10 +68,13 @@ void _asyncError() {
 
 Future<void> _runScenario(String scenario) async {
   final state = await Tracer.getCollectionState();
-  debugPrint(
-    'APPTRACER_READY enabled=${Tracer.isEnabled} '
-    'backend=${TracerPlatform.instance.backendName} state=${state.state.name}',
-  );
+  final ready = 'APPTRACER_READY enabled=${Tracer.isEnabled} '
+      'backend=${TracerPlatform.instance.backendName} state=${state.state.name}';
+  debugPrint(ready);
+  // A Windows GUI process need not have a console or inherited stdout.
+  // Only opt-in probes write this status file; it contains no credentials.
+  final readyPath = Platform.environment['TRACER_PROBE_READY_FILE'];
+  if (readyPath != null) await File(readyPath).writeAsString(ready);
   if (scenario == 'lifecycle') {
     await runLifecycleProbe();
   } else if (scenario == 'smoke') {
@@ -151,8 +154,8 @@ class _DesktopProbeAppState extends State<DesktopProbeApp> {
                   Text('Collection: ${Tracer.isEnabled ? "enabled" : "off"}'),
                   const SizedBox(height: 12),
                   const Text(
-                    'macOS: stop cancels delivery; clear deletes the adapter queue. '
-                    'Starting again requires a process restart.',
+                    'Inspect the collection result after each operation. '
+                    'Windows queue cleanup is not implemented yet.',
                   ),
                   const SizedBox(height: 24),
                   Wrap(
