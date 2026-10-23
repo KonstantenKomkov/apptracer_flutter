@@ -3,8 +3,8 @@
 Separate dependency graph for `apptracer_flutter` + the optional official Sentry
 SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS registration
 selects `SentryDesktopTracer` automatically; registration itself does not start SDK
-collection. Windows x64 release build and Dart loopback delivery passed in CI;
-native crash/lifecycle and live Tracer acceptance remain pending.
+collection. Windows x64 release build, Dart/native loopback delivery and native
+queue recovery after HTTP 503 passed in CI. Stop/clear and live Tracer remain pending.
 
 ## Build and launch
 

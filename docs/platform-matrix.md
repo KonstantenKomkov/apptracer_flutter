@@ -15,7 +15,8 @@ Unreleased macOS update, 2026-10-23: see [local lifecycle and live recheck](maco
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
 | macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
-| Windows / Linux | manual HTTP transport; Windows official SDK work pending target acceptance | code only | unverified | no | no | **not supported in this release** — runtime not verified |
+| Windows x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6 | release loopback verified | minidump, runner identity and retry after HTTP 503 verified in CI | disabled | not claimed | experimental; stop/clear and live Tracer acceptance pending |
+| Linux | manual HTTP transport | code only | unverified | no | no | **not supported in this release** — outside this iteration |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
@@ -376,8 +377,10 @@ The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.
 Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
-[acceptance record](macos-lifecycle-acceptance.md). Windows and Aurora are still
-pending target environments; Linux is outside this iteration.
+[acceptance record](macos-lifecycle-acceptance.md). Windows x64 now has
+[release/Dart](windows-preparation.md) and [native crash/retry](windows-native-acceptance.md)
+CI evidence; stop/clear and live Tracer remain open. Aurora still needs a target
+environment and a Flutter plugin; Linux is outside this iteration.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system

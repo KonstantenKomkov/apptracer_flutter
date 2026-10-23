@@ -3,6 +3,8 @@
 Дата: 2026-10-23. Частичная реализация №3; задача остаётся открытой.
 
 **Подтверждено на Windows CI:** release-сборка x64 и локальная доставка Dart-событий.
+[Полный прогон 39994523733](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994523733)
+успешно выполнил сборку и все три transport-сценария одним циклом.
 [Прогон сборки 39992634203](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39992634203)
 успешно собрал приложение, но выявил ошибку chunked-декодирования проверочного
 приёмника. После исправления приёмника
@@ -12,7 +14,8 @@
 не менялись. Проверены запуск вне checkout в пути с пробелами/кириллицей,
 отсутствие отправки в disabled/deferred и ровно три ошибки с user/key/breadcrumbs.
 Это loopback-приёмник, не Tracer. Отдельная последующая
-[native-проверка](windows-native-acceptance.md) прошла crash/minidump/restart;
+[native-проверка](windows-native-acceptance.md) прошла crash/minidump/restart
+и восстановление той же очереди после HTTP 503;
 stop/clear остаются открытыми.
 
 Добавлены автоматическая Dart-регистрация optional desktop-пакета, Windows runner,

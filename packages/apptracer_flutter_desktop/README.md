@@ -2,8 +2,9 @@
 
 Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
 Dart-код предназначен для Windows/macOS. Жизненный цикл macOS проверен локально
-на arm64; Windows x64 release и Dart loopback проверены в CI. Windows native
-crash/lifecycle и полная платформенная приёмка не завершены. Пакет не опубликован.
+на arm64; Windows x64 release, Dart/native loopback и повторная отправка native
+дампа после HTTP 503 проверены в CI. Windows stop/clear и live-приёмка Tracer
+не завершены. Пакет не опубликован.
 
 Подключить этот пакет по path/git вместе с `apptracer_flutter`. На Windows/macOS адаптер
 регистрируется автоматически; при явном выборе backend до bootstrap:

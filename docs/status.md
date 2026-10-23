@@ -24,6 +24,13 @@ match. See the
 requires a new process; server native symbolication is unsupported in the tested
 integration. Windows/Aurora acceptance and publication remain open.
 
+**Unreleased Windows update:** x64 release build and disabled/deferred/Dart
+loopback scenarios passed in CI (`39994523733`). Native crash/minidump identity
+and a new process restart passed; a rejected HTTP 503 upload was preserved and
+delivered once with identical SHA-256 after the old Crashpad process was stopped
+(`40003238550`). See [native evidence](windows-native-acceptance.md).
+Windows stop/clear, account separation and live Tracer remain unverified.
+
 **iOS revocation fix:** the adapter now pins OKTracer 1.5.2, persists revocation,
 purges and seals its report paths, and requires explicit deferred consent in a
 new process before starting again. Physical fatal-after-stop no longer produces
