@@ -50,12 +50,18 @@ SDK в №2/10; lockfile приложения должен закреплять 
 DSN и подтвердил три Dart-события снимком Tracer; см.
 [протокол](macos-local-acceptance.md). Значения `.env.tracer` не выводились.
 
+**Уточнение 23 октября:** MacOS было названием первого проекта; пользователь
+сообщил, что, вероятно, при создании выбрал Android. После открытия расширенного
+списка платформ ему указан C/C++; создан проект `Test`, оба macOS credentials
+заменены. Первые live-результаты не подтверждают приёмку нового C/C++-проекта.
+Повторная проверка — в [протоколе символов](macos-symbols-acceptance.md).
+
 | Назначение | Имя переменной | Наличие / требуемая проверка |
 | --- | --- | --- |
 | Windows ingest | `TRACER_WINDOWS_SENTRY_DSN` | Отсутствует; получить из API нужного проекта, сопоставить проект в консоли |
-| macOS ingest | `TRACER_MACOS_SENTRY_DSN` | Добавлен; три Dart-события и стеки карточек подтверждены пользователем в Tracer; userId, ключ запуска, Context FlutterError и breadcrumb подтверждены |
+| macOS ingest | `TRACER_MACOS_SENTRY_DSN` | Заменён для C/C++-проекта Test; Dart/native пробы выполнены, новая консольная приёмка ожидается. Подтверждения первого проекта сохранены в протоколе |
 | Windows symbols | `TRACER_WINDOWS_PLUGIN_TOKEN` | Отсутствует; подтвердить принадлежность проекту Windows |
-| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Добавлен; 12 файлов загружены, но в новом native-событии файлы/строки не восстановились; [диагностика](macos-symbols-acceptance.md) |
+| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Заменён для Test; 12 модулей загружены и доступны, применение символов в новом проекте ожидает проверки; [диагностика](macos-symbols-acceptance.md) |
 | Aurora ingest | `TRACER_AURORA_APP_TOKEN` | Отсутствует; нужен проект **C/C++** |
 | Aurora symbols | `TRACER_AURORA_PLUGIN_TOKEN` | Отсутствует; отдельный plugin token того же C/C++ проекта |
 | Существующие платформы | `TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN`, `TRACER_IOS_APP_TOKEN`, `TRACER_IOS_PLUGIN_TOKEN`, `TRACER_JS_APP_TOKEN`, `TRACER_JS_PLUGIN_TOKEN` | Есть непустые значения; не считать их доступом к новым проектам |
@@ -211,7 +217,7 @@ apptracer_flutter_aurora → platform_interface + MethodChannel + Tracer Native
 | B3 | Windows планируется на отдельном компьютере; версии и доступ пока не подтверждены | Выполнить [preflight](windows-preflight.md), записать версии VS/MSVC/SDK/CMake; затем проверить запуск и пути №3 |
 | B4 | Пользователь подтвердил отсутствие среды Авроры; установка возможна позже | После появления Linux runner и устройства/эмулятора закрепить версии №1, собрать/установить RPM №6 |
 | B5 | API Aurora 0.1.15 не покрывает Dart error, удаление данных, остановку | Получить подтверждённые API/новую поставку или согласованное ограничение; №7–8 остаются блокерами поддержки, без HTTP fallback |
-| B6 | macOS native SIGABRT принят, но после загрузки символов файлы/строки не появились; сводка Android противоречит macOS Context. Windows ingest не подтверждён | Сверить тип проекта/путь Cocoa-символизации, затем повторить проверку точной сборки; №3–5/11 |
+| B6 | В первом проекте вероятно выбран Android. Для нового C/C++-проекта Test символы загружены, проверка native-карточки ожидается; Windows ingest не подтверждён | Подтвердить новую карточку Test/применение символов, затем остальные проверки №3–5/11 |
 | B7 | Не доказано прекращение native upload и purge обеих desktop платформ | Файловые и сетевые проверки stop/clear/offline/in-flight/restart/account switch №8 |
 
 №1 не переносится в архив до проверки недостающих конфигураций и фиксации целевых
