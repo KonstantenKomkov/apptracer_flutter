@@ -1,5 +1,10 @@
 # apptracer_flutter_sentry
 
+For the experimental official SDK integration, see
+[apptracer_flutter_desktop](../apptracer_flutter_desktop/README.en.md). This package
+remains the legacy HTTP transport. Migration requires replacing the dependency and
+`SentryProtocolTracer` with `SentryDesktopTracer`; do not run both transports.
+
 A pure-Dart Sentry-protocol transport for
 [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter),
 the unofficial Flutter integration with [Tracer](https://apptracer.ru).

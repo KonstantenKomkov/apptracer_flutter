@@ -1,0 +1,18 @@
+name: apptracer_flutter_desktop
+description: Experimental official Sentry SDK adapter for Tracer on macOS and Windows.
+version: 0.1.0-dev.1
+publish_to: none
+repository: https://github.com/KonstantenKomkov/apptracer_flutter
+environment:
+  sdk: ^3.5.0
+  flutter: '>=3.24.0'
+dependencies:
+  apptracer_flutter_platform_interface: ^0.2.0
+  flutter:
+    sdk: flutter
+  sentry_flutter: 9.30.1
+dev_dependencies:
+  apptracer_flutter: ^0.2.1
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter

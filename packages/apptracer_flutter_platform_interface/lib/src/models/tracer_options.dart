@@ -96,8 +96,11 @@ class TracerOptions {
   /// A Sentry DSN issued for the Tracer project.
   ///
   /// Tracer ingests events over the Sentry protocol, which is how platforms
-  /// without a native Tracer SDK are covered. When set, the pure-Dart
-  /// transport is available; see `docs/platform-matrix.md`.
+  /// without a native Tracer SDK are covered. The experimental
+  /// apptracer_flutter_desktop adapter passes this to the official Sentry SDK.
+  /// The legacy apptracer_flutter_sentry package implements the protocol itself.
+  /// Neither is selected just by setting this value: register the desired
+  /// platform adapter. See `docs/platform-matrix.md`.
   final String? dsn;
 
   /// Deployment environment, for example `prod`, `test` or `dev`.
