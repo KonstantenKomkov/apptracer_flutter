@@ -87,3 +87,12 @@ Initial hosted run
 at `cc7fc12` completed successfully, including release runtime/lifecycle,
 binary/symbol identity and artifact upload. That revision predates the external
 consumer CI step; the consumer result above was local.
+
+The full workflow, including the external consumer, passed at `ca23fc2`:
+[run 40003260512](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40003260512).
+The staged dry-run, hosted sibling resolution, clean consumer release build,
+automatic registration and one enriched loopback event all passed on the
+macOS 15 arm64 runner. The artifact `macos-arm64-acceptance` includes both
+the example acceptance reports and `macos-consumer/report.json` with its logs
+and dependency lockfile. This remains local-receiver acceptance, not a new
+Tracer console series or an actual Pub publication.

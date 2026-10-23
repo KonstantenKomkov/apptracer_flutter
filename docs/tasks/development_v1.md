@@ -474,6 +474,9 @@ Staged publish dry-run допускает только одно задокуме
 остаётся `publish_to: none`. Обновлены RU/EN README, privacy, publishing и
 [миграция](../desktop-migration.md). Это path-consumer, не проверка опубликованной
 desktop-версии. Общая подготовка выпуска Windows/Авроры остаётся открытой.
+Проверка внешнего consumer также прошла на macOS 15 arm64 hosted runner:
+[CI 40003260512](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40003260512),
+код `ca23fc2`.
 
 **Контекст.** Текущие README, пример и publishing guide описывают desktop/Аврору
 как неподдерживаемые; пакет Sentry не опубликован.

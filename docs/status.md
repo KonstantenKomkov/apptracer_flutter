@@ -24,6 +24,14 @@ match. See the
 requires a new process; server native symbolication is unsupported in the tested
 integration. Windows/Aurora acceptance and publication remain open.
 
+**macOS automation and packaging:** the separate macOS 15 arm64 CI builds the
+release example, runs real loopback/lifecycle checks and retains binaries,
+symbols and reports. An isolated external macOS consumer resolves the facade
+and interface from pub.dev without monorepo overrides. The staged publish
+dry-run retains one documented warning for the exact Sentry SDK pin; no
+publication was performed. See [CI and consumer evidence](macos-ci-consumer-acceptance.md)
+and [migration instructions](desktop-migration.md).
+
 **iOS revocation fix:** the adapter now pins OKTracer 1.5.2, persists revocation,
 purges and seals its report paths, and requires explicit deferred consent in a
 new process before starting again. Physical fatal-after-stop no longer produces
