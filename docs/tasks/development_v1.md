@@ -200,8 +200,8 @@ init/close failure, отмена старта, Unicode, AOT raw stack и сбр�
 с полями. Исправлены длинные пути native dependencies и chunked-приёмник;
 3 Python-теста приёмника проходят. Старт с default policy удаления прежних
 отчётов явно отклоняется до SDK init, поскольку Windows purge ещё не реализован.
-[Команды и ограничения](../windows-preparation.md). Native crash/restart,
-live Tracer и №8 ещё не приняты; №3 остаётся открытой.
+[Команды и ограничения](../windows-preparation.md). Live Tracer и Windows
+stop/clear из №8 ещё не приняты; №3 остаётся открытой.
 
 Добавлена [автоматическая native-проверка](../windows-native-acceptance.md):
 намеренное падение отдельной копии release runner, multipart minidump, сверка

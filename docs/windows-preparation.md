@@ -66,8 +66,8 @@ GitHub Actions `.github/workflows/windows.yml` выполняет эти же п
   отправить прежние отчёты вопреки выбранной политике. Пример явно использует `true`.
 - Windows native stop/clear, запрет replay после stop и отмена запросов — №8.
   Отсутствие purge не маскируется успешным `disabled`.
-- Live Tracer, native crash/restart, grouping и читаемые native/Dart AOT стеки
-  остаются отдельной приёмкой. В UI есть явная кнопка падения с подтверждением.
+- Native crash/restart проверен через loopback. Live Tracer, grouping и читаемые
+  native/Dart AOT стеки остаются отдельной приёмкой. В UI есть явная кнопка падения с подтверждением.
   Автоматический native crash включается только `TRACER_SCENARIO=native-crash`.
   Проверять без отладчика, затем перезапускать с `TRACER_SCENARIO=idle` и тем же DSN.
 - PDB сохраняется от этой сборки, но соответствие ID и загрузка в Tracer — №5.
