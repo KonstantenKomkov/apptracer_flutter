@@ -207,7 +207,13 @@ native macOS символизацию неподдерживаемой в про
 Локальная символизация подтверждена, причина серверного поведения не установлена.
 Обычные Dart-события в Test позднее подтверждены повторной live-серией №11;
 это не проверка обфусцированного Dart AOT.
-Windows и обфусцированный Dart AOT не приняты; задача остаётся открытой.
+Локальная macOS Dart AOT-проверка завершена: обфусцированный release,
+три события с точными UUID и восстановление функций/строк через `atos`.
+Стандартный `flutter symbolize` 3.47.4 на этих стеках завершился ошибкой;
+[рабочие команды и протокол](../macos-dart-symbols-acceptance.md),
+[архив самостоятельной подзадачи](development_completed_v1.md#task-5-macos-dart).
+Windows и live-приёмка обфусцированного Dart AOT в Tracer не приняты;
+общая задача остаётся открытой.
 
 **Контекст.** Доставка ошибки не гарантирует читаемый стек. Применимость загрузчиков
 Tracer к данным выбранного Sentry SDK нужно подтвердить на точной release-сборке.
@@ -463,5 +469,6 @@ staged dry-run и документация установки/миграции/p
 
 - [№2. Общий адаптер официального Sentry SDK для desktop](development_completed_v1.md#task-2).
 - [№4. Подключить macOS](development_completed_v1.md#task-4).
+- [№5.macOS-Dart. Локальная символизация обфусцированного Dart AOT](development_completed_v1.md#task-5-macos-dart).
 - [№10.macOS. Пример, сборка, CI и регрессии](development_completed_v1.md#task-10-macos).
 - [№12.macOS. Внешний потребитель, упаковка и миграция](development_completed_v1.md#task-12-macos).

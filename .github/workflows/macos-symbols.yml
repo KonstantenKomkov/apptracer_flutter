@@ -1,0 +1,62 @@
+name: macOS Dart AOT symbols
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_macos_dart_symbols.py'
+      - 'tool/symbolize_macos_dart.py'
+      - 'tool/check_macos_desktop.py'
+      - 'tool/tests/test_macos_dart_symbols.py'
+      - '.github/workflows/macos-symbols.yml'
+  pull_request:
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_macos_dart_symbols.py'
+      - 'tool/symbolize_macos_dart.py'
+      - 'tool/check_macos_desktop.py'
+      - 'tool/tests/test_macos_dart_symbols.py'
+      - '.github/workflows/macos-symbols.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  symbols:
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      COCOAPODS_DISABLE_STATS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Check rejection of missing and foreign symbols
+        run: python3 -m unittest discover -s tool/tests -v
+      - name: Build obfuscated release with separate symbols
+        working-directory: packages/apptracer_flutter_desktop/example
+        run: flutter build macos --release --obfuscate --split-debug-info=build/dart-symbols
+      - name: Decode three real SDK events from the exact release
+        run: |
+          python3 tool/check_macos_dart_symbols.py \
+            --app packages/apptracer_flutter_desktop/example/build/macos/Build/Products/Release/apptracer_desktop_example.app \
+            --symbols packages/apptracer_flutter_desktop/example/build/dart-symbols \
+            --output build/macos-dart-symbols
+          cp packages/apptracer_flutter_desktop/example/pubspec.lock build/macos-dart-symbols/
+          cp packages/apptracer_flutter_desktop/example/macos/Podfile.lock build/macos-dart-symbols/
+          git rev-parse HEAD > build/macos-dart-symbols/revision.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-dart-symbols
+          path: build/macos-dart-symbols/
+          retention-days: 14
