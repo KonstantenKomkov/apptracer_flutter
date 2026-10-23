@@ -55,7 +55,7 @@ DSN и подтвердил три Dart-события снимком Tracer; с
 | Windows ingest | `TRACER_WINDOWS_SENTRY_DSN` | Отсутствует; получить из API нужного проекта, сопоставить проект в консоли |
 | macOS ingest | `TRACER_MACOS_SENTRY_DSN` | Добавлен; три Dart-события и стеки карточек подтверждены пользователем в Tracer; userId, ключ запуска, Context FlutterError и breadcrumb подтверждены |
 | Windows symbols | `TRACER_WINDOWS_PLUGIN_TOKEN` | Отсутствует; подтвердить принадлежность проекту Windows |
-| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Добавлен; 12 файлов символов загружены, применение в native-карточке проверяется; [протокол](macos-symbols-acceptance.md) |
+| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Добавлен; 12 файлов загружены, но в новом native-событии файлы/строки не восстановились; [диагностика](macos-symbols-acceptance.md) |
 | Aurora ingest | `TRACER_AURORA_APP_TOKEN` | Отсутствует; нужен проект **C/C++** |
 | Aurora symbols | `TRACER_AURORA_PLUGIN_TOKEN` | Отсутствует; отдельный plugin token того же C/C++ проекта |
 | Существующие платформы | `TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN`, `TRACER_IOS_APP_TOKEN`, `TRACER_IOS_PLUGIN_TOKEN`, `TRACER_JS_APP_TOKEN`, `TRACER_JS_PLUGIN_TOKEN` | Есть непустые значения; не считать их доступом к новым проектам |
@@ -211,7 +211,7 @@ apptracer_flutter_aurora → platform_interface + MethodChannel + Tracer Native
 | B3 | Windows планируется на отдельном компьютере; версии и доступ пока не подтверждены | Выполнить [preflight](windows-preflight.md), записать версии VS/MSVC/SDK/CMake; затем проверить запуск и пути №3 |
 | B4 | Пользователь подтвердил отсутствие среды Авроры; установка возможна позже | После появления Linux runner и устройства/эмулятора закрепить версии №1, собрать/установить RPM №6 |
 | B5 | API Aurora 0.1.15 не покрывает Dart error, удаление данных, остановку | Получить подтверждённые API/новую поставку или согласованное ограничение; №7–8 остаются блокерами поддержки, без HTTP fallback |
-| B6 | macOS native SIGABRT принят в Tracer; native символизация и Windows ingest ещё не подтверждены | На точных release-сборках проверить crash, restart, PDB/dSYM/Dart AOT и console frames №3–5/11 |
+| B6 | macOS native SIGABRT принят, но после загрузки символов файлы/строки не появились; сводка Android противоречит macOS Context. Windows ingest не подтверждён | Сверить тип проекта/путь Cocoa-символизации, затем повторить проверку точной сборки; №3–5/11 |
 | B7 | Не доказано прекращение native upload и purge обеих desktop платформ | Файловые и сетевые проверки stop/clear/offline/in-flight/restart/account switch №8 |
 
 №1 не переносится в архив до проверки недостающих конфигураций и фиксации целевых
