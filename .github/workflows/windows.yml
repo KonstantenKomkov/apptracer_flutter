@@ -49,14 +49,22 @@ jobs:
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
         run: |
-          flutter pub get
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter analyze --fatal-infos
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter test
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter build windows --release
-          exit $LASTEXITCODE
+          function Invoke-Flutter {
+            & flutter @args 2>&1 | Tee-Object -FilePath windows-build.log
+            $result = $LASTEXITCODE
+            if ($result -ne 0) {
+              # Public annotations retain the useful failure when Actions logs
+              # require an authenticated reader. No credentials enter this job.
+              $detail = (Get-Content windows-build.log -Tail 45) -join "`n"
+              $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows example failed::$detail"
+              exit $result
+            }
+          }
+          Invoke-Flutter pub get
+          Invoke-Flutter analyze --fatal-infos
+          Invoke-Flutter test
+          Invoke-Flutter build windows --release
       - name: Test relocated release against loopback
         run: |
           foreach ($scenario in @('disabled', 'deferred', 'smoke')) {
@@ -72,4 +80,5 @@ jobs:
             packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release/
             packages/apptracer_flutter_desktop/example/build/symbols/native/
             packages/apptracer_flutter_desktop/example/pubspec.lock
+            packages/apptracer_flutter_desktop/example/windows-build.log
           retention-days: 14
