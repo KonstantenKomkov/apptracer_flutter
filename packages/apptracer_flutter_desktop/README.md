@@ -4,7 +4,8 @@
 Dart-код предназначен для Windows/macOS; платформенная приёмка и управление
 нативной очередью ещё не завершены. Пакет не опубликован.
 
-Подключить этот пакет по path/git вместе с `apptracer_flutter`, затем до bootstrap:
+Подключить этот пакет по path/git вместе с `apptracer_flutter`. На macOS адаптер
+регистрируется автоматически; при явном выборе backend до bootstrap:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
@@ -75,6 +76,8 @@ Native crash минует Dart callback. В него могут попасть �
 Git-потребителям `apptracer_flutter_sentry` нужно явно заменить зависимость и
 `SentryProtocolTracer()` на `SentryDesktopTracer()`. Старый manual envelope transport
 остаётся неизменным; одновременно запускать его и новый SDK нельзя.
+
+Пример с macOS runner и локальной проверкой доставки: [example](example/README.md).
 
 ## Проверки
 

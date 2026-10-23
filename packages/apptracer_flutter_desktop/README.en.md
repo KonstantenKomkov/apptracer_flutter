@@ -7,6 +7,9 @@ Add this optional package alongside `apptracer_flutter`, set
 `TracerPlatform.instance = SentryDesktopTracer()` before `Tracer.initialize`, and
 pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
 environment and dist use the existing options. Never embed a symbol plugin token.
+macOS now registers the optional adapter automatically; explicit assignment is
+only needed when selecting the backend yourself. See [example](example/README.md)
+for the separate macOS runner and local release transport checks.
 
 Tracer owns appRunner, Dart error handlers and user filters. Do not initialize or
 write to Sentry separately. Existing SDK ownership is rejected without closing it.

@@ -10,8 +10,9 @@
 [desktop-aurora-sdk-audit.md](../desktop-aurora-sdk-audit.md).
 №1 остаётся открытой: не проверены конфигурации новых проектов и целевые среды
 Windows/Авроры. По уточнению пользователя локальные desktop/macOS работы
-продолжаются независимо от этих внешних проверок; №2 в реализации.
-Платформенная приёмка остаётся открытой.
+продолжаются независимо от этих внешних проверок. Локальная реализация №2 и
+macOS-часть №4 проверены: [протокол](../macos-local-acceptance.md).
+Приёмка Tracer и native lifecycle остаются открытыми.
 
 **Обновление 23 октября 2026:** пользователь подключил проект Tracer через VK Cloud.
 Заведены №1–12: Windows и macOS через официальный Sentry SDK, Аврора через нативный
@@ -197,6 +198,16 @@ init/close failure, отмена старта, Unicode, AOT raw stack и сбр�
 <a id="task-4"></a>
 
 ## П. 4. Подключить macOS
+
+**Прогресс 23 октября 2026.** Добавлены optional macOS registration, отдельный
+desktop example/runner с CocoaPods и sandbox network.client, ручные Dart/Flutter/
+async/native probes и локальный проверочный приёмник. Release `.app` собран и
+запущен arm64 вне IDE/checkout, с пробелами/кириллицей в пути. Приняты ровно три
+Dart/Flutter/async события; disabled/deferred не отправили запросов; native SIGABRT
+доставлен после перезапуска. Существующий iOS example собран для симулятора.
+[Подробный протокол, команды и ограничения](../macos-local-acceptance.md).
+Реальный Tracer DSN/консоль ещё не проверены; №4 остаётся открытой, новый пакет
+экспериментальный, native purge/revocation остаются №8.
 
 **Контекст.** macOS должна использовать Sentry SDK; существующий iOS-адаптер OKTracer
 не является реализацией macOS.

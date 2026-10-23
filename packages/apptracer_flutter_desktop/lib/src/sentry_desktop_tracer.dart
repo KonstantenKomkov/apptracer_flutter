@@ -17,6 +17,11 @@ class SentryDesktopTracer extends TracerPlatform {
   /// Creates an inert adapter; the SDK starts only after collection is allowed.
   SentryDesktopTracer();
 
+  /// Registers the optional macOS plugin without starting the native SDK.
+  static void registerWith() {
+    TracerPlatform.instance = SentryDesktopTracer();
+  }
+
   static SentryDesktopTracer? _owner;
   ObservedSdkOptions? _sdkOptions;
   bool _enabled = false;
