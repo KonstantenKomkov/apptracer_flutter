@@ -68,13 +68,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $app = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.exe | Select-Object -First 1
           if (-not $app) { throw 'Release executable missing from artifact' }
-          python tool/check_windows_native.py --app $app.Directory.FullName --output build/windows-native/report.json 2>&1 | Tee-Object -FilePath native-probe.log
-          $result = $LASTEXITCODE
-          if ($result -ne 0) {
-            $detail = (Get-Content native-probe.log -Tail 40) -join "`n"
-            $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-            Write-Output "::error title=Windows native probe failed::$detail"
-            exit $result
+          foreach ($mode in @('online', 'offline-restart')) {
+            $probeArgs = @('--app', $app.Directory.FullName, '--output', "build/windows-native/$mode.json")
+            if ($mode -eq 'offline-restart') { $probeArgs += '--offline-restart' }
+            python tool/check_windows_native.py @probeArgs 2>&1 | Tee-Object -FilePath native-probe.log -Append
+            $result = $LASTEXITCODE
+            if ($result -ne 0) {
+              $detail = (Get-Content native-probe.log -Tail 40) -join "`n"
+              $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Windows native $mode probe failed::$detail"
+              exit $result
+            }
           }
       - uses: actions/upload-artifact@v4
         if: always()

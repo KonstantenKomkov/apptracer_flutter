@@ -117,26 +117,33 @@ def cleanup_handlers(bundle):
     handler = str(bundle / 'crashpad_handler.exe').replace("'", "''")
     wer = str(bundle / 'crashpad_wer.dll').replace("'", "''")
     script = (
+        "$ErrorActionPreference = 'Stop'; "
         "Get-CimInstance Win32_Process -Filter \"Name='crashpad_handler.exe'\" | "
         f"Where-Object {{ $_.ExecutablePath -eq '{handler}' }} | "
-        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; "
+        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop }; "
+        "if (Get-CimInstance Win32_Process -Filter \"Name='crashpad_handler.exe'\" | "
+        f"Where-Object {{ $_.ExecutablePath -eq '{handler}' }}) {{ throw 'Probe handler still running' }}; "
         "Remove-ItemProperty -LiteralPath 'HKCU:\\Software\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules' "
-        f"-Name '{wer}' -ErrorAction SilentlyContinue")
-    subprocess.run(['powershell.exe', '-NoProfile', '-Command', script],
-                   capture_output=True, timeout=20, check=False)
+        f"-Name '{wer}' -ErrorAction SilentlyContinue; exit 0")
+    result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', script],
+                            capture_output=True, timeout=20, check=False)
+    if result.returncode != 0:
+        raise RuntimeError('could not confirm probe Crashpad cleanup')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--app', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--offline-restart', action='store_true',
+                        help='Reject the initial upload with 503; stop the old handler before restart')
     args = parser.parse_args()
     if os.name != 'nt':
         parser.error('run on Windows x64')
     name = 'apptracer_desktop_example.exe'
     identity = pe_identity((args.app / name).read_bytes())
     incoming = queue.Queue()
-    phase = 'crash'
+    phase = 'offline-crash' if args.offline_restart else 'crash'
     requests = []
     failures = []
     dumps = []
@@ -150,16 +157,19 @@ def main():
 
         def do_POST(self):
             try:
+                request_phase = phase
                 body = read_http_body(self.rfile, self.headers)
                 if self.headers.get('Content-Encoding') == 'gzip':
                     body = gzip.decompress(body)
                 dump = multipart_dumps(self.headers.get('Content-Type', ''), body)
-                incoming.put({'path': self.path, 'phase': phase,
-                              'dump': inspect_dump(dump, name)})
-                self.send_response(200)
+                accepted = request_phase != 'offline-crash'
+                request = {'path': self.path, 'phase': request_phase,
+                           'accepted': accepted, 'dump': inspect_dump(dump, name)}
+                self.send_response(200 if accepted else 503)
                 self.send_header('Content-Length', '2')
                 self.end_headers()
                 self.wfile.write(b'{}')
+                incoming.put(request)
             except Exception as error:
                 incoming.put({'path': self.path, 'phase': phase,
                               'error': type(error).__name__ + ': ' + str(error)})
@@ -208,6 +218,15 @@ def main():
                 exit_code = process.wait(timeout=30)
                 if exit_code == 0:
                     failures.append('native crash exited successfully')
+                if args.offline_restart:
+                    rejected = incoming.get(timeout=30)
+                    requests.append(rejected)
+                    if rejected.get('accepted') is not False or 'error' in rejected:
+                        raise ValueError('initial native upload was not rejected with 503')
+                    # Let the handler process the response, then stop that exact
+                    # relocated handler. Only the next process may retry online.
+                    time.sleep(1)
+                    cleanup_handlers(bundle)
                 phase = 'restart'
                 process = launch('idle')
                 await_ready()
@@ -223,14 +242,16 @@ def main():
                             failures.append(request['error'])
                         else:
                             dump = request['dump']
-                            dumps.append(dump)
+                            if request.get('accepted'):
+                                dumps.append(dump)
                             if dump['exception_code'] != '0xc0000005':
                                 failures.append('unexpected native exception code')
                             if dump['runner']['codeview'] != identity:
                                 failures.append('minidump does not match the release runner')
                             if run_id not in dump['runner']['path']:
                                 failures.append('minidump belongs to a different probe directory')
-                            settled = time.monotonic() + 5
+                            if request.get('accepted'):
+                                settled = time.monotonic() + 5
                     except queue.Empty:
                         pass
                     if process.poll() is not None:
@@ -240,6 +261,11 @@ def main():
                         break
                 if len(dumps) != 1:
                     failures.append(f'expected one native minidump, got {len(dumps)}')
+                elif args.offline_restart:
+                    rejected_hashes = {item['dump']['sha256'] for item in requests
+                                       if item.get('accepted') is False and 'dump' in item}
+                    if dumps[0]['sha256'] not in rejected_hashes:
+                        failures.append('retry did not preserve the rejected minidump')
             except Exception as error:
                 failures.append(type(error).__name__ + ': ' + str(error))
             finally:
@@ -253,9 +279,10 @@ def main():
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
-    report = {'run_id': run_id, 'ready': ready, 'crash_exit_code': exit_code,
+    report = {'run_id': run_id, 'offline_restart': args.offline_restart,
+              'ready': ready, 'crash_exit_code': exit_code,
               'runner_codeview': identity, 'requests': requests, 'failures': failures,
-              'scope': 'native capture + loopback + restart; no Tracer acceptance, symbolication or revocation'}
+              'scope': 'native capture + loopback + restart; optional HTTP 503 recovery; no Tracer acceptance, symbolication or revocation'}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     # Windows CI can expose a cp1252 stdout even when files use UTF-8.
