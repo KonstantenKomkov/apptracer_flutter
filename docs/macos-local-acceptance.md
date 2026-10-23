@@ -108,6 +108,31 @@ SDK envelopes того же executable:
 трёх проб подтверждены; исправление маппинга по этому наблюдению не требуется.
 Это не проверка обфусцированных AOT-стеков, native symbols или дополнительных полей.
 
+### Live native crash и перезапуск
+
+23 октября 2026 в `13:02:57 UTC` (`16:02:57 МСК`) тот же release executable
+запущен с рабочим macOS DSN и сценарием `native-crash`, без отладчика.
+Метка — `probe_run=macos-native-6c5678b76d62`; исходный runner/бинарник не менялся,
+HEAD документации на момент запуска — `7dbd9af`.
+
+- Перед падением подтверждён `enabled=true backend=sentry-sdk state=enabled`.
+- Дочерний процесс завершился с кодом `-6`: ожидаемый `SIGABRT` от native probe.
+- Выполнен новый запуск `idle` с тем же DSN и меткой: SDK включён, процесс
+  оставался работоспособным в течение 25 секунд, затем остановлен проверкой.
+- Доставка в Tracer и содержимое native-карточки ожидают подтверждения пользователя.
+  Успешный restart сам по себе не подтверждает доставку; HTTPS-ответы не наблюдались.
+
+Локальный отчёт: `build/macos-acceptance/live-native-crash.json` (без DSN).
+
+Дополнительно сохранён локальный `build/macos-acceptance/symbols-manifest.json`:
+SHA-256 и UUID обеих архитектур шести dSYM из этой release-сборки. UUID arm64
+runner, Sentry и FlutterMacOS совпадают с debug images ранее принятого локального
+native-события. `atos` с runner dSYM разрешил три адреса кадров runner; для двух
+Swift thunk указаны compiler-generated frames, строки места `abort()` не получены.
+Это ограниченная локальная проверка, не символизация в Tracer. Её вывод —
+`build/macos-acceptance/native-local-symbols.txt`.
+`TRACER_MACOS_PLUGIN_TOKEN` не задан; загрузка символов не выполнялась.
+
 ## Воспроизведение
 
 Из `packages/apptracer_flutter_desktop/example`:

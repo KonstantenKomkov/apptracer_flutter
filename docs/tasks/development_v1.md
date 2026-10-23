@@ -214,7 +214,9 @@ Dart/Flutter/async события; disabled/deferred не отправили з�
 `Stacktrace not available`, однако пользователь подтвердил стеки в карточках:
 13 кадров async, по 2 handled/FlutterError, с функциями, файлами и строками.
 Дополнительные поля карточек ещё не проверены.
-Native crash принят только локально. №4 остаётся открытой, новый пакет
+Native crash принят локальным приёмником. Выполнен также live SIGABRT с macOS
+DSN (`macos-native-6c5678b76d62`): падение и успешный restart подтверждены,
+native-карточка Tracer ожидает подтверждения. №4 остаётся открытой, новый пакет
 экспериментальный, native purge/revocation остаются №8.
 
 **Контекст.** macOS должна использовать Sentry SDK; существующий iOS-адаптер OKTracer
