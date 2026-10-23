@@ -1,0 +1,43 @@
+name: Aurora SDK preparation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tool/aurora/**'
+      - 'tool/prepare_aurora_sdk.py'
+      - 'tool/elf_build_id.py'
+      - '.github/workflows/aurora-preparation.yml'
+  pull_request:
+    paths:
+      - 'tool/aurora/**'
+      - 'tool/prepare_aurora_sdk.py'
+      - 'tool/elf_build_id.py'
+      - '.github/workflows/aurora-preparation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned SDK and record ELF identities
+        run: |
+          mkdir -p build
+          python3 tool/prepare_aurora_sdk.py > build/aurora-sdk-manifest.json
+      - name: Compile API declarations and inert loader probe on host
+        run: |
+          cmake -S tool/aurora -B build/aurora-host -DAPPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15"
+          cmake --build build/aurora-host
+      - name: Test integrity, import and installation checks
+        run: |
+          APPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15" python3 -m unittest discover -s tool/aurora/tests -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aurora-sdk-manifest
+          path: build/aurora-sdk-manifest.json
+          retention-days: 14

@@ -1,0 +1,47 @@
+# Imported target for the exact audited SDK. Do not include the vendor's generic
+# CMakeLists: its architecture names do not match the Aurora archive layout.
+include_guard(GLOBAL)
+
+function(apptracer_import_aurora_sdk SDK_ROOT)
+  if(TARGET apptracer_aurora_sdk)
+    message(FATAL_ERROR "Aurora SDK has already been imported")
+  endif()
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "Aurora SDK requires the Linux/Aurora target toolchain")
+  endif()
+  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" processor)
+  if(processor STREQUAL "aarch64" OR processor STREQUAL "arm64")
+    set(arch "aarch64")
+    set(library_hash "30d578457a1ea6f55a8690b1d5e674f7fb594080b15214e8dfda921ecc2a3e5e")
+  elseif(processor STREQUAL "x86_64" OR processor STREQUAL "amd64")
+    set(arch "x86_64")
+    set(library_hash "cb0e65f47a0510129ee35aa403f8cf369fd873f2a466baed20e923c2189d1ece")
+  else()
+    message(FATAL_ERROR "Unaudited Aurora target ABI: ${CMAKE_SYSTEM_PROCESSOR}")
+  endif()
+  get_filename_component(sdk_root "${SDK_ROOT}" ABSOLUTE)
+  set(header "${sdk_root}/include/tracer.h")
+  set(library "${sdk_root}/aurora/lib/${arch}/libtracernative.so")
+  if(NOT EXISTS "${header}" OR NOT EXISTS "${library}")
+    message(FATAL_ERROR "Prepare the pinned SDK with tool/prepare_aurora_sdk.py first")
+  endif()
+  file(SHA256 "${header}" header_hash)
+  file(SHA256 "${library}" actual_hash)
+  if(NOT header_hash STREQUAL "bf910544edc6050e6aeb99b36fdfc8801e470977c7a3c047ba13b02addfba8b7"
+      OR NOT actual_hash STREQUAL library_hash)
+    message(FATAL_ERROR "Aurora SDK checksum mismatch; expected the audited 0.1.15 archive")
+  endif()
+  add_library(apptracer_aurora_sdk SHARED IMPORTED GLOBAL)
+  set_target_properties(apptracer_aurora_sdk PROPERTIES
+    IMPORTED_LOCATION "${library}"
+    INTERFACE_INCLUDE_DIRECTORIES "${sdk_root}/include"
+    INTERFACE_COMPILE_DEFINITIONS "AURORA")
+endfunction()
+
+function(apptracer_install_aurora_sdk DESTINATION)
+  if(NOT TARGET apptracer_aurora_sdk)
+    message(FATAL_ERROR "Call apptracer_import_aurora_sdk first")
+  endif()
+  get_target_property(library apptracer_aurora_sdk IMPORTED_LOCATION)
+  install(FILES "${library}" DESTINATION "${DESTINATION}")
+endfunction()

@@ -1,0 +1,24 @@
+{
+  "version": "0.1.15",
+  "url": "https://nexus-external.vkteam.ru/repository/raw-tracer-native-public/aurora/tracer-native-aurora-0.1.15.zip",
+  "archive_sha256": "b65040d76d0aa2d882a91699700a36160ef327c8eeece2616c1db0897ada9669",
+  "files": {
+    "CMakeLists.txt": "7aaaef894981bceff666ed16a46d1a12a2653325a55507f1098afc4ec661a593",
+    "aurora/lib/aarch64/libtracernative.so": "30d578457a1ea6f55a8690b1d5e674f7fb594080b15214e8dfda921ecc2a3e5e",
+    "aurora/lib/armv7hl/libtracernative.so": "443e8be6fae0ba31918ba6cbb90094d88aecfac16529d88e7908554259bf12af",
+    "aurora/lib/x86_64/libtracernative.so": "cb0e65f47a0510129ee35aa403f8cf369fd873f2a466baed20e923c2189d1ece",
+    "changelog.md": "9fde3a72c6c171b091b9e7d00f7047481eb06f2d55fa9513fc3e23211382918c",
+    "include/tracer.h": "bf910544edc6050e6aeb99b36fdfc8801e470977c7a3c047ba13b02addfba8b7",
+    "symupload/crashupload.py": "83b452533857dcd2faa4ae68d823f50df37d098486b33074439a3b4a8101eb2a",
+    "symupload/dump_syms/linux/dump_syms.bin": "ec15844716549208397b1ece4fe1ba02d6f686f23d00e4aedb263685429a4845",
+    "symupload/dump_syms/macosx/arm64/dump_syms": "ebee9efdbd94ce6a063f1f3caf216c8f81ae3d20633db4157b4fd42ed17bcfe7",
+    "symupload/dump_syms/macosx/x86_64/dump_syms": "aa5764d3d69b08f8f18694e8b78bc4bdab1bf7f01d79de1b1255877f709adb18",
+    "symupload/dump_syms/windows/dump_syms.exe": "f9623a73495c36660d1b1ccdd972734d41292638af445c6d4bf704976db48c7c",
+    "symupload/dump_syms/windows/dump_syms.pdb": "d2c307ec45ba161cae49c31f4ce0febbb172f5de9966177a0e0dafe739ddb026",
+    "symupload/dump_syms/windows/libdump_syms.rlib": "7705b5e5d4e33f9dd1271ac643d3b26fdf05ee73e92c40ba83c4bc718356f093",
+    "symupload/symupload.py": "090e33aaf91da11e4e026b9c0af8c587996d854b3fad241f0b8e0ff8654fee73",
+    "symupload/third_party/symbolstore.CHANGES.txt": "55db3c21870248da34f908e5cf5aa74ddf49c70c0498c493a8ec658c946887c1",
+    "symupload/third_party/symbolstore.LICENSE.txt": "7a23cb64fc288850cbf46c875d3849fd5a8834d4e27fc723b63ba783df196cc7",
+    "symupload/third_party/symbolstore.py": "147fa1ac04470c779d46d540a4db089b60e3806ec9f1b0a4f3b3f427f26e8b81"
+  }
+}

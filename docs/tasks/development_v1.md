@@ -267,6 +267,14 @@ Tracer к данным выбранного Sentry SDK нужно подтвер
 
 ## П. 6. Нативный плагин Tracer для Авроры
 
+**Прогресс 23 октября 2026:** подготовлены загрузка SDK 0.1.15 с проверкой ZIP и
+всех файлов, ELF ABI/build-id manifest, CMake imported target для aarch64/x86_64,
+проверка сигнатур header и диагностическая утилита загрузки без init/upload.
+На macOS собраны C++-инструменты и прошли 7 host-тестов; подготовлен Ubuntu CI.
+[Команды и ограничения](../aurora-preparation.md). Flutter-плагин, runner и RPM
+ещё не реализованы. Нужны Aurora toolchain/embedder и решение ограничений B5;
+№6 не архивируется, host-проверки не заменяют целевую сборку и запуск.
+
 **Контекст.** Нужен отдельный адаптер для Flutter embedder Авроры. По
 [инструкции Tracer](https://apptracer.ru/doc/native-aurora/quick-start/) нативная
 поставка содержит `libtracernative.so` и `tracer.h`; системные минидампы создаёт `crash-dumper`.
