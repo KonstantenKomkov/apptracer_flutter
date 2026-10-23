@@ -28,7 +28,12 @@ jobs:
       - name: Prepare pinned SDK and record ELF identities
         run: |
           mkdir -p build
-          python3 tool/prepare_aurora_sdk.py > build/aurora-sdk-manifest.json
+          if ! python3 tool/prepare_aurora_sdk.py > build/aurora-sdk-manifest.json 2> build/aurora-prepare.log; then
+            while IFS= read -r line; do
+              printf '::error title=Aurora SDK preparation::%s\n' "$line"
+            done < build/aurora-prepare.log
+            exit 1
+          fi
       - name: Compile API declarations and inert loader probe on host
         run: |
           cmake -S tool/aurora -B build/aurora-host -DAPPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15"
@@ -37,7 +42,10 @@ jobs:
         run: |
           APPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15" python3 -m unittest discover -s tool/aurora/tests -v
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: aurora-sdk-manifest
-          path: build/aurora-sdk-manifest.json
+          path: |
+            build/aurora-sdk-manifest.json
+            build/aurora-prepare.log
           retention-days: 14

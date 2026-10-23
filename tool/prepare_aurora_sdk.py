@@ -9,10 +9,11 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
-import shutil
 import stat
 import struct
+import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 
@@ -88,9 +89,21 @@ def prepare(destination, archive=None, verify_only=False, lock=None):
         staging = Path(temp)
         if archive is None:
             archive = staging / 'sdk.zip'
-            with urllib.request.urlopen(lock['url'], timeout=60) as response:
+            started = time.monotonic()
+            received = 0
+            with urllib.request.urlopen(lock['url'], timeout=30) as response:
                 with archive.open('wb') as output:
-                    shutil.copyfileobj(response, output)
+                    while True:
+                        if time.monotonic() - started > 180:
+                            raise OSError(f'SDK download exceeded 180 seconds after {received} bytes; '
+                                          'retry or provide --archive from a verified local download')
+                        block = response.read(128 * 1024)
+                        if not block:
+                            break
+                        output.write(block)
+                        received += len(block)
+                        if received % (4 * 1024 * 1024) == 0:
+                            print(f'SDK download: {received} bytes', file=sys.stderr, flush=True)
         archive = Path(archive)
         if sha256(archive) != lock['archive_sha256']:
             raise ValueError('SDK archive checksum mismatch; destination was not changed')
