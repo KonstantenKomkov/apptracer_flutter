@@ -55,7 +55,7 @@ DSN и подтвердил три Dart-события снимком Tracer; с
 | Windows ingest | `TRACER_WINDOWS_SENTRY_DSN` | Отсутствует; получить из API нужного проекта, сопоставить проект в консоли |
 | macOS ingest | `TRACER_MACOS_SENTRY_DSN` | Добавлен; три Dart-события и стеки карточек подтверждены пользователем в Tracer; userId, ключ запуска, Context FlutterError и breadcrumb подтверждены |
 | Windows symbols | `TRACER_WINDOWS_PLUGIN_TOKEN` | Отсутствует; подтвердить принадлежность проекту Windows |
-| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Отсутствует; подтвердить принадлежность проекту macOS |
+| macOS symbols | `TRACER_MACOS_PLUGIN_TOKEN` | Добавлен; 12 файлов символов загружены, применение в native-карточке проверяется; [протокол](macos-symbols-acceptance.md) |
 | Aurora ingest | `TRACER_AURORA_APP_TOKEN` | Отсутствует; нужен проект **C/C++** |
 | Aurora symbols | `TRACER_AURORA_PLUGIN_TOKEN` | Отсутствует; отдельный plugin token того же C/C++ проекта |
 | Существующие платформы | `TRACER_APP_TOKEN`, `TRACER_PLUGIN_TOKEN`, `TRACER_IOS_APP_TOKEN`, `TRACER_IOS_PLUGIN_TOKEN`, `TRACER_JS_APP_TOKEN`, `TRACER_JS_PLUGIN_TOKEN` | Есть непустые значения; не считать их доступом к новым проектам |

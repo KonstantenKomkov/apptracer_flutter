@@ -157,7 +157,9 @@ native-события. `atos` с runner dSYM разрешил три адрес�
 Swift thunk указаны compiler-generated frames, строки места `abort()` не получены.
 Это ограниченная локальная проверка, не символизация в Tracer. Её вывод —
 `build/macos-acceptance/native-local-symbols.txt`.
-`TRACER_MACOS_PLUGIN_TOKEN` не задан; загрузка символов не выполнялась.
+На этом этапе `TRACER_MACOS_PLUGIN_TOKEN` ещё не был задан. После добавления токена
+символы загружены; отдельный [протокол №5](macos-symbols-acceptance.md) описывает
+проверку модулей и повторное падение после загрузки.
 
 ## Воспроизведение
 
