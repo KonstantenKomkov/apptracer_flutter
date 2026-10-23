@@ -76,7 +76,10 @@ python3 tool/symbolize_macos_dart.py \
 
 Workflow [macos-symbols.yml](../.github/workflows/macos-symbols.yml) повторяет
 сборку и проверку на macOS 15 arm64, сохраняет артефакт на 14 дней.
-Наличие workflow само по себе не означает успешный hosted-прогон.
+[Hosted-прогон 40007734317](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40007734317)
+на `e76bf55` успешно выполнил все шаги, включая реальную расшифровку трёх событий
+и загрузку артефакта `macos-dart-symbols`. Это отдельная CI-сборка со своими UUID;
+хеши локального прогона выше на неё не переносятся.
 
 Команды сборки соответствуют [документации Flutter](https://docs.flutter.dev/deployment/obfuscate).
 Для Windows способ нельзя предполагать тем же: документация текущего Flutter

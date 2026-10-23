@@ -21,6 +21,9 @@ SHA-256/UUID и JSON отчёт. Runtime принят на macOS 27 arm64; x86_6
 10 Python-тестов (включая новые проверки чужих/отсутствующих символов и
 повреждённых адресов), отдельное ревью изменений. Значения DSN/токенов не нужны.
 [Протокол и команды](../macos-dart-symbols-acceptance.md).
+Реализация: `e76bf55`; [CI 40007734317](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40007734317)
+также успешно прошёл сборку, расшифровку трёх реальных событий и сохранение
+артефакта на macOS 15 arm64.
 
 **Ограничение:** Flutter 3.47.4 / native_stack_traces 0.6.1 не расшифровал эти
 стеки (`Cannot locate isolate instructions section in snapshot`); используется
