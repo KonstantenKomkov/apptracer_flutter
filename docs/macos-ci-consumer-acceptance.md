@@ -27,7 +27,7 @@ packages and legacy transport with Flutter 3.47.4:
 
 | Package | Passed tests |
 |---|---:|
-| platform_interface | 43 (one existing test skipped) |
+| platform_interface | 43 (existing browser-only fixture skipped on VM) |
 | http | 18 |
 | sentry (legacy) | 23 |
 | android | 2 |
@@ -81,3 +81,9 @@ pushes, or manual dispatch. Runner labels are documented by
 It runs the real release app against loopback, not only mock-channel tests.
 Hosted results are recorded after the workflow finishes; local success alone
 does not count as a hosted pass.
+
+Initial hosted run
+[39994869570](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994869570)
+at `cc7fc12` completed successfully, including release runtime/lifecycle,
+binary/symbol identity and artifact upload. That revision predates the external
+consumer CI step; the consumer result above was local.
