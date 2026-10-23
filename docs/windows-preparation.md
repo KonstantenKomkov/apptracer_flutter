@@ -2,6 +2,17 @@
 
 Дата: 2026-10-23. Частичная реализация №3; задача остаётся открытой.
 
+**Подтверждено на Windows CI:** release-сборка x64 и локальная доставка Dart-событий.
+[Прогон сборки 39992634203](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39992634203)
+успешно собрал приложение, но выявил ошибку chunked-декодирования проверочного
+приёмника. После исправления приёмника
+[прогон 39994294312](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994294312)
+успешно проверил **тот же** release-артефакт: disabled, deferred, smoke.
+Исходники пакетов и приложения между сборкой `25fe9ca` и проверкой `d8522a6`
+не менялись. Проверены запуск вне checkout в пути с пробелами/кириллицей,
+отсутствие отправки в disabled/deferred и ровно три ошибки с user/key/breadcrumbs.
+Это loopback-приёмник, не Tracer и не проверка native crash/stop/clear.
+
 Добавлены автоматическая Dart-регистрация optional desktop-пакета, Windows runner,
 канал явного native crash, выбор `TRACER_WINDOWS_SENTRY_DSN`, сохранение runner PDB
 и отдельный Windows workflow. Runner создан шаблоном Flutter 3.47.4, официальный
@@ -38,12 +49,12 @@ Build helper включает Git `core.longpaths` только для проц�
 Sentry/Crashpad submodules; эти настройки устраняют причину этого сбоя.
 
 GitHub Actions `.github/workflows/windows.yml` выполняет эти же проверки,
-сохраняет JSON, runtime bundle, PDB и разрешённый lockfile. До получения результата
-workflow наличие YAML не считается успешно выполненной проверкой Windows.
+сохраняет JSON, runtime bundle, PDB и разрешённый lockfile. Временный workflow
+повторной проверки готового артефакта удалён после успешного прогона.
 
 ## Открытые проверки и ограничения
 
-- Dart analyze/tests на macOS проверяют регистрацию, инертный bootstrap,
+- Dart analyze/tests на macOS и Windows проверяют регистрацию, инертный bootstrap,
   конфигурацию и отказ по отсутствующим credentials/cleanup. Они не загружают DLL.
 - Default `preservePreviousReports: false` на Windows возвращает `unsupported`
   (`windows_previous_report_cleanup_unavailable`) до запуска SDK. Иначе SDK мог бы

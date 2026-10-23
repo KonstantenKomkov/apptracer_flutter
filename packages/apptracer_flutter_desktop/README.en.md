@@ -67,8 +67,9 @@ the official SDK with a mocked native channel, not live Tracer ingestion. See th
 
 The optional package now registers on Windows. The x64 example includes an
 explicit native crash probe, runtime DSN selection and a loopback acceptance
-driver. See [Windows preparation](../../docs/windows-preparation.md). Native
-build/runtime acceptance is still pending. Default startup (previous report
+driver. Windows x64 release build and Dart loopback delivery passed in CI; native
+crash/lifecycle and live Tracer acceptance remain pending. See
+[Windows preparation](../../docs/windows-preparation.md). Default startup (previous report
 preservation disabled) returns `unsupported` before SDK initialization, because
 Windows queue cleanup is not implemented. The experimental example explicitly
 preserves reports. Stop/clear and native replay revocation remain unverified.
