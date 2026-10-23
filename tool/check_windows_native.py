@@ -258,7 +258,8 @@ def main():
               'scope': 'native capture + loopback + restart; no Tracer acceptance, symbolication or revocation'}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-    print(json.dumps(report, ensure_ascii=False))
+    # Windows CI can expose a cp1252 stdout even when files use UTF-8.
+    print(json.dumps(report))
     return 1 if failures else 0
 
 
