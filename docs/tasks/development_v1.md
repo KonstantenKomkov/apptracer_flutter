@@ -461,6 +461,17 @@ release/build/UUID и `handled=false`/signal. Агент затем сам св�
 
 ## П. 12. Документация и подготовка выпуска пакетов
 
+**Прогресс 23 октября 2026 (macOS):** внешний release-потребитель собран из
+изолированного desktop export без overrides. Facade 0.2.1, interface 0.2.0 и
+все публичные sibling-пакеты разрешены с pub.dev; одна локальная ошибка с
+userId/key/breadcrumb подтверждает автоматическую регистрацию адаптера.
+Добавлен воспроизводимый `tool/check_macos_consumer.py` и шаг CI.
+Staged publish dry-run допускает только одно задокументированное предупреждение
+о точном pin sentry_flutter 9.30.1; публикация не выполнялась, в репозитории
+остаётся `publish_to: none`. Обновлены RU/EN README, privacy, publishing и
+[миграция](../desktop-migration.md). Это path-consumer, не проверка опубликованной
+desktop-версии. Общая подготовка выпуска Windows/Авроры остаётся открытой.
+
 **Контекст.** Текущие README, пример и publishing guide описывают desktop/Аврору
 как неподдерживаемые; пакет Sentry не опубликован.
 

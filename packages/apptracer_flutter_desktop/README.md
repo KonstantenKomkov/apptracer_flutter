@@ -1,5 +1,7 @@
 # apptracer_flutter_desktop
 
+[English](README.en.md)
+
 Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
 Dart-код предназначен для Windows/macOS. Жизненный цикл macOS проверен локально
 на arm64; Windows и полная платформенная приёмка не завершены. Пакет не опубликован.
@@ -106,6 +108,12 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 
 Пример с Windows/macOS runners: [example](example/README.md).
 Подготовка и открытые проверки Windows: [протокол](../../docs/windows-preparation.md).
+
+Установка во внешнее приложение, CocoaPods, переход со старого транспорта и
+проверка упаковки: [migration guide](../../docs/desktop-migration.md).
+Проверенный инструментальный baseline: Flutter 3.47.4 / Dart 3.13.3,
+sentry_flutter 9.30.1 / Cocoa 8.58.4; runtime macOS arm64. Deployment target
+моста — macOS 12.0, но это не означает выполненную приёмку на каждой старой ОС.
 
 ## Проверки
 

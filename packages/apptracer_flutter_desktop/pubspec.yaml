@@ -3,6 +3,11 @@ description: Experimental official Sentry SDK adapter for Tracer on macOS and Wi
 version: 0.1.0-dev.1
 publish_to: none
 repository: https://github.com/KonstantenKomkov/apptracer_flutter
+issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
+topics:
+  - crash-reporting
+  - error-monitoring
+  - tracer
 environment:
   sdk: ^3.5.0
   flutter: '>=3.24.0'

@@ -74,6 +74,8 @@ jobs:
             python3 tool/check_macos_desktop.py --app "$app" --scenario "$scenario" --output "build/macos-acceptance/$scenario.json"
           done
           python3 tool/check_macos_lifecycle.py --app "$app" --output build/macos-acceptance/lifecycle.json
+      - name: Build external consumer without monorepo overrides
+        run: python3 tool/check_macos_consumer.py --output build/macos-consumer
       - name: Record binary and symbol identity
         if: success()
         run: |
@@ -100,6 +102,7 @@ jobs:
           name: macos-arm64-acceptance
           path: |
             build/macos-acceptance/
+            build/macos-consumer/
             packages/apptracer_flutter_desktop/example/pubspec.lock
             packages/apptracer_flutter_desktop/example/macos/Podfile.lock
             packages/apptracer_flutter_desktop/example/macos-build.log
