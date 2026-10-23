@@ -174,6 +174,69 @@ executable. Пересборки не было, 12 MODULE identifiers повто
 права чтения параметров проекта через API не получены. SDK отправляет события
 непосредственно по HTTPS, его ответы при этой проверке не наблюдались.
 
-**Ожидается:** подтверждение трёх Dart-событий и native SIGABRT именно в Test,
-правильной подписи платформы, файлов/строк native-стека и полей новых карточек.
-Ни доставка старому проекту, ни успешный upload не заменяют эту приёмку.
+**Результат:** в ответ на запрос проверки Test пользователь прислал native
+`SIGABRT / Signal 6, Code 0`. Доставка подтверждена; файлы по-прежнему `<unknown>`,
+исходных строк нет. В тексте нет метки запуска, времени или подписи платформы;
+сопоставление основано на ответе пользователя на запрос этой пробы. Три Dart-события
+и их поля в Test ещё не подтверждены. Отрицательный результат символизации теперь
+получен и после смены проекта, но точная причина на стороне обработки не установлена.
+
+## Проверка альтернативного Apple dSYM endpoint
+
+В `14:08:52 UTC` проверен отдельный путь, описанный в
+[официальном Apple Bash uploader](https://apptracer.ru/doc/ios/bash/):
+`POST /api/symbol/upload`, параметр `symbolToken`, поля
+`versionName=apptracer_desktop_example`, `versionCode=1.0.0`, ZIP с runner dSYM.
+Это диагностическая проверка совместимости, не объявление поддержки macOS этим API.
+Выбран только runner (архив 1 976 002 байта); SHA-256 DWARF совпадает с исходным
+манифестом. SDK, приложение и отправка событий не менялись.
+
+С новым macOS plugin token сервер ответил **HTTP 400**:
+
+```json
+{"errorCode":"REQUEST","code":0,"message":"Application type should be IOS, but is DESKTOP"}
+```
+
+Это подтверждает тип **DESKTOP** проекта, которому принадлежит текущий plugin token,
+и неприменимость Apple upload endpoint к этому проекту. Загрузка не удалась;
+повторный crash после отклонённой загрузки не выполнялся. Артефакты без токенов:
+`build/macos-acceptance/cpp-runner-dsym-upload.json`, `cpp-runner-dsym.zip`.
+Не выполнять циклические повторы того же upload/crash без новых данных.
+
+Следующий недостающий факт — поддерживает ли Tracer серверную символизацию
+Sentry Cocoa/Mach-O в DESKTOP-проекте и какой путь загрузки/сопоставления ему нужен.
+Успешный `/api/nativesymbol/upload` и наличие модулей не подтверждают этот факт.
+
+## Текст для обращения в Tracer
+
+Черновик подготовлен локально; сообщение не отправлялось.
+
+> Проверяем Flutter macOS arm64 в C/C++-проекте Test (backend подтверждает тип
+> DESKTOP). Используем официальный sentry_flutter 9.30.1 / Sentry Cocoa 8.58.4
+> с DSN Tracer. Native SIGABRT доставляется после перезапуска, но стек остаётся
+> без файлов/строк и с частично нерасшифрованными Swift-именами.
+>
+> В локально принятом envelope той же сборки: platform=cocoa,
+> sdk.name=sentry.cocoa.flutter, contexts.os.name=macOS, arch=arm64,
+> debug_meta.images с type=macho, debug_id/image_addr/image_size/code_file;
+> кадры содержат instruction_addr/image_addr/package.
+>
+> Через vendor symupload.py подготовлены и загружены 12 Breakpad-модулей для
+> шести dSYM (arm64/x86_64). Все upload-ответы success:true, повторный
+> /api/nativesymbol/exists не запрашивает ни один модуль. Новый crash создан
+> после загрузки: 23.10.2026 около 16:39 МСК,
+> probe_run=macos-cpp-690a2cd66a-native. В его стеке файлы остаются unknown.
+>
+> UUID runner A070B3E2-E343-368F-AD64-F8D9122EFB30 совпадает с dSYM;
+> Breakpad MODULE ID — A070B3E2E343368FAD64F8D9122EFB300. Локальный atos
+> восстанавливает MainFlutterWindow.swift:18 и строки Flutter. Загруженный
+> .sym содержит соответствующие FILE/FUNC/line records.
+>
+> Альтернативная загрузка исходного runner dSYM через /api/symbol/upload
+> отклонена HTTP 400: Application type should be IOS, but is DESKTOP.
+>
+> Поддерживает ли DESKTOP ingest символизацию Sentry Cocoa/Mach-O по debug_meta?
+> Должны ли применяться символы /api/nativesymbol, какой формат идентификаторов
+> ожидается и как проверить готовность загруженных модулей к обработке событий?
+> Если этот маршрут не поддерживается, какой официальный SDK/формат рекомендуется
+> для native macOS в C/C++-проекте?
