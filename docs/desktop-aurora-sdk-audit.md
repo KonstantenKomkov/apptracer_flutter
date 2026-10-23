@@ -74,7 +74,9 @@ DSN Windows/macOS могут совпадать только после явно
 «Исходник» означает наличие API в закреплённой поставке, а не приёмку в Tracer.
 **Обновление:** macOS runtime проверен локально; пользователь подтвердил три
 Dart-события и стеки карточек в Tracer. В FlutterError подтверждены userId, ключ
-запуска, Context и breadcrumb. Native ingest и другие платформы остаются непроверенными. Подробности — в [протоколе macOS](macos-local-acceptance.md).
+запуска, Context и breadcrumb. Пользователь подтвердил native SIGABRT в Tracer;
+символизация, расширенная приёмка и другие платформы остаются непроверенными.
+Подробности — в [протоколе macOS](macos-local-acceptance.md).
 
 | Возможность | Windows/macOS, официальный Sentry SDK | Аврора, Tracer 0.1.15 | Проверка в плане |
 | --- | --- | --- | --- |
@@ -209,7 +211,7 @@ apptracer_flutter_aurora → platform_interface + MethodChannel + Tracer Native
 | B3 | Windows планируется на отдельном компьютере; версии и доступ пока не подтверждены | Выполнить [preflight](windows-preflight.md), записать версии VS/MSVC/SDK/CMake; затем проверить запуск и пути №3 |
 | B4 | Пользователь подтвердил отсутствие среды Авроры; установка возможна позже | После появления Linux runner и устройства/эмулятора закрепить версии №1, собрать/установить RPM №6 |
 | B5 | API Aurora 0.1.15 не покрывает Dart error, удаление данных, остановку | Получить подтверждённые API/новую поставку или согласованное ограничение; №7–8 остаются блокерами поддержки, без HTTP fallback |
-| B6 | Не подтверждён приём native формата Sentry и символизация | На точных release-сборках проверить crash, restart, PDB/dSYM/Dart AOT и console frames №3–5/11 |
+| B6 | macOS native SIGABRT принят в Tracer; native символизация и Windows ingest ещё не подтверждены | На точных release-сборках проверить crash, restart, PDB/dSYM/Dart AOT и console frames №3–5/11 |
 | B7 | Не доказано прекращение native upload и purge обеих desktop платформ | Файловые и сетевые проверки stop/clear/offline/in-flight/restart/account switch №8 |
 
 №1 не переносится в архив до проверки недостающих конфигураций и фиксации целевых
