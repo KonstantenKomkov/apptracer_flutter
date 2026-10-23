@@ -11,7 +11,9 @@
 Исходники пакетов и приложения между сборкой `25fe9ca` и проверкой `d8522a6`
 не менялись. Проверены запуск вне checkout в пути с пробелами/кириллицей,
 отсутствие отправки в disabled/deferred и ровно три ошибки с user/key/breadcrumbs.
-Это loopback-приёмник, не Tracer и не проверка native crash/stop/clear.
+Это loopback-приёмник, не Tracer. Отдельная последующая
+[native-проверка](windows-native-acceptance.md) прошла crash/minidump/restart;
+stop/clear остаются открытыми.
 
 Добавлены автоматическая Dart-регистрация optional desktop-пакета, Windows runner,
 канал явного native crash, выбор `TRACER_WINDOWS_SENTRY_DSN`, сохранение runner PDB
