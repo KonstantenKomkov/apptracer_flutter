@@ -6,12 +6,14 @@ on:
     paths:
       - 'tool/aurora/**'
       - 'tool/prepare_aurora_sdk.py'
+      - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'
       - '.github/workflows/aurora-preparation.yml'
   pull_request:
     paths:
       - 'tool/aurora/**'
       - 'tool/prepare_aurora_sdk.py'
+      - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'
       - '.github/workflows/aurora-preparation.yml'
   workflow_dispatch:
@@ -34,6 +36,8 @@ jobs:
             done < build/aurora-prepare.log
             exit 1
           fi
+      - name: Inspect native exports and runtime dependencies
+        run: python3 tool/inspect_aurora_elf.py > build/aurora-elf-inspection.json
       - name: Compile API declarations and inert loader probe on host
         run: |
           cmake -S tool/aurora -B build/aurora-host -DAPPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15"
@@ -48,4 +52,5 @@ jobs:
           path: |
             build/aurora-sdk-manifest.json
             build/aurora-prepare.log
+            build/aurora-elf-inspection.json
           retention-days: 14
