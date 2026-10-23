@@ -2,6 +2,35 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-5-windows-native"></a>
+
+## П. 5.Windows-native. PDB и локальная символизация нативного падения
+
+**Завершено 23 октября 2026.** Самостоятельная локальная подзадача №5.
+Live-символизация в Tracer и Windows Dart AOT остаются открытыми.
+
+**Критерий и результат:** точная Windows x64 release-сборка/PDB сопоставлена
+с native minidump по GUID/age, сформировано локальное дерево Breakpad.
+В двух сценариях (online и повторная отправка сохранённого дампа после HTTP 503)
+верхний кадр восстановлен до `(anonymous namespace)::ApptracerNativeCrashProbe()`,
+`flutter_window.cpp:16`. Кадр получен из crash context (`trust=context`), а не
+сканированием стека. Тестовый runner теперь падает в собственной noinline-функции.
+
+**Проверки:** 14 host Python-тестов; реальная Windows release-сборка и
+disabled/deferred/smoke в [CI 40009549554](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40009549554);
+crash/restart, offline-restart, проверка символов и сохранение полного артефакта
+в [CI 40010387576](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40010387576).
+Реализация: `1a0d6ab`, закрепление отдельных symbol tools — `d0c1ebf`,
+источник crash context — `1657514`. Отдельное ревью и исправления выполнены.
+
+**Артефакты и ограничения:** `windows-native-evidence` содержит minidumps только
+собственных тестовых запусков, EXE/PDB, symbol tree и JSON стеков; хранение CI —
+14 дней. Инструменты Mozilla dump_syms 2.3.9 / rust-minidump 0.27.0 загружаются
+из официальных releases с проверкой SHA-256. Symbol servers и реальные Tracer
+credentials не используются. Полная расшифровка системных/Flutter кадров не
+заявляется. [Протокол и команды](../windows-symbols-acceptance.md).
+Общий №5, Windows stop/clear №8 и сквозная приёмка №11 не закрыты.
+
 <a id="task-5-macos-dart"></a>
 
 ## П. 5.macOS-Dart. Локальная символизация обфусцированного Dart AOT

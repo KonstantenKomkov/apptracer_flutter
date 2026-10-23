@@ -70,7 +70,9 @@ GitHub Actions `.github/workflows/windows.yml` выполняет эти же п
   native/Dart AOT стеки остаются отдельной приёмкой. В UI есть явная кнопка падения с подтверждением.
   Автоматический native crash включается только `TRACER_SCENARIO=native-crash`.
   Проверять без отладчика, затем перезапускать с `TRACER_SCENARIO=idle` и тем же DSN.
-- PDB сохраняется от этой сборки, но соответствие ID и загрузка в Tracer — №5.
+- PDB сохраняется от этой сборки; соответствие PE/PDB/minidump и восстановление
+  верхнего native-кадра до исходной строки проверены в
+  [отдельном CI](windows-symbols-acceptance.md). Загрузка в Tracer — открытая №5.
 - MSVC runtime на чистой Windows, readonly install directory и Windows ARM64
   ещё не проверены. Проверка переноса в CI не заменяет чистую пользовательскую ОС.
 

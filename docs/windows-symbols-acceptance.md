@@ -49,8 +49,35 @@ Breakpad symbol tree, исходные minidumps тестового прилож
 чужой модуль и кадр другого потока. Дополнительно на macOS проверена реальная
 пара vendor `dump_syms.exe`/`.pdb` и соответствующий Breakpad MODULE.
 Отдельное ревью проверило границы MSF-блоков, отсутствие сетевых symbol servers,
-хеши инструментов и изоляцию артефактов. Целевой runtime результат фиксируется
-отдельно после Windows CI; одни host-тесты не закрывают задачу.
+хеши инструментов и изоляцию артефактов.
+
+## Подтверждённый Windows runtime
+
+Release x64 из `1657514` собран в
+[CI 40009549554](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40009549554),
+включая disabled/deferred/smoke. После сборки
+[CI 40010387576](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40010387576)
+успешно проверил native crash/restart, offline-restart после HTTP 503,
+совпадение PE/PDB/minidump и локальную символизацию обоих дампов.
+
+GUID/age: `bfd53960-ed86-4d36-aa78-d0fa6620a69d` / `1`.
+SHA-256 EXE: `66e1b2cf31dc6773af064c782ffdcf6b97885f0bf198559c0d7808092f6b5883`;
+PDB: `d2d6fbc1400f1c92a0a102d0599e038d32982470a3e16eb87761af4de4911f5a`.
+
+Оба первых кадра: `(anonymous namespace)::ApptracerNativeCrashProbe()`,
+`flutter_window.cpp:16`, `trust=context`. SHA-256 дампов:
+
+```text
+cc292345f75c0b5a1cdccde7fc950f98dd261be9210408fbb02768c93860080e
+f48f33535fd8944ed75350ff09f9aa6240487a1bc692015bcfd0d3fb5e6bae19
+```
+
+Функция/строка подтверждены из crash context; это не результат сканирования
+стека. Артефакт `windows-native-evidence` хранится 14 дней и содержит исходные
+дампы, точные EXE/PDB, SHA-256/GUID/age, Breakpad symbol tree и JSON stackwalk.
+Локальная копия артефакта: `build/windows-native-symbols-passed.zip`.
+Системные и Flutter-кадры без их символов остаются ограничением; Windows Dart AOT,
+live Tracer и stop/clear этой проверкой не закрываются.
 
 Рабочий путь будущей загрузки описан в
 [документации Tracer](https://apptracer.ru/doc/native-desktop/symbolization/):

@@ -383,7 +383,8 @@ Obfuscated macOS Dart AOT stacks have a separate
 Mach-O symbols and `atos`; the pinned Flutter CLI failed on those raw stacks.
 Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
 [acceptance record](macos-lifecycle-acceptance.md). Windows x64 now has
-[release/Dart](windows-preparation.md) and [native crash/retry](windows-native-acceptance.md)
+[release/Dart](windows-preparation.md), [native crash/retry](windows-native-acceptance.md)
+and [local PDB source-line symbolication](windows-symbols-acceptance.md)
 CI evidence; stop/clear and live Tracer remain open. Aurora still needs a target
 environment and a Flutter plugin; Linux is outside this iteration.
 

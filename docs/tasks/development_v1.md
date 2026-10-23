@@ -31,7 +31,8 @@ Tracer SDK. Наличие проекта не означает, что DSN, н�
 уже получены и проверены для каждой платформы. Следующий свободный номер — **13**.
 
 Выполненные работы переносить в `development_completed_v1.md` в этой папке,
-сохраняя номера и ссылки; №2, №4 и завершённые macOS-подзадачи №10/12 перенесены в архив.
+сохраняя номера и ссылки; №2, №4, локальные подзадачи №5 (macOS Dart AOT и
+Windows native PDB) и завершённые macOS-подзадачи №10/12 перенесены в архив.
 
 ## Бэклог (по убыванию значимости)
 
@@ -215,11 +216,13 @@ native macOS символизацию неподдерживаемой в про
 Windows и live-приёмка обфусцированного Dart AOT в Tracer не приняты;
 общая задача остаётся открытой.
 
-Windows native: добавлены сверка PE/PDB/minidump GUID/age, локальное дерево
-Breakpad и проверка верхнего кадра `ApptracerNativeCrashProbe` через `minidump-stackwalk` в CI.
-14 host-тестов проходят; целевой результат и границы — в
-[протоколе](../windows-symbols-acceptance.md). До успешного целевого прогона
-эта часть не архивируется; загрузка в Tracer и Dart AOT остаются открытыми.
+Windows native: локальная подзадача завершена и
+[архивирована](development_completed_v1.md#task-5-windows-native).
+В CI `40010387576` оба minidump (online и повторный upload после HTTP 503)
+прошли сверку PE/PDB/GUID/age и восстановлены до `ApptracerNativeCrashProbe`,
+`flutter_window.cpp:16`, `trust=context`. 14 host-тестов проходят;
+[протокол](../windows-symbols-acceptance.md). Загрузка/символизация в Tracer
+и Windows Dart AOT остаются открытыми.
 
 **Контекст.** Доставка ошибки не гарантирует читаемый стек. Применимость загрузчиков
 Tracer к данным выбранного Sentry SDK нужно подтвердить на точной release-сборке.
@@ -476,5 +479,6 @@ staged dry-run и документация установки/миграции/p
 - [№2. Общий адаптер официального Sentry SDK для desktop](development_completed_v1.md#task-2).
 - [№4. Подключить macOS](development_completed_v1.md#task-4).
 - [№5.macOS-Dart. Локальная символизация обфусцированного Dart AOT](development_completed_v1.md#task-5-macos-dart).
+- [№5.Windows-native. PDB и локальная символизация нативного падения](development_completed_v1.md#task-5-windows-native).
 - [№10.macOS. Пример, сборка, CI и регрессии](development_completed_v1.md#task-10-macos).
 - [№12.macOS. Внешний потребитель, упаковка и миграция](development_completed_v1.md#task-12-macos).
