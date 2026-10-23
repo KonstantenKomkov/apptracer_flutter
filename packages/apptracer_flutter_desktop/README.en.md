@@ -1,5 +1,7 @@
 # apptracer_flutter_desktop
 
+[Русский](README.md)
+
 Experimental `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
 SDK for macOS/Windows. Not published; platform acceptance is pending.
 
@@ -73,3 +75,11 @@ recovery after HTTP 503 passed in CI. Stop/clear and live Tracer acceptance rema
 preservation disabled) returns `unsupported` before SDK initialization, because
 Windows queue cleanup is not implemented. The experimental example explicitly
 preserves reports. Stop/clear and native replay revocation remain unverified.
+
+## External consumer and migration
+
+See [desktop-migration.md](../../docs/desktop-migration.md) for installation
+without monorepo overrides, CocoaPods setup, legacy-cache ownership and the
+package dry-run procedure. The tested baseline is Flutter 3.47.4 / Dart 3.13.3,
+sentry_flutter 9.30.1 / Cocoa 8.58.4 on macOS arm64. The bridge deployment target
+is macOS 12.0; this is not runtime acceptance on every older OS or Intel.

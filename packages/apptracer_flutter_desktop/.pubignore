@@ -1,0 +1,19 @@
+# Development wiring must not enter a published package.
+**/pubspec_overrides.yaml
+**/.dart_tool/
+**/build/
+**/Pods/
+**/ephemeral/
+**/.symlinks/
+**/pubspec.lock
+**/Podfile.lock
+**/.env*
+**/*.log
+**/symbols/
+**/*.symbols
+**/.DS_Store
+**/.idea/
+**/.vs/
+**/xcuserdata/
+**/*.keystore
+**/*.jks

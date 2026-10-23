@@ -45,7 +45,14 @@ Android SDK предлагает две похожие вещи: `setKey` (вк�
 `TracerOptions.reportUnhandledErrorsAsFatal` существует для команд, осознанно
 решивших иначе.
 
-## Web, десктоп и Аврора говорят с HTTP-приёмом Tracer напрямую
+## Web и прежний ручной HTTP-транспорт
+
+Историческое решение ниже относится к выпуску августа 2026. С октября
+опциональный `apptracer_flutter_desktop` использует официальный sentry_flutter
+9.30.1 / Cocoa 8.58.4. macOS arm64 прошёл локальные lifecycle-проверки и
+live-приёмку базовых Dart/native событий; расширенная матрица остаётся открытой.
+Адаптер не добавлен в обязательные зависимости фасада. Переход, дополнительные
+данные SDK и ограничения: [desktop-migration.md](desktop-migration.md).
 
 JavaScript-SDK Tracer поставляется только как npm-пакет `@apptracer/sdk`, а
 Flutter-сборка под web не умеет включать в себя npm-пакет. Под десктоп у

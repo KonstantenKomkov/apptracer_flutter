@@ -52,12 +52,28 @@ has to be on pub.dev before the next resolves.
 5. `apptracer_flutter_web`
 6. `apptracer_flutter`
 
-`apptracer_flutter_sentry` is **not** in that list and carries
-`publish_to: none`. The platforms it exists for — desktop and Aurora OS — are
-outside this release and have never been run against a live Tracer project, so
-there is nothing to publish it on the strength of. Anyone who needs it can
-depend on it from git. Remove the line and add it to the list, after
-`apptracer_flutter_platform_interface`, when that changes.
+`apptracer_flutter_sentry` is the legacy manual transport and remains
+`publish_to: none`. Do not publish it as the new desktop backend.
+The optional `apptracer_flutter_desktop` is a separate, experimental
+`0.1.0-dev.1` package using the official Sentry SDK. It also remains
+`publish_to: none`; macOS results do not close Windows/Aurora acceptance.
+
+For a separately approved desktop release, publish any required changed
+platform-interface version first, then the desktop adapter. The current
+adapter resolves the already hosted interface 0.2.0 and facade 0.2.1.
+No facade release is needed merely to opt into the adapter. Keep its exact
+`sentry_flutter: 9.30.1` dependency until the version-specific integration
+has been re-audited. Pub reports a tight-constraint warning for this deliberate
+pin; it must be recorded explicitly, not silently converted into a clean
+dry-run result. Set the final release version/changelog only when scope and
+acceptance are settled.
+
+Run `python3 tool/check_macos_consumer.py --output build/macos-consumer`
+on macOS to check an isolated export, staged publish dry-run and external release
+consumer with hosted siblings and no monorepo overrides. The staged copy alone
+has `publish_to: none` removed; the check never publishes. See
+[desktop-migration.md](desktop-migration.md) for the exact scope and limits.
+After publication, repeat against the hosted desktop package.
 
 0.1.0 went out on 2026-08-28, in that order. The required `publish-dry-run` CI
 job checks archive contents and package metadata using local overrides. It does
@@ -87,7 +103,8 @@ between `v0.1.1` and `v0.1.2`.
 - [ ] `flutter analyze --fatal-infos` is clean
 - [ ] `flutter test` passes
 - [ ] `dart format --set-exit-if-changed .` is clean
-- [ ] `dart pub publish --dry-run` reports no warnings
+- [ ] `dart pub publish --dry-run` reports no unexpected warnings (the experimental
+      desktop adapter's exact SDK pin is the documented exception above)
 - [ ] hosted dependencies resolve without `pubspec_overrides.yaml`, after the
       required sibling versions have been published
 - [ ] `LICENSE`, `README.md`, `CHANGELOG.md` present

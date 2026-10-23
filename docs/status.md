@@ -24,6 +24,14 @@ match. See the
 requires a new process; server native symbolication is unsupported in the tested
 integration. Windows/Aurora acceptance and publication remain open.
 
+**macOS automation and packaging:** the separate macOS 15 arm64 CI builds the
+release example, runs real loopback/lifecycle checks and retains binaries,
+symbols and reports. An isolated external macOS consumer resolves the facade
+and interface from pub.dev without monorepo overrides. The staged publish
+dry-run retains one documented warning for the exact Sentry SDK pin; no
+publication was performed. See [CI and consumer evidence](macos-ci-consumer-acceptance.md)
+and [migration instructions](desktop-migration.md).
+
 **Unreleased Windows update:** x64 release build and disabled/deferred/Dart
 loopback scenarios passed in CI (`39994523733`). Native crash/minidump identity
 and a new process restart passed; a rejected HTTP 503 upload was preserved and

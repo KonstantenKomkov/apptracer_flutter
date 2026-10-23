@@ -6,6 +6,8 @@ copied from prose documentation. Where a fact could not be verified it says so.
 Baseline verified: 2026-08-25. Android SDK 1.5.2 update: 2026-10-16;
 see [artifact audit and validation scope](android-sdk-1.5.2.md).
 Unreleased macOS update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
+macOS 15 arm64 CI and isolated consumer checks:
+[automation and packaging evidence](macos-ci-consumer-acceptance.md).
 
 ## Summary
 
