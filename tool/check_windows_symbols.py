@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Match PE/PDB/minidumps and recover runner source frames using local symbols.
 
-The caller supplies vendor dump_syms and rust-minidump-stackwalk executables.
+The caller supplies dump_syms and rust-minidump-stackwalk executables.
 No symbol servers, plugin tokens or Tracer uploads are used.
 """
 import argparse

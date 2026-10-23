@@ -4,20 +4,26 @@
 остаётся отдельной открытой работой. Проверка ниже касается native runner x64.
 
 `tool/check_windows_symbols.py` читает GUID/age из PE CodeView и Info stream PDB 7,
-сверяет их с модулем runner в minidump, преобразует символы через vendor
+сверяет их с модулем runner в minidump, преобразует символы через
 `dump_syms` и проверяет Breakpad MODULE. Затем `minidump-stackwalk 0.27.0`
 восстанавливает стек из локального дерева символов. В crashing thread требуется
 кадр `FlutterWindow` с файлом `flutter_window.cpp` и положительным номером строки.
 Метод получения кадра (`trust`) сохраняется в JSON; найденный сканированием кадр
 не объявляется доказанным CFI-unwind. Системные символы не скачиваются.
 
-Источники инструментов: `dump_syms.exe` из уже проверенной поставки Tracer
-0.1.15, закреплённой в `tool/aurora/sdk.lock.json` (используется только утилита,
-не Aurora runtime), и официальный
+Источники инструментов CI: официальный
+[Mozilla dump_syms 2.3.9](https://github.com/mozilla/dump_syms/releases/tag/v2.3.9)
+и официальный
 [rust-minidump 0.27.0](https://github.com/rust-minidump/rust-minidump/releases/tag/v0.27.0).
+SHA-256 Windows архива dump_syms:
+`bdf48486220708808a3e00aec78856ee1cce096189d47a1e2cb1c635f93bacc7`.
 SHA-256 архива stackwalk:
 `f6f2d7f1665843c4a270cd13fcd1458fed3b19013ea5dd909e12bc3599b959f4`.
 Скачивание проверяет хеш до распаковки. Бинарники в Git не включаются.
+Загрузка большого Aurora SDK ради vendor-копии утилиты в первом CI
+`40008328779` остановилась на лимите времени; CI использует отдельный
+архив исходного проекта Mozilla. Vendor uploader для будущей загрузки
+в Tracer этим инструментом не заменяется.
 
 Для воспроизведения на Windows после release-сборки:
 

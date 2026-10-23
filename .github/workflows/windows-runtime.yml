@@ -7,8 +7,6 @@ on:
       - 'tool/tests/test_windows_native.py'
       - 'tool/check_windows_symbols.py'
       - 'tool/tests/test_windows_symbols.py'
-      - 'tool/prepare_aurora_sdk.py'
-      - 'tool/aurora/sdk.lock.json'
       - '.github/workflows/windows-runtime.yml'
   workflow_run:
     workflows: ['Windows desktop preparation']
@@ -87,13 +85,17 @@ jobs:
       - name: Prepare pinned local symbol tools
         shell: pwsh
         run: |
-          # The audited vendor archive also includes its Windows dump_syms.
-          # No Aurora runtime library is installed or executed on Windows.
-          python tool/prepare_aurora_sdk.py --destination build/symbol-tools/tracer
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $ProgressPreference = 'SilentlyContinue'
+          New-Item -ItemType Directory -Force build/symbol-tools | Out-Null
+          $symbolsUrl = 'https://github.com/mozilla/dump_syms/releases/download/v2.3.9/dump_syms-x86_64-pc-windows-msvc.zip'
+          $symbolsArchive = 'build/symbol-tools/dump-syms.zip'
+          Invoke-WebRequest -Uri $symbolsUrl -OutFile $symbolsArchive -TimeoutSec 120
+          $symbolsHash = (Get-FileHash $symbolsArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($symbolsHash -ne 'bdf48486220708808a3e00aec78856ee1cce096189d47a1e2cb1c635f93bacc7') { throw 'dump_syms archive checksum mismatch' }
+          Expand-Archive -LiteralPath $symbolsArchive -DestinationPath build/symbol-tools/dump-syms
           $url = 'https://github.com/rust-minidump/rust-minidump/releases/download/v0.27.0/minidump-stackwalk-x86_64-pc-windows-msvc.zip'
           $archive = 'build/symbol-tools/stackwalk.zip'
-          Invoke-WebRequest -Uri $url -OutFile $archive
+          Invoke-WebRequest -Uri $url -OutFile $archive -TimeoutSec 120
           $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($hash -ne 'f6f2d7f1665843c4a270cd13fcd1458fed3b19013ea5dd909e12bc3599b959f4') { throw 'Stackwalk archive checksum mismatch' }
           Expand-Archive -LiteralPath $archive -DestinationPath build/symbol-tools/stackwalk
@@ -103,13 +105,21 @@ jobs:
           $app = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.exe | Select-Object -First 1
           $pdb = Get-ChildItem build/compiled -Recurse -Filter apptracer_desktop_example.pdb | Select-Object -First 1
           $walker = Get-ChildItem build/symbol-tools/stackwalk -Recurse -Filter minidump-stackwalk.exe | Select-Object -First 1
-          if (-not $app -or -not $pdb -or -not $walker) { throw 'Missing executable, exact PDB or stackwalker' }
-          python tool/check_windows_symbols.py --app $app.Directory.FullName --pdb $pdb.FullName --dump-dir build/windows-native/dumps --dump-syms build/symbol-tools/tracer/symupload/dump_syms/windows/dump_syms.exe --stackwalk $walker.FullName --output build/windows-native/symbols 2>&1 | Tee-Object -FilePath symbols-probe.log
+          $dumper = Get-ChildItem build/symbol-tools/dump-syms -Recurse -Filter dump_syms.exe | Select-Object -First 1
+          if (-not $app -or -not $pdb -or -not $walker -or -not $dumper) { throw 'Missing executable, exact PDB or symbol tool' }
+          python tool/check_windows_symbols.py --app $app.Directory.FullName --pdb $pdb.FullName --dump-dir build/windows-native/dumps --dump-syms $dumper.FullName --stackwalk $walker.FullName --output build/windows-native/symbols 2>&1 | Tee-Object -FilePath symbols-probe.log
           if ($LASTEXITCODE -ne 0) {
             $detail = (Get-Content symbols-probe.log -Tail 30) -join "`n"
             $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
             Write-Output "::error title=Windows symbols probe failed::$detail"
             exit 1
+          }
+          $result = Get-Content build/windows-native/symbols/report.json -Raw | ConvertFrom-Json
+          foreach ($dump in $result.dumps) {
+            $frame = $dump.frames[0]
+            $detail = "$($dump.sha256): $($frame.function), $($frame.file):$($frame.line), trust=$($frame.trust)"
+            $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::notice title=Recovered runner source frame::$detail"
           }
       - uses: actions/upload-artifact@v4
         if: always()
