@@ -1,5 +1,15 @@
 # Символизация
 
+**Windows, 24 октября 2026:** optional adapter восстанавливает исходные кадры
+на клиенте. Dart-карта: `data/apptracer-dart-symbols/<ELF-build-id>.json.gz`;
+native: `symbols/<pdb-name>/<GUID+age>/<pdb-name>.sym`. Проверяется совпадение
+stack/binary/map identity; отсутствующие/чужие карты не изменяют исходный отчёт.
+Native mapping выполняется в crash daemon, Dart mapping — перед сериализацией
+SDK с сохранением raw stack. Runtime symbol tools/plugin token не нужны.
+Карты раскрывают имена/пути; их создание можно пропустить. PDB/DWARF хранятся
+отдельно от приложения. [Команды](windows-preparation.md) и
+[приёмка](windows-local-acceptance.md). Серверная обработка PDB/DWARF этим не доказана.
+
 Что происходит со стектрейсом Dart в release-сборке, что Tracer с этим может и
 чего не может, и что сделать, чтобы через полгода не остаться с крашем, который
 невозможно прочитать.

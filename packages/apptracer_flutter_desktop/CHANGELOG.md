@@ -30,11 +30,14 @@
   dependencies and automatic adapter registration. Add package exclusions and
   migration/privacy guidance; retain the exact SDK pin and unpublished status.
 
-- Prepare Windows x64 registration, runner, native crash probe, PDB retention and
-  loopback CI. Refuse default Windows startup until previous-report cleanup is
-  implemented. Native lifecycle and live platform acceptance remain open.
+- Complete Windows x64 native-backend lifecycle: owned queue, durable consent
+  revocation, uploader cancellation, default purge and stop/clear. Bundle app-local
+  MSVC runtime. Resolve Dart AOT/native source frames using optional exact-build
+  maps, fix Cyrillic module paths in the pinned daemon, and verify 24 local
+  release scenarios, live Tracer delivery and two isolated external consumers.
+  Updated CI is prepared; clean Windows VM/Windows 10/ARM64 remain untested.
 - Add an experimental official Sentry SDK adapter with explicit ownership,
   filtered event mapping and fail-safe initialization.
 - Add macOS Cocoa lifecycle ownership, cancellable delivery, durable replay
   revocation and isolated queue cleanup; restarting after native init requires a
-  new process. Keep Windows purge and full live platform acceptance open.
+  new process. Expanded acceptance for other targets remains separate.

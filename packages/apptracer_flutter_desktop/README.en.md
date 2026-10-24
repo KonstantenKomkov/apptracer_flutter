@@ -4,7 +4,7 @@
 
 Experimental `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
 SDK for macOS/Windows/Ubuntu Linux. Unpublished; macOS arm64 and Ubuntu x64 are
-accepted within their documented scope, while Windows acceptance remains pending.
+accepted within their documented scope. Windows 11 x64 local acceptance is recorded below.
 
 Ubuntu 22.04 x86_64 uses the official native queue for SDK-serialized Dart events
 and native reports. Linux requires `SENTRY_NATIVE_BACKEND=native` and an executable
@@ -88,7 +88,7 @@ The macOS bridge uses public Cocoa 8.58.4 APIs and CocoaPods; SPM is not support
 by this bridge. Official SDK serialization, crash handling and queueing remain in
 use; a session-local URLProtocol gates network delivery. See the
 [local lifecycle evidence](../../docs/macos-lifecycle-acceptance.md).
-Windows purge remains unsupported; macOS results do not establish Windows support.
+Windows has its own native queue/lifecycle implementation and separate acceptance below.
 
 The main package's dependency graph is unchanged. Adding this optional package to
 a combined mobile/desktop app also pulls in Sentry's iOS/Android native dependencies;
@@ -102,16 +102,29 @@ Run `flutter pub get`, `flutter analyze`, `flutter test` on macOS. Tests exercis
 the official SDK with a mocked native channel, not live Tracer ingestion. See the
 [Russian README](README.md) for the setup example and full limitations.
 
-## Windows preparation
+## Windows x64
 
-The optional package now registers on Windows. The x64 example includes an
-explicit native crash probe, runtime DSN selection and a loopback acceptance
-driver. Windows x64 release build, Dart/native loopback delivery and native queue
-recovery after HTTP 503 passed in CI. Stop/clear and live Tracer acceptance remain pending. See
-[Windows preparation](../../docs/windows-preparation.md). Default startup (previous report
-preservation disabled) returns `unsupported` before SDK initialization, because
-Windows queue cleanup is not implemented. The experimental example explicitly
-preserves reports. Stop/clear and native replay revocation remain unverified.
+Build with `SENTRY_NATIVE_BACKEND=native`. Automatic registration includes the
+native lifecycle helper and bundles `sentry-crash.exe`, `sentry-wer.dll` and
+app-local MSVC runtime DLLs. Ship the entire Release directory. Storage is
+`%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`, independent of the install path.
+Default startup discards old reports; preservation is opt-in. Stop durably
+revokes replay and cancels owned uploaders; clear deletes the owned queue.
+After native initialization, collection requires a new process to resume.
+Windows reparse-point ancestors are rejected and a process lock prevents two
+instances from sharing the active queue. Legacy SDK caches are not migrated.
+
+Optional exact-build maps resolve obfuscated Dart frames from `data/app.so`
+and native runner frames from PE/PDB identity. Maps expose function names/source
+paths; omit the map generation steps to keep them private. Missing/mismatched
+maps retain the SDK report and raw Dart stack. No symbol plugin token is needed.
+See [commands](../../docs/windows-preparation.md),
+[consumer setup](../../docs/desktop-migration.md#windows-consumer) and
+[Windows 11 x64 evidence](../../docs/windows-local-acceptance.md).
+All 24 local release scenarios and two external consumers passed. Eight events
+were accepted by Tracer; handled/native cards and grouping counts were inspected.
+Clean Windows VM, Windows 10 and ARM64 are untested. Current CI changes have not
+yet run remotely; packages remain unpublished.
 
 ## External consumer and migration
 

@@ -56,9 +56,11 @@ def inspect_linux_dump(data, executable):
 
 
 class Probe:
-    def __init__(self, bundle, directory, dump_directory=None):
-        self.executable = bundle / 'apptracer_desktop_example'
-        self.storage = directory / 'Data Кириллица/apptracer_desktop/apptracer_desktop_example/v1'
+    def __init__(self, bundle, directory, dump_directory=None, windows=False):
+        self.windows = windows
+        name = 'apptracer_desktop_example' + ('.exe' if windows else '')
+        self.executable = bundle / name
+        self.storage = directory / 'Data Кириллица/apptracer_desktop' / name / 'v1'
         self.requests, self.steps, self.logs = [], [], []
         self.mode = 'online'
         self.expect_native_symbols = True
@@ -92,7 +94,13 @@ class Probe:
                     else:
                         raise ValueError('unexpected ingest route')
                     if dump is not None:
-                        request['dump'] = inspect_linux_dump(dump, probe.executable)
+                        if windows:
+                            from check_windows_native import inspect_dump, pe_identity
+                            request['dump'] = inspect_dump(dump, probe.executable.name)
+                            assert request['dump']['runner']['codeview'] == pe_identity(probe.executable.read_bytes())
+                            assert request['dump']['exception_code'] == '0xc0000005'
+                        else:
+                            request['dump'] = inspect_linux_dump(dump, probe.executable)
                         if str(bundle) not in request['dump']['runner']['path']:
                             raise ValueError('dump is from another probe process')
                         if dump_directory is not None:
@@ -136,6 +144,9 @@ class Probe:
                         TRACER_LINUX_SENTRY_DSN=f'http://linux-probe@127.0.0.1:{self.server.server_port}/42',
                         TRACER_SCENARIO='lifecycle', TRACER_RUN_ID=directory.name,
                         XDG_DATA_HOME=str(directory / 'Data Кириллица'))
+        if windows:
+            self.env['TRACER_WINDOWS_SENTRY_DSN'] = self.env.pop('TRACER_LINUX_SENTRY_DSN')
+            self.env['LOCALAPPDATA'] = self.env.pop('XDG_DATA_HOME')
 
     def wait(self, predicate, label, timeout=30):
         deadline = time.monotonic() + timeout
@@ -188,6 +199,15 @@ class Probe:
         assert self.process.poll() is None, self.logs[-5:]
 
     def terminate(self):
+        if self.windows:
+            if self.process is not None:
+                if self.process.poll() is None:
+                    self.process.terminate()
+                self.process.wait(timeout=5)
+                self.process = None
+            from check_windows_runtime import cleanup_daemons
+            cleanup_daemons(self.executable.parent)
+            return
         if self.process is not None:
             # A dedicated session owns this probe and its Crashpad child only.
             try:
@@ -385,7 +405,9 @@ def dart_offline(p, policy='retry'):
             try:
                 if path.is_file() and marker.encode() in path.read_bytes():
                     return True
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
+                # Windows SDK lock files deny read sharing; wait for a readable
+                # persisted envelope rather than treating a lock as payload.
                 pass
         return False
 

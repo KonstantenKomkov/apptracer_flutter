@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  apptracer_flutter_desktop
   jni
 )
 

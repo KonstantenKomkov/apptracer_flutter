@@ -96,7 +96,7 @@ def main():
     if windows:
         executable_name = 'apptracer_desktop_example.exe'
         for name in [executable_name, 'sentry.dll', 'flutter_windows.dll',
-                     'crashpad_handler.exe', 'crashpad_wer.dll', 'data/app.so']:
+                     'sentry-crash.exe', 'sentry-wer.dll', 'apptracer_windows.dll', 'data/app.so']:
             if not (app / name).is_file():
                 parser.error('incomplete Windows bundle: ' + name)
     elif linux:
@@ -174,6 +174,8 @@ def main():
             executable = (relocated if windows or linux else relocated / 'Contents/MacOS') / executable_name
             if linux:
                 env['XDG_DATA_HOME'] = str(Path(directory) / 'Data Кириллица')
+            if windows:
+                env['LOCALAPPDATA'] = str(Path(directory) / 'Data Кириллица')
             ready_file = Path(directory) / 'ready.txt'
             if windows or linux:
                 env['TRACER_PROBE_READY_FILE'] = str(ready_file)
@@ -279,7 +281,7 @@ def main():
               'logs': outputs if failures else [],
               'scope': 'local release app + official SDK, not Tracer console acceptance'}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'scenario': args.scenario, 'events': len(received),
                       'failures': failures, 'report': str(args.output)}, ensure_ascii=False))
     return 1 if failures else 0

@@ -166,8 +166,16 @@ Native crash не проходит через Dart `beforeSend`: фильтра�
 другого транспорта и системные crash-логи macOS не удаляются. Уже доставленные
 серверу отчёты локальная очистка также не удаляет.
 
-Windows cleanup/отзыв сети ещё не приняты; эти результаты macOS нельзя
-переносить на Windows. Порядок перехода и границы очистки:
+Windows 11 x64 проверен отдельно: SDK queue находится в
+`%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`, stop отзывает consent/replay
+и отменяет принадлежащие адаптеру uploaders; clear удаляет только эту очередь.
+Junction/reparse-point в предках storage отвергаются. Старые SDK/Crashpad кэши
+и системные WER-файлы не удаляются. Повторный старт после native init требует
+нового процесса. Dart-события содержат Windows version/architecture; native
+SDK добавляет собственные OS/device/module сведения. Клиентские Dart/PDB-карты
+раскрывают имена функций и пути файлов; их можно не включать в поставку.
+Full PDB/DWARF не нужны для исполнения. [Проверенная область](windows-local-acceptance.md).
+Порядок перехода и границы очистки:
 [desktop-migration.md](desktop-migration.md).
 
 ## Согласие не опционально

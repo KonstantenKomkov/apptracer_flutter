@@ -21,8 +21,8 @@ instead of assuming this example's CMake changes exist in the Flutter template.
 Separate dependency graph for `apptracer_flutter` + the optional official Sentry
 SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS/Linux registration
 selects `SentryDesktopTracer` automatically; registration itself does not start SDK
-collection. Windows x64 release build, Dart/native loopback delivery and native
-queue recovery after HTTP 503 passed in CI. Windows stop/clear and live Tracer remain pending.
+collection. Windows 11 x64 now has separate local lifecycle, offline/retry,
+source-frame and live delivery evidence; see the Windows section below.
 
 ## Build and launch
 
@@ -53,9 +53,8 @@ network access and uses the SDK's normal sandbox container for persistent data.
 
 This acceptance example opts into `preservePreviousReports: true` to recover native
 crashes after restart. Set `TRACER_PRESERVE_REPORTS=false` to discard old reports.
-The library API default remains false. On macOS/Ubuntu, stop revokes replay regardless of
-this flag. Windows revocation and cleanup are not implemented; starting with this
-flag set to false returns `unsupported` before SDK initialization.
+The library API default remains false. On macOS/Ubuntu/Windows, stop revokes
+replay regardless of this flag. Resuming after native init requires a new process.
 
 ## Local SDK transport acceptance
 
@@ -93,8 +92,8 @@ files, account change, normal and crash restarts, and default report disposal.
 Run acceptance scripts sequentially: this example has one shared sandbox/cache.
 They deliberately create synthetic crash reports in the example process.
 
-**This receiver is not Tracer.** Console delivery/grouping and Windows runtime
-remain separate checks. Native macOS server symbolication is unsupported in the
+**This receiver is not Tracer.** Console delivery/grouping have separate
+platform acceptance records. Native macOS server symbolication is unsupported in the
 tested integration. Local macOS stop/clear results and their limits are documented
 in [macOS lifecycle acceptance](../../../docs/macos-lifecycle-acceptance.md).
 
@@ -104,13 +103,13 @@ Use Flutter 3.47.4 and Visual Studio with Desktop development with C++.
 From this example directory:
 
 ```powershell
-../../../tool/build_windows_desktop.ps1
+../../../tool/build_windows_desktop.ps1 -Obfuscate
 $env:TRACER_WINDOWS_SENTRY_DSN = '<DSN of the Windows Tracer project>'
 .\build\windows\x64\runner\Release\apptracer_desktop_example.exe
 ```
 
 Copy the entire `Release` directory when moving to another machine, including
-Sentry, Flutter, Crashpad and data files. Native runner PDBs from the same build
+Sentry, Flutter, native daemon/helper, app-local MSVC DLLs and data files. Native runner PDBs from the same build
 are retained under `build/symbols/native`. This does not upload them or establish
 Tracer symbolication. No plugin token is compiled into the application.
 
@@ -118,4 +117,8 @@ Run `tool/check_windows_desktop.py` from the repository root, with `--app` point
 to that Release directory and `--scenario disabled`, `deferred` or `smoke`.
 It uses a dummy loopback DSN and relocates the complete bundle to a temporary
 path with spaces/Cyrillic. It closes only its own process tree.
-[Commands and remaining acceptance](../../../docs/windows-preparation.md).
+[Build/source-map commands](../../../docs/windows-preparation.md) and
+[Windows 11 x64 acceptance](../../../docs/windows-local-acceptance.md).
+The local build used Flutter 3.35.5 / Dart 3.9.2; CI remains pinned to 3.47.4.
+Optional exact-build maps populate source lines before SDK serialization; they
+expose function names and paths. Omit map generation to preserve obfuscation.

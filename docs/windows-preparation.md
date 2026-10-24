@@ -1,80 +1,71 @@
-# Windows x64: подготовка реализации
+# Windows x64: сборка и проверка
 
-Дата: 2026-10-23. Частичная реализация №3; задача остаётся открытой.
+Обновлено 24 октября 2026. Текущая реализация использует официальный
+Sentry Flutter 9.30.1 / sentry-native 0.16.6 с backend `native` и
+`sentry-crash.exe`. Реализованы stop/clear, отзыв replay и автоматические
+исходные кадры Dart/native. [Приёмка и границы](windows-local-acceptance.md).
+Прежние [Crashpad CI](windows-native-acceptance.md) и
+[PDB-проверки](windows-symbols-acceptance.md) сохранены как история.
 
-**Подтверждено на Windows CI:** release-сборка x64 и локальная доставка Dart-событий.
-[Полный прогон 39994523733](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994523733)
-успешно выполнил сборку и все три transport-сценария одним циклом.
-[Прогон сборки 39992634203](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39992634203)
-успешно собрал приложение, но выявил ошибку chunked-декодирования проверочного
-приёмника. После исправления приёмника
-[прогон 39994294312](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/39994294312)
-успешно проверил **тот же** release-артефакт: disabled, deferred, smoke.
-Исходники пакетов и приложения между сборкой `25fe9ca` и проверкой `d8522a6`
-не менялись. Проверены запуск вне checkout в пути с пробелами/кириллицей,
-отсутствие отправки в disabled/deferred и ровно три ошибки с user/key/breadcrumbs.
-Это loopback-приёмник, не Tracer. Отдельная последующая
-[native-проверка](windows-native-acceptance.md) прошла crash/minidump/restart
-и восстановление той же очереди после HTTP 503;
-stop/clear остаются открытыми.
+## Инструменты и сборка
 
-Добавлены автоматическая Dart-регистрация optional desktop-пакета, Windows runner,
-канал явного native crash, выбор `TRACER_WINDOWS_SENTRY_DSN`, сохранение runner PDB
-и отдельный Windows workflow. Runner создан шаблоном Flutter 3.47.4, официальный
-Sentry Flutter закреплён на 9.30.1. Проверяемая архитектура — только x64.
+На пользовательском компьютере Flutter находится в `D:\Tools\flutter`,
+Build Tools — `D:\Tools\VisualStudio\BuildTools`, pub cache — `D:\Tools\PubCache`,
+TEMP — `D:\Tools\Temp`, native sources — `D:\Tools\apptracer-native`.
+Общие компоненты Windows SDK/installer используют также существующие пути C.
+Старые Flutter/Visual Studio на C не удалялись.
 
-Поставка SDK управляется CMake официального пакета: `sentry.dll`,
-`crashpad_handler.exe`, `crashpad_wer.dll`. При переносе нужен весь каталог Release
-с `flutter_windows.dll`, остальными DLL и `data/`. Системный MSVC runtime должен
-присутствовать на целевом компьютере. Скрипт не устанавливает его автоматически.
-
-## Локальная проверка на Windows
-
-Сначала выполнить [preflight](windows-preflight.md). Из корня репозитория:
+Из корня репозитория:
 
 ```powershell
-./tool/build_windows_desktop.ps1
-python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario disabled --output build/windows-acceptance/disabled.json
-python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario deferred --output build/windows-acceptance/deferred.json
-python tool/check_windows_desktop.py --app packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release --scenario smoke --output build/windows-acceptance/smoke.json
+. ./tool/use_windows_tools.ps1
+./tool/build_windows_desktop.ps1 -NativeDepsDirectory D:\Tools\apptracer-native -Obfuscate
+$example = 'packages/apptracer_flutter_desktop/example'
+$bundle = "$example/build/windows/x64/runner/Release"
+$dumper = 'D:\Tools\Symbols\dump-syms\dump_syms.exe'
+python -X utf8 tool/prepare_windows_runtime_symbols.py --bundle $bundle --pdb "$example/build/symbols/native/apptracer_desktop_example.pdb" --dump-syms $dumper
+python -X utf8 tool/prepare_linux_dart_runtime_symbols.py --windows --bundle $bundle --symbols "$example/build/symbols/dart/app.windows-x64.symbols" --dump-syms $dumper
+$env:TRACER_WINDOWS_SENTRY_DSN = '<Sentry DSN проекта Tracer>'
+& "$bundle/apptracer_desktop_example.exe"
 ```
 
-Каждая команда должна завершиться с кодом 0. Скрипт проверяет комплект файлов,
-переносит приложение за пределы checkout в путь с пробелами/кириллицей и использует
-только локальный приёмник с фиктивным DSN. Disabled/deferred должны стартовать
-без SDK и сетевых запросов; smoke — отправить ровно три события с разными
-ошибками, userId, ключом запуска и breadcrumbs. GUI-приложение сообщает готовность
-через отдельный временный файл, поскольку консоль может отсутствовать.
+Helper выбирает native backend и включает `core.longpaths` только для процесса.
+Карты исходников опциональны: пропустить две команды `prepare_*`, если нельзя
+раскрывать имена функций/пути файлов. Полные PDB/DWARF хранить отдельно:
+MSVC оставляет runner `.pdb` рядом с EXE в build output, его не нужно включать
+в распространяемый архив. Каталог `symbols/<name>.pdb/` — компактная карта,
+его не путать с полным PDB-файлом. Готовый архив этой проверки полных PDB не содержит.
+Plugin token не нужен для клиентских карт и не передаётся приложению.
 
-Build helper включает Git `core.longpaths` только для процесса сборки и задаёт
-короткий каталог native-зависимостей в TEMP, отдельный для этого checkout.
-Окружение восстанавливается после завершения; глобальная конфигурация Git
-не меняется. Каталог можно задать через `-NativeDepsDirectory C:\at-deps`.
-Первый Windows CI обнаружил превышение длины путей при checkout вложенных
-Sentry/Crashpad submodules; эти настройки устраняют причину этого сбоя.
+Переносить весь Release: EXE, Flutter/Sentry/helper DLL, `sentry-crash.exe`,
+`sentry-wer.dll`, app-local MSVC DLL, `data/` и выбранные карты `symbols/`.
+Очередь — `%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`, независимо от каталога
+установки. Старые кэши Sentry/Crashpad не импортируются и не удаляются.
 
-GitHub Actions `.github/workflows/windows.yml` выполняет эти же проверки,
-сохраняет JSON, runtime bundle, PDB и разрешённый lockfile. Временный workflow
-повторной проверки готового артефакта удалён после успешного прогона.
+## Воспроизводимая проверка
 
-## Открытые проверки и ограничения
+```powershell
+python -X utf8 -m unittest discover -s tool/tests -v
+foreach ($scenario in @('disabled', 'deferred', 'smoke')) {
+  python -X utf8 tool/check_windows_desktop.py --app $bundle --scenario $scenario --output "build/windows-local/$scenario.json"
+  if ($LASTEXITCODE -ne 0) { throw $scenario }
+}
+foreach ($scenario in @('lifecycle', 'grouping', 'native', 'native-revoked', 'native-discard', 'native-inflight', 'dart-retry', 'dart-online', 'dart-revoked', 'dart-discard', 'missing-handler', 'unwritable-storage', 'missing-native-symbols', 'mismatched-native-symbols', 'junction-storage', 'junction-queue-entry', 'concurrent-owner', 'readonly-bundle')) {
+  python -X utf8 tool/check_windows_runtime.py --app $bundle --scenario $scenario --output "build/windows-local/$scenario.json"
+  if ($LASTEXITCODE -ne 0) { throw $scenario }
+}
+foreach ($mode in @('resolved', 'missing', 'mismatched')) {
+  python -X utf8 tool/check_linux_dart_display.py --windows --app $bundle --mode $mode --output "build/windows-local/dart-$mode.json"
+  if ($LASTEXITCODE -ne 0) { throw $mode }
+}
+```
 
-- Dart analyze/tests на macOS и Windows проверяют регистрацию, инертный bootstrap,
-  конфигурацию и отказ по отсутствующим credentials/cleanup. Они не загружают DLL.
-- Default `preservePreviousReports: false` на Windows возвращает `unsupported`
-  (`windows_previous_report_cleanup_unavailable`) до запуска SDK. Иначе SDK мог бы
-  отправить прежние отчёты вопреки выбранной политике. Пример явно использует `true`.
-- Windows native stop/clear, запрет replay после stop и отмена запросов — №8.
-  Отсутствие purge не маскируется успешным `disabled`.
-- Native crash/restart проверен через loopback. Live Tracer, grouping и читаемые
-  native/Dart AOT стеки остаются отдельной приёмкой. В UI есть явная кнопка падения с подтверждением.
-  Автоматический native crash включается только `TRACER_SCENARIO=native-crash`.
-  Проверять без отладчика, затем перезапускать с `TRACER_SCENARIO=idle` и тем же DSN.
-- PDB сохраняется от этой сборки; соответствие PE/PDB/minidump и восстановление
-  верхнего native-кадра до исходной строки проверены в
-  [отдельном CI](windows-symbols-acceptance.md). Загрузка в Tracer — открытая №5.
-- MSVC runtime на чистой Windows, readonly install directory и Windows ARM64
-  ещё не проверены. Проверка переноса в CI не заменяет чистую пользовательскую ОС.
+Все приёмники здесь локальные, с фиктивным DSN. Скрипты переносят bundle в
+уникальный путь с пробелами/кириллицей и используют отдельный LOCALAPPDATA.
+`dart-online` ждёт штатного retry SDK до 950 секунд. Native-сценарии намеренно
+роняют только тестовое приложение; закрывается только его daemon.
 
-Бинарники, DSN, plugin tokens и SDK-кэши не коммитятся. Автоматический workflow
-не обращается к Tracer и не использует секреты репозитория.
+Обновлённые `.github/workflows/windows.yml` и `windows-runtime.yml` собирают
+обфусцированный release с точными картами и повторяют эти проверки без секретов.
+Новый GitHub Actions run ещё не выполнялся. Установка во внешнее приложение —
+[migration guide](desktop-migration.md#windows-consumer).

@@ -1,5 +1,15 @@
 # Windows, macOS и Аврора: аудит SDK для итерации v1
 
+**Актуализация Windows, 24 октября:** Windows 11 x64, Flutter 3.35.5 / Dart 3.9.2,
+VS 2022 17.14/SDK 26100 и официальный Sentry native backend 0.16.6 проверены.
+Инструменты/кэши размещены на D. Пользователь явно выбрал существующий C/C++ Test
+и локальные Linux credentials для Windows; ingest из relocated release принят,
+исходные Dart/native кадры видны в консоли. Stop/clear, revoke/retry и consumer
+проверены отдельно. B1/B3/B7 для этой Windows-области закрыты;
+Windows-часть B6 заменена клиентскими точными картами. Plugin token для них
+не нужен. [Полный протокол](windows-local-acceptance.md).
+Следующие исходные формулировки об отсутствии Windows-среды/credentials — история.
+
 Дата: **2026-10-23**. Задача: [№1](tasks/development_v1.md#task-1).
 Исходный код проекта: `c2fc225` (`Record verified 0.2.1 publication`).
 

@@ -32,11 +32,14 @@ def main():
     parser.add_argument('--app', required=True, type=Path)
     parser.add_argument('--mode', choices=['resolved', 'missing', 'mismatched'], default='resolved')
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--windows', action='store_true')
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='apptracer-dart-display-') as temp:
         bundle = Path(temp) / 'Release Кириллица'
         shutil.copytree(args.app, bundle, symlinks=True)
-        maps = list((bundle / 'lib/apptracer-dart-symbols').glob('*.json.gz'))
+        from elf_build_id import build_id
+        identity = build_id(str(bundle / ('data/app.so' if args.windows else 'lib/libapp.so')))
+        maps = list((bundle / ('data/apptracer-dart-symbols' if args.windows else 'lib/apptracer-dart-symbols')).glob(identity + '.json.gz'))
         assert len(maps) == 1
         if args.mode == 'missing':
             maps[0].unlink()
@@ -44,7 +47,7 @@ def main():
             value = json.loads(gzip.decompress(maps[0].read_bytes()))
             value['build_id'] = '0' * 32
             maps[0].write_bytes(gzip.compress(json.dumps(value).encode(), mtime=0))
-        subprocess.run([sys.executable, str(Path(__file__).with_name('check_linux_desktop.py')),
+        subprocess.run([sys.executable, str(Path(__file__).with_name('check_windows_desktop.py' if args.windows else 'check_linux_desktop.py')),
                         '--app', str(bundle), '--scenario', 'smoke',
                         '--output', str(args.output)], check=True)
         report = json.loads(args.output.read_text(encoding='utf-8'))

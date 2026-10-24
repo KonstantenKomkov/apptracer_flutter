@@ -75,7 +75,7 @@ Future<void> main() async {
 """
 
 
-def runtime(bundle, output, candidate):
+def runtime(bundle, output, candidate, windows=False):
     """Exercise the installed executable, not the source tree."""
     events, errors, kinds = [], [], []
 
@@ -115,21 +115,31 @@ def runtime(bundle, output, candidate):
             env.update(TRACER_CONSUMER_DSN=f'http://consumer@127.0.0.1:{server.server_port}/42',
                        XDG_DATA_HOME=str(root / 'data'), GDK_BACKEND='x11',
                        LIBGL_ALWAYS_SOFTWARE='1')
+            if windows:
+                env['LOCALAPPDATA'] = str(root / 'data')
+                env['TRACER_CONSUMER_DONE'] = str(root / 'done.txt')
+                env['PATH'] = os.path.join(os.environ['SystemRoot'], 'System32')
             with (output / 'runtime.log').open('w') as log:
-                child = subprocess.Popen([str(installed / 'tracer_external_consumer')],
+                child = subprocess.Popen([str(installed / ('tracer_external_consumer.exe' if windows else 'tracer_external_consumer'))],
                                          cwd=root, env=env, stdout=log,
                                          stderr=subprocess.STDOUT, start_new_session=True)
                 try:
                     result = child.wait(timeout=60)
                 finally:
                     # Includes the owned SDK daemon on failure; never other apps.
-                    try:
-                        os.killpg(child.pid, signal.SIGTERM)
-                    except ProcessLookupError:
-                        pass
+                    if windows:
+                        if child.poll() is None:
+                            child.terminate()
+                        from check_windows_runtime import cleanup_daemons
+                        cleanup_daemons(installed)
+                    else:
+                        try:
+                            os.killpg(child.pid, signal.SIGTERM)
+                        except ProcessLookupError:
+                            pass
                     child.wait(timeout=10)
             assert result == 0, 'Consumer failed; see runtime.log'
-            assert 'CONSUMER_OK' in (output / 'runtime.log').read_text()
+            assert 'CONSUMER_OK' in ((root / 'done.txt') if windows else (output / 'runtime.log')).read_text()
     finally:
         server.shutdown()
         server.server_close()

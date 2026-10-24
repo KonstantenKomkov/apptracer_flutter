@@ -8,6 +8,9 @@ on:
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
+      - 'tool/*windows*'
+      - 'tool/*linux*'
+      - 'tool/elf_build_id.py'
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
       - '.github/workflows/windows.yml'
@@ -17,6 +20,9 @@ on:
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
+      - 'tool/*windows*'
+      - 'tool/*linux*'
+      - 'tool/elf_build_id.py'
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
       - '.github/workflows/windows.yml'
@@ -33,6 +39,7 @@ jobs:
       GIT_CONFIG_COUNT: '1'
       GIT_CONFIG_KEY_0: core.longpaths
       GIT_CONFIG_VALUE_0: 'true'
+      SENTRY_NATIVE_BACKEND: native
     defaults:
       run:
         shell: pwsh
@@ -57,7 +64,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           flutter analyze --fatal-infos
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter test test/windows_configuration_test.dart
+          flutter test
           exit $LASTEXITCODE
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
@@ -79,7 +86,26 @@ jobs:
           Invoke-Flutter pub get
           Invoke-Flutter analyze --fatal-infos
           Invoke-Flutter test
-          Invoke-Flutter build windows --release
+          Invoke-Flutter build windows --release --obfuscate --split-debug-info=build/symbols/dart
+      - name: Bundle exact-build Dart and native source maps
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          New-Item -ItemType Directory -Force build/symbol-tools | Out-Null
+          $archive = 'build/symbol-tools/dump-syms.zip'
+          Invoke-WebRequest -Uri 'https://github.com/mozilla/dump_syms/releases/download/v2.3.9/dump_syms-x86_64-pc-windows-msvc.zip' -OutFile $archive -TimeoutSec 120
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'bdf48486220708808a3e00aec78856ee1cce096189d47a1e2cb1c635f93bacc7') { throw 'dump_syms checksum mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath build/symbol-tools/dump-syms
+          $dumper = Get-ChildItem build/symbol-tools/dump-syms -Recurse -Filter dump_syms.exe | Select-Object -First 1
+          $example = 'packages/apptracer_flutter_desktop/example'
+          $bundle = "$example/build/windows/x64/runner/Release"
+          python -X utf8 tool/prepare_windows_runtime_symbols.py --bundle $bundle --pdb "$example/build/symbols/native/apptracer_desktop_example.pdb" --dump-syms $dumper.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -X utf8 tool/prepare_linux_dart_runtime_symbols.py --windows --bundle $bundle --symbols "$example/build/symbols/dart/app.windows-x64.symbols" --dump-syms $dumper.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($mode in @('resolved', 'missing', 'mismatched')) {
+            python -X utf8 tool/check_linux_dart_display.py --windows --app $bundle --mode $mode --output "build/windows-acceptance/dart-$mode.json"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Test relocated release against loopback
         run: |
           python -m unittest discover -s tool/tests -v
@@ -102,6 +128,7 @@ jobs:
             build/windows-acceptance/
             packages/apptracer_flutter_desktop/example/build/windows/x64/runner/Release/
             packages/apptracer_flutter_desktop/example/build/symbols/native/
+            packages/apptracer_flutter_desktop/example/build/symbols/dart/
             packages/apptracer_flutter_desktop/example/pubspec.lock
             packages/apptracer_flutter_desktop/example/windows-build.log
           retention-days: 14

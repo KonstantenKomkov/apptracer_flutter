@@ -51,7 +51,8 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
       sdk.removeIntegration(integration);
     }
     if ((defaultTargetPlatform == TargetPlatform.macOS ||
-            defaultTargetPlatform == TargetPlatform.linux) &&
+            defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.windows) &&
         integration is NativeSdkIntegration) {
       sdk.removeIntegration(integration);
     }

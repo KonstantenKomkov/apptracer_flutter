@@ -2,6 +2,75 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+## Windows — завершённый локальный объём, 24 октября 2026
+
+Граница приёмки: Windows 11 x64 22631.7582, Flutter 3.35.5 / Dart 3.9.2,
+MSVC 2022 17.14, Sentry Flutter 9.30.1 / native 0.16.6. Инструменты на D.
+[Полный протокол](../windows-local-acceptance.md), [команды](../windows-preparation.md).
+Windows 10/ARM64/чистая Windows VM не проверены. Новый CI подготовлен,
+но не запускался удалённо; публикация — отдельный выпуск.
+
+<a id="task-3"></a>
+
+### П. 3. Подключить Windows
+
+**Завершено в указанной области.** Автоматическая Dart/FFI-регистрация,
+Windows runner, официальный native backend и app-local MSVC runtime.
+Обфусцированный release перенесён вне checkout в путь с пробелами/кириллицей;
+проверен read-only install. Handled/FlutterError/async и native crash доставлены
+в существующий C/C++-проект по решению пользователя. Native exception
+0xc0000005 имеет собственные minidump/PDB/source-line и Tracer-свидетельства.
+
+<a id="task-1-windows"></a>
+
+### П. 1.Windows. Среда и привязка проекта
+
+**Завершено.** Toolchain установлен/проверен; Windows/VS в flutter doctor зелёные.
+DSN существующего C/C++ Test использован по явному выбору пользователя.
+Версии, пути, архитектура и ограничения закреплены в протоколе/матрице.
+Рабочие credentials не добавлены в исходники или runtime bundle.
+
+<a id="task-5-windows"></a>
+
+### П. 5.Windows. Dart AOT и native исходные кадры
+
+**Реализовано и проверено локально/live в описанной области.** Точная привязка
+ELF build ID для Dart и PE/PDB GUID+age для native, компактные клиентские карты,
+отрицательные missing/mismatch-сценарии. main.dart:45/55/64 и
+ApptracerNativeCrashProbe:16 восстановлены в SDK events. Native, handled, FlutterError и async source frames непосредственно
+сверены в консоли; точный объём проверки полей перечислен в протоколе. Серверная символизация не заявлена.
+
+<a id="task-8-windows"></a>
+
+### П. 8.Windows. Consent, очередь, stop/clear и retry
+
+**Завершено.** 18-шаговый lifecycle, durable revoke, default discard,
+native/Dart retry, 15-минутный retry без перезапуска, in-flight cancellation,
+смена аккаунта, конкурентный владелец, junction protection и очистка
+без повреждения чужого каталога прошли. Native init требует нового процесса
+для возобновления; ошибки shutdown/cleanup не маскируются как disabled.
+
+<a id="task-10-windows"></a>
+
+### П. 10.Windows. Пример, команды и подготовка CI
+
+**Реализация завершена.** Release/helper, inherited lifecycle pipes, exact-build
+maps, 24 локальных release-сценария, сохранение PDB/DWARF/отчётов и новый workflow.
+Команды проверены на Windows; выполнение текущей версии в GitHub Actions
+остаётся отдельной remote-проверкой. Исторические CI runs не выданы за новые.
+
+<a id="task-12-windows"></a>
+
+### П. 12.Windows. Внешние потребители и документация
+
+**Завершён подготовительный объём.** Два независимых consumer без overrides:
+hosted facade 0.2.1 и staged 0.2.2, hosted interface/siblings, obfuscation,
+перенос bundle с MSVC DLL, ограниченный runtime PATH, filtering/dedup/source/clear.
+Dry-run desktop/facade прошёл; у desktop одно намеренное SDK-pin предупреждение.
+Исправление FlutterError требует staged 0.2.2. Инструкции RU/EN, migration,
+symbolication, статус и границы согласованы. Ничего не опубликовано.
+
+
 <a id="task-1-ubuntu"></a>
 
 ## П. 1.Ubuntu. Среда, конфигурация и границы поддержки
@@ -472,3 +541,21 @@ OS/device widgets из этих contexts; Environment filter также не з�
 C/C++. Это открытые ограничения сервиса, а не исправленные возможности SDK.
 Физический компьютер, Wayland, ARM64, другие дистрибутивы и Аврора не проверены.
 Общие №5/8/10/11/12 и публикация остаются за рамками закрытия №13.
+
+<a id="task-11-windows"></a>
+
+## П. 11.Windows. Локальная и live-приёмка
+
+**Завершено 24 октября 2026 в области Windows 11 x64.** Все 24 локальных
+release-сценария прошли, включая offline/retry/revoke/in-flight и clear/restart.
+Восемь событий серии windows-20261024-165633 приняты существующим C/C++ Test:
+handled/FlutterError/async, native access violation, группировка и новая учётная
+запись после очистки. В консоли проверены точные Dart/native исходные строки,
+поля native/handled, run keys последних FlutterError/async, две группы 3/2 и 1/1.
+Account isolation после clear дополнительно проверена по SDK envelopes и
+локальному lifecycle. Два external consumer проверили фильтрацию/дедупликацию.
+
+[Протокол](../windows-local-acceptance.md) разделяет live, локальный receiver,
+client-side symbolication и ограничения Tracer UI. Crash-free/sessions не заявлены.
+Другие версии/архитектуры, чистая Windows VM, публикация и новый remote CI run
+не выданы за выполненные проверки.

@@ -52,8 +52,8 @@ def parse_breakpad(text, identity):
             'functions': sorted(functions), 'lines': sorted(lines)}
 
 
-def prepare(bundle, symbols, dump_syms):
-    identity = build_id(str(bundle / 'lib/libapp.so'))
+def prepare(bundle, symbols, dump_syms, windows=False):
+    identity = build_id(str(bundle / ('data/app.so' if windows else 'lib/libapp.so')))
     if not identity or identity != build_id(str(symbols)):
         raise ValueError('Dart binary and split-debug-info build IDs differ')
     with tempfile.TemporaryDirectory(prefix='apptracer-dart-map-') as temp:
@@ -65,7 +65,7 @@ def prepare(bundle, symbols, dump_syms):
         if len(maps) != 1:
             raise ValueError('expected one exact-build Dart map')
         data = parse_breakpad(maps[0].read_text(encoding='utf-8'), identity)
-    directory = bundle / 'lib/apptracer-dart-symbols'
+    directory = bundle / ('data/apptracer-dart-symbols' if windows else 'lib/apptracer-dart-symbols')
     directory.mkdir(parents=True, exist_ok=True)
     packed = gzip.compress(json.dumps(data, separators=(',', ':')).encode(), mtime=0)
     output = directory / f'{identity}.json.gz'
@@ -80,8 +80,9 @@ def main():
     parser.add_argument('--bundle', required=True, type=Path)
     parser.add_argument('--symbols', required=True, type=Path)
     parser.add_argument('--dump-syms', required=True, type=Path)
+    parser.add_argument('--windows', action='store_true', help='use Windows Flutter ELF bundle paths')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.bundle.resolve(), args.symbols.resolve(), args.dump_syms.resolve())))
+    print(json.dumps(prepare(args.bundle.resolve(), args.symbols.resolve(), args.dump_syms.resolve(), windows=args.windows)))
 
 
 if __name__ == '__main__':
