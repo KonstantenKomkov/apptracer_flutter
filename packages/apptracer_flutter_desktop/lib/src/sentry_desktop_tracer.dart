@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'event_mapping.dart';
+import 'linux_dart_symbols.dart';
+import 'linux_lifecycle.dart';
 import 'macos_lifecycle.dart';
 import 'sdk_configuration.dart';
 
@@ -19,13 +21,15 @@ class SentryDesktopTracer extends TracerPlatform {
   /// Creates an inert adapter; the SDK starts only after collection is allowed.
   SentryDesktopTracer();
 
-  /// Registers the optional Windows/macOS plugin without starting the native SDK.
+  /// Registers the optional desktop plugin without starting the native SDK.
   static void registerWith() {
     TracerPlatform.instance = SentryDesktopTracer();
   }
 
   static SentryDesktopTracer? _owner;
   ObservedSdkOptions? _sdkOptions;
+  LinuxLifecycle? _linux;
+  final _dartSymbols = LinuxDartSymbols();
   bool _enabled = false;
   bool _attemptedNativeStart = false;
   bool _closeFailed = false;
@@ -77,6 +81,7 @@ class SentryDesktopTracer extends TracerPlatform {
       }
       if (kIsWeb ||
           (defaultTargetPlatform != TargetPlatform.macOS &&
+              defaultTargetPlatform != TargetPlatform.linux &&
               defaultTargetPlatform != TargetPlatform.windows)) {
         return _state = const TracerCollectionResult(
             TracerCollectionState.unsupported,
@@ -105,16 +110,30 @@ class SentryDesktopTracer extends TracerPlatform {
       _attemptedNativeStart = true;
       final sdk = _sdkOptions = ObservedSdkOptions();
       try {
+        if (defaultTargetPlatform == TargetPlatform.linux) {
+          _linux ??= LinuxLifecycle();
+          await _linux!.prepare(options.preservePreviousReports);
+          if (generation != _generation) {
+            await _close();
+            return _state;
+          }
+        }
         await SentryFlutter.init((sdk) {
           configureDesktopSdk(sdk, options);
-          sdk.beforeSend = (event, hint) {
+          _linux?.configure(sdk, isAuthorized: () => generation == _generation);
+          sdk.beforeSend = (event, hint) async {
             final source = hint.get('apptracer.event');
             if (!_enabled ||
                 generation != _generation ||
                 source is! TracerEvent) {
               return null;
             }
-            return restoreFilteredFields(event, source);
+            final filtered = restoreFilteredFields(event, source);
+            _linux?.contexts?.apply(filtered);
+            if (_linux != null) await _dartSymbols.resolve(filtered, source);
+            // A symbol-file read can yield while stop revokes collection.
+            if (!_enabled || generation != _generation) return null;
+            return filtered;
           };
           // Only recordLog supplies native breadcrumbs; automatic integrations
           // are disabled. Tracer invokes the user's breadcrumb filter first.
@@ -125,7 +144,9 @@ class SentryDesktopTracer extends TracerPlatform {
             options: sdk);
         final integration = defaultTargetPlatform == TargetPlatform.macOS
             ? 'apptracerMacOSLifecycle'
-            : 'nativeSdkIntegration';
+            : defaultTargetPlatform == TargetPlatform.linux
+                ? 'apptracerLinuxLifecycle'
+                : 'nativeSdkIntegration';
         if (!Sentry.isEnabled ||
             sdk.failures != 0 ||
             !sdk.sdk.integrations.contains(integration)) {
@@ -171,6 +192,16 @@ class SentryDesktopTracer extends TracerPlatform {
   Future<void> _close() async {
     if (_closeFailed || (_owner != null && !identical(_owner, this))) return;
     if (_owner == null) {
+      if (defaultTargetPlatform == TargetPlatform.linux) {
+        try {
+          _linux ??= LinuxLifecycle();
+          await _linux!.revoke();
+        } catch (_) {
+          _closeFailed = true;
+          _state = const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'linux_revoke_failed');
+        }
+      }
       if (defaultTargetPlatform == TargetPlatform.macOS) {
         try {
           _state = await MacOSLifecycle.invoke('closeNativeSdk');
@@ -185,6 +216,7 @@ class SentryDesktopTracer extends TracerPlatform {
     final sdk = _sdkOptions;
     final failures = sdk?.failures;
     try {
+      await _linux?.revoke();
       // Cancel the native session BEFORE Dart/Cocoa close can flush its queue.
       final nativeState = defaultTargetPlatform == TargetPlatform.macOS
           ? await MacOSLifecycle.invoke('closeNativeSdk')
@@ -192,8 +224,10 @@ class SentryDesktopTracer extends TracerPlatform {
       await Sentry.close();
       if (sdk?.failures != failures) throw StateError('native_close_failed');
       _state = nativeState ??
-          const TracerCollectionResult(TracerCollectionState.restartRequired,
-              reason: 'native_purge_unverified');
+          TracerCollectionResult(TracerCollectionState.restartRequired,
+              reason: _linux != null
+                  ? 'linux_stopped_restart_required'
+                  : 'native_purge_unverified');
     } catch (_) {
       _closeFailed = true;
       _state = const TracerCollectionResult(TracerCollectionState.error,
@@ -207,6 +241,7 @@ class SentryDesktopTracer extends TracerPlatform {
   Future<void> stopCollection() {
     _enabled = false;
     ++_generation;
+    _linux?.cancel();
     return _serial(_close);
   }
 
@@ -214,11 +249,35 @@ class SentryDesktopTracer extends TracerPlatform {
   Future<TracerCollectionResult> stopAndClearCollection() {
     _enabled = false;
     ++_generation;
+    _linux?.cancel();
     // Close and purge must occupy ONE queue slot. Otherwise a prestart clear
     // can yield to a later start, then clear its freshly enabled native SDK.
     return _serial(() async {
       await _close();
       if (_state.state == TracerCollectionState.error) return _state;
+      if (defaultTargetPlatform == TargetPlatform.linux) {
+        if (_owner != null && !identical(_owner, this)) {
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'sentry_already_owned');
+        }
+        try {
+          _linux ??= LinuxLifecycle();
+          await _linux!.clear();
+          return _state = TracerCollectionResult(
+              _attemptedNativeStart
+                  ? TracerCollectionState.restartRequired
+                  : TracerCollectionState.disabled,
+              reason: _attemptedNativeStart
+                  ? 'linux_cleared_restart_required'
+                  : null);
+        } catch (_) {
+          _closeFailed = true;
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'native_cleanup_failed');
+        }
+      }
       if (defaultTargetPlatform == TargetPlatform.macOS) {
         if (_owner != null && !identical(_owner, this)) {
           return _state = const TracerCollectionResult(

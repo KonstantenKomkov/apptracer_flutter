@@ -1,0 +1,125 @@
+name: Ubuntu desktop preparation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_*desktop.py'
+      - 'tool/check_linux_runtime.py'
+      - 'tool/check_windows_native.py'
+      - 'tool/build_linux_desktop.sh'
+      - 'tool/elf_build_id.py'
+      - 'tool/symbolize_linux_dart.py'
+      - 'tool/symbolize_linux_native.py'
+      - 'tool/prepare_linux_symbol_tools.py'
+      - 'tool/prepare_linux_runtime_symbols.py'
+      - 'tool/prepare_linux_dart_runtime_symbols.py'
+      - 'tool/check_linux_dart_display.py'
+      - 'tool/tests/**'
+      - '.github/workflows/linux.yml'
+  pull_request:
+    paths:
+      - 'packages/apptracer_flutter_desktop/**'
+      - 'packages/apptracer_flutter_platform_interface/**'
+      - 'packages/apptracer_flutter/lib/**'
+      - 'tool/check_*desktop.py'
+      - 'tool/check_linux_runtime.py'
+      - 'tool/check_windows_native.py'
+      - 'tool/build_linux_desktop.sh'
+      - 'tool/elf_build_id.py'
+      - 'tool/symbolize_linux_dart.py'
+      - 'tool/symbolize_linux_native.py'
+      - 'tool/prepare_linux_symbol_tools.py'
+      - 'tool/prepare_linux_runtime_symbols.py'
+      - 'tool/prepare_linux_dart_runtime_symbols.py'
+      - 'tool/check_linux_dart_display.py'
+      - 'tool/tests/**'
+      - '.github/workflows/linux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build and headless GUI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm-14 cmake ninja-build pkg-config libgtk-3-dev libgles2 libcurl4-openssl-dev liblzma-dev xvfb openjdk-17-jdk
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Record baseline
+        run: |
+          mkdir -p build/linux-acceptance
+          { cat /etc/os-release; uname -a; flutter --version; clang --version; cmake --version; ninja --version; pkg-config --modversion gtk+-3.0; ldd --version; } > build/linux-acceptance/toolchain.txt
+      - name: Analyze and test adapter
+        working-directory: packages/apptracer_flutter_desktop
+        run: |
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
+          cd ../apptracer_flutter
+          flutter pub get --no-example
+          flutter analyze --fatal-infos lib test
+          flutter test
+          cd ../apptracer_flutter_desktop
+          cd example
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
+      - name: Build release and preserve symbols
+        run: bash tool/build_linux_desktop.sh
+      - name: Test relocated bundle
+        env:
+          GDK_BACKEND: x11
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          python3 -m unittest discover -s tool/tests -v
+          # The pinned native SDK retries offline Dart envelopes every 15 min.
+          # Each probe owns a distinct bundle, process and XDG namespace.
+          xvfb-run -a python3 tool/check_linux_runtime.py --app packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle --scenario dart-online --output build/linux-acceptance/dart-online.json &
+          online_pid=$!
+          for scenario in disabled deferred smoke; do
+            xvfb-run -a python3 tool/check_linux_desktop.py --app packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle --scenario "$scenario" --output "build/linux-acceptance/$scenario.json"
+          done
+          for scenario in lifecycle grouping native native-inflight native-revoked native-discard dart-retry dart-revoked dart-discard missing-handler unwritable-storage readonly-bundle missing-native-symbols mismatched-native-symbols; do
+            xvfb-run -a python3 tool/check_linux_runtime.py --app packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle --scenario "$scenario" --output "build/linux-acceptance/$scenario.json" --dump-directory build/linux-acceptance/minidumps
+          done
+          wait "$online_pid"
+          for mode in resolved missing mismatched; do
+            xvfb-run -a python3 tool/check_linux_dart_display.py --app packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle --mode "$mode" --output "build/linux-acceptance/dart-display-$mode.json"
+          done
+      - name: Recover Dart AOT source lines from the exact build
+        run: |
+          python3 tool/symbolize_linux_dart.py --report build/linux-acceptance/smoke.json --binary packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle/lib/libapp.so --symbols packages/apptracer_flutter_desktop/example/build/symbols/dart/app.linux-x64.symbols --output build/linux-acceptance/dart-symbols.json
+      - name: Recover the native crash source line from the exact build
+        run: |
+          python3 tool/prepare_linux_symbol_tools.py --output build/linux-symbol-tools
+          bundle=packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle
+          for elf in "$bundle/apptracer_desktop_example" /usr/lib/x86_64-linux-gnu/libc.so.6 "$bundle"/lib/*.so; do
+            build/linux-symbol-tools/dump_syms --store build/linux-acceptance/symbols/breakpad "$elf"
+          done
+          for dump in build/linux-acceptance/minidumps/*.dmp; do
+            python3 tool/symbolize_linux_native.py --dump "$dump" --runner "$bundle/apptracer_desktop_example" --symbols build/linux-acceptance/symbols/breakpad --stackwalk build/linux-symbol-tools/minidump-stackwalk --output build/linux-acceptance/native-symbols.json
+            break
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ubuntu-22.04-x64-preparation
+          path: |
+            build/linux-acceptance/
+            packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle/
+            packages/apptracer_flutter_desktop/example/build/symbols/
+            packages/apptracer_flutter_desktop/example/pubspec.lock
+          retention-days: 14

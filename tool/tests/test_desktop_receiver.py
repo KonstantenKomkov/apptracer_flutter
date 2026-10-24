@@ -6,7 +6,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_macos_desktop import envelope_events, read_http_body
+from check_macos_desktop import envelope_events, envelope_items, read_http_body
 
 
 class DesktopReceiverTests(unittest.TestCase):
@@ -22,6 +22,15 @@ class DesktopReceiverTests(unittest.TestCase):
 
     def test_fixed_length_cocoa_upload_still_works(self):
         self.assertEqual(read_http_body(io.BytesIO(b'abc'), {'Content-Length': '3'}), b'abc')
+
+    def test_binary_minidump_attachment_preserves_delimiters(self):
+        dump = b'MDMP\x00\xff\n{}\n\x00\r\n'
+        header = {'type': 'attachment', 'attachment_type': 'event.minidump', 'length': len(dump)}
+        body = b'{}\n' + json.dumps(header).encode() + b'\n' + dump + b'\n'
+        self.assertEqual(list(envelope_items(body)), [(header, dump)])
+        self.assertEqual(list(envelope_events(body)), [('attachment', None)])
+        with self.assertRaises(ValueError):
+            list(envelope_items(body[:-3]))
 
     def test_truncated_and_oversized_uploads_fail(self):
         for body, headers in [

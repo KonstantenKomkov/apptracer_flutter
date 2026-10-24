@@ -19,6 +19,10 @@ class ErrorNormalizer {
       // `throw 'some message'` carries no type information of its own.
       return 'String';
     }
+    // runtimeType is renamed by Dart AOT obfuscation, including FlutterError.
+    if (error is FlutterError) {
+      return 'FlutterError';
+    }
     return error.runtimeType.toString();
   }
 

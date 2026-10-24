@@ -157,8 +157,11 @@ class _DesktopProbeAppState extends State<DesktopProbeApp> {
                     Platform.isWindows
                         ? 'Windows queue cleanup is not implemented yet. '
                             'Inspect the collection result after each operation.'
-                        : 'macOS: stop cancels delivery; clear deletes the adapter queue. '
-                            'Starting again requires a process restart.',
+                        : Platform.isLinux
+                            ? 'Linux: restarting collection requires a process restart. '
+                                'Stop cancels delivery; clear deletes the adapter queue.'
+                            : 'macOS: stop cancels delivery; clear deletes the adapter queue. '
+                                'Starting again requires a process restart.',
                   ),
                   const SizedBox(height: 24),
                   Wrap(
