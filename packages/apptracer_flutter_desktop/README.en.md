@@ -123,8 +123,10 @@ See [commands](../../docs/windows-preparation.md),
 [Windows 11 x64 evidence](../../docs/windows-local-acceptance.md).
 All 24 local release scenarios and two external consumers passed. Eight events
 were accepted by Tracer; handled/native cards and grouping counts were inspected.
-Clean Windows VM, Windows 10 and ARM64 are untested. Current CI changes have not
-yet run remotely; packages remain unpublished.
+The current Windows CI passed all 24 scenarios and independent PDB/minidump
+checks. A fresh Windows 11 x64 VM without build tools passed 11 runtime/consumer
+checks with an unelevated token. Windows 10 and ARM64 are untested. Publication
+is deferred; packages remain unpublished.
 
 ## External consumer and migration
 

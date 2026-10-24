@@ -5,7 +5,9 @@
 Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
 Dart-код предназначен для Windows/macOS/Ubuntu Linux. Для Windows 11 x64
 проверены native backend, stop/clear, offline/retry, исходные Dart/native кадры,
-доставка в Tracer и два внешних потребителя. Пакет ещё не опубликован;
+доставка в Tracer и два внешних потребителя. Все 24 сценария текущего Windows CI
+и независимая PDB/minidump-проверка прошли. Чистая Windows 11 x64 VM без средств
+разработки прошла 11 runtime/consumer-проверок. Публикация отложена;
 [проверенная область и ограничения](../../docs/windows-local-acceptance.md).
 
 Ubuntu 22.04 x86_64 использует официальную native-очередь для сериализованных SDK

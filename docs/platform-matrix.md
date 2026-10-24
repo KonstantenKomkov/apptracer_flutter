@@ -387,7 +387,9 @@ Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
 and [local PDB source-line symbolication](windows-symbols-acceptance.md)
 historical CI evidence. The current native backend additionally passed Windows 11 x64
 [local lifecycle, source-map, live delivery and external-consumer checks](windows-local-acceptance.md).
-Stop/clear is implemented; clean Windows VM/ARM64 and a new CI run remain outside this evidence. Aurora still needs a target
+Stop/clear and all 24 current Windows CI scenarios passed; a fresh Windows 11 x64
+VM without build tools passed 11 runtime/consumer checks. Windows 10/ARM64 remain
+outside this evidence. Aurora still needs a target
 environment and a Flutter plugin. Ubuntu/Linux was added to this iteration on
 2026-10-24 in [task 13](tasks/development_v1.md#task-13); Linux runner, official
 SDK integration, release, Dart/native loopback, persistent queue and lifecycle now

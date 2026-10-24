@@ -16,8 +16,8 @@
 Windows 11 x64 принят локально 24 октября: native backend, stop/clear,
 offline/retry, Dart/native source frames и реальные события в Tracer.
 [Протокол](../windows-local-acceptance.md). №3 и Windows-части №1/5/8/10/12
-перенесены в архив. Windows-часть №11 также завершена; remote CI учитывается отдельно;
-Windows 10/ARM64/чистая Windows VM не объявлены проверенными.
+перенесены в архив. Windows-часть №11 также завершена; remote CI прошёл все 24 сценария;
+Чистая Windows 11 x64 VM без toolchain прошла 11 runtime/consumer-проверок. Windows 10/ARM64 не объявлены проверенными.
 
 По Авроре проверена поставка SDK, подготовлены CMake и host-проверки ELF/API;
 [результаты](../aurora-preparation.md). Flutter-плагин и RPM ещё не реализованы,
@@ -73,7 +73,7 @@ Tracer SDK. Наличие проекта не означает, что DSN, н�
 | 7 | [Связать Dart API с нативным Tracer на Авроре](#task-7) | P1 | L | №6; проверить API поставляемого `tracer.h` |
 | 8 | [Запуск, остановка и очистка сбора на новых платформах](#task-8) | P0 | XL | macOS/Ubuntu/Windows архивированы; остаётся Аврора |
 | 9 | [Символизация и упаковка Авроры](#task-9) | P1 | L | №6–7; RPM, build-id, plugin token |
-| 10 | [Примеры, команды сборки и CI](#task-10) | P1 | L | №3–9, №13; macOS/Ubuntu/Windows реализация архивирована; remote Windows run, Аврора и общая сверка |
+| 10 | [Примеры, команды сборки и CI](#task-10) | P1 | L | №3–9, №13; macOS/Ubuntu/Windows и remote Windows run архивированы; Аврора и общая сверка |
 | 11 | [Сквозная приёмка Windows, macOS, Ubuntu и Авроры в Tracer](#task-11) | P1 | XL | №5, №8–10; Ubuntu/Windows закрыты в описанной области; Аврора и расширенные macOS-критерии |
 | 12 | [Документация и подготовка выпуска пакетов](#task-12) | P1 | M | №11; macOS/Ubuntu/Windows consumer и документация архивированы; Аврора и общий выпуск остаются |
 

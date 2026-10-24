@@ -123,8 +123,83 @@ SHA-256 `3b62d52ee653735d33b8b9810fd44918e9146986d111d92af6cdef60119aa9d8`.
 Исторический `native-debug.json` сохраняет первоначальный отказ до исправления
 UTF-8 и не входит в финальные 24 сценария.
 
-Новый workflow подготовлен для 24 сценариев и source maps; текущая версия ещё
-не запускалась в GitHub Actions. Исторические CI runs относятся к Crashpad.
-Windows 10, ARM64 и чистая Windows VM без установленного toolchain не проверены;
-ограниченный PATH на разработческой машине не заменяет чистую VM.
-Публикация facade 0.2.2/desktop и hosted desktop-проверка остаются отдельным выпуском.
+Windows preparation с native backend прошёл в GitHub Actions:
+[40104502715](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40104502715)
+на `196e75d` и повторный PR-прогон
+[40105473898](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40105473898)
+на `db8b602`. Flutter 3.47.4 / Dart 3.13.3: анализ, тесты, obfuscated release,
+точные Dart/native maps, три режима Dart-карт и disabled/deferred/smoke прошли.
+Общий [CI 40105473906](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40105473906)
+также зелёный: семь пакетов, Android/Web examples и publish dry-run.
+Полный [Windows runtime 40105339434](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40105339434)
+на `db8b602` также прошёл: все 18 сценариев, 22 Python tests и независимая
+проверка minidump/PDB/source frames. Вместе с preparation проверены все 24
+сценария текущего native backend. Повторный прогон исправляет сравнение
+текстовых Windows-путей в test receiver: теперь проверяется идентичность
+файла, включая короткие имена и различие регистра. Сам crash envelope
+в первом прогоне был получен; ошибка относилась к его проверке.
+Исторические CI runs в отдельных документах относятся к Crashpad.
+Локальная копия всех 18 JSON и шести symbolication reports:
+`build/windows-followup/ci-40105339434/evidence.json`;
+runtime artifact SHA-256
+`7ac7c0d6c5266a48054b8d7f4d47f8357482a234432e2de235e4808984ce8cfd`.
+Точный CI PDB GUID `2708c64f-7b1e-4078-8875-7b7ccb4cb2c4`, age 1;
+все шесть minidump дают `ApptracerNativeCrashProbe`, flutter_window.cpp:16,
+`trust=context`. Общий PR также прошёл macOS и Ubuntu workflows; общий
+receiver с проверкой идентичности файлов не нарушил Linux-приёмку.
+
+CI runtime-архив без полных PDB:
+`build/windows-release/apptracer-windows-ci-x64.zip`, 12 821 894 байта,
+SHA-256 `8016c7becb5ce0ac54cf8e19e4b118c99906bc3a131784a93322cc1d9480b0ec`.
+В нём 26 runtime-файлов и manifest с их SHA-256. Исходный Actions artifact
+12563888956 имеет SHA-256
+`84053aba9f91e6c3447c617089b6164b5df03009a1ec4e0b99f6941dd31bf894`.
+
+Финальный staged consumer после исправления совместимости ELF reader с Dart
+3.13 повторно прошёл analyze/tests, оба dry-run и runtime. Отчёт:
+`build/windows-consumer-final-candidate/report.json`; три события, исходные
+кадры, stable FlutterError, filtering/deduplication и stop/clear подтверждены.
+Bundle SHA-256 `8e0610cd45058ac669b528d5712374b6e871fd4222ccf7b701a61e06cae8aea1`.
+Публикация **отложена пользователем 24 октября 2026**; версии в рабочем дереве
+и `publish_to: none` сохранены. Hosted desktop-проверка зависит от будущего
+выпуска; CLI уже поддерживает `--hosted-desktop` и `--facade-version`.
+
+## Чистая Windows VM
+
+Отдельная установка Microsoft Windows 11 Enterprise Evaluation,
+версия 10.0.26300, build 26300,
+x64 из официального Microsoft evaluation ISO. SHA-256 ISO:
+`bc3f24086ebadc94489066b5ad78089e2cf5c3491e90e790bb81a2b199c10e38`.
+UEFI/TPM 2.0, 4 vCPU, 5 GiB RAM; диск VM физически расположен на D,
+в `D:/WSL/ApptracerUbuntu/ext4.vhdx`. Flutter, Dart, Visual Studio, SDK,
+CMake, Ninja, Java и Git в гостевой системе не установлены. Проверки исполнялись
+с неповышенным токеном пользователя tracertest. Embedded Python использован
+только как тестовый драйвер, средства сборки в VM не переносились.
+
+Все 11 проверок прошли: disabled/deferred/smoke, lifecycle, native crash/retry,
+native-revoked, dart-retry, readonly-bundle, concurrent-owner и два внешних
+consumer (hosted facade 0.2.1 и staged facade 0.2.2). Готовые приложения
+перенесены без полных PDB, с app-local MSVC DLL; пример взят из CI 40104502715,
+candidate — из финального локального consumer-прогона. Payload SHA-256:
+`781f0aae5f26dfd72177bc366d2ddc219107233b5055bd026553aa01a62d4876`.
+
+Отчёты: `build/windows-clean-vm/evidence.json`, `environment.json`, `summary.json`
+и отдельные runtime JSON. Архив исходных отчётов SHA-256:
+`1db1907d108f503fc3743d4d8aaa23a60f045dea157eaed0f19ad4524d9dcd93`.
+Первичная настройка Windows потребовала восстановления
+DNS внутри WSL и штатного обновления/перезапуска; эти этапы не засчитывались
+как runtime-проверки. После настройки ОС исходная конфигурация DNS восстановлена.
+Первый подготовительный запуск остановился до приложения: копия с ISO сохраняла
+read-only attributes. Атрибуты исправлены только внутри копии тестовых файлов,
+после чего тот же CI payload проверен повторно; исходный отказ сохранён в
+`build/windows-followup/vm-first-attempt.zip`.
+Первый lifecycle-прогон выявил слишком короткое ожидание завершения аварийного
+процесса после stop/clear: штатный `WerFault.exe` ещё собирал отчёт. Повтор
+подтвердил все 18 шагов; Windows crash timeout в тестовом receiver увеличен
+с 20 до 120 секунд, Linux остаётся 20 секунд. Настройки WER и код SDK не менялись.
+Полный финальный прогон использует этот receiver; диагностические попытки
+сохранены отдельно в `build/windows-followup/vm-*-attempt.zip` и
+`vm-focused-passed.zip`. Загрузка с дополнительными Hyper-V enlightenments
+вложенной VM не удалась; приёмка выполнена с исходным `-cpu host`.
+
+Windows 10 и ARM64 не проверены. Публикация отложена пользователем.

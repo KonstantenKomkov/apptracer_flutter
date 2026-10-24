@@ -202,7 +202,8 @@ Use the optional desktop path/git dependency alongside the facade. Before
 The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
 `sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release
 directory, including Flutter/Sentry DLLs and `data/`. Windows 11 x64 is the
-tested local baseline; clean Windows VM, Windows 10 and ARM64 are untested.
+tested local baseline; a fresh Windows 11 x64 VM without build tools also passed
+the runtime/consumer checks. Windows 10 and ARM64 are untested.
 
 Use an executable name unique to the application: the owned per-user namespace
 is `%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`. Concurrent instances with that
@@ -234,6 +235,17 @@ The harness performs package dry-runs, builds obfuscated release, relocates it,
 restricts PATH to Windows/System32 and verifies filtering/deduplication/source
 frames/clear. This does not replace clean-machine testing.
 [Local results and publication boundary](windows-local-acceptance.md).
+
+Publication is deferred by the maintainer (2026-10-24). When both versions are
+published, repeat the Windows consumer check with hosted packages only:
+
+```powershell
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 0.1.0-dev.1 --facade-version 0.2.2 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+```
+
+This mode checks that every Tracer dependency resolves from pub.dev; it creates
+no source export or dependency override. The command is prepared for the later
+release and has not been represented as a successful hosted desktop check.
 
 ## Reproducible consumer and package check
 

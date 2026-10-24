@@ -35,7 +35,9 @@
   MSVC runtime. Resolve Dart AOT/native source frames using optional exact-build
   maps, fix Cyrillic module paths in the pinned daemon, and verify 24 local
   release scenarios, live Tracer delivery and two isolated external consumers.
-  Updated CI is prepared; clean Windows VM/Windows 10/ARM64 remain untested.
+  Updated Windows CI passed all 24 scenarios and independent PDB/minidump
+  checks. A fresh Windows 11 x64 VM without build tools passed 11 runtime/consumer
+  checks. Windows 10/ARM64 remain untested; publication is deferred.
 - Add an experimental official Sentry SDK adapter with explicit ownership,
   filtered event mapping and fail-safe initialization.
 - Add macOS Cocoa lifecycle ownership, cancellable delivery, durable replay

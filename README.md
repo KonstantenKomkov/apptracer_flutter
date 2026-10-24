@@ -22,6 +22,13 @@ Dart/native доставка в Tracer, исходные строки, груп�
 desktop не подключает. [Установка и сборка](docs/desktop-migration.md#ubuntu-linux-consumer),
 [протокол и ограничения](docs/linux-preparation.md).
 
+Windows 11 x64 использует тот же optional desktop-пакет: native backend,
+stop/clear, offline/retry и исходные Dart/native кадры проверены локально и
+с реальным Tracer. Сборка и проверки Windows проходят в GitHub Actions;
+чистая Windows VM без средств разработки прошла 11 runtime/consumer-проверок.
+[Установка](docs/desktop-migration.md#windows-consumer),
+[актуальный протокол](docs/windows-local-acceptance.md).
+
 Нативные SDK Tracer не видят ошибок Dart: необработанное Dart-исключение не
 роняет процесс и не попадает в JVM, поэтому мимо него проходят и
 `UncaughtException`-обработчик, и обработчик сигналов, и ANR-watchdog. Для
@@ -37,7 +44,7 @@ packages/
   apptracer_flutter_ios/                мост на Swift к OKTracer
   apptracer_flutter_web/                реализация для web
   apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
-                                        macOS/Ubuntu приняты в указанном объёме, не опубликован
+                                        macOS/Ubuntu/Windows приняты в указанном объёме, не опубликован
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
   apptracer_flutter_sentry/             протокол Sentry; только для платформ,
                                         которые этот релиз не поддерживает,

@@ -7,8 +7,9 @@
 Граница приёмки: Windows 11 x64 22631.7582, Flutter 3.35.5 / Dart 3.9.2,
 MSVC 2022 17.14, Sentry Flutter 9.30.1 / native 0.16.6. Инструменты на D.
 [Полный протокол](../windows-local-acceptance.md), [команды](../windows-preparation.md).
-Windows 10/ARM64/чистая Windows VM не проверены. Новый CI подготовлен,
-но не запускался удалённо; публикация — отдельный выпуск.
+Чистая Windows 11 x64 VM без toolchain прошла 11 runtime/consumer-проверок;
+Windows 10/ARM64 не проверены. Новый CI прошёл все 24 сценария
+и независимую PDB/minidump-проверку; публикация отложена пользователем.
 
 <a id="task-3"></a>
 
@@ -52,12 +53,13 @@ native/Dart retry, 15-минутный retry без перезапуска, in-f
 
 <a id="task-10-windows"></a>
 
-### П. 10.Windows. Пример, команды и подготовка CI
+### П. 10.Windows. Пример, команды и CI
 
 **Реализация завершена.** Release/helper, inherited lifecycle pipes, exact-build
 maps, 24 локальных release-сценария, сохранение PDB/DWARF/отчётов и новый workflow.
-Команды проверены на Windows; выполнение текущей версии в GitHub Actions
-остаётся отдельной remote-проверкой. Исторические CI runs не выданы за новые.
+Команды проверены на Windows; текущая версия прошла GitHub Actions preparation
+40104502715 / 40105473898 и полный runtime 40105339434. Все 24 сценария и
+независимая проверка шести minidump по точному PDB прошли.
 
 <a id="task-12-windows"></a>
 
@@ -557,5 +559,6 @@ Account isolation после clear дополнительно проверена
 
 [Протокол](../windows-local-acceptance.md) разделяет live, локальный receiver,
 client-side symbolication и ограничения Tracer UI. Crash-free/sessions не заявлены.
-Другие версии/архитектуры, чистая Windows VM, публикация и новый remote CI run
-не выданы за выполненные проверки.
+Текущий remote CI и чистая Windows 11 x64 VM без toolchain также прошли.
+Другие версии/архитектуры
+и публикация не выданы за выполненные проверки.

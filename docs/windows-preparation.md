@@ -67,5 +67,9 @@ foreach ($mode in @('resolved', 'missing', 'mismatched')) {
 
 Обновлённые `.github/workflows/windows.yml` и `windows-runtime.yml` собирают
 обфусцированный release с точными картами и повторяют эти проверки без секретов.
-Новый GitHub Actions run ещё не выполнялся. Установка во внешнее приложение —
+Свежие GitHub Actions runs и артефакты перечислены в
+[протоколе](windows-local-acceptance.md). Для отдельного runtime workflow можно
+передать `build_run_id` успешного preparation run той же ветки; workflow
+проверяет происхождение артефакта и совпадение исходников пакетов.
+Установка во внешнее приложение —
 [migration guide](desktop-migration.md#windows-consumer).
