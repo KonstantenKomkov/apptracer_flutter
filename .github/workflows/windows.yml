@@ -14,6 +14,16 @@ on:
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
       - '.github/workflows/windows.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
@@ -26,6 +36,16 @@ on:
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
       - '.github/workflows/windows.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 permissions:

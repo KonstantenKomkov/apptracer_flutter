@@ -12,6 +12,16 @@ on:
       - 'tool/check_macos_desktop.py'
       - 'tool/tests/test_macos_dart_symbols.py'
       - '.github/workflows/macos-symbols.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
@@ -22,6 +32,16 @@ on:
       - 'tool/check_macos_desktop.py'
       - 'tool/tests/test_macos_dart_symbols.py'
       - '.github/workflows/macos-symbols.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 permissions:

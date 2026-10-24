@@ -19,12 +19,30 @@ on:
       - "packages/apptracer_flutter/example/ios/**"
       - ".github/workflows/ios.yml"
       - "!**/*.md"
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - "packages/apptracer_flutter_ios/**"
       - "packages/apptracer_flutter/example/ios/**"
       - ".github/workflows/ios.yml"
       - "!**/*.md"
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 env:

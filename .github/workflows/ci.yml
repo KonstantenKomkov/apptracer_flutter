@@ -3,9 +3,47 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - 'packages/**'
+      - 'tool/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - '.github/actions/**'
+      - '.github/workflows/ci.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
+    paths:
+      - 'packages/**'
+      - 'tool/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - '.github/actions/**'
+      - '.github/workflows/ci.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
+# Run automatically for source, tests, dependencies and build configuration.
+# Documentation and repository housekeeping alone do not need a runner.
 # A crash reporter that only works on the maintainer's machine is worthless, so
 # every claim the README makes about a platform is built here.
 env:

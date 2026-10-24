@@ -21,6 +21,16 @@ on:
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
       - '.github/workflows/linux.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
@@ -40,6 +50,16 @@ on:
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
       - '.github/workflows/linux.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 permissions:

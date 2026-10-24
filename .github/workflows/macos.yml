@@ -9,6 +9,16 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_macos*.py'
       - '.github/workflows/macos.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
@@ -16,6 +26,16 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_macos*.py'
       - '.github/workflows/macos.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 permissions:

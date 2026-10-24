@@ -9,6 +9,16 @@ on:
       - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'
       - '.github/workflows/aurora-preparation.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   pull_request:
     paths:
       - 'tool/aurora/**'
@@ -16,6 +26,16 @@ on:
       - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'
       - '.github/workflows/aurora-preparation.yml'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!**/*.adoc'
+      - '!**/docs/**'
+      - '!**/LICENSE'
+      - '!**/LICENSE.*'
+      - '!**/NOTICE'
+      - '!**/NOTICE.*'
+      - '!**/.gitignore'
+      - '!**/.gitattributes'
   workflow_dispatch:
 
 permissions:
