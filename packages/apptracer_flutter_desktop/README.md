@@ -2,13 +2,13 @@
 
 [English](README.en.md)
 
-Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
+Стабильный адаптер 1.0.0 `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
 Dart-код предназначен для Windows/macOS/Ubuntu Linux. Для Windows 11 x64
 проверены native backend, stop/clear, offline/retry, исходные Dart/native кадры,
 доставка в Tracer и два внешних потребителя. Все 24 сценария текущего Windows CI
 и независимая PDB/minidump-проверка прошли. Чистая Windows 11 x64 VM без средств
-разработки прошла 11 runtime/consumer-проверок. Публикация отложена;
-[проверенная область и ограничения](../../docs/windows-local-acceptance.md).
+разработки прошла 11 runtime/consumer-проверок;
+[проверенная область и ограничения](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-local-acceptance.md).
 
 Ubuntu 22.04 x86_64 использует официальную native-очередь для сериализованных SDK
 Dart-событий и native-отчётов. Linux требует `SENTRY_NATIVE_BACKEND=native`
@@ -32,21 +32,28 @@ hostname, serial и machine-id не читаются. В Tracer эти поля 
 Stop отзывает replay и отменяет собственные
 отправки; повторный старт требует нового процесса. Реальная доставка,
 исходные кадры и группировка проверены отдельно на Ubuntu 22.04.5 x64 VM;
-[среды, результаты и команды](../../docs/linux-preparation.md).
+[среды, результаты и команды](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/linux-preparation.md).
 
 Для внешнего Ubuntu-приложения выполнить
-[настройку CMake и упаковки](../../docs/desktop-migration.md#ubuntu-linux-consumer):
+[настройку CMake и упаковки](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer):
 заранее задать bundle install prefix, исключить неиспользуемый JNI runtime,
 установить `sentry-crash` как PROGRAMS. Одной зависимости в pubspec недостаточно.
 Проверены glibc 2.35, GTK 3 и X11; для остановки uploader нужны kernel ≥5.3 и `/proc`.
 Переносить весь bundle с правами исполнения; Flutter/Java на целевой машине не нужны.
 Символы создаются инструментами из той же ревизии репозитория; plugin token для
-клиентских карт не требуется. Опубликованный facade 0.2.1 ещё не содержит
-исправление имени `FlutterError` при обфускации; для него использовать текущий
-facade по path/git до выпуска 0.2.2.
+клиентских карт не требуется. Facade 1.0.0 сохраняет имя `FlutterError`
+при обфускации.
 
-Подключить этот пакет по path/git вместе с `apptracer_flutter`. На Windows/macOS/Linux адаптер
-регистрируется автоматически; при явном выборе backend до bootstrap:
+Установить оба стабильных пакета с pub.dev:
+
+```yaml
+dependencies:
+  apptracer_flutter: ^1.0.0
+  apptracer_flutter_desktop: ^1.0.0
+```
+
+На Windows/macOS/Linux адаптер регистрируется автоматически. При явном выборе
+backend до bootstrap:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
@@ -96,7 +103,7 @@ Native crash минует Dart callback. В него могут попасть �
 SIGABRT доставляется, но файлы/строки не восстанавливаются после загрузки
 совпадающих desktop-символов; Apple dSYM endpoint отклоняет DESKTOP-проект.
 Локальное восстановление по dSYM работает. Обычные символические Dart-стеки
-передаются отдельно. [Результаты проверки](../../docs/macos-symbols-acceptance.md).
+передаются отдельно. [Результаты проверки](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-symbols-acceptance.md).
 
 ## Ограничения жизненного цикла
 
@@ -128,12 +135,12 @@ SIGABRT доставляется, но файлы/строки не восста
   получает безопасный отказ. Старые SDK-кэши не импортируются и не удаляются.
   Переносить весь Release, включая daemon/helper и app-local MSVC DLL.
   Опциональные точные Dart/PDB-карты раскрывают function/file/line; их можно
-  не создавать. Plugin token для карт не нужен. [Команды](../../docs/windows-preparation.md).
+  не создавать. Plugin token для карт не нужен. [Команды](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).
 
 Нативный мост использует публичные API Cocoa 8.58.4 и CocoaPods, сохраняя официальный
 SDK для сериализации, scope, crash handler и очереди. Session-local `URLProtocol`
 только ограничивает сетевую отправку. Swift Package Manager для этого моста не заявлен.
-Подробные сценарии и пределы: [macOS lifecycle](../../docs/macos-lifecycle-acceptance.md).
+Подробные сценарии и пределы: [macOS lifecycle](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 
 ## Зависимости и переход
 
@@ -148,10 +155,10 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 остаётся неизменным; одновременно запускать его и новый SDK нельзя.
 
 Пример с Windows/macOS/Linux runners: [example](example/README.md).
-Сборка и проверенная область Windows: [протокол](../../docs/windows-preparation.md).
+Сборка и проверенная область Windows: [протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).
 
 Установка во внешнее приложение, CocoaPods, переход со старого транспорта и
-проверка упаковки: [migration guide](../../docs/desktop-migration.md).
+проверка упаковки: [migration guide](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md).
 Проверенный инструментальный baseline: Flutter 3.47.4 / Dart 3.13.3,
 sentry_flutter 9.30.1 / Cocoa 8.58.4; runtime macOS arm64. Deployment target
 моста — macOS 12.0, но это не означает выполненную приёмку на каждой старой ОС.

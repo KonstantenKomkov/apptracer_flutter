@@ -5,7 +5,7 @@ copied from prose documentation. Where a fact could not be verified it says so.
 
 Baseline verified: 2026-08-25. Android SDK 1.5.2 update: 2026-10-16;
 see [artifact audit and validation scope](android-sdk-1.5.2.md).
-Unreleased macOS update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
+macOS 1.0.0 update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
 macOS 15 arm64 CI and isolated consumer checks:
 [automation and packaging evidence](macos-ci-consumer-acceptance.md).
 
@@ -16,9 +16,9 @@ macOS 15 arm64 CI and isolated consumer checks:
 | Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
-| macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
-| Windows 11 x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
-| Ubuntu 22.04.5 x86_64 (optional, unreleased) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
+| macOS (optional 1.0.0) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | stable; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
+| Windows 11 x64 (optional 1.0.0) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
+| Ubuntu 22.04.5 x86_64 (optional 1.0.0) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See

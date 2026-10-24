@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verify isolated Ubuntu package exports, publish dry-runs and a release consumer.
 
-Uses only a loopback DSN. --candidate-facade stages the unreleased FlutterError
-fix as facade 0.2.2; otherwise the facade resolves from pub.dev. Never publishes.
+Uses only a loopback DSN. --candidate-facade exports the current facade;
+otherwise facade 1.0.0 resolves from pub.dev. Never publishes.
 --bundle runs the exported consumer on a separate Ubuntu machine without tools.
 """
 import argparse
@@ -228,7 +228,7 @@ def main():
 
     try:
         if args.bundle:
-            report['runtime'] = runtime(args.bundle.resolve(), output, args.candidate_facade)
+            report['runtime'] = runtime(args.bundle.resolve(), output, True)
         else:
             report['revision'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
             report['source_dirty'] = bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo))
@@ -244,13 +244,9 @@ def main():
                 for forbidden in ('pubspec_overrides.yaml', '.env.tracer'):
                     assert forbidden not in packed
                 report['adapter_publish_dry_run'] = True
-                facade_dep = '  apptracer_flutter: 0.2.1\n'
+                facade_dep = '  apptracer_flutter: 1.0.0\n'
                 if args.candidate_facade:
                     facade = export('apptracer_flutter', root)
-                    spec = facade / 'pubspec.yaml'
-                    spec.write_text(spec.read_text().replace('version: 0.2.1\n', 'version: 0.2.2\n'))
-                    changelog = facade / 'CHANGELOG.md'
-                    changelog.write_text(changelog.read_text().replace('## [Unreleased]', '## [0.2.2] - 2026-10-24'))
                     run(['flutter', 'pub', 'get', '--no-example'], facade)
                     run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], facade)
                     run(['flutter', 'test'], facade)
@@ -319,7 +315,7 @@ def main():
                     tar.add(bundle, arcname='bundle')
                 report['bundle_sha256'] = hashlib.sha256(archive.read_bytes()).hexdigest()
                 shutil.copytree(app / 'build/symbols', output / 'symbols', dirs_exist_ok=True)
-                report['runtime'] = runtime(bundle, output, args.candidate_facade)
+                report['runtime'] = runtime(bundle, output, True)
         report['success'] = True
     except Exception as error:
         report['error'] = str(error)

@@ -2,7 +2,7 @@
 
 ## Layout
 
-Six publishable packages under `packages/`, an unpublished Sentry transport,
+Seven publishable packages under `packages/`, an unpublished Sentry transport,
 and an example application at `packages/apptracer_flutter/example`.
 
 The packages depend on each other by **version**, exactly as a consumer would,

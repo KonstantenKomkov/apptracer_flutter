@@ -213,4 +213,4 @@ read-only attributes. Атрибуты исправлены только вну�
 и без изменения расписания SDK. Остальные условия, включая event ID и user,
 сохранены. Failed evidence: `build/windows-followup/ci-40113884393-failed.zip`.
 
-Windows 10 и ARM64 не проверены. Публикация отложена пользователем.
+Windows 10 и ARM64 не проверены. Выпуск стабильных facade/desktop 1.0.0 описан в [publishing.md](publishing.md).

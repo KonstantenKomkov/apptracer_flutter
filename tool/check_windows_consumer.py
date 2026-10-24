@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate-facade', action='store_true')
     parser.add_argument('--hosted-desktop', help='Use this published desktop version instead of a source export')
-    parser.add_argument('--facade-version', default='0.2.1', help='Exact hosted facade version (default: 0.2.1)')
+    parser.add_argument('--facade-version', default='1.0.0', help='Exact hosted facade version (default: 1.0.0)')
     parser.add_argument('--bundle', type=Path, help='Only run a previously built consumer bundle')
     parser.add_argument('--dump-syms', required=True, type=Path)
     parser.add_argument('--native-source', type=Path)
@@ -109,10 +109,6 @@ def main():
                 facade_dep = f'  apptracer_flutter: {args.facade_version}\n'
                 if args.candidate_facade:
                     facade = export('apptracer_flutter', root)
-                    spec = facade / 'pubspec.yaml'
-                    spec.write_text(spec.read_text(encoding='utf-8').replace('version: 0.2.1\n', 'version: 0.2.2\n'), encoding='utf-8')
-                    changelog = facade / 'CHANGELOG.md'
-                    changelog.write_text(changelog.read_text(encoding='utf-8', errors='replace').replace('## [Unreleased]', '## [0.2.2] - 2026-10-24'), encoding='utf-8')
                     run(['flutter', 'pub', 'get', '--no-example'], facade)
                     run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], facade)
                     run(['flutter', 'test'], facade)

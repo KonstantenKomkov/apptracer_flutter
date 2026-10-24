@@ -13,13 +13,14 @@ error-monitoring service by OK.TECH / VK.
 
 ## Quick start
 
-This section covers Android/iOS/Web. Ubuntu 22.04.5 x64 requires the separate
-optional `apptracer_flutter_desktop` package installed by path/git and a C/C++
-Tracer project's Sentry DSN. [Ubuntu setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer)
-includes required CMake settings, the native handler and exact-build symbol maps.
-The facade alone does not add a desktop backend. Stable `FlutterError` names
-under obfuscation are currently a source change prepared for 0.2.2, absent from
-published 0.2.1. See the [Ubuntu evidence and service limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/linux-preparation.md).
+This section covers Android/iOS/Web. For Windows, macOS and Ubuntu Linux,
+add stable `apptracer_flutter_desktop ^1.0.0` alongside
+`apptracer_flutter ^1.0.0` and configure the Tracer project's Sentry DSN.
+[Desktop installation](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md)
+covers platform setup, the native handler and exact-build symbol maps.
+The facade alone does not add a desktop backend. Version 1.0.0 preserves the
+`FlutterError` type name under obfuscation. Tested environments and limitations
+are recorded in the [platform matrix](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
 
 Five minutes to the first event in the Tracer console. Every step below has a
 fuller version further down.

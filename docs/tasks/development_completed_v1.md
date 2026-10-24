@@ -9,7 +9,7 @@ MSVC 2022 17.14, Sentry Flutter 9.30.1 / native 0.16.6. Инструменты �
 [Полный протокол](../windows-local-acceptance.md), [команды](../windows-preparation.md).
 Чистая Windows 11 x64 VM без toolchain прошла 11 runtime/consumer-проверок;
 Windows 10/ARM64 не проверены. Новый CI прошёл все 24 сценария
-и независимую PDB/minidump-проверку; публикация отложена пользователем.
+и независимую PDB/minidump-проверку; историческая приёмка предшествует выпуску 1.0.0 (см. [публикацию](../publishing.md)).
 
 <a id="task-3"></a>
 

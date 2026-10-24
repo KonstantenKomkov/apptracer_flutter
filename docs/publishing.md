@@ -54,62 +54,23 @@ has to be on pub.dev before the next resolves.
 
 `apptracer_flutter_sentry` is the legacy manual transport and remains
 `publish_to: none`. Do not publish it as the new desktop backend.
-The optional `apptracer_flutter_desktop` is a separate, experimental
-`0.1.0-dev.1` package using the official Sentry SDK. It also remains
-`publish_to: none`; macOS results do not close Windows/Aurora acceptance.
+The optional `apptracer_flutter_desktop` is a stable **1.0.0** package using
+the official Sentry SDK for Windows, macOS and Ubuntu Linux. For this release,
+publish facade **1.0.0** first, then desktop **1.0.0**. The facade includes the
+obfuscated `FlutterError` type-name fix. Platform-interface, Android, iOS, Web
+and HTTP packages retain their compatible published versions.
 
-For a separately approved desktop release, publish any required changed
-platform-interface version first, then the desktop adapter. The current
-adapter resolves the already hosted interface 0.2.0 and facade 0.2.1.
-No facade release is needed merely to opt into the adapter. Keep its exact
-`sentry_flutter: 9.30.1` dependency until the version-specific integration
-has been re-audited. Pub reports a tight-constraint warning for this deliberate
-pin; it must be recorded explicitly, not silently converted into a clean
-dry-run result. Set the final release version/changelog only when scope and
-acceptance are settled.
+Keep the exact `sentry_flutter: 9.30.1` dependency until the version-specific
+integration has been re-audited. Pub reports one intentional tight-constraint
+warning for desktop; no other warnings are accepted.
 
-Run `python3 tool/check_macos_consumer.py --output build/macos-consumer`
-on macOS to check an isolated export, staged publish dry-run and external release
-consumer with hosted siblings and no monorepo overrides. The staged copy alone
-has `publish_to: none` removed; the check never publishes. See
-[desktop-migration.md](desktop-migration.md) for the exact scope and limits.
-After publication, repeat against the hosted desktop package.
-
-### Ubuntu release candidate (2026-10-24)
-
-The accepted target is Ubuntu 22.04.5 x86_64, X11, Sentry Flutter 9.30.1 /
-native 0.16.6. It does not imply acceptance of Windows, Aurora, other Linux
-distributions or architectures. The existing desktop candidate is
-`0.1.0-dev.1`; retain its exact SDK pin and `publish_to: none` until the release
-action. The facade's unreleased stable `FlutterError` name fix is prepared as
-patch **0.2.2**, with no interface or sibling dependency change.
-
-For the complete accepted Ubuntu behavior, release order is facade **0.2.2**
-(existing sibling versions already satisfy its dependencies), then optional
-desktop **0.1.0-dev.1**. An older hosted facade can send Ubuntu events but does
-not preserve the `FlutterError` type name under obfuscation. Platform-interface,
-Android, iOS, Web and HTTP packages do not need a version bump for this fix.
-
-```sh
-xvfb-run -a python3 tool/check_linux_consumer.py --output build/ubuntu-consumer-hosted
-xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade \
-  --output build/ubuntu-consumer-candidate
-```
-
-The second check changes facade version/changelog only in an isolated export;
-the working tree retains its unreleased version until the final release commit.
-It resolves public siblings from pub.dev without overrides, checks both staged
-publish dry-runs, and builds/runs a new release consumer. The desktop dry-run's
-one intentional exact-SDK-pin warning remains explicit. Reports contain source
-file hashes, dependency sources/versions, lockfile, bundle hash and runtime
-results. No publication or hosted desktop installation is performed.
-
-Before the eventual release, apply these versions/changelog dates to the release
-commit and repeat the candidate checks. After publishing, verify a consumer
-with both facade and desktop resolved from pub.dev. Native handler/CMake and
-symbol-map instructions are in [the Ubuntu installation guide](desktop-migration.md#ubuntu-linux-consumer).
-The completed local and clean-VM checks, artifact hashes and warning scope are
-recorded in [Ubuntu consumer acceptance](ubuntu-consumer-acceptance.md).
+Earlier Ubuntu/Windows acceptance used hosted facade 0.2.1 and an isolated
+0.2.2 candidate. Those historical records describe the tested builds; the final
+release is 1.0.0 for both facade and desktop. See
+[desktop-migration.md](desktop-migration.md) for platform installation and
+consumer checks. After publication, run the Windows consumer with
+`--hosted-desktop 1.0.0 --facade-version 1.0.0` to verify hosted resolution,
+release compilation and runtime behavior without source dependencies.
 
 0.1.0 went out on 2026-08-28, in that order. The required `publish-dry-run` CI
 job checks archive contents and package metadata using local overrides. It does
@@ -139,7 +100,7 @@ between `v0.1.1` and `v0.1.2`.
 - [ ] `flutter analyze --fatal-infos` is clean
 - [ ] `flutter test` passes
 - [ ] `dart format --set-exit-if-changed .` is clean
-- [ ] `dart pub publish --dry-run` reports no unexpected warnings (the experimental
+- [ ] `dart pub publish --dry-run` reports no unexpected warnings (the
       desktop adapter's exact SDK pin is the documented exception above)
 - [ ] hosted dependencies resolve without `pubspec_overrides.yaml`, after the
       required sibling versions have been published
@@ -254,8 +215,8 @@ git grep -nE '(pluginToken|appToken)\s*[:=]\s*["'\''][A-Za-z0-9]{8,}' -- . || ec
 
 ## Version policy
 
-Below `1.0.0`, a breaking change bumps the **minor** version, which is what
-pub.dev treats as breaking for `^0.x` constraints. `1.0.0` waits until a real
-Tracer project has confirmed end-to-end delivery on each supported platform;
-until then [status.md](status.md) lists what is unproven, and claiming stability
-would be a claim nobody has checked.
+Starting with stable 1.0.0, incompatible public API changes require a major
+version, compatible features a minor version and fixes a patch version. Packages
+version independently. Desktop is an optional stable package; its tested OS and
+architecture scope and service limitations remain documented in
+[status.md](status.md) and [platform-matrix.md](platform-matrix.md).

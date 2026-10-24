@@ -113,7 +113,7 @@ def main():
             report['exported_files'] = exported_files
             pubspec = exported / 'pubspec.yaml'
             original = pubspec.read_text()
-            # A staged candidate only: the repository remains publish_to: none.
+            # Prepare an isolated package export; this check never publishes.
             pubspec.write_text(original.replace('publish_to: none\n', ''))
             run(['flutter', 'pub', 'get'], exported)
             archive_log = run(['dart', 'pub', 'publish', '--dry-run'], exported, allow_sdk_pin_warning=True)
@@ -133,7 +133,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^0.2.1
+  apptracer_flutter: ^1.0.0
   apptracer_flutter_desktop:
     path: ../adapter
 flutter:

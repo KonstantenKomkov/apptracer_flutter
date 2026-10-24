@@ -7,7 +7,14 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-24
+
+### Added
+
+- Stable desktop integration through the optional `apptracer_flutter_desktop`
+  1.0.0 package for Windows, macOS and Ubuntu Linux. Existing Android, iOS and
+  Web implementations keep their compatible published versions.
+- Document hosted desktop installation and the tested platform scope.
 
 ### Fixed
 
@@ -168,7 +175,7 @@ as pub.dev expects.
   ingest would take an event without it is left unclaimed — the server answers
   `200` to a malformed body, so its absence cannot be tested.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.1...HEAD
+[1.0.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3

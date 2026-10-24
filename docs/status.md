@@ -10,7 +10,7 @@ mistaken for a guarantee.
 
 Last updated: 2026-10-24.
 
-**Unreleased Ubuntu update:** Ubuntu 22.04.5 x86_64 was accepted on a clean
+**Ubuntu 1.0.0:** Ubuntu 22.04.5 x86_64 was accepted on a clean
 QEMU/KVM VM with X11/Xvfb and no Flutter/compiler/Java runtime installation.
 The optional adapter uses Sentry Flutter 9.30.1 / sentry-native 0.16.6, backend
 `native`: Tracer accepts its envelopes; the old Crashpad minidump endpoint
@@ -26,8 +26,7 @@ The C/C++ service still leaves OS/device widgets blank and may display
 `Stacktrace not available` above correctly displayed source frames. Metadata
 is available in Other/Context. Crash-free, sessions, performance and replay are
 not claimed. Other distros, ARM64, Wayland and physical hardware are outside the
-accepted baseline. Packages remain unpublished candidates; installation and
-release preparation are described in [desktop-migration.md](desktop-migration.md).
+accepted baseline. Stable 1.0.0 installation and release verification are described in [desktop-migration.md](desktop-migration.md).
 
 **Ubuntu external consumers:** isolated desktop exports with hosted facade 0.2.1
 and staged facade 0.2.2 both build obfuscated release and run on the clean VM
@@ -36,7 +35,7 @@ stop/clear passed. Staged facade restores the `FlutterError` name; hosted 0.2.1
 still obfuscates it. Publish dry-runs passed with zero facade warnings and the
 one intentional desktop SDK-pin warning. [Evidence and release boundaries](ubuntu-consumer-acceptance.md).
 
-**Unreleased macOS update:** the optional `apptracer_flutter_desktop` now uses
+**macOS 1.0.0:** the optional `apptracer_flutter_desktop` now uses
 sentry_flutter 9.30.1 / Cocoa 8.58.4. Release arm64 delivery was confirmed in
 Tracer; local stop/clear/offline/restart acceptance passed 55 steps. After the
 lifecycle changes, two new Dart series and two native crash/restarts were run in
@@ -48,7 +47,7 @@ events or duplicates were found in this series; fresh Dart keys/logs/Context als
 match. See the
 [dated evidence and limits](macos-lifecycle-acceptance.md). Restart after stop
 requires a new process; server native symbolication is unsupported in the tested
-integration. Aurora acceptance and publication remain open; Windows evidence is recorded below.
+integration. Aurora acceptance remains open; Windows evidence is recorded below.
 
 **macOS automation and packaging:** the separate macOS 15 arm64 CI builds the
 release example, runs real loopback/lifecycle checks and retains binaries,
@@ -58,7 +57,7 @@ dry-run retains one documented warning for the exact Sentry SDK pin; no
 publication was performed. See [CI and consumer evidence](macos-ci-consumer-acceptance.md)
 and [migration instructions](desktop-migration.md).
 
-**Unreleased Windows update:** Windows 11 x64 local release acceptance now covers
+**Windows 1.0.0:** Windows 11 x64 local release acceptance now covers
 the official native backend, stop/clear, persistent replay revocation, in-flight
 cancellation, offline Dart/native retry, account separation and exact-build
 Dart/PDB source frames. All 24 release scenarios and two external consumers
@@ -69,8 +68,8 @@ in the console. [Detailed evidence and limits](windows-local-acceptance.md).
 The current Windows preparation and runtime workflows passed all 24 scenarios
 and independent PDB/minidump checks; general CI also passed. Windows 10/ARM64
 remain untested. A fresh Windows 11 x64 VM without build tools passed 11
-runtime/consumer checks with an unelevated token. Publication is deferred
-by the maintainer.
+runtime/consumer checks with an unelevated token. Stable facade and desktop 1.0.0
+publication is tracked in [publishing.md](publishing.md).
 
 **iOS revocation fix:** the adapter now pins OKTracer 1.5.2, persists revocation,
 purges and seals its report paths, and requires explicit deferred consent in a

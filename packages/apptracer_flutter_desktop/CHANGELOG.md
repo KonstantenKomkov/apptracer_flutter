@@ -1,10 +1,17 @@
-## 0.1.0-dev.1
+# Changelog
+
+## [1.0.0] - 2026-10-24
+
+### Added
+
+- First stable release for Windows, macOS and Ubuntu Linux, installed alongside
+  `apptracer_flutter ^1.0.0`. Desktop registration remains optional.
 
 - Verify two isolated Ubuntu release consumers with hosted public siblings and
   no monorepo overrides, including clean-VM execution without build tools.
   Document external CMake/native-handler setup, exact-build symbol maps,
   filtering/deduplication and staged publish checks. The facade's obfuscated
-  FlutterError name fix is prepared separately for 0.2.2; no publication yet.
+  FlutterError name fix ships in facade 1.0.0.
 
 - Add Ubuntu/Linux registration, GTK runner, official persistent Dart/native
   queue, consent revocation, owned uploader cancellation, release/symbol tooling
@@ -28,7 +35,7 @@
 
 - Verify an isolated macOS release consumer with hosted facade/interface
   dependencies and automatic adapter registration. Add package exclusions and
-  migration/privacy guidance; retain the exact SDK pin and unpublished status.
+  migration/privacy guidance; retain the audited exact SDK pin.
 
 - Complete Windows x64 native-backend lifecycle: owned queue, durable consent
   revocation, uploader cancellation, default purge and stop/clear. Bundle app-local
@@ -37,8 +44,8 @@
   release scenarios, live Tracer delivery and two isolated external consumers.
   Updated Windows CI passed all 24 scenarios and independent PDB/minidump
   checks. A fresh Windows 11 x64 VM without build tools passed 11 runtime/consumer
-  checks. Windows 10/ARM64 remain untested; publication is deferred.
-- Add an experimental official Sentry SDK adapter with explicit ownership,
+  checks. Windows 10/ARM64 remain untested.
+- Add an official Sentry SDK adapter with explicit ownership,
   filtered event mapping and fail-safe initialization.
 - Add macOS Cocoa lifecycle ownership, cancellable delivery, durable replay
   revocation and isolated queue cleanup; restarting after native init requires a

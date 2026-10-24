@@ -2,8 +2,8 @@
 
 [Русский](README.md)
 
-Experimental `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
-SDK for macOS/Windows/Ubuntu Linux. Unpublished; macOS arm64 and Ubuntu x64 are
+Stable 1.0.0 `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
+SDK for macOS/Windows/Ubuntu Linux. macOS arm64 and Ubuntu x64 are
 accepted within their documented scope. Windows 11 x64 local acceptance is recorded below.
 
 Ubuntu 22.04 x86_64 uses the official native queue for SDK-serialized Dart events
@@ -30,21 +30,27 @@ Linux registration is automatic. Stop revokes replay and
 cancels owned uploaders; restarting collection requires a new process. Live Tracer
 delivery, source frames and grouping were verified separately on an Ubuntu
 22.04.5 x64 VM; see the tested environments and results in the
-[Linux commands and record](../../docs/linux-preparation.md).
+[Linux commands and record](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/linux-preparation.md).
 
 For an external Ubuntu app, follow the
-[CMake and packaging setup](../../docs/desktop-migration.md#ubuntu-linux-consumer):
+[CMake and packaging setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer):
 set the bundle install prefix before plugins, omit the unused JNI runtime and
 install `sentry-crash` as PROGRAMS. A pubspec dependency alone is insufficient.
 Verified with glibc 2.35, GTK 3 and X11; uploader cancellation requires kernel ≥5.3
 and `/proc`. Ship the whole bundle with executable permissions; the target does
 not need Flutter/Java. Generate symbols using tools from the same repository
-revision; client maps need no plugin token. Hosted facade 0.2.1 predates the
-stable obfuscated `FlutterError` name fix: use reviewed facade source by path/git
-for that fix until 0.2.2 is published.
+revision; client maps need no plugin token. Facade 1.0.0 preserves the
+`FlutterError` type name under obfuscation.
 
-Add this optional package alongside `apptracer_flutter`, and
-pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
+Install both stable packages from pub.dev:
+
+```yaml
+dependencies:
+  apptracer_flutter: ^1.0.0
+  apptracer_flutter_desktop: ^1.0.0
+```
+
+Pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
 environment and dist use the existing options. Never embed a symbol plugin token.
 macOS/Windows/Linux register the optional adapter automatically; explicit assignment is
 only needed when selecting the backend yourself. See [example](example/README.md)
@@ -65,7 +71,7 @@ scope expecting the Dart callback to filter a later native crash.
 confirmed, but matching desktop symbols do not restore source files/lines; the
 Apple dSYM endpoint rejects DESKTOP projects. Local dSYM symbolication works.
 Ordinary symbolic Dart stacks are sent separately. See the
-[acceptance record](../../docs/macos-symbols-acceptance.md).
+[acceptance record](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-symbols-acceptance.md).
 
 Disabled/deferred bootstrap does not start the SDK. On macOS, stop gates Dart and
 native network admission, cancels in-flight requests, and closes Cocoa SDK; it waits
@@ -87,7 +93,7 @@ System macOS crash logs are not deleted.
 The macOS bridge uses public Cocoa 8.58.4 APIs and CocoaPods; SPM is not supported
 by this bridge. Official SDK serialization, crash handling and queueing remain in
 use; a session-local URLProtocol gates network delivery. See the
-[local lifecycle evidence](../../docs/macos-lifecycle-acceptance.md).
+[local lifecycle evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 Windows has its own native queue/lifecycle implementation and separate acceptance below.
 
 The main package's dependency graph is unchanged. Adding this optional package to
@@ -118,19 +124,18 @@ Optional exact-build maps resolve obfuscated Dart frames from `data/app.so`
 and native runner frames from PE/PDB identity. Maps expose function names/source
 paths; omit the map generation steps to keep them private. Missing/mismatched
 maps retain the SDK report and raw Dart stack. No symbol plugin token is needed.
-See [commands](../../docs/windows-preparation.md),
-[consumer setup](../../docs/desktop-migration.md#windows-consumer) and
-[Windows 11 x64 evidence](../../docs/windows-local-acceptance.md).
+See [commands](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md),
+[consumer setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#windows-consumer) and
+[Windows 11 x64 evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-local-acceptance.md).
 All 24 local release scenarios and two external consumers passed. Eight events
 were accepted by Tracer; handled/native cards and grouping counts were inspected.
 The current Windows CI passed all 24 scenarios and independent PDB/minidump
 checks. A fresh Windows 11 x64 VM without build tools passed 11 runtime/consumer
-checks with an unelevated token. Windows 10 and ARM64 are untested. Publication
-is deferred; packages remain unpublished.
+checks with an unelevated token. Windows 10 and ARM64 are untested.
 
 ## External consumer and migration
 
-See [desktop-migration.md](../../docs/desktop-migration.md) for installation
+See [desktop-migration.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md) for installation
 without monorepo overrides, CocoaPods setup, legacy-cache ownership and the
 package dry-run procedure. The tested baseline is Flutter 3.47.4 / Dart 3.13.3,
 sentry_flutter 9.30.1 / Cocoa 8.58.4 on macOS arm64. The bridge deployment target

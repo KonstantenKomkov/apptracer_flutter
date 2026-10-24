@@ -1,5 +1,5 @@
 name: apptracer_desktop_example
-description: Windows/macOS/Ubuntu acceptance example for the experimental Tracer desktop SDK adapter.
+description: Windows/macOS/Ubuntu acceptance example for the Tracer desktop SDK adapter.
 publish_to: none
 version: 1.0.0+1
 environment:
@@ -8,7 +8,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^0.2.1
+  apptracer_flutter: ^1.0.0
   apptracer_flutter_desktop:
     path: ..
 dev_dependencies:

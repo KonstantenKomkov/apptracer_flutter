@@ -18,8 +18,8 @@ English version: [README.en.md](README.en.md).
 Ubuntu 22.04.5 x64 проверена на отдельной VM через optional
 [`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.md):
 Dart/native доставка в Tracer, исходные строки, группировка, stop/clear и retry.
-Пакет пока устанавливается из исходников; опубликованный основной пакет сам
-desktop не подключает. [Установка и сборка](docs/desktop-migration.md#ubuntu-linux-consumer),
+Стабильный `apptracer_flutter_desktop ^1.0.0` устанавливается с pub.dev вместе
+с `apptracer_flutter ^1.0.0`; основной пакет сам desktop не подключает. [Установка и сборка](docs/desktop-migration.md#ubuntu-linux-consumer),
 [протокол и ограничения](docs/linux-preparation.md).
 
 Windows 11 x64 использует тот же optional desktop-пакет: native backend,
@@ -44,7 +44,7 @@ packages/
   apptracer_flutter_ios/                мост на Swift к OKTracer
   apptracer_flutter_web/                реализация для web
   apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
-                                        macOS/Ubuntu/Windows приняты в указанном объёме, не опубликован
+                                        macOS/Ubuntu/Windows стабильный 1.0.0, проверенные среды указаны в документации
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
   apptracer_flutter_sentry/             протокол Sentry; только для платформ,
                                         которые этот релиз не поддерживает,

@@ -1,34 +1,29 @@
 # Desktop installation and migration
 
-The optional `apptracer_flutter_desktop` package is experimental and unpublished.
+The optional `apptracer_flutter_desktop` package is stable at 1.0.0.
 The accepted macOS scope is recorded in
 [macos-lifecycle-acceptance.md](macos-lifecycle-acceptance.md); Ubuntu 22.04.5
 x86_64 VM evidence is in [linux-preparation.md](linux-preparation.md).
-Windows/Aurora work proceeds separately; their pending checks do not become
-accepted by passing this macOS procedure.
+Windows 11 x64 evidence is in [windows-local-acceptance.md](windows-local-acceptance.md).
+Aurora is not supported by this adapter.
 
 ## External application
 
-Use the published facade and a pinned repository revision containing the adapter:
+Install the facade and optional desktop adapter from pub.dev:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^0.2.1
-  apptracer_flutter_desktop:
-    git:
-      url: https://github.com/KonstantenKomkov/apptracer_flutter.git
-      ref: YOUR_REVIEWED_COMMIT_SHA
-      path: packages/apptracer_flutter_desktop
+  apptracer_flutter: ^1.0.0
+  apptracer_flutter_desktop: ^1.0.0
 flutter:
   config:
     enable-swift-package-manager: false
 ```
 
-Replace the revision placeholder with the commit you have reviewed. A path
-dependency to an isolated adapter copy is also supported. Do not copy the
-repository's `pubspec_overrides.yaml` into the app: its sibling paths are for
+For source development, a pinned git revision or isolated path copy is also
+supported. Do not copy the repository's `pubspec_overrides.yaml` into the app: its sibling paths are for
 repository development. Pub ignores overrides declared by dependencies;
 the consumer must resolve public siblings from pub.dev
 ([Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides)).
@@ -149,11 +144,9 @@ process. `preservePreviousReports:true` only preserves authorized reports;
 revocation takes precedence. Retry covers network failures; HTTP 5xx are discarded
 by this pinned native SDK. Sessions/crash-free/performance/replay are disabled.
 
-The current hosted facade 0.2.1 predates the stable `FlutterError` type-name fix
-under obfuscation. For that fix, use the reviewed facade source as a second
-path/git dependency until facade 0.2.2 is published. Public siblings still
-resolve from pub.dev; do not use monorepo overrides. Source-frame decoding
-belongs to the adapter and is separate from that facade fix.
+Facade 1.0.0 preserves the `FlutterError` type name under obfuscation.
+Public siblings resolve from pub.dev without monorepo overrides. Source-frame
+decoding belongs to the adapter and is separate from that facade fix.
 
 Run the external-consumer check from this repository on Ubuntu:
 
@@ -166,8 +159,8 @@ xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade \
 It validates staged publish candidates, builds a newly generated release app,
 relocates it into a path with spaces/Cyrillic, checks automatic registration,
 filtered data, deduplication, exact-build source frames and stop/clear using a
-loopback receiver. `--candidate-facade` stages facade 0.2.2 without changing
-repository versions or publishing. The exported `consumer-bundle.tar.gz` can
+loopback receiver. `--candidate-facade` exports the current facade without
+changing its release version or publishing. The exported `consumer-bundle.tar.gz` can
 also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
 ## Moving from the manual transport
@@ -197,7 +190,7 @@ dependencies out of an existing mobile graph.
 
 ## Windows consumer
 
-Use the optional desktop path/git dependency alongside the facade. Before
+Use `apptracer_flutter_desktop ^1.0.0` alongside `apptracer_flutter ^1.0.0`. Before
 `flutter build windows --release`, set `$env:SENTRY_NATIVE_BACKEND = 'native'`.
 The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
 `sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release
@@ -229,23 +222,22 @@ python -X utf8 tool/check_windows_consumer.py --candidate-facade --output build/
 
 An optional `--native-source <directory>` reuses a complete, audited sentry-native
 0.16.6 checkout. Both variants resolve siblings from pub.dev without overrides;
-the candidate temporarily stages facade 0.2.2 for its obfuscated FlutterError
-name fix. Hosted 0.2.1 delivers correctly but retains the old name limitation.
+the candidate uses the current facade source and the default uses hosted 1.0.0.
+Both include the obfuscated FlutterError name fix.
 The harness performs package dry-runs, builds obfuscated release, relocates it,
 restricts PATH to Windows/System32 and verifies filtering/deduplication/source
 frames/clear. This does not replace clean-machine testing.
 [Local results and publication boundary](windows-local-acceptance.md).
 
-Publication is deferred by the maintainer (2026-10-24). When both versions are
-published, repeat the Windows consumer check with hosted packages only:
+After publication, check both stable 1.0.0 packages using hosted dependencies only:
 
 ```powershell
-python -X utf8 tool/check_windows_consumer.py --hosted-desktop 0.1.0-dev.1 --facade-version 0.2.2 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 1.0.0 --facade-version 1.0.0 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
 ```
 
 This mode checks that every Tracer dependency resolves from pub.dev; it creates
-no source export or dependency override. The command is prepared for the later
-release and has not been represented as a successful hosted desktop check.
+no source export or dependency override. The publication record in
+[publishing.md](publishing.md) tracks the result.
 
 ## Reproducible consumer and package check
 
@@ -263,8 +255,7 @@ the resolved sources, analyzes and builds release, and verifies automatic
 plugin registration by receiving one error with user ID, key and breadcrumb
 at a local receiver. No real DSN or plugin token is read.
 
-The repository retains `publish_to: none`; only the temporary copy permits
-`dart pub publish --dry-run`. The exact SDK pin produces one known Pub warning.
+The exact SDK pin produces one known Pub warning in `dart pub publish --dry-run`.
 The check accepts only that warning; other warnings/errors fail. The pin is
 intentional because SDK integrations and observer APIs are version-specific.
 Logs, the dependency lockfile, export file list and event are written under
