@@ -1,3 +1,12 @@
-# Keep monorepo wiring in Git, but out of the package and its example.
-# Ancestor and nested .gitignore rules still exclude generated files and secrets.
-pubspec_overrides.yaml
+# Keep standalone release exports free of development wiring and test output.
+**/pubspec_overrides.yaml
+**/.dart_tool/
+**/build/
+**/coverage/
+**/pubspec.lock
+**/.env*
+**/*.log
+**/symbols/
+**/*.symbols
+**/*.keystore
+**/*.jks
