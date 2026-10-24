@@ -101,8 +101,9 @@ class Probe:
                             assert request['dump']['exception_code'] == '0xc0000005'
                         else:
                             request['dump'] = inspect_linux_dump(dump, probe.executable)
-                        if str(bundle) not in request['dump']['runner']['path']:
-                            raise ValueError('dump is from another probe process')
+                        runner = Path(request['dump']['runner']['path'])
+                        if not runner.samefile(probe.executable):
+                            raise ValueError(f'dump runner {runner} differs from {probe.executable}')
                         if dump_directory is not None:
                             dump_directory.mkdir(parents=True, exist_ok=True)
                             (dump_directory / (request['dump']['sha256'] + '.dmp')).write_bytes(dump)

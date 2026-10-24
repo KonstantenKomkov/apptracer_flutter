@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -18,12 +19,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate-facade', action='store_true')
+    parser.add_argument('--hosted-desktop', help='Use this published desktop version instead of a source export')
+    parser.add_argument('--facade-version', default='0.2.1', help='Exact hosted facade version (default: 0.2.1)')
     parser.add_argument('--bundle', type=Path, help='Only run a previously built consumer bundle')
     parser.add_argument('--dump-syms', required=True, type=Path)
     parser.add_argument('--native-source', type=Path)
     args = parser.parse_args()
     if os.name != 'nt':
         parser.error('Run on Windows x64')
+    if args.candidate_facade and args.hosted_desktop:
+        parser.error('A hosted desktop check must use a hosted facade')
+    for version in [args.facade_version, args.hosted_desktop]:
+        if version and not re.fullmatch(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?', version):
+            parser.error('Expected an exact package version')
+    stable_flutter_error = args.candidate_facade or tuple(map(int, args.facade_version.split('-')[0].split('.'))) >= (0, 2, 2)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     report = {'success': False, 'published': False}
@@ -76,23 +85,28 @@ def main():
 
     try:
         if args.bundle:
-            report['runtime'] = runtime(args.bundle.resolve(), output, args.candidate_facade, windows=True)
+            report['runtime'] = runtime(args.bundle.resolve(), output, stable_flutter_error, windows=True)
         else:
             report['revision'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
             report['source_dirty'] = bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo))
             with tempfile.TemporaryDirectory(prefix='apptracer-consumer-') as directory:
                 root = Path(directory)
-                adapter = export('apptracer_flutter_desktop', root)
-                pubspec = adapter / 'pubspec.yaml'
-                pubspec.write_text(pubspec.read_text(encoding='utf-8').replace('publish_to: none\n', ''), encoding='utf-8')
-                run(['flutter', 'pub', 'get'], adapter)
-                run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], adapter)
-                run(['flutter', 'test'], adapter)
-                packed = run(['dart', 'pub', 'publish', '--dry-run'], adapter, sdk_warning=True)
-                for forbidden in ('pubspec_overrides.yaml', '.env.tracer'):
-                    assert forbidden not in packed
-                report['adapter_publish_dry_run'] = True
-                facade_dep = '  apptracer_flutter: 0.2.1\n'
+                if args.hosted_desktop:
+                    desktop_dep = f'  apptracer_flutter_desktop: {args.hosted_desktop}\n'
+                    report['hosted_desktop_version'] = args.hosted_desktop
+                else:
+                    adapter = export('apptracer_flutter_desktop', root)
+                    pubspec = adapter / 'pubspec.yaml'
+                    pubspec.write_text(pubspec.read_text(encoding='utf-8').replace('publish_to: none\n', ''), encoding='utf-8')
+                    run(['flutter', 'pub', 'get'], adapter)
+                    run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], adapter)
+                    run(['flutter', 'test'], adapter)
+                    packed = run(['dart', 'pub', 'publish', '--dry-run'], adapter, sdk_warning=True)
+                    for forbidden in ('pubspec_overrides.yaml', '.env.tracer'):
+                        assert forbidden not in packed
+                    report['adapter_publish_dry_run'] = True
+                    desktop_dep = '  apptracer_flutter_desktop:\n    path: ../apptracer_flutter_desktop\n'
+                facade_dep = f'  apptracer_flutter: {args.facade_version}\n'
                 if args.candidate_facade:
                     facade = export('apptracer_flutter', root)
                     spec = facade / 'pubspec.yaml'
@@ -111,7 +125,7 @@ def main():
                 (app / 'pubspec.yaml').write_text('name: tracer_external_consumer\npublish_to: none\n'
                     'version: 1.0.0+1\nenvironment:\n  sdk: ^3.5.0\ndependencies:\n'
                     '  flutter:\n    sdk: flutter\n' + facade_dep +
-                    '  apptracer_flutter_desktop:\n    path: ../apptracer_flutter_desktop\n'
+                    desktop_dep +
                     'flutter:\n  uses-material-design: true\n', encoding='utf-8')
                 (app / 'lib/main.dart').write_text(MAIN.replace('Ubuntu', 'Windows').replace("stdout.writeln('CONSUMER_OK');", "await File(Platform.environment['TRACER_CONSUMER_DONE']!).writeAsString('CONSUMER_OK');"), encoding='utf-8')
                 shutil.rmtree(app / 'test')
@@ -128,7 +142,7 @@ def main():
                 graph = json.loads(run(['dart', 'pub', 'deps', '--json'], app))
                 siblings = {p['name']: {'source': p['source'], 'version': p['version']}
                             for p in graph['packages'] if p['name'].startswith('apptracer_')}
-                paths = {'apptracer_flutter_desktop'}
+                paths = set() if args.hosted_desktop else {'apptracer_flutter_desktop'}
                 if args.candidate_facade:
                     paths.add('apptracer_flutter')
                 for name, metadata in siblings.items():
@@ -157,7 +171,7 @@ def main():
                     tar.add(bundle, arcname='bundle')
                 report['bundle_sha256'] = hashlib.sha256(archive.read_bytes()).hexdigest()
                 shutil.copytree(app / 'build/symbols', output / 'symbols', dirs_exist_ok=True)
-                report['runtime'] = runtime(bundle, output, args.candidate_facade, windows=True)
+                report['runtime'] = runtime(bundle, output, stable_flutter_error, windows=True)
         report['success'] = True
     except Exception as error:
         report['error'] = str(error)
