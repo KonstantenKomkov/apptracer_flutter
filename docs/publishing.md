@@ -75,6 +75,42 @@ has `publish_to: none` removed; the check never publishes. See
 [desktop-migration.md](desktop-migration.md) for the exact scope and limits.
 After publication, repeat against the hosted desktop package.
 
+### Ubuntu release candidate (2026-10-24)
+
+The accepted target is Ubuntu 22.04.5 x86_64, X11, Sentry Flutter 9.30.1 /
+native 0.16.6. It does not imply acceptance of Windows, Aurora, other Linux
+distributions or architectures. The existing desktop candidate is
+`0.1.0-dev.1`; retain its exact SDK pin and `publish_to: none` until the release
+action. The facade's unreleased stable `FlutterError` name fix is prepared as
+patch **0.2.2**, with no interface or sibling dependency change.
+
+For the complete accepted Ubuntu behavior, release order is facade **0.2.2**
+(existing sibling versions already satisfy its dependencies), then optional
+desktop **0.1.0-dev.1**. An older hosted facade can send Ubuntu events but does
+not preserve the `FlutterError` type name under obfuscation. Platform-interface,
+Android, iOS, Web and HTTP packages do not need a version bump for this fix.
+
+```sh
+xvfb-run -a python3 tool/check_linux_consumer.py --output build/ubuntu-consumer-hosted
+xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade \
+  --output build/ubuntu-consumer-candidate
+```
+
+The second check changes facade version/changelog only in an isolated export;
+the working tree retains its unreleased version until the final release commit.
+It resolves public siblings from pub.dev without overrides, checks both staged
+publish dry-runs, and builds/runs a new release consumer. The desktop dry-run's
+one intentional exact-SDK-pin warning remains explicit. Reports contain source
+file hashes, dependency sources/versions, lockfile, bundle hash and runtime
+results. No publication or hosted desktop installation is performed.
+
+Before the eventual release, apply these versions/changelog dates to the release
+commit and repeat the candidate checks. After publishing, verify a consumer
+with both facade and desktop resolved from pub.dev. Native handler/CMake and
+symbol-map instructions are in [the Ubuntu installation guide](desktop-migration.md#ubuntu-linux-consumer).
+The completed local and clean-VM checks, artifact hashes and warning scope are
+recorded in [Ubuntu consumer acceptance](ubuntu-consumer-acceptance.md).
+
 0.1.0 went out on 2026-08-28, in that order. The required `publish-dry-run` CI
 job checks archive contents and package metadata using local overrides. It does
 not prove that a consumer can resolve the new versions from pub.dev.

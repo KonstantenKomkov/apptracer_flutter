@@ -13,6 +13,15 @@ English version: [README.en.md](README.en.md).
 
 ## Быстрый старт
 
+Этот раздел описывает Android/iOS/Web. Для Ubuntu 22.04.5 x64 нужен отдельный
+optional пакет `apptracer_flutter_desktop`, устанавливаемый по path/git, и DSN
+C/C++-проекта Tracer. [Настройка Ubuntu](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer)
+включает обязательные настройки CMake, native handler и карты символов.
+Сам основной пакет desktop backend не добавляет. Исправление имени `FlutterError`
+при обфускации пока находится в исходниках и готовится для 0.2.2; оно не входит
+в опубликованную 0.2.1. Границы приёмки и ограничения сервиса — в
+[протоколе Ubuntu](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/linux-preparation.md).
+
 Пять минут до первого события в консоли Tracer. Развёрнутые версии всех шагов —
 ниже по документу.
 

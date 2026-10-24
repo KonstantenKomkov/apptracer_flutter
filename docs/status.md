@@ -8,7 +8,33 @@ the SDK versions on which they were obtained.
 An honest ledger of what has actually been exercised, so that nothing here is
 mistaken for a guarantee.
 
-Last updated: 2026-10-23.
+Last updated: 2026-10-24.
+
+**Unreleased Ubuntu update:** Ubuntu 22.04.5 x86_64 was accepted on a clean
+QEMU/KVM VM with X11/Xvfb and no Flutter/compiler/Java runtime installation.
+The optional adapter uses Sentry Flutter 9.30.1 / sentry-native 0.16.6, backend
+`native`: Tracer accepts its envelopes; the old Crashpad minidump endpoint
+returned 404. Three Dart error kinds and a Flutter runner SIGSEGV are confirmed
+in Tracer with user/key/breadcrumb and exact-build source frames. Native maps
+are applied in the crash daemon and Dart maps before SDK serialization;
+server-side symbolication is not claimed. Grouping and account isolation after
+clear/restart passed. Consent, offline/retry/revocation and in-flight cancellation
+have separate VM/loopback evidence; all 21 Ubuntu CI scenarios passed.
+See [the dated platform record](linux-preparation.md).
+
+The C/C++ service still leaves OS/device widgets blank and may display
+`Stacktrace not available` above correctly displayed source frames. Metadata
+is available in Other/Context. Crash-free, sessions, performance and replay are
+not claimed. Other distros, ARM64, Wayland and physical hardware are outside the
+accepted baseline. Packages remain unpublished candidates; installation and
+release preparation are described in [desktop-migration.md](desktop-migration.md).
+
+**Ubuntu external consumers:** isolated desktop exports with hosted facade 0.2.1
+and staged facade 0.2.2 both build obfuscated release and run on the clean VM
+without Flutter/compiler/Java. Filtering, deduplication, source frames and
+stop/clear passed. Staged facade restores the `FlutterError` name; hosted 0.2.1
+still obfuscates it. Publish dry-runs passed with zero facade warnings and the
+one intentional desktop SDK-pin warning. [Evidence and release boundaries](ubuntu-consumer-acceptance.md).
 
 **Unreleased macOS update:** the optional `apptracer_flutter_desktop` now uses
 sentry_flutter 9.30.1 / Cocoa 8.58.4. Release arm64 delivery was confirmed in
@@ -141,7 +167,7 @@ in the lifecycle section below; publication remains a separate step.
 | Dart errors reach the project from a real browser | live run in Chrome, 2026-08-26, on the rewritten transport: the event arrives, the platform is recognised (`Chrome 151`, `Mac OS`), and under `flutter run -d chrome` the frames read straight against Dart sources — `package:apptracer_flutter_example/main.dart 190:21` — because DDC keeps that mapping at runtime. A release build compiles through dart2js and will need source maps instead |
 | Tracer accepts the rewritten web payload | live probe into the real JS project, 2026-08-26: `200 {"success":true}`, and the event appears in the console. A second probe differing only in stack-trace shape showed that JavaScript-style frames (`at name (url:line:col)`) are parsed into a structured stack, while Dart VM frames (`#0 name (package:…)`) are only stored as text — which costs nothing, since `dart2js` produces the former |
 | **The web half of the Sentry premise did not survive contact** (see [web-protocol.md](web-protocol.md)) | `design-decisions.md` claimed Tracer ingests over the Sentry protocol on every platform, citing nothing. Half of that is true — the vendor documents Sentry ingest for platforms with no Tracer SDK, with a DSN issued when the project is created through VK Cloud — but not for web, which has its own SDK and no DSN. Measured 2026-08-26: a JS project hands out no DSN, and the vendor's own `@apptracer/sdk` 2.6.9, unpacked from npm, posts to `sdk-api.apptracer.ru/api/crash/uploadBatch`, `/api/crash/trackSession` and `/api/perf/upload`, authenticating with the same `appToken` as Android and carrying `versionName`/`versionCode`. There is no Sentry anywhere in it | web delivery is not merely unverified: the route it was built for may not exist |
-| Delivery from **desktop and Aurora OS** | The 2026-08-27 release excluded these platforms. Work reopened in iteration v1 on 2026-10-23: macOS now has an optional official SDK adapter, local lifecycle evidence and 8 fresh live events with grouping/metadata confirmed in the console. Windows release/native loopback and HTTP 503 recovery now passed in CI; Windows stop/clear/live acceptance and the Aurora target environment remain open | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md); not a release support claim |
+| Delivery from **desktop and Aurora OS** | The published release excludes these platforms. Optional macOS and Ubuntu adapters have live delivery and lifecycle evidence; Ubuntu also has client-resolved Dart/native source frames, grouping and account isolation on the accepted x64 VM baseline. Windows release/native loopback and HTTP 503 recovery passed in CI; Windows stop/clear/live and the Aurora target environment remain open | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md), [Ubuntu evidence](linux-preparation.md); publication is separate |
 | ~~Clause 4.2.4 of the licence is not read as covering an integration wrapper~~ | **Answered 2026-08-27: the vendor does not object**, to the reading or to the name. This was the last thing blocking publication. Summarised rather than quoted — see [legal.md](legal.md) | closed |
 | ~~Tracer's backend *applies* the staged Dart symbols~~ | **Measured 2026-08-27: it does not, and cannot.** This row used to say a native crash inside Dart AOT code «cannot be provoked» because `Process.sendSignal` lands in libc. It can: a store through a `dart:ffi` pointer to an unmapped address compiles to an instruction inside `_kDartIsolateSnapshotInstructions`, and the example has a button for it. The report that came back carries `libapp.so + 0xa5234` with a zero build id, against the real `0x155234` and id `F99DCFDB6338…30`, so nothing is matched. Cause in the confirmed table above | closed; `flutter symbolize` on the verbatim trace is the route, and check 15 closed it. Closed from the other end too: the vendor states there is no Dart symbolication at all, so this is not a scenario waiting on a fix |
 

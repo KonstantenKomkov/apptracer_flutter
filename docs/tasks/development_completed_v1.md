@@ -2,6 +2,180 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-1-ubuntu"></a>
+
+## П. 1.Ubuntu. Среда, конфигурация и границы поддержки
+
+**Завершено 24 октября 2026.** Зафиксированы Ubuntu 22.04.5 x86_64 VM,
+glibc 2.35, GTK 3/X11, kernel 5.15, Flutter 3.47.4 / Dart 3.13.3,
+Sentry Flutter 9.30.1 / native 0.16.6 и native envelope backend. DSN C/C++-проекта
+и plugin token проверены без записи значений в документацию. Граница optional
+пакета, регистрация, native/Dart API, consent, очередь и символы описаны по
+фактическим результатам, включая отсутствующие server widgets и crash-free.
+Обновлены [аудит](../desktop-aurora-sdk-audit.md),
+[матрица](../platform-matrix.md) и [протокол](../linux-preparation.md).
+Windows/Аврора остаются в общем №1; целевая среда Авроры не выводится из Ubuntu.
+
+<a id="task-12-ubuntu"></a>
+
+## П. 12.Ubuntu. Документация, внешний потребитель и подготовка выпуска
+
+**Завершено 24 октября 2026.** Два новых внешних Ubuntu release-потребителя
+без monorepo overrides: desktop path + hosted facade 0.2.1 и desktop path +
+staged facade 0.2.2; все остальные siblings из pub.dev. Проверены CMake/native
+handler, изолированная сборка с обфускацией, карты точной сборки, перенос bundle
+и запуск обоих вариантов на чистой Ubuntu 22.04.5 x64 VM без build toolchain.
+Фильтрация/дедупликация, поля, исходные кадры и stop/clear прошли.
+
+Оба staged publish dry-run приняты: у facade 0 предупреждений, у desktop одно
+документированное предупреждение точного SDK pin. Plugin token не найден в
+проверенных bundle/экспортируемых исходниках. RU/EN README, инструкции внешней
+установки, status/матрица, symbolication/privacy и аудит согласованы.
+Добавлены воспроизводимый helper и отдельный Ubuntu consumer CI job;
+команды прошли локально, новый hosted job отдельно не запускался.
+
+**Свидетельства:** [полный протокол, SHA-256 и границы](../ubuntu-consumer-acceptance.md).
+Стабильное имя обфусцированного FlutterError требует staged facade 0.2.2;
+hosted 0.2.1 успешно доставляет события, но показывает обфусцированное имя.
+Зафиксирован порядок будущего выпуска: facade 0.2.2 → desktop 0.1.0-dev.1.
+Версии в рабочем дереве и `publish_to: none` сохранены до release commit.
+Финальная публикация и проверка hosted desktop-пакета — отдельное действие,
+не незавершённая Ubuntu-реализация. Общий №12 для остальных платформ открыт.
+
+## Дополнительно выделенный выполненный объём — сверка 24 октября 2026
+
+Следующие подзадачи выделены из общих №5/8/10/11 по существующим протоколам,
+коду и сохранённым отчётам. Это не новые runtime/live-прогоны. Общие задачи
+остаются в активном плане; номера и границы платформенной приёмки сохранены.
+
+<a id="task-5-ubuntu"></a>
+
+## П. 5.Ubuntu. Dart/native символизация и исходные кадры в Tracer
+
+**Завершено 24 октября 2026 для Ubuntu 22.04.5 x64 VM в рамках №13.**
+Сохранены ELF и символы точных release-сборок; helpers проверяют build ID
+binary/symbols/stack/minidump. Локально восстановлены три обфусцированных
+Dart AOT стека и native `apptracer_native_crash()`, `my_application.cc:21`,
+с `trust=cfi`. Проверены отсутствующие и несовпадающие карты.
+
+Native crash daemon восстанавливает кадры по точным Breakpad-картам;
+Dart-адаптер — по компактной карте перед сериализацией SDK. В новых событиях
+Tracer подтверждены `main.dart:45/55/64` и native `my_application.cc:21`.
+Upload четырёх модулей через vendor tool успешен, но самостоятельное серверное
+восстановление строк не заработало: принятый результат использует клиентские карты.
+
+**Свидетельства:** [протокол, build ID, event IDs и команды](../linux-preparation.md),
+`tool/symbolize_linux_{dart,native}.py`, `tool/prepare_linux*_symbols.py`,
+`lib/src/linux_dart_symbols.dart` и `linux/native_symbols.cc` desktop-пакета.
+Локальная расшифровка и негативные сценарии дополнительно прошли в
+[CI 40093674274](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274).
+
+**Ограничения:** карты раскрывают имена/пути; для Dart предусмотрен opt-out.
+Кадры без карт могут оставаться unknown. Серверная символизация и исправление
+подписи `Stacktrace not available` не заявляются. Windows и macOS live Dart AOT
+остаются в [№5](development_v1.md#task-5).
+
+<a id="task-8-macos"></a>
+
+## П. 8.macOS. Остановка, очистка и восстановление очереди
+
+**Выполнено 23 октября 2026; выделено в архив 24 октября.** На macOS arm64
+реализованы инертная регистрация, собственная native lifecycle integration
+с публичными Cocoa API, отмена сети до close, сохранённый отзыв очереди,
+удаление собственного cache/async.log. Пройдены 55 release-шагов: deferred,
+повторные вызовы, offline/in-flight, разрешённое восстановление, default purge,
+crash после stop и смена пользователя. SDK/Swift storage-проверки и четыре
+runtime-регрессии прошли; проверки включены в macOS CI из №10.macOS.
+
+**Свидетельства и границы:** [протокол](../macos-lifecycle-acceptance.md),
+реализация `a373234`, [CI-приёмка](../macos-ci-consumer-acceptance.md).
+После native init повторный старт требует нового процесса. Исторические cache,
+проверенные версии ОС и границы очистки описаны в протоколе; Intel и минимальная
+ОС не приняты. Общая [№8](development_v1.md#task-8) остаётся для Windows/Авроры.
+
+<a id="task-8-ubuntu"></a>
+
+## П. 8.Ubuntu. Consent, очистка, retry и изоляция аккаунтов
+
+**Завершено 24 октября 2026 для Ubuntu 22.04.5 x64 VM в рамках №13.**
+До согласия SDK/очередь/метаданные не запускаются. Собственная очередь имеет
+блокировку и сохранённый маркер отзыва; clear удаляет данные и блокирует позднюю
+запись. Native consent отзывается до close. Собственный `sentry-crash`
+останавливается через pidfd с проверками UID и принадлежности очереди;
+предусмотрена очистка прежнего Crashpad. Чужие процессы/очереди не затрагиваются.
+
+**Приёмка:** 18-шаговый lifecycle, разрешённое восстановление Dart/native,
+revoke/discard, in-flight cancellation, restart и изоляция аккаунтов.
+15-минутный retry Dart без restart и отдельные native-сценарии прошли в Ubuntu CI.
+После native init возвращается `restartRequired`; новый процесс не отправляет
+отозванные данные даже при `preservePreviousReports:true`.
+
+**Свидетельства:** [протокол](../linux-preparation.md),
+`build/linux-final-acceptance/ci-evidence.json` и `acceptance-summary.json`,
+[CI 40093674274](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274).
+Требуются Linux x64, kernel ≥5.3 и доступный `/proc`; уже принятые сервером
+данные не отзываются. HTTP 5xx отбрасываются native SDK, проверенный retry
+относится к сетевому обрыву. Windows/Аврора остаются в [№8](development_v1.md#task-8).
+
+<a id="task-10-ubuntu"></a>
+
+## П. 10.Ubuntu. Пример, release CI и артефакты
+
+**Завершено 24 октября 2026 в рамках №13.**
+[`linux.yml`](../../.github/workflows/linux.yml) собирает Ubuntu 22.04 x64 release
+на Flutter 3.47.4, запускает перенесённый bundle под Xvfb, выполняет analyze,
+unit/widget/Python-проверки и **21 release-сценарий**, включая 15-минутный retry,
+consent/clear, grouping, native crash и отсутствующие/чужие карты символов.
+Локальное восстановление Dart/native исходных строк — отдельные шаги CI.
+Живые ingest/upload credentials не требуются.
+
+**Свидетельства:** [успешный CI 40093674274](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274)
+на `04569a097380545a7f9a14aeee1e812c207d13c1`; сохранённые статусы и сценарии —
+`build/linux-final-acceptance/ci-runs.json` / `ci-evidence.json`.
+Артефакт `ubuntu-22.04-x64-preparation`, ID `12560780565`, содержит bundle,
+символы, lockfile, toolchain и отчёты; срок хранения до 07.11.2026.
+[Протокол](../linux-preparation.md) содержит локальные команды, результаты чистой
+VM без toolchain и отдельные границы WSL2. Общий CI, Windows и два macOS workflow
+на том же commit успешны по сохранённым результатам.
+
+Windows lifecycle, Аврора и окончательная сверка общих инструкций остаются
+в [№10](development_v1.md#task-10). Это не новая live-приёмка и не публикация.
+
+<a id="task-11-ubuntu-live"></a>
+<a id="task-11-ubuntu"></a>
+
+## П. 11.Ubuntu-live. Проверенная live-серия в Tracer
+
+**Завершено 24 октября 2026 для Ubuntu 22.04.5 x64 VM в рамках №13.**
+Подзадача фиксирует проверенные live-сценарии, а не все общие критерии №11.
+В трёх Dart-пробах подтверждены исходные строки `main.dart:45/55/64`, userId,
+ключ запуска и breadcrumb. Native Flutter runner SIGSEGV доставлен с исходными
+кадрами, в том числе `my_application.cc:21`; это отдельная crash-проба.
+
+Финальная серия `linux-final-20261024-1223-a7e30a`: восемь неизменённых SDK
+envelopes получили HTTP 200, без дублей и pending queue после успешной доставки.
+В консоли проверены две группы с 3/1 событиями и 2/1 пользователями, новый
+аккаунт после clear/restart, его Dart/native события и breadcrumb без старого
+аккаунта. OS/device metadata видны в Other/Context. Native source frames и
+пользовательские поля проверены в карточке события.
+
+**Свидетельства:** [полный протокол и event IDs](../linux-preparation.md),
+`build/linux-final-acceptance/acceptance-summary.json`, receipts/UIA-снимки
+в том же каталоге и `build/tracer-console-audit/`.
+
+**Дополнение после внешней приёмки:** release-фильтрация, отсутствие дублей
+и лишних SDK telemetry items проверены на двух внешних потребителях, в том
+числе на чистой VM. Обновлены `status.md` и `platform-matrix.md`; crash-free
+не заявляется, unhandled Dart не выдаётся за падение процесса. Таким образом,
+Ubuntu-объём №11 закрыт совокупностью live №13 и VM/CI/runtime-протоколов.
+[Дополнительный протокол](../ubuntu-consumer-acceptance.md).
+
+**Границы принятого результата:** offline/revoke/in-flight приняты отдельными VM/CI-пробами,
+а не всеми сценариями через live endpoint. Crash-free не заявляется. Сервисные
+OS/device widgets, Environment filter C/C++ и подпись `Stacktrace not available`
+остаются ограничениями. Расширенные macOS-критерии и Windows/Аврора остаются
+в [№11](development_v1.md#task-11).
+
 <a id="task-5-windows-native"></a>
 
 ## П. 5.Windows-native. PDB и локальная символизация нативного падения

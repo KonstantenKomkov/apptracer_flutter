@@ -1,5 +1,11 @@
 ## 0.1.0-dev.1
 
+- Verify two isolated Ubuntu release consumers with hosted public siblings and
+  no monorepo overrides, including clean-VM execution without build tools.
+  Document external CMake/native-handler setup, exact-build symbol maps,
+  filtering/deduplication and staged publish checks. The facade's obfuscated
+  FlutterError name fix is prepared separately for 0.2.2; no publication yet.
+
 - Add Ubuntu/Linux registration, GTK runner, official persistent Dart/native
   queue, consent revocation, owned uploader cancellation, release/symbol tooling
   and Ubuntu CI.

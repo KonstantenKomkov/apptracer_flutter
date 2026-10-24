@@ -13,6 +13,17 @@
 подтвердил release-сборку и отправку в loopback-приёмник. Далее сохранён срез
 **исходного аудита до реализации**; live Tracer и символизация всё ещё не проверены.
 
+**Актуализация Ubuntu, 24 октября:** исходные ограничения Linux ниже заменены
+результатами №13: Ubuntu 22.04.5 x64 VM, glibc 2.35, GTK 3, kernel 5.15,
+Flutter 3.47.4 / Dart 3.13.3 и Sentry Native 0.16.6 backend `native` приняты.
+`TRACER_LINUX_SENTRY_DSN` и `TRACER_LINUX_PLUGIN_TOKEN` проверены для C/C++-проекта;
+значения остаются вне репозитория. Dart/native delivery, source frames,
+offline/restart/clear и смена аккаунта подтверждены раздельными live/VM/CI
+проверками. [Матрица и версии](linux-preparation.md),
+[установка внешнего приложения](desktop-migration.md#ubuntu-linux-consumer).
+Sessions/crash-free/performance/replay не включены. Это закрывает Ubuntu-объём
+№1; открытые Windows/Аврора блокеры не относятся к проверенным Ubuntu credentials.
+
 ## Версии и архитектуры
 
 | Компонент | Решение / результат проверки | Что ещё проверить |
@@ -181,7 +192,9 @@ apptracer_flutter_aurora → platform_interface + MethodChannel + Tracer Native
 1. Новый **опциональный** desktop пакет, floor Flutter 3.24, точный SDK pin.
    Не добавлять Sentry в зависимости основного пакета до регрессионных сборок.
    На этапе №2 явная установка `TracerPlatform.instance`; в №3–4 регистрация
-   `dartPluginClass` только windows/macos. Никакой регистрации на Linux/Авроре.
+   `dartPluginClass` первоначально только windows/macos. После №13 добавлены
+   Linux `dartPluginClass` и FFI CMake hook; это регистрация Ubuntu backend,
+   а не нативного Tracer SDK Авроры.
 2. `sentry_flutter` сам является многоплатформенным плагином: установка optional
    пакета в общее приложение всё равно добавит его iOS/Android native dependencies.
    Условный Dart import их не убирает. Для изоляции использовать отдельный desktop
@@ -201,7 +214,7 @@ apptracer_flutter_aurora → platform_interface + MethodChannel + Tracer Native
    на новый пакет в №2/12; никогда не активировать оба транспорта одновременно.
 6. Аврора — отдельный пакет с metadata/template совместимого Flutter fork и
    регистрацией MethodChannel. Upstream `TargetPlatform.linux` не отличает Аврору;
-   включение по Linux запрещено. Не добавлять неизвестный upstream платформенный
+   включение Aurora backend по одному признаку Linux запрещено. Не добавлять неизвестный upstream платформенный
    ключ в основной pubspec до проверки tooling/упаковки в №6/12.
 
 Ограничения lifecycle — часть архитектуры, а не последняя косметическая проверка.

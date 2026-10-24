@@ -11,14 +11,18 @@ The helper also generates a compact Dart source map in `lib/apptracer-dart-symbo
 for automatic file/line display. This exposes function names and file paths;
 set `TRACER_BUNDLE_DART_SYMBOLS=0` to omit it when preserving obfuscation matters.
 Dependencies,
-Xvfb probes, WSL2/clean Ubuntu VM results and outstanding acceptance are in
+Xvfb probes, WSL2/clean Ubuntu VM results and accepted scope are in
 [linux-preparation.md](../../../docs/linux-preparation.md).
+All 21 Ubuntu CI scenarios passed; live Dart/native source frames, grouping and
+account isolation are confirmed. Service UI limitations remain. For a new app,
+use the [external-consumer setup](../../../docs/desktop-migration.md#ubuntu-linux-consumer)
+instead of assuming this example's CMake changes exist in the Flutter template.
 
 Separate dependency graph for `apptracer_flutter` + the optional official Sentry
 SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS/Linux registration
 selects `SentryDesktopTracer` automatically; registration itself does not start SDK
 collection. Windows x64 release build, Dart/native loopback delivery and native
-queue recovery after HTTP 503 passed in CI. Stop/clear and live Tracer remain pending.
+queue recovery after HTTP 503 passed in CI. Windows stop/clear and live Tracer remain pending.
 
 ## Build and launch
 
@@ -49,7 +53,7 @@ network access and uses the SDK's normal sandbox container for persistent data.
 
 This acceptance example opts into `preservePreviousReports: true` to recover native
 crashes after restart. Set `TRACER_PRESERVE_REPORTS=false` to discard old reports.
-The library API default remains false. On macOS, stop revokes replay regardless of
+The library API default remains false. On macOS/Ubuntu, stop revokes replay regardless of
 this flag. Windows revocation and cleanup are not implemented; starting with this
 flag set to false returns `unsupported` before SDK initialization.
 

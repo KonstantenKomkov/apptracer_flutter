@@ -3,7 +3,8 @@
 [Русский](README.md)
 
 Experimental `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
-SDK for macOS/Windows/Ubuntu Linux. Not published; platform acceptance is pending.
+SDK for macOS/Windows/Ubuntu Linux. Unpublished; macOS arm64 and Ubuntu x64 are
+accepted within their documented scope, while Windows acceptance remains pending.
 
 Ubuntu 22.04 x86_64 uses the official native queue for SDK-serialized Dart events
 and native reports. Linux requires `SENTRY_NATIVE_BACKEND=native` and an executable
@@ -31,11 +32,21 @@ delivery, source frames and grouping were verified separately on an Ubuntu
 22.04.5 x64 VM; see the tested environments and results in the
 [Linux commands and record](../../docs/linux-preparation.md).
 
-Add this optional package alongside `apptracer_flutter`, set
-`TracerPlatform.instance = SentryDesktopTracer()` before `Tracer.initialize`, and
+For an external Ubuntu app, follow the
+[CMake and packaging setup](../../docs/desktop-migration.md#ubuntu-linux-consumer):
+set the bundle install prefix before plugins, omit the unused JNI runtime and
+install `sentry-crash` as PROGRAMS. A pubspec dependency alone is insufficient.
+Verified with glibc 2.35, GTK 3 and X11; uploader cancellation requires kernel ≥5.3
+and `/proc`. Ship the whole bundle with executable permissions; the target does
+not need Flutter/Java. Generate symbols using tools from the same repository
+revision; client maps need no plugin token. Hosted facade 0.2.1 predates the
+stable obfuscated `FlutterError` name fix: use reviewed facade source by path/git
+for that fix until 0.2.2 is published.
+
+Add this optional package alongside `apptracer_flutter`, and
 pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
 environment and dist use the existing options. Never embed a symbol plugin token.
-macOS now registers the optional adapter automatically; explicit assignment is
+macOS/Windows/Linux register the optional adapter automatically; explicit assignment is
 only needed when selecting the backend yourself. See [example](example/README.md)
 for the separate macOS runner and local release transport checks.
 

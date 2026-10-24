@@ -9,6 +9,7 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
       - 'tool/check_linux_runtime.py'
+      - 'tool/check_linux_consumer.py'
       - 'tool/check_windows_native.py'
       - 'tool/build_linux_desktop.sh'
       - 'tool/elf_build_id.py'
@@ -27,6 +28,7 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'tool/check_*desktop.py'
       - 'tool/check_linux_runtime.py'
+      - 'tool/check_linux_consumer.py'
       - 'tool/check_windows_native.py'
       - 'tool/build_linux_desktop.sh'
       - 'tool/elf_build_id.py'
@@ -122,4 +124,35 @@ jobs:
             packages/apptracer_flutter_desktop/example/build/linux/x64/release/bundle/
             packages/apptracer_flutter_desktop/example/build/symbols/
             packages/apptracer_flutter_desktop/example/pubspec.lock
+          retention-days: 14
+
+  consumer:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install consumer build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm-14 cmake ninja-build pkg-config libgtk-3-dev libgles2 libcurl4-openssl-dev liblzma-dev xvfb openjdk-17-jdk
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Validate staged candidates and external Ubuntu consumers
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          GDK_BACKEND: x11
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          xvfb-run -a python3 tool/check_linux_consumer.py --output build/ubuntu-consumer-hosted
+          xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade --output build/ubuntu-consumer-candidate
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ubuntu-22.04-x64-consumer
+          path: |
+            build/ubuntu-consumer-hosted/
+            build/ubuntu-consumer-candidate/
           retention-days: 14

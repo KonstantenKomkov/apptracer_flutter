@@ -15,6 +15,13 @@
 
 English version: [README.en.md](README.en.md).
 
+Ubuntu 22.04.5 x64 проверена на отдельной VM через optional
+[`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.md):
+Dart/native доставка в Tracer, исходные строки, группировка, stop/clear и retry.
+Пакет пока устанавливается из исходников; опубликованный основной пакет сам
+desktop не подключает. [Установка и сборка](docs/desktop-migration.md#ubuntu-linux-consumer),
+[протокол и ограничения](docs/linux-preparation.md).
+
 Нативные SDK Tracer не видят ошибок Dart: необработанное Dart-исключение не
 роняет процесс и не попадает в JVM, поэтому мимо него проходят и
 `UncaughtException`-обработчик, и обработчик сигналов, и ANR-watchdog. Для
@@ -29,6 +36,8 @@ packages/
   apptracer_flutter_android/            мост на Kotlin к ru.ok.tracer
   apptracer_flutter_ios/                мост на Swift к OKTracer
   apptracer_flutter_web/                реализация для web
+  apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
+                                        macOS/Ubuntu приняты в указанном объёме, не опубликован
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
   apptracer_flutter_sentry/             протокол Sentry; только для платформ,
                                         которые этот релиз не поддерживает,

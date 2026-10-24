@@ -19,6 +19,13 @@ application that is most of the errors. This repository closes that gap.
 
 Русская версия: [README.md](README.md).
 
+Ubuntu 22.04.5 x64 is verified on a separate VM through the optional
+[`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.en.md):
+live Dart/native delivery, source frames, grouping, stop/clear and retry.
+The adapter is installed from source; the published facade does not add desktop
+support by itself. [Installation/build](docs/desktop-migration.md#ubuntu-linux-consumer),
+[evidence and limits](docs/linux-preparation.md).
+
 ## Repository layout
 
 ```
@@ -28,6 +35,8 @@ packages/
   apptracer_flutter_android/            Kotlin bridge to ru.ok.tracer
   apptracer_flutter_ios/                Swift bridge to OKTracer
   apptracer_flutter_web/                web implementation
+  apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
+                                        macOS/Ubuntu accepted within documented scope, unpublished
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
   apptracer_flutter_sentry/             the Sentry protocol; only for platforms
                                         this release does not support, and so

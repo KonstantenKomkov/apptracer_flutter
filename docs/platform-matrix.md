@@ -18,7 +18,7 @@ macOS 15 arm64 CI and isolated consumer checks:
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
 | macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
 | Windows x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6 | release loopback verified | minidump, runner identity and retry after HTTP 503 verified in CI | disabled | not claimed | experimental; stop/clear and live Tracer acceptance pending |
-| Ubuntu/Linux (experimental) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live Dart delivery confirmed; server stacks unreadable | Flutter SIGSEGV via envelope confirmed in Tracer; source files/lines unknown | no | no | 15 final-bundle VM scenarios passed; **not supported in this release** — server symbolication and remaining console acceptance open |
+| Ubuntu 22.04.5 x86_64 (optional, unreleased) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
@@ -421,6 +421,11 @@ limitations. The final bundle passed 14 clean-VM scenarios, and
 passed all 21 release scenarios including the 15-minute retry without restart.
 Task 13 is accepted for this Ubuntu baseline; other distros, physical hardware,
 Wayland, ARM64 and Aurora are outside this evidence.
+External consumers with hosted facade 0.2.1 and staged facade 0.2.2 also passed
+obfuscated release, relocation and clean-VM checks with hosted sibling packages
+and no overrides. Facade 0.2.2 preserves the FlutterError type name; 0.2.1 does not.
+[Consumer/package evidence](ubuntu-consumer-acceptance.md) closes the Ubuntu
+documentation/filtering/release-preparation scope, while publication remains separate.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system
