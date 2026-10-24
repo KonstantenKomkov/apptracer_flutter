@@ -1,5 +1,14 @@
 # Working in this monorepo
 
+## CI triggers
+
+Automatic push/PR checks run for source, tests, dependencies and build/workflow
+configuration. Changes limited to Markdown, reStructuredText, AsciiDoc, docs
+directories, license/notice files, `.gitignore` or `.gitattributes` do not start
+CI. Mixed changes that include code still run the relevant checks. Manual
+workflow dispatch remains available. Windows runtime checks follow a successful
+Windows preparation run, so documentation-only pushes start neither workflow.
+
 ## Layout
 
 Seven publishable packages under `packages/`, an unpublished Sentry transport,

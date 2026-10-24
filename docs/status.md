@@ -10,6 +10,12 @@ mistaken for a guarantee.
 
 Last updated: 2026-10-24.
 
+**Stable 1.0.0 is published:** facade and optional desktop are both available on
+pub.dev. A fresh Windows release consumer using hosted dependencies only passed
+analysis, build, filtering/deduplication, source frames and stop/clear.
+[Publication record and archive hashes](publishing.md#stable-100--2026-10-24).
+Historical 0.2.2/staged references below identify pre-release evidence.
+
 **Ubuntu 1.0.0:** Ubuntu 22.04.5 x86_64 was accepted on a clean
 QEMU/KVM VM with X11/Xvfb and no Flutter/compiler/Java runtime installation.
 The optional adapter uses Sentry Flutter 9.30.1 / sentry-native 0.16.6, backend

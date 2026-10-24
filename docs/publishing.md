@@ -192,6 +192,52 @@ matches the release commit (37 Android files and 109 facade files):
 | `apptracer_flutter_android` | `9f56a0b62ee80f486693dd0e86473eb8389bbd79bfb86ca5810d84f39fabdc13` |
 | `apptracer_flutter` | `41e59a0fa088b31778b061ab1236dabfc225ed1f3519f046184ca2099058e472` |
 
+## Stable 1.0.0 — 2026-10-24
+
+Published from `e4b0e515abd0c40631f8d6d48004bf08b68ec036` (`v1.0.0`),
+after merging [Windows PR #3](https://github.com/KonstantenKomkov/apptracer_flutter/pull/3):
+
+1. [apptracer_flutter 1.0.0](https://pub.dev/packages/apptracer_flutter/versions/1.0.0)
+2. [apptracer_flutter_desktop 1.0.0](https://pub.dev/packages/apptracer_flutter_desktop/versions/1.0.0)
+
+Both are stable releases. Desktop remains an optional dependency for Windows,
+macOS and Ubuntu Linux. The existing Android 0.2.1, iOS/Web/interface/HTTP 0.2.0
+packages retain their versions. Facade 1.0.0 preserves `FlutterError` type names
+under obfuscation and excludes generated test output from standalone archives.
+
+Publication used a clean Git export outside the repository, on drive D, without
+monorepo overrides. Both packages passed formatting and analysis; the facade
+passed 82 tests and desktop passed 20 Windows-applicable tests (6 platform skips).
+The facade dry-run had zero warnings. Desktop retained exactly one documented
+warning for its audited `sentry_flutter: 9.30.1` pin.
+
+After publication, both examples resolved their dependencies without monorepo
+overrides and passed analysis and widget tests. The facade example uses hosted
+1.0.0; the desktop example keeps its normal relative adapter dependency.
+
+Downloaded archives match pub.dev SHA-256 metadata and every packaged file
+matches the release export:
+
+| Package | Files | Archive SHA-256 |
+|---|---:|---|
+| `apptracer_flutter` | 110 | `38f73f1530611ff39884518ac0eb1a561efa65d7e5111559cbf79c452a7c5ea6` |
+| `apptracer_flutter_desktop` | 109 | `d11561dd46171ae82d62a8311e1b972d64787644c0f9b6b02f2c7e0403fb0870` |
+
+After publication, a newly generated Windows x64 consumer resolved **all**
+Tracer packages from pub.dev, with facade and desktop exactly 1.0.0 and no path,
+Git or override dependencies. Analysis, obfuscated release build, relocated
+runtime with restricted PATH, three-event delivery, filtering/deduplication,
+exact-build Dart source frames, stable `FlutterError` and stop/clear passed.
+The bundle includes the native crash handler and app-local MSVC runtime.
+This checks hosted installation; earlier full native/live/clean-VM acceptance
+remains recorded in [windows-local-acceptance.md](windows-local-acceptance.md).
+
+Consumer bundle SHA-256: `7d8e0fa411d4520fe0a12e47957a7332e65da3e03b9d84f07e61291c2001ed65`.
+Local receipts: `build/stable-1.0.0/` and
+`build/windows-consumer-published/report.json`.
+The consumer harness never publishes, so its `published:false` field describes
+the check's actions, not whether its hosted dependencies exist.
+
 ## Secrets
 
 No credential of any kind belongs in this repository — not in a test fixture,

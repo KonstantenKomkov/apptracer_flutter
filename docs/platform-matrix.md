@@ -427,9 +427,11 @@ Task 13 is accepted for this Ubuntu baseline; other distros, physical hardware,
 Wayland, ARM64 and Aurora are outside this evidence.
 External consumers with hosted facade 0.2.1 and staged facade 0.2.2 also passed
 obfuscated release, relocation and clean-VM checks with hosted sibling packages
-and no overrides. Facade 0.2.2 preserves the FlutterError type name; 0.2.1 does not.
+and no overrides. The staged 0.2.2 fix preserves the FlutterError type name;
+that fix ships in stable facade 1.0.0. Hosted 0.2.1 does not preserve it.
 [Consumer/package evidence](ubuntu-consumer-acceptance.md) closes the Ubuntu
-documentation/filtering/release-preparation scope, while publication remains separate.
+documentation/filtering/release-preparation scope. Both stable 1.0.0 packages
+are published; see [the release record](publishing.md#stable-100--2026-10-24).
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system

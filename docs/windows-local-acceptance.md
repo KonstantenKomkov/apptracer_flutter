@@ -1,6 +1,6 @@
 # Windows 11 x64: локальная приёмка 24 октября 2026
 
-Проверена текущая неопубликованная реализация optional desktop-пакета на
+До выпуска 1.0.0 проверена реализация optional desktop-пакета на
 пользовательском Windows 11 x64, build 22631.7582. Исходная ревизия —
 `86ca9ba936b08edf56ba33ec0c52e1b266425c98` плюс рабочие изменения Windows.
 Flutter 3.35.5 / Dart 3.9.2, Visual Studio 2022 17.14, Windows SDK 26100,
@@ -160,9 +160,8 @@ SHA-256 `8016c7becb5ce0ac54cf8e19e4b118c99906bc3a131784a93322cc1d9480b0ec`.
 `build/windows-consumer-final-candidate/report.json`; три события, исходные
 кадры, stable FlutterError, filtering/deduplication и stop/clear подтверждены.
 Bundle SHA-256 `8e0610cd45058ac669b528d5712374b6e871fd4222ccf7b701a61e06cae8aea1`.
-Публикация **отложена пользователем 24 октября 2026**; версии в рабочем дереве
-и `publish_to: none` сохранены. Hosted desktop-проверка зависит от будущего
-выпуска; CLI уже поддерживает `--hosted-desktop` и `--facade-version`.
+На этапе staged-приёмки публикация была отложена. Позже в тот же день
+пользователь утвердил стабильный выпуск 1.0.0; фактический результат ниже.
 
 ## Чистая Windows VM
 
@@ -214,3 +213,19 @@ read-only attributes. Атрибуты исправлены только вну�
 сохранены. Failed evidence: `build/windows-followup/ci-40113884393-failed.zip`.
 
 Windows 10 и ARM64 не проверены. Выпуск стабильных facade/desktop 1.0.0 описан в [publishing.md](publishing.md).
+
+## Опубликованный потребитель 1.0.0
+
+24 октября 2026 facade и desktop **1.0.0** опубликованы на pub.dev как стабильные
+пакеты. [Публикация и контрольные суммы](publishing.md#stable-100--2026-10-24).
+`check_windows_consumer.py --hosted-desktop 1.0.0 --facade-version 1.0.0`
+создал новое Windows-приложение: все семь Tracer-зависимостей получены с pub.dev,
+без path/git/overrides. Analyze и обфусцированная release-сборка прошли.
+Перенесённый bundle с ограниченным PATH доставил ровно три события; подтверждены
+фильтрация, дедупликация, исходные Dart-кадры, имя FlutterError и stop/clear.
+Незапрошенная телеметрия отсутствует. Native daemon и MSVC runtime включены.
+
+Отчёт: `build/windows-consumer-published/report.json`. Bundle SHA-256:
+`7d8e0fa411d4520fe0a12e47957a7332e65da3e03b9d84f07e61291c2001ed65`.
+Эта проверка дополняет прежние 24 сценария и 11 проверок чистой Windows VM;
+Windows 10/ARM64 по-прежнему не проверены.
