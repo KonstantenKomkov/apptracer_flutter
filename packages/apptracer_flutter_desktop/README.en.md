@@ -20,9 +20,15 @@ The example helper generates this map by default. It exposes function names and
 source paths, weakening obfuscation; opt out with
 `TRACER_BUNDLE_DART_SYMBOLS=0 bash tool/build_linux_desktop.sh`.
 Full DWARF and source code remain outside the bundle.
+After consent, Linux adds distro/kernel, architecture and DMI model/vendor;
+it does not read hostname, serial or machine-id. Tracer displays these fields
+under Data → Other/Context. Its C/C++ receiver still has limitations in the
+OS/device widgets and the `Stacktrace not available` caption, which can remain
+even when source files and lines are present.
 Linux registration is automatic. Stop revokes replay and
 cancels owned uploaders; restarting collection requires a new process. Live Tracer
-acceptance remains separate; see the tested environments and results in the
+delivery, source frames and grouping were verified separately on an Ubuntu
+22.04.5 x64 VM; see the tested environments and results in the
 [Linux commands and record](../../docs/linux-preparation.md).
 
 Add this optional package alongside `apptracer_flutter`, set

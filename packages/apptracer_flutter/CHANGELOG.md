@@ -9,6 +9,10 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve the `FlutterError` exception type name in obfuscated Dart AOT builds.
+
 ## [0.2.1] - 2026-10-16
 
 ### Changed

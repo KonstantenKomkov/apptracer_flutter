@@ -517,6 +517,73 @@ Relay переслал payload SDK без изменений. В браузер�
 показаны в событии. FlutterError runtime type остаётся обфусцированным (`yF`)
 в заголовке; восстановление имени типа в это исправление не входило.
 
+## Финальная проверка метаданных и группировки — 24 октября 2026
+
+Исправлено имя `FlutterError` при AOT-обфускации: нормализатор проверяет тип
+объекта, а не его переименованный `runtimeType`. Другие исключения внутри
+`FlutterErrorDetails` сохраняют свой тип. В pinned C-мосте Sentry загрузка
+native contexts в Dart не поддерживается. Поэтому после согласия адаптер
+читает allowlist из `/etc/os-release`, версию ядра и DMI model/vendor;
+архитектура берётся из Dart ABI. Одинаковые данные передаются в официальный
+native scope и в Dart event. Hostname, serial и machine-id не читаются.
+Lifecycle-проба теперь явно задаёт `environment=desktop-acceptance` и позволяет
+проверить `issueKey`; release/dist равны `1.0.0`/`1`.
+
+Финальная Ubuntu 22.04.5 x64 VM-сборка:
+
+- SHA-256 bundle archive:
+  `10d877c42c1545d5c7232e32065ad848e0d703b2db45f3bd8eedbdd3b812f6fa`.
+- Dart ELF build ID: `29203546f35c990aff19ef5426aa6c25`.
+- Native runner build ID: `bc8ea719fde3704845b42b656650ce87d49bd478`.
+- Локально: 82 facade-теста, 22 desktop-теста (ещё 2 macOS skip), widget test,
+  22 Python-теста; анализ изменённых пакетов без замечаний.
+- На чистой VM без toolchain прошли 14 сценариев: disabled/deferred/smoke,
+  lifecycle, grouping, native/native-inflight, три Dart retry/revoke/discard,
+  readonly bundle и три режима Dart-карты (resolved/missing/mismatched).
+  Результаты: `build/ubuntu-vm/run-1792844483095611242/reports`.
+
+Live run `linux-final-20261024-1223-a7e30a`: 8 неизменённых SDK envelopes через
+диагностический TLS relay получили HTTP 200, без дублей и без очереди после
+успешной доставки/restart. Это три Dart smoke-пробы, три ошибки аккаунта A,
+одна ошибка аккаунта B после clear/restart и его native crash. Все восемь
+содержат Ubuntu 22.04, kernel `5.15.0-198-generic`, x86_64, QEMU/Standard PC,
+правильные environment/dist. `FlutterError` в обфусцированной сборке имеет
+стабильное имя. Dart source lines остаются `main.dart:45/55/64`, native —
+`my_application.cc:21`.
+
+Самостоятельно в консоли проверены две группы одного текста: 3 события / 2
+пользователя для одного fingerprint и 1 событие / 1 пользователь для другого.
+Поиск `linux-final-account-B` возвращает ровно его Dart-событие 15:23:36 МСК
+и SIGSEGV 15:23:41. В native-карточке проверены userId, ключи `probe_run` и
+`account_marker`, breadcrumb B без A, а также три исходных native-кадра.
+OS/device данные проверены в Dart- и native-карточках. Исходящие SDK envelopes
+аккаунта B также проверены на отсутствие A. Локальные UIA-снимки и receipt:
+`build/linux-final-acceptance/`.
+
+**Разделение с ограничениями сервиса:** Tracer извлекает `os.name`, `os.version`
+и `device.arch` в «Данные → Other», остальные OS/device поля — в Context.
+Стандартные виджеты ОС/устройства остаются пустыми, `Stacktrace not available`
+сохраняется над реально отображаемыми исходными кадрами. Клиентское исправление
+не меняет серверный parser/UI. Environment/dist проверены в SDK payload;
+фильтр Environment для C/C++ не заявлен сервисом как поддерживаемый
+([документация Tracer](https://apptracer.ru/doc/intro/crashes/)). Сохранение Context
+соответствует [описанному Sentry-мосту](https://apptracer.ru/doc/other-platforms/quick-start/).
+Эти ограничения не следует выдавать за исправленные или обходить подменой платформы.
+
+Код опубликован для проверки в отдельной ветке
+[`codex/task13-ubuntu-acceptance`, PR #2](https://github.com/KonstantenKomkov/apptracer_flutter/pull/2),
+commit `04569a097380545a7f9a14aeee1e812c207d13c1`. Ubuntu CI включает
+21 release-сценарий, в том числе реальный 15-минутный retry без restart.
+Статус и артефакты:
+[Ubuntu CI 40093674274](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274).
+Workflow завершился успешно: все 21 сценарий подтверждены по сохранённым логам,
+обе проверки восстановления исходных строк также прошли. Артефакт
+`ubuntu-22.04-x64-preparation` (ID `12560780565`, хранение до 07.11.2026):
+SHA-256 `387fd4faae11aa3804c5dbb02a771818b4288338a6d23f94e1601d420c89374d`.
+На том же commit зелёные общий CI `40093674303`, Windows `40093674245`,
+macOS desktop `40093674366` и macOS Dart AOT `40093674357`.
+Основная ветка и публикация пакетов не изменены.
+
 ## Жизненный цикл и ограничения
 
 До согласия не запускаются SDK/crash daemon и не открывается очередь. Linux lifecycle
@@ -565,7 +632,8 @@ pidfd, повторно проверяет принадлежность, ост�
 - Для новой сборки с компактной картой автоматические Dart source frames,
   userId/key/breadcrumb всех трёх проб подтверждены в консоли. Без карты
   серверное восстановление строк по загруженным символам не заработало.
-  Расширенная матрица группировки/аккаунтов и OS/device metadata ещё не принята.
+  Группировка, смена аккаунта и доставка OS/device metadata дополнительно
+  проверены финальной серией выше; ограничения виджетов сервиса сохраняются.
 - Flutter SIGSEGV доставлен и подтверждён пользователем. После upload сервер
   оставлял исходные файлы/строки `unknown`; теперь crash daemon передаёт точные
   native file/line до доставки, и пользователь подтвердил их отображение в новом

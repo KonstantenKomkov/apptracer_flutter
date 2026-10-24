@@ -411,9 +411,16 @@ before SDK serialization using an optional exact-build compact map. New events
 at 14:56:01–14:56:02 MSK were inspected directly: handled/FlutterError/async source lines
 45/55/64, user IDs, run keys and breadcrumbs all appear correctly. This is
 client-side symbolication and exposes function names/source paths in the bundle;
-the example offers an opt-out. Account-switch scenarios, OS/device metadata and
-the full grouping matrix remain separate checks.
-Ubuntu CI host checks and WSL2 builds do not establish Linux desktop or Aurora support.
+the example offers an opt-out. A final Ubuntu 22.04.5 x64 VM run also verified
+grouping (3 events for one fingerprint and 1 for another), account isolation,
+stable FlutterError names and OS/device metadata in Data → Other/Context.
+Environment/dist are correct in SDK payloads; the C/C++ receiver's dedicated
+OS/device widgets, environment filter and missing-stack caption remain service
+limitations. The final bundle passed 14 clean-VM scenarios, and
+[Ubuntu CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274)
+passed all 21 release scenarios including the 15-minute retry without restart.
+Task 13 is accepted for this Ubuntu baseline; other distros, physical hardware,
+Wayland, ARM64 and Aurora are outside this evidence.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system

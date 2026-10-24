@@ -3,8 +3,8 @@
 - Add Ubuntu/Linux registration, GTK runner, official persistent Dart/native
   queue, consent revocation, owned uploader cancellation, release/symbol tooling
   and Ubuntu CI.
-  Ubuntu x64 loopback covers Dart, native crash/retry and lifecycle; live Tracer
-  acceptance remains open. See the Linux preparation record for exact scope.
+  Ubuntu 22.04.5 x64 VM acceptance covers Dart/native delivery, source frames,
+  grouping and lifecycle; see the Linux preparation record for service UI limits.
   Use the official native backend with `sentry-crash` to deliver native stacks
   and minidump attachments through `/envelope/`; Tracer rejects the Crashpad
   `/minidump/` route. Resolve native source frames in the crash daemon from
@@ -15,6 +15,10 @@
   The example includes these maps by default; opt out with
   `TRACER_BUNDLE_DART_SYMBOLS=0` to retain obfuscation. Full DWARF remains private.
   Server processing is separate from this client-side symbolication.
+  Collect Linux distro/kernel and hardware model/architecture after consent,
+  for both Dart and native events, without hostname or machine identifiers.
+  Preserve the FlutterError type name under Dart AOT obfuscation. Verify
+  grouping fingerprints and account isolation in the release acceptance driver.
 
 - Verify an isolated macOS release consumer with hosted facade/interface
   dependencies and automatic adapter registration. Add package exclusions and
