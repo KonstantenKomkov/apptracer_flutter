@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,6 +20,7 @@ Future<void> runLifecycleProbe() async {
             dsn: probeDsn,
             release: '1.0.0',
             dist: '1',
+            environment: 'desktop-acceptance',
             preservePreviousReports: command['preserve'] == true,
             initialCustomKeys: {
               'probe_run': Platform.environment['TRACER_RUN_ID'] ?? 'lifecycle'
@@ -31,7 +33,11 @@ Future<void> runLifecycleProbe() async {
           Tracer.addBreadcrumb(TracerBreadcrumb(message: user));
         case 'capture':
           await Tracer.recordError(
-              command['message'] as String, StackTrace.current);
+              command['message'] as String, StackTrace.current,
+              issueKey: command['issueKey'] as String?);
+        case 'capture-async':
+          unawaited(Tracer.recordError(
+              command['message'] as String, StackTrace.current));
         case 'stop':
           await Tracer.stopCollection();
         case 'clear':

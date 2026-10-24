@@ -1,7 +1,21 @@
-# Windows/macOS desktop acceptance example
+# Windows/macOS/Ubuntu desktop acceptance example
+
+Ubuntu 22.04 x86_64 uses `TRACER_LINUX_SENTRY_DSN` and automatic registration.
+From the repository root run `bash tool/build_linux_desktop.sh`; launch the entire
+`build/linux/x64/release/bundle` from this example's build directory. The helper
+selects `SENTRY_NATIVE_BACKEND=native` and bundles executable `lib/sentry-crash`.
+It also creates native Breakpad maps in `bundle/lib/symbols` for automatic source
+resolution inside the crash daemon. Keep this directory with the bundle; Dart
+AOT split-debug-info remains a separate artifact under `build/symbols/dart`.
+The helper also generates a compact Dart source map in `lib/apptracer-dart-symbols`
+for automatic file/line display. This exposes function names and file paths;
+set `TRACER_BUNDLE_DART_SYMBOLS=0` to omit it when preserving obfuscation matters.
+Dependencies,
+Xvfb probes, WSL2/clean Ubuntu VM results and outstanding acceptance are in
+[linux-preparation.md](../../../docs/linux-preparation.md).
 
 Separate dependency graph for `apptracer_flutter` + the optional official Sentry
-SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS registration
+SDK adapter. The existing Android/iOS/Web example is unchanged. Windows/macOS/Linux registration
 selects `SentryDesktopTracer` automatically; registration itself does not start SDK
 collection. Windows x64 release build, Dart/native loopback delivery and native
 queue recovery after HTTP 503 passed in CI. Stop/clear and live Tracer remain pending.

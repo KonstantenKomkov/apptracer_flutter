@@ -1,5 +1,5 @@
 name: apptracer_desktop_example
-description: Windows/macOS acceptance example for the experimental Tracer desktop SDK adapter.
+description: Windows/macOS/Ubuntu acceptance example for the experimental Tracer desktop SDK adapter.
 publish_to: none
 version: 1.0.0+1
 environment:

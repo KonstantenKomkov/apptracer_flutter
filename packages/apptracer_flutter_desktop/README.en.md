@@ -3,7 +3,27 @@
 [Русский](README.md)
 
 Experimental `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
-SDK for macOS/Windows. Not published; platform acceptance is pending.
+SDK for macOS/Windows/Ubuntu Linux. Not published; platform acceptance is pending.
+
+Ubuntu 22.04 x86_64 uses the official native queue for SDK-serialized Dart events
+and native reports. Linux requires `SENTRY_NATIVE_BACKEND=native` and an executable
+`lib/sentry-crash` in the bundle (see the example build helper).
+The Linux CMake hook resolves native source frames inside the crash daemon using
+matching Breakpad maps in `lib/symbols`. The example build helper generates these
+from the same build's DWARF; this native store does not contain Dart maps. Missing
+or mismatched maps preserve the original SDK report. The hook is pinned to
+sentry-native 0.16.6 and must be re-audited when upgrading the SDK.
+For Dart AOT, the adapter reads an optional compact map from
+`lib/apptracer-dart-symbols/<build-id>.json.gz` before SDK serialization. Stack,
+loaded ELF and map build IDs must agree; the original stack is retained.
+The example helper generates this map by default. It exposes function names and
+source paths, weakening obfuscation; opt out with
+`TRACER_BUNDLE_DART_SYMBOLS=0 bash tool/build_linux_desktop.sh`.
+Full DWARF and source code remain outside the bundle.
+Linux registration is automatic. Stop revokes replay and
+cancels owned uploaders; restarting collection requires a new process. Live Tracer
+acceptance remains separate; see the tested environments and results in the
+[Linux commands and record](../../docs/linux-preparation.md).
 
 Add this optional package alongside `apptracer_flutter`, set
 `TracerPlatform.instance = SentryDesktopTracer()` before `Tracer.initialize`, and

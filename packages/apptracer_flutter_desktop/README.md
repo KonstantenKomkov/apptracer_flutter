@@ -3,12 +3,30 @@
 [English](README.en.md)
 
 Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
-Dart-код предназначен для Windows/macOS. Жизненный цикл macOS проверен локально
+Dart-код предназначен для Windows/macOS/Ubuntu Linux. Жизненный цикл macOS проверен локально
 на arm64; Windows x64 release, Dart/native loopback и повторная отправка native
 дампа после HTTP 503 проверены в CI. Windows stop/clear и live-приёмка Tracer
 не завершены. Пакет не опубликован.
 
-Подключить этот пакет по path/git вместе с `apptracer_flutter`. На Windows/macOS адаптер
+Ubuntu 22.04 x86_64 использует официальную native-очередь для сериализованных SDK
+Dart-событий и native-отчётов. Linux требует `SENTRY_NATIVE_BACKEND=native`
+и исполняемый `lib/sentry-crash` в bundle (см. build helper примера).
+Linux CMake добавляет в crash daemon восстановление native-файлов/строк по
+совпадающим Breakpad-картам в `lib/symbols`. Build helper создаёт их из DWARF
+этой же сборки; Dart AOT-карты туда не включаются. Пустые или несовпадающие карты
+не мешают доставке исходного отчёта. Механизм привязан к sentry-native 0.16.6.
+Для Dart AOT адаптер автоматически читает отдельную компактную карту из
+`lib/apptracer-dart-symbols/<build-id>.json.gz` и заполняет function/file/line
+перед сериализацией официальным SDK. Проверяются build ID стека, загруженного ELF
+и карты; исходный стек сохраняется. Helper примера создаёт карту по умолчанию.
+Она раскрывает имена функций и пути файлов, ослабляя обфускацию; для сборки без неё
+используйте `TRACER_BUNDLE_DART_SYMBOLS=0 bash tool/build_linux_desktop.sh`.
+Полный DWARF и исходный код в bundle не добавляются.
+Stop отзывает replay и отменяет собственные
+отправки; повторный старт требует нового процесса. Live Tracer проверяется
+отдельно; [среды, результаты и команды](../../docs/linux-preparation.md).
+
+Подключить этот пакет по path/git вместе с `apptracer_flutter`. На Windows/macOS/Linux адаптер
 регистрируется автоматически; при явном выборе backend до bootstrap:
 
 ```dart
@@ -108,7 +126,7 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 `SentryProtocolTracer()` на `SentryDesktopTracer()`. Старый manual envelope transport
 остаётся неизменным; одновременно запускать его и новый SDK нельзя.
 
-Пример с Windows/macOS runners: [example](example/README.md).
+Пример с Windows/macOS/Linux runners: [example](example/README.md).
 Подготовка и открытые проверки Windows: [протокол](../../docs/windows-preparation.md).
 
 Установка во внешнее приложение, CocoaPods, переход со старого транспорта и
