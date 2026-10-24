@@ -48,7 +48,7 @@ pin требуется повторный аудит. App-local MSVC DLL вхо�
 | lifecycle | 18 команд: stop/clear, re-consent, новая учётная запись |
 | grouping | same/same/different, после clear новое событие от B без данных A |
 | native / revoked / discard / inflight | access violation, идентичный SHA-256/event ID при retry; после отзыва replay отсутствует; запрос отменён |
-| dart-retry / online / revoked / discard | persistent Dart очередь; online retry без перезапуска после штатных 15 минут |
+| dart-retry / online / revoked / discard | persistent Dart очередь; online retry без перезапуска, в локальном прогоне примерно через 15 минут |
 | missing-handler / unwritable-storage | безопасный `error`, сетевых запросов нет |
 | missing/mismatched native symbols | отчёт сохранён, чужие file/line не применяются |
 | junction-storage / junction-queue-entry | отказ при подмене storage; чужой sentinel переживает clear |
@@ -201,5 +201,16 @@ read-only attributes. Атрибуты исправлены только вну�
 сохранены отдельно в `build/windows-followup/vm-*-attempt.zip` и
 `vm-focused-passed.zip`. Загрузка с дополнительными Hyper-V enlightenments
 вложенной VM не удалась; приёмка выполнена с исходным `-cpu host`.
+
+Повторный CI 40113884393 подтвердил lifecycle и native-сценарии, но выявил
+короткий лимит `dart-online` в receiver: 950 секунд. В
+[sentry-native 0.16.6](https://github.com/getsentry/sentry-native/blob/0.16.6/src/sentry_retry.c)
+проверка очереди идёт каждые 15 минут, а первая повторная отправка разрешена
+после достижения событием возраста 15 минут. По этому алгоритму poll,
+запланированный чуть раньше записи события, переносит отправку на второй цикл:
+обычно 15–30 минут после первой сетевой ошибки, затем растущий backoff.
+Лимит `dart-online` увеличен до 1850 секунд; проверка выполняется без restart
+и без изменения расписания SDK. Остальные условия, включая event ID и user,
+сохранены. Failed evidence: `build/windows-followup/ci-40113884393-failed.zip`.
 
 Windows 10 и ARM64 не проверены. Публикация отложена пользователем.

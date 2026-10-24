@@ -428,8 +428,11 @@ def dart_offline(p, policy='retry'):
             p.launch()
         p.command('start', 'enabled', preserve=policy != 'discard')
     if policy in ('retry', 'online'):
+        # Native SDK polls every 15 minutes and requires the envelope to be
+        # at least 15 minutes old. A poll armed before persistence can miss
+        # that age threshold, so allow the second poll without restarting.
         p.wait(lambda: any(marker in json.dumps(r.get('events', [])) for r in p.requests[count:]),
-               'Dart retry', timeout=950 if policy == 'online' else 60)
+               'Dart retry', timeout=1850 if policy == 'online' else 60)
         events = [e for r in p.requests[count:] for e in r.get('events', [])]
         assert len(events) == 1 and events[0]['user']['id'] == 'offline-account-A'
         original = next(e for r in p.requests[:count] for e in r.get('events', [])
