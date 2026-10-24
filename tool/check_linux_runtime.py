@@ -182,7 +182,9 @@ class Probe:
         self.process.stdin.write(json.dumps(dict(id=identifier, action=action, **values)) + '\n')
         self.process.stdin.flush()
         if action == 'crash':
-            result = self.process.wait(timeout=20)
+            # After SDK shutdown, Windows WER can hold the faulted process
+            # while collecting its own report, especially on a fresh VM.
+            result = self.process.wait(timeout=120 if self.windows else 20)
             assert result != 0, result
             self.steps.append({'action': action, 'exit_code': result})
             return
