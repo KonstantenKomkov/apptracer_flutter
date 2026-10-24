@@ -6,14 +6,15 @@ import 'dart:typed_data';
 Future<String?> windowsElfIdentity(String path) async {
   RandomAccessFile? file;
   try {
-    file = await File(path).open();
-    final length = await file.length();
+    final opened = await File(path).open();
+    file = opened;
+    final length = await opened.length();
     Future<Uint8List> read(int offset, int count) async {
       if (offset < 0 || count < 0 || offset > length - count) {
         throw const FormatException('ELF bounds');
       }
-      await file!.setPosition(offset);
-      final bytes = await file.read(count);
+      await opened.setPosition(offset);
+      final bytes = await opened.read(count);
       if (bytes.length != count) throw const FormatException('ELF truncated');
       return bytes;
     }
