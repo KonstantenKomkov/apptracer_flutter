@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:flutter/foundation.dart';
@@ -109,5 +111,7 @@ void main() {
                 const TracerOptions(dsn: 'https://public@tracer.invalid/42')))
             .state,
         TracerCollectionState.restartRequired);
-  });
+    // Sentry selects Cocoa envelope transport from the host OS, independently of
+    // Flutter's target override. Linux delivery is covered by the release probe.
+  }, skip: !Platform.isMacOS);
 }

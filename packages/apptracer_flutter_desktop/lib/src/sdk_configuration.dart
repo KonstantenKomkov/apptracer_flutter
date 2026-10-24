@@ -50,7 +50,8 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
         integration is! LoadNativeDebugImagesIntegration) {
       sdk.removeIntegration(integration);
     }
-    if (defaultTargetPlatform == TargetPlatform.macOS &&
+    if ((defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux) &&
         integration is NativeSdkIntegration) {
       sdk.removeIntegration(integration);
     }

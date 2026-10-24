@@ -18,7 +18,7 @@ macOS 15 arm64 CI and isolated consumer checks:
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
 | macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
 | Windows x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6 | release loopback verified | minidump, runner identity and retry after HTTP 503 verified in CI | disabled | not claimed | experimental; stop/clear and live Tracer acceptance pending |
-| Linux | manual HTTP transport | code only | unverified | no | no | **not supported in this release** — outside this iteration |
+| Ubuntu/Linux (experimental) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live Dart delivery confirmed; server stacks unreadable | Flutter SIGSEGV via envelope confirmed in Tracer; source files/lines unknown | no | no | 15 final-bundle VM scenarios passed; **not supported in this release** — server symbolication and remaining console acceptance open |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
@@ -386,7 +386,41 @@ Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
 [release/Dart](windows-preparation.md), [native crash/retry](windows-native-acceptance.md)
 and [local PDB source-line symbolication](windows-symbols-acceptance.md)
 CI evidence; stop/clear and live Tracer remain open. Aurora still needs a target
-environment and a Flutter plugin; Linux is outside this iteration.
+environment and a Flutter plugin. Ubuntu/Linux was added to this iteration on
+2026-10-24 in [task 13](tasks/development_v1.md#task-13); Linux runner, official
+SDK integration, release, Dart/native loopback, persistent queue and lifecycle now
+have [WSL2 and clean Ubuntu VM evidence](linux-preparation.md). Local symbolication
+is recorded separately for Dart AOT and native source frames. Live Dart delivery
+and Flutter SIGSEGV delivery are confirmed by the user, but server source files
+and lines remained unknown after symbol upload. The Linux crash daemon now resolves
+native source frames from bundled exact-build maps before SDK serialization;
+a live HTTP 200 receipt contains runner source files/lines, and the user confirmed
+all three source frames in the console event at 2026-10-24 13:49:17 MSK.
+System/Flutter frames without maps remain unknown; the card still says
+`Stacktrace not available` despite displaying the event frames.
+Dart AOT symbolication is separate.
+The adapter uses the official native
+backend via envelope because Tracer rejects Crashpad's minidump endpoint (404).
+The handled Dart event's user ID, run key, breadcrumb/data, fatal flag and
+fingerprint fields are confirmed in the console. Its original AOT stack was
+recovered locally to `main.dart:45` and `main.dart:89` using the exact ELF build ID;
+the current FlutterError stack resolves to `main.dart:55/90`, and async to
+`main.dart:64`. All three original stacks and additional context/fatal fields
+are present in the console. The adapter now automatically resolves Dart frames
+before SDK serialization using an optional exact-build compact map. New events
+at 14:56:01–14:56:02 MSK were inspected directly: handled/FlutterError/async source lines
+45/55/64, user IDs, run keys and breadcrumbs all appear correctly. This is
+client-side symbolication and exposes function names/source paths in the bundle;
+the example offers an opt-out. A final Ubuntu 22.04.5 x64 VM run also verified
+grouping (3 events for one fingerprint and 1 for another), account isolation,
+stable FlutterError names and OS/device metadata in Data → Other/Context.
+Environment/dist are correct in SDK payloads; the C/C++ receiver's dedicated
+OS/device widgets, environment filter and missing-stack caption remain service
+limitations. The final bundle passed 14 clean-VM scenarios, and
+[Ubuntu CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/40093674274)
+passed all 21 release scenarios including the 15-minute retry without restart.
+Task 13 is accepted for this Ubuntu baseline; other distros, physical hardware,
+Wayland, ARM64 and Aurora are outside this evidence.
 
 * **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
   `libtracernative.so`, current version 0.1.15) that relies on the system

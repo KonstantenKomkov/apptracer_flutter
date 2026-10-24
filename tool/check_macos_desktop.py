@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the macOS/Windows release example against a loopback receiver.
+"""Run the macOS/Windows/Linux release example against a loopback receiver.
 
 This proves local SDK delivery only, not Tracer ingestion or symbolication.
 No real credentials are read. Only this script's example process is terminated.
@@ -12,6 +12,7 @@ from pathlib import Path
 import queue
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -57,7 +58,7 @@ def read_http_body(stream, headers):
     return body
 
 
-def envelope_events(data):
+def envelope_items(data):
     """Read length-delimited Sentry items; attachments can contain newlines."""
     _, _, data = data.partition(b'\n')
     while data.strip():
@@ -73,6 +74,11 @@ def envelope_events(data):
             data = data.removeprefix(b'\n')
         else:
             payload, _, data = data.partition(b'\n')
+        yield item, payload
+
+
+def envelope_events(data):
+    for item, payload in envelope_items(data):
         yield item['type'], json.loads(payload) if item['type'] == 'event' else None
 
 
@@ -84,14 +90,21 @@ def main():
     args = parser.parse_args()
     app = args.app.resolve()
     windows = os.name == 'nt'
-    if windows and args.scenario == 'native-crash':
-        parser.error('Windows minidump delivery requires the separate native acceptance protocol')
+    linux = sys.platform == 'linux'
+    if (windows or linux) and args.scenario == 'native-crash':
+        parser.error('Minidump delivery requires the separate native acceptance protocol')
     if windows:
         executable_name = 'apptracer_desktop_example.exe'
         for name in [executable_name, 'sentry.dll', 'flutter_windows.dll',
                      'crashpad_handler.exe', 'crashpad_wer.dll', 'data/app.so']:
             if not (app / name).is_file():
                 parser.error('incomplete Windows bundle: ' + name)
+    elif linux:
+        executable_name = 'apptracer_desktop_example'
+        for name in [executable_name, 'lib/libsentry.so', 'lib/sentry-crash',
+                     'lib/libflutter_linux_gtk.so', 'lib/libapp.so', 'data/icudtl.dat']:
+            if not (app / name).is_file():
+                parser.error('incomplete Linux bundle: ' + name)
     else:
         executable_name = subprocess.check_output(
             ['/usr/libexec/PlistBuddy', '-c', 'Print :CFBundleExecutable', str(app / 'Contents/Info.plist')],
@@ -103,6 +116,7 @@ def main():
     kinds = []
     requests = []
     failures = []
+    outputs = []
 
     class Receiver(BaseHTTPRequestHandler):
         def log_message(self, *unused):
@@ -127,7 +141,8 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     env = os.environ.copy()
-    dsn_key = 'TRACER_WINDOWS_SENTRY_DSN' if windows else 'TRACER_MACOS_SENTRY_DSN'
+    dsn_key = ('TRACER_WINDOWS_SENTRY_DSN' if windows else
+               'TRACER_LINUX_SENTRY_DSN' if linux else 'TRACER_MACOS_SENTRY_DSN')
     env[dsn_key] = f'http://local-probe@127.0.0.1:{server.server_port}/42'
     env['TRACER_RUN_ID'] = run_id
     process = None
@@ -144,6 +159,9 @@ def main():
 
         def read_output():
             for line in child.stdout:
+                outputs.append(line.strip())
+                if len(outputs) > 30:
+                    del outputs[0]
                 if 'APPTRACER_READY ' in line:
                     messages.put(line.strip())
         threading.Thread(target=read_output, daemon=True).start()
@@ -151,16 +169,18 @@ def main():
 
     try:
         with tempfile.TemporaryDirectory(prefix='apptracer-desktop-') as directory:
-            relocated = Path(directory) / ('Desktop probe Кириллица' + ('' if windows else '.app'))
+            relocated = Path(directory) / ('Desktop probe Кириллица' + ('' if windows or linux else '.app'))
             shutil.copytree(app, relocated, symlinks=True)
-            executable = (relocated if windows else relocated / 'Contents/MacOS') / executable_name
+            executable = (relocated if windows or linux else relocated / 'Contents/MacOS') / executable_name
+            if linux:
+                env['XDG_DATA_HOME'] = str(Path(directory) / 'Data Кириллица')
             ready_file = Path(directory) / 'ready.txt'
-            if windows:
+            if windows or linux:
                 env['TRACER_PROBE_READY_FILE'] = str(ready_file)
             process = launch(executable, args.scenario)
             try:
                 while time.monotonic() < deadline:
-                    if windows and not ready and ready_file.is_file():
+                    if (windows or linux) and not ready and ready_file.is_file():
                         # Readiness is written after bootstrap; tolerate a partial write.
                         status = ready_file.read_text(encoding='utf-8')
                         if ' state=' in status:
@@ -233,6 +253,9 @@ def main():
             if sum(marker in value for value in values) != 1:
                 failures.append('missing or duplicated error: ' + marker)
         for event in received:
+            for exception in event.get('exception', {}).get('values', []):
+                if 'desktop FlutterError probe' in exception.get('value', '') and exception.get('type') != 'FlutterError':
+                    failures.append('FlutterError type was obfuscated')
             if event.get('tags', {}).get('probe_run') != run_id:
                 failures.append('wrong run/project scope')
             if event.get('user', {}).get('id') != 'desktop-test-user':
@@ -253,6 +276,7 @@ def main():
     report = {'scenario': args.scenario, 'run_id': run_id, 'ready': ready,
               'native_crashed': native_crashed, 'requests': requests,
               'item_types': kinds, 'events': received, 'failures': failures,
+              'logs': outputs if failures else [],
               'scope': 'local release app + official SDK, not Tracer console acceptance'}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')

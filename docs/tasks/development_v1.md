@@ -474,6 +474,10 @@ staged dry-run и документация установки/миграции/p
 
 ## Завершённые задачи
 
+<a id="task-13"></a>
+
+- [№13. Подключить Ubuntu/Linux](development_completed_v1.md#task-13).
+
 <a id="task-2"></a>
 
 - [№2. Общий адаптер официального Sentry SDK для desktop](development_completed_v1.md#task-2).

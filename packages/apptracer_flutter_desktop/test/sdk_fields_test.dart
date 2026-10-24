@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:flutter/foundation.dart';
@@ -55,5 +57,6 @@ void main() {
     expect(event['tags'] ?? <String, dynamic>{}, isEmpty);
     expect(event['user'], isNull);
     await client.stop();
-  });
+    // The mocked Cocoa envelope channel is only used on an actual macOS host.
+  }, skip: !Platform.isMacOS);
 }

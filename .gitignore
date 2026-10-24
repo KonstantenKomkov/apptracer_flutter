@@ -55,3 +55,7 @@ key.properties
 
 # OS
 .DS_Store
+
+# Python verification tools
+__pycache__/
+*.py[cod]
