@@ -3,10 +3,12 @@
 [English](README.en.md)
 
 Экспериментальный адаптер `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
-Dart-код предназначен для Windows/macOS/Ubuntu Linux. Жизненный цикл macOS проверен локально
-на arm64; Windows x64 release, Dart/native loopback и повторная отправка native
-дампа после HTTP 503 проверены в CI. Windows stop/clear и live-приёмка Tracer
-не завершены. Пакет не опубликован.
+Dart-код предназначен для Windows/macOS/Ubuntu Linux. Для Windows 11 x64
+проверены native backend, stop/clear, offline/retry, исходные Dart/native кадры,
+доставка в Tracer и два внешних потребителя. Все 24 сценария текущего Windows CI
+и независимая PDB/minidump-проверка прошли. Чистая Windows 11 x64 VM без средств
+разработки прошла 11 runtime/consumer-проверок. Публикация отложена;
+[проверенная область и ограничения](../../docs/windows-local-acceptance.md).
 
 Ubuntu 22.04 x86_64 использует официальную native-очередь для сериализованных SDK
 Dart-событий и native-отчётов. Linux требует `SENTRY_NATIVE_BACKEND=native`
@@ -119,12 +121,14 @@ SIGABRT доставляется, но файлы/строки не восста
   (в sandbox — внутри контейнера). Старые каталоги предыдущего адаптера и отдельного
   Sentry SDK не импортируются и автоматически не удаляются; миграционную очистку
   должен планировать владелец приложения. Системные crash-логи macOS не удаляются.
-- На Windows старт с `preservePreviousReports: false` возвращает `unsupported`
-  (`windows_previous_report_cleanup_unavailable`) до запуска SDK: удаление
-  прежних отчётов пока не реализовано. Экспериментальный пример явно сохраняет
-  отчёты для проверки доставки. Native purge возвращает `unsupported`;
-  stop/отзыв сети ещё не приняты. macOS-результаты нельзя
-  переносить на Windows. Ни одна платформа пока не объявлена полностью поддержанной.
+- Windows использует официальный native backend (`SENTRY_NATIVE_BACKEND=native`)
+  и собственный `%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`. Default purge,
+  stop/clear и отзыв replay реализованы. После native init нужен новый процесс.
+  Junction/reparse-point в предках storage отвергаются; второй владелец очереди
+  получает безопасный отказ. Старые SDK-кэши не импортируются и не удаляются.
+  Переносить весь Release, включая daemon/helper и app-local MSVC DLL.
+  Опциональные точные Dart/PDB-карты раскрывают function/file/line; их можно
+  не создавать. Plugin token для карт не нужен. [Команды](../../docs/windows-preparation.md).
 
 Нативный мост использует публичные API Cocoa 8.58.4 и CocoaPods, сохраняя официальный
 SDK для сериализации, scope, crash handler и очереди. Session-local `URLProtocol`
@@ -144,7 +148,7 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 остаётся неизменным; одновременно запускать его и новый SDK нельзя.
 
 Пример с Windows/macOS/Linux runners: [example](example/README.md).
-Подготовка и открытые проверки Windows: [протокол](../../docs/windows-preparation.md).
+Сборка и проверенная область Windows: [протокол](../../docs/windows-preparation.md).
 
 Установка во внешнее приложение, CocoaPods, переход со старого транспорта и
 проверка упаковки: [migration guide](../../docs/desktop-migration.md).

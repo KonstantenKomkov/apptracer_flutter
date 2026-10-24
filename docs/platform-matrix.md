@@ -17,7 +17,7 @@ macOS 15 arm64 CI and isolated consumer checks:
 | iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
 | Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
 | macOS (optional, unreleased) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | experimental; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
-| Windows x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6 | release loopback verified | minidump, runner identity and retry after HTTP 503 verified in CI | disabled | not claimed | experimental; stop/clear and live Tracer acceptance pending |
+| Windows 11 x64 (optional, unreleased) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
 | Ubuntu 22.04.5 x86_64 (optional, unreleased) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
 | Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
 
@@ -385,7 +385,11 @@ Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
 [acceptance record](macos-lifecycle-acceptance.md). Windows x64 now has
 [release/Dart](windows-preparation.md), [native crash/retry](windows-native-acceptance.md)
 and [local PDB source-line symbolication](windows-symbols-acceptance.md)
-CI evidence; stop/clear and live Tracer remain open. Aurora still needs a target
+historical CI evidence. The current native backend additionally passed Windows 11 x64
+[local lifecycle, source-map, live delivery and external-consumer checks](windows-local-acceptance.md).
+Stop/clear and all 24 current Windows CI scenarios passed; a fresh Windows 11 x64
+VM without build tools passed 11 runtime/consumer checks. Windows 10/ARM64 remain
+outside this evidence. Aurora still needs a target
 environment and a Flutter plugin. Ubuntu/Linux was added to this iteration on
 2026-10-24 in [task 13](tasks/development_v1.md#task-13); Linux runner, official
 SDK integration, release, Dart/native loopback, persistent queue and lifecycle now

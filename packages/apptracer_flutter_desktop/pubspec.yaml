@@ -28,6 +28,7 @@ flutter:
     platforms:
       windows:
         dartPluginClass: SentryDesktopTracer
+        ffiPlugin: true
       linux:
         dartPluginClass: SentryDesktopTracer
         ffiPlugin: true

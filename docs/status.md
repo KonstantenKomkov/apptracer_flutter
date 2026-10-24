@@ -48,7 +48,7 @@ events or duplicates were found in this series; fresh Dart keys/logs/Context als
 match. See the
 [dated evidence and limits](macos-lifecycle-acceptance.md). Restart after stop
 requires a new process; server native symbolication is unsupported in the tested
-integration. Windows/Aurora acceptance and publication remain open.
+integration. Aurora acceptance and publication remain open; Windows evidence is recorded below.
 
 **macOS automation and packaging:** the separate macOS 15 arm64 CI builds the
 release example, runs real loopback/lifecycle checks and retains binaries,
@@ -58,12 +58,19 @@ dry-run retains one documented warning for the exact Sentry SDK pin; no
 publication was performed. See [CI and consumer evidence](macos-ci-consumer-acceptance.md)
 and [migration instructions](desktop-migration.md).
 
-**Unreleased Windows update:** x64 release build and disabled/deferred/Dart
-loopback scenarios passed in CI (`39994523733`). Native crash/minidump identity
-and a new process restart passed; a rejected HTTP 503 upload was preserved and
-delivered once with identical SHA-256 after the old Crashpad process was stopped
-(`40003238550`). See [native evidence](windows-native-acceptance.md).
-Windows stop/clear, account separation and live Tracer remain unverified.
+**Unreleased Windows update:** Windows 11 x64 local release acceptance now covers
+the official native backend, stop/clear, persistent replay revocation, in-flight
+cancellation, offline Dart/native retry, account separation and exact-build
+Dart/PDB source frames. All 24 release scenarios and two external consumers
+passed. App-local MSVC DLLs are bundled; tools/caches are under D:\Tools.
+Eight live events were accepted by the existing C/C++ Tracer project; handled
+and native source frames, keys/users/logs and grouping counts were inspected
+in the console. [Detailed evidence and limits](windows-local-acceptance.md).
+The current Windows preparation and runtime workflows passed all 24 scenarios
+and independent PDB/minidump checks; general CI also passed. Windows 10/ARM64
+remain untested. A fresh Windows 11 x64 VM without build tools passed 11
+runtime/consumer checks with an unelevated token. Publication is deferred
+by the maintainer.
 
 **iOS revocation fix:** the adapter now pins OKTracer 1.5.2, persists revocation,
 purges and seals its report paths, and requires explicit deferred consent in a
@@ -167,7 +174,7 @@ in the lifecycle section below; publication remains a separate step.
 | Dart errors reach the project from a real browser | live run in Chrome, 2026-08-26, on the rewritten transport: the event arrives, the platform is recognised (`Chrome 151`, `Mac OS`), and under `flutter run -d chrome` the frames read straight against Dart sources — `package:apptracer_flutter_example/main.dart 190:21` — because DDC keeps that mapping at runtime. A release build compiles through dart2js and will need source maps instead |
 | Tracer accepts the rewritten web payload | live probe into the real JS project, 2026-08-26: `200 {"success":true}`, and the event appears in the console. A second probe differing only in stack-trace shape showed that JavaScript-style frames (`at name (url:line:col)`) are parsed into a structured stack, while Dart VM frames (`#0 name (package:…)`) are only stored as text — which costs nothing, since `dart2js` produces the former |
 | **The web half of the Sentry premise did not survive contact** (see [web-protocol.md](web-protocol.md)) | `design-decisions.md` claimed Tracer ingests over the Sentry protocol on every platform, citing nothing. Half of that is true — the vendor documents Sentry ingest for platforms with no Tracer SDK, with a DSN issued when the project is created through VK Cloud — but not for web, which has its own SDK and no DSN. Measured 2026-08-26: a JS project hands out no DSN, and the vendor's own `@apptracer/sdk` 2.6.9, unpacked from npm, posts to `sdk-api.apptracer.ru/api/crash/uploadBatch`, `/api/crash/trackSession` and `/api/perf/upload`, authenticating with the same `appToken` as Android and carrying `versionName`/`versionCode`. There is no Sentry anywhere in it | web delivery is not merely unverified: the route it was built for may not exist |
-| Delivery from **desktop and Aurora OS** | The published release excludes these platforms. Optional macOS and Ubuntu adapters have live delivery and lifecycle evidence; Ubuntu also has client-resolved Dart/native source frames, grouping and account isolation on the accepted x64 VM baseline. Windows release/native loopback and HTTP 503 recovery passed in CI; Windows stop/clear/live and the Aurora target environment remain open | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md), [Ubuntu evidence](linux-preparation.md); publication is separate |
+| Delivery from **desktop and Aurora OS** | The published release excludes these platforms. Optional macOS and Ubuntu adapters have live delivery and lifecycle evidence; Ubuntu also has client-resolved Dart/native source frames, grouping and account isolation on the accepted x64 VM baseline. Windows 11 x64 local lifecycle, Dart/native source frames, live delivery and external consumers passed; a fresh Windows 11 x64 VM without build tools also passed 11 runtime/consumer checks; other Windows targets and Aurora remain outside the evidence | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md), [Ubuntu evidence](linux-preparation.md); publication is separate |
 | ~~Clause 4.2.4 of the licence is not read as covering an integration wrapper~~ | **Answered 2026-08-27: the vendor does not object**, to the reading or to the name. This was the last thing blocking publication. Summarised rather than quoted — see [legal.md](legal.md) | closed |
 | ~~Tracer's backend *applies* the staged Dart symbols~~ | **Measured 2026-08-27: it does not, and cannot.** This row used to say a native crash inside Dart AOT code «cannot be provoked» because `Process.sendSignal` lands in libc. It can: a store through a `dart:ffi` pointer to an unmapped address compiles to an instruction inside `_kDartIsolateSnapshotInstructions`, and the example has a button for it. The report that came back carries `libapp.so + 0xa5234` with a zero build id, against the real `0x155234` and id `F99DCFDB6338…30`, so nothing is matched. Cause in the confirmed table above | closed; `flutter symbolize` on the verbatim trace is the route, and check 15 closed it. Closed from the other end too: the vendor states there is no Dart symbolication at all, so this is not a scenario waiting on a fix |
 

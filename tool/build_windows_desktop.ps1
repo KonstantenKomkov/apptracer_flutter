@@ -1,7 +1,8 @@
 # Build from any working directory without changing the user's Git settings.
 [CmdletBinding()]
 param(
-    [string]$NativeDepsDirectory = ''
+    [string]$NativeDepsDirectory = '',
+    [switch]$Obfuscate
 )
 $ErrorActionPreference = 'Stop'
 $example = Join-Path $PSScriptRoot '../packages/apptracer_flutter_desktop/example'
@@ -21,6 +22,7 @@ $settings = @{
     "GIT_CONFIG_KEY_$count" = 'core.longpaths'
     "GIT_CONFIG_VALUE_$count" = 'true'
     APPTRACER_NATIVE_DEPS_DIR = [IO.Path]::GetFullPath($NativeDepsDirectory)
+    SENTRY_NATIVE_BACKEND = 'native'
 }
 $previous = @{}
 foreach ($key in $settings.Keys) {
@@ -33,7 +35,11 @@ try {
     }
     & flutter pub get
     if ($LASTEXITCODE -ne 0) { throw "flutter pub get failed: $LASTEXITCODE" }
-    & flutter build windows --release
+    $buildArgs = @('build', 'windows', '--release')
+    if ($Obfuscate) {
+        $buildArgs += @('--obfuscate', '--split-debug-info=build/symbols/dart')
+    }
+    & flutter @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "Windows release build failed: $LASTEXITCODE" }
 } finally {
     foreach ($key in $settings.Keys) {

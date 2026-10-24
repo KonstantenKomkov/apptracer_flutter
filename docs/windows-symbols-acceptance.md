@@ -1,5 +1,9 @@
 # Windows: соответствие PDB и локальная символизация
 
+> Исторический протокол. Текущий native backend, lifecycle и клиентские карты
+> проверены отдельно 24 октября 2026: [Windows local acceptance](windows-local-acceptance.md).
+
+
 Продолжение №5, 23 октября 2026. Live-приёмка символов в Tracer и Dart AOT
 остаётся отдельной открытой работой. Проверка ниже касается native runner x64.
 

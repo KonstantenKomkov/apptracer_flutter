@@ -8,15 +8,17 @@ import 'event_mapping.dart';
 import 'linux_dart_symbols.dart';
 import 'linux_lifecycle.dart';
 import 'macos_lifecycle.dart';
+import 'windows_lifecycle.dart';
+import 'windows_dart_symbols.dart';
 import 'sdk_configuration.dart';
 
-/// Official Sentry SDK transport for desktop. Native acceptance is pending.
+/// Official Sentry SDK transport with platform-specific native lifecycle.
 ///
 /// Install explicitly before Tracer.initialize. Never initialize Sentry elsewhere
 /// in the same process. Tracer retains ownership of appRunner and error handlers.
 /// On macOS stop cancels native delivery and revokes replay; clear also deletes
 /// this adapter's queue. A new process is required before collection can resume.
-/// Native purge on Windows remains unsupported pending platform acceptance.
+/// Windows uses an owned native queue and requires a restart after stopping.
 class SentryDesktopTracer extends TracerPlatform {
   /// Creates an inert adapter; the SDK starts only after collection is allowed.
   SentryDesktopTracer();
@@ -29,7 +31,9 @@ class SentryDesktopTracer extends TracerPlatform {
   static SentryDesktopTracer? _owner;
   ObservedSdkOptions? _sdkOptions;
   LinuxLifecycle? _linux;
+  WindowsLifecycle? _windows;
   final _dartSymbols = LinuxDartSymbols();
+  final _windowsDartSymbols = WindowsDartSymbols();
   bool _enabled = false;
   bool _attemptedNativeStart = false;
   bool _closeFailed = false;
@@ -92,15 +96,6 @@ class SentryDesktopTracer extends TracerPlatform {
             TracerCollectionState.disabled,
             reason: 'invalid_sentry_dsn');
       }
-      // The default policy requires deleting old native reports BEFORE init.
-      // Until Windows owns that storage, refuse rather than silently replaying
-      // another account's data. The acceptance example explicitly retains it.
-      if (defaultTargetPlatform == TargetPlatform.windows &&
-          !options.preservePreviousReports) {
-        return _state = const TracerCollectionResult(
-            TracerCollectionState.unsupported,
-            reason: 'windows_previous_report_cleanup_unavailable');
-      }
       if (_owner != null || Sentry.isEnabled) {
         return _state = const TracerCollectionResult(
             TracerCollectionState.error,
@@ -118,9 +113,19 @@ class SentryDesktopTracer extends TracerPlatform {
             return _state;
           }
         }
+        if (defaultTargetPlatform == TargetPlatform.windows) {
+          _windows ??= WindowsLifecycle();
+          await _windows!.prepare(options.preservePreviousReports);
+          if (generation != _generation) {
+            await _close();
+            return _state;
+          }
+        }
         await SentryFlutter.init((sdk) {
           configureDesktopSdk(sdk, options);
           _linux?.configure(sdk, isAuthorized: () => generation == _generation);
+          _windows?.configure(sdk,
+              isAuthorized: () => generation == _generation);
           sdk.beforeSend = (event, hint) async {
             final source = hint.get('apptracer.event');
             if (!_enabled ||
@@ -130,7 +135,11 @@ class SentryDesktopTracer extends TracerPlatform {
             }
             final filtered = restoreFilteredFields(event, source);
             _linux?.contexts?.apply(filtered);
+            _windows?.applyContexts(filtered);
             if (_linux != null) await _dartSymbols.resolve(filtered, source);
+            if (_windows != null) {
+              await _windowsDartSymbols.resolve(filtered, source);
+            }
             // A symbol-file read can yield while stop revokes collection.
             if (!_enabled || generation != _generation) return null;
             return filtered;
@@ -146,7 +155,7 @@ class SentryDesktopTracer extends TracerPlatform {
             ? 'apptracerMacOSLifecycle'
             : defaultTargetPlatform == TargetPlatform.linux
                 ? 'apptracerLinuxLifecycle'
-                : 'nativeSdkIntegration';
+                : 'apptracerWindowsLifecycle';
         if (!Sentry.isEnabled ||
             sdk.failures != 0 ||
             !sdk.sdk.integrations.contains(integration)) {
@@ -202,6 +211,16 @@ class SentryDesktopTracer extends TracerPlatform {
               reason: 'linux_revoke_failed');
         }
       }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        try {
+          _windows ??= WindowsLifecycle();
+          await _windows!.revoke();
+        } catch (_) {
+          _closeFailed = true;
+          _state = const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'windows_revoke_failed');
+        }
+      }
       if (defaultTargetPlatform == TargetPlatform.macOS) {
         try {
           _state = await MacOSLifecycle.invoke('closeNativeSdk');
@@ -217,6 +236,7 @@ class SentryDesktopTracer extends TracerPlatform {
     final failures = sdk?.failures;
     try {
       await _linux?.revoke();
+      await _windows?.revoke();
       // Cancel the native session BEFORE Dart/Cocoa close can flush its queue.
       final nativeState = defaultTargetPlatform == TargetPlatform.macOS
           ? await MacOSLifecycle.invoke('closeNativeSdk')
@@ -227,7 +247,7 @@ class SentryDesktopTracer extends TracerPlatform {
           TracerCollectionResult(TracerCollectionState.restartRequired,
               reason: _linux != null
                   ? 'linux_stopped_restart_required'
-                  : 'native_purge_unverified');
+                  : 'windows_stopped_restart_required');
     } catch (_) {
       _closeFailed = true;
       _state = const TracerCollectionResult(TracerCollectionState.error,
@@ -242,6 +262,7 @@ class SentryDesktopTracer extends TracerPlatform {
     _enabled = false;
     ++_generation;
     _linux?.cancel();
+    _windows?.cancel();
     return _serial(_close);
   }
 
@@ -250,6 +271,7 @@ class SentryDesktopTracer extends TracerPlatform {
     _enabled = false;
     ++_generation;
     _linux?.cancel();
+    _windows?.cancel();
     // Close and purge must occupy ONE queue slot. Otherwise a prestart clear
     // can yield to a later start, then clear its freshly enabled native SDK.
     return _serial(() async {
@@ -270,6 +292,29 @@ class SentryDesktopTracer extends TracerPlatform {
                   : TracerCollectionState.disabled,
               reason: _attemptedNativeStart
                   ? 'linux_cleared_restart_required'
+                  : null);
+        } catch (_) {
+          _closeFailed = true;
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'native_cleanup_failed');
+        }
+      }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        if (_owner != null && !identical(_owner, this)) {
+          return _state = const TracerCollectionResult(
+              TracerCollectionState.error,
+              reason: 'sentry_already_owned');
+        }
+        try {
+          _windows ??= WindowsLifecycle();
+          await _windows!.clear();
+          return _state = TracerCollectionResult(
+              _attemptedNativeStart
+                  ? TracerCollectionState.restartRequired
+                  : TracerCollectionState.disabled,
+              reason: _attemptedNativeStart
+                  ? 'windows_cleared_restart_required'
                   : null);
         } catch (_) {
           _closeFailed = true;

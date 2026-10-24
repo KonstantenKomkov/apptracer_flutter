@@ -1,5 +1,9 @@
 # Windows: самостоятельная нативная проверка
 
+> Исторический протокол. Текущий native backend, lifecycle и клиентские карты
+> проверены отдельно 24 октября 2026: [Windows local acceptance](windows-local-acceptance.md).
+
+
 Дата: 2026-10-23. Продолжение №3, без реальных Tracer credentials.
 
 `tool/check_windows_native.py` запускает release-пример из отдельной временной

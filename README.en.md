@@ -26,6 +26,13 @@ The adapter is installed from source; the published facade does not add desktop
 support by itself. [Installation/build](docs/desktop-migration.md#ubuntu-linux-consumer),
 [evidence and limits](docs/linux-preparation.md).
 
+Windows 11 x64 uses the same optional desktop package: the native backend,
+stop/clear, offline/retry and Dart/native source frames have local and live
+Tracer evidence. Windows builds and checks also run in GitHub Actions;
+a fresh Windows VM without build tools passed 11 runtime/consumer checks.
+[Installation](docs/desktop-migration.md#windows-consumer),
+[current evidence](docs/windows-local-acceptance.md).
+
 ## Repository layout
 
 ```
@@ -36,7 +43,7 @@ packages/
   apptracer_flutter_ios/                Swift bridge to OKTracer
   apptracer_flutter_web/                web implementation
   apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
-                                        macOS/Ubuntu accepted within documented scope, unpublished
+                                        macOS/Ubuntu/Windows accepted within documented scope, unpublished
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
   apptracer_flutter_sentry/             the Sentry protocol; only for platforms
                                         this release does not support, and so

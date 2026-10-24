@@ -30,13 +30,7 @@ void main() {
     // Missing credentials must not attempt to load sentry.dll on any host.
     expect((await adapter.startCollection(const TracerOptions())).state,
         TracerCollectionState.disabled);
-    final defaultPolicy = await adapter.startCollection(
-        const TracerOptions(dsn: 'https://public@tracer.invalid/42'));
-    expect(defaultPolicy.state, TracerCollectionState.unsupported);
-    expect(defaultPolicy.reason, 'windows_previous_report_cleanup_unavailable');
     expect(Sentry.isEnabled, false);
-    expect((await adapter.stopAndClearCollection()).state,
-        TracerCollectionState.unsupported);
   });
 
   test('Windows SDK configuration disables automatic telemetry', () {
@@ -53,5 +47,7 @@ void main() {
     expect(options.integrations.whereType<OnErrorIntegration>(), isEmpty);
     expect(options.integrations.map((item) => item.runtimeType.toString()),
         isNot(contains('FlutterErrorIntegration')));
+    expect(options.integrations.map((item) => item.runtimeType.toString()),
+        isNot(contains('NativeSdkIntegration')));
   });
 }

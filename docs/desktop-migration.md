@@ -195,6 +195,58 @@ mobile/desktop application does add Sentry's transitive native mobile plugins;
 conditional imports cannot remove them. A separate desktop app keeps those
 dependencies out of an existing mobile graph.
 
+## Windows consumer
+
+Use the optional desktop path/git dependency alongside the facade. Before
+`flutter build windows --release`, set `$env:SENTRY_NATIVE_BACKEND = 'native'`.
+The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
+`sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release
+directory, including Flutter/Sentry DLLs and `data/`. Windows 11 x64 is the
+tested local baseline; a fresh Windows 11 x64 VM without build tools also passed
+the runtime/consumer checks. Windows 10 and ARM64 are untested.
+
+Use an executable name unique to the application: the owned per-user namespace
+is `%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`. Concurrent instances with that
+name cannot own collection simultaneously. The install directory can be read-only.
+Do not migrate the old Crashpad queue; plan any legacy-cache cleanup separately.
+Stop/clear revokes replay even when the next process requests preservation;
+resuming after native initialization requires a new process.
+
+Build with `--obfuscate --split-debug-info=build/symbols`, retain the exact PDB
+and `app.windows-x64.symbols`, and optionally generate native/Dart compact maps
+using the [Windows commands](windows-preparation.md). For another EXE use
+`prepare_windows_runtime_symbols.py --executable <name.exe>` and its matching
+PDB. Maps reveal source paths/function names but require no plugin token.
+The app runs without maps; unknown frames retain original addresses/raw stacks.
+
+Two reproducible consumer variants (from this repository root):
+
+```powershell
+. ./tool/use_windows_tools.ps1
+python -X utf8 tool/check_windows_consumer.py --output build/windows-consumer-hosted --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+python -X utf8 tool/check_windows_consumer.py --candidate-facade --output build/windows-consumer-candidate --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+```
+
+An optional `--native-source <directory>` reuses a complete, audited sentry-native
+0.16.6 checkout. Both variants resolve siblings from pub.dev without overrides;
+the candidate temporarily stages facade 0.2.2 for its obfuscated FlutterError
+name fix. Hosted 0.2.1 delivers correctly but retains the old name limitation.
+The harness performs package dry-runs, builds obfuscated release, relocates it,
+restricts PATH to Windows/System32 and verifies filtering/deduplication/source
+frames/clear. This does not replace clean-machine testing.
+[Local results and publication boundary](windows-local-acceptance.md).
+
+Publication is deferred by the maintainer (2026-10-24). When both versions are
+published, repeat the Windows consumer check with hosted packages only:
+
+```powershell
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 0.1.0-dev.1 --facade-version 0.2.2 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+```
+
+This mode checks that every Tracer dependency resolves from pub.dev; it creates
+no source export or dependency override. The command is prepared for the later
+release and has not been represented as a successful hosted desktop check.
+
 ## Reproducible consumer and package check
 
 From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and CocoaPods:
