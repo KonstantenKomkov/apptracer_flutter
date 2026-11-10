@@ -1,0 +1,242 @@
+[
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-platform/1.6.1/tracer-platform-1.6.1.pom",
+    "file": "tracer-platform-1.6.1.pom",
+    "sha256": "b8769b43178a7434e8e88c26695bc2fc565040b08078fc92b31d2af6c8d426b5"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-platform/1.6.1/tracer-platform-1.6.1.module",
+    "file": "tracer-platform-1.6.1.module",
+    "sha256": "b38a4743a1fb5ee30b9d98d6ab43fd296fce0fd73e35dc3ffa26ae8a7c2fe84c"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/ru.ok.tracer.gradle.plugin/1.6.1/ru.ok.tracer.gradle.plugin-1.6.1.pom",
+    "file": "ru.ok.tracer.gradle.plugin-1.6.1.pom",
+    "sha256": "c54dd81d60dc9f6895fb18f89904da25358ad037200d01432456f6d52d2d8856"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-plugin/1.6.1/tracer-plugin-1.6.1.pom",
+    "file": "tracer-plugin-1.6.1.pom",
+    "sha256": "aee61597b609da528b5c84d3323a53940aea839480a2f49a0817f931ed346950"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-plugin/1.6.1/tracer-plugin-1.6.1.module",
+    "file": "tracer-plugin-1.6.1.module",
+    "sha256": "a3d704c1ebd5a3ac5d4f1d88224d0dd25da69594e2df5dba45b7594f69bd02bd"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-plugin/1.6.1/tracer-plugin-1.6.1.jar",
+    "file": "tracer-plugin-1.6.1.jar",
+    "sha256": "fcd03b67a73b2c157374169ae821bdf3f60d5cb3dca2a6be2e3a8d73df7f4a61"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-base/1.6.1/tracer-base-1.6.1.pom",
+    "file": "tracer-base-1.6.1.pom",
+    "sha256": "52935d584b71da5455210714c72a6f7a3676ab206ff36d97b10a8adf2ee36383"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-base/1.6.1/tracer-base-1.6.1.module",
+    "file": "tracer-base-1.6.1.module",
+    "sha256": "3346d1006447be4ed615ba29eaca43f1e95ed42b5d7aa1a0dba2a05422b602c0"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-base/1.6.1/tracer-base-1.6.1.aar",
+    "file": "tracer-base-1.6.1.aar",
+    "sha256": "85283216992c6bffd96858f4a9a2ada6205368cbc877877f0cf57673712a7499"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-commons/1.6.1/tracer-commons-1.6.1.pom",
+    "file": "tracer-commons-1.6.1.pom",
+    "sha256": "8a9b73120627d45d2db09097484b07eb18fbf7ff5882250057b14b79d2a4279a"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-commons/1.6.1/tracer-commons-1.6.1.module",
+    "file": "tracer-commons-1.6.1.module",
+    "sha256": "f0f8ef85026946dc52393010223813e79fe254732fade269acf22811e906dd2c"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-commons/1.6.1/tracer-commons-1.6.1.aar",
+    "file": "tracer-commons-1.6.1.aar",
+    "sha256": "9ed92188a093e685d9b75563b3492b8820a3834c6827d541df59eac9420a7ae9"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report/1.6.1/tracer-crash-report-1.6.1.pom",
+    "file": "tracer-crash-report-1.6.1.pom",
+    "sha256": "777ea5bd1b5d035bdf04b898eec8b1085f09810cea41331c8bcc07d5bbf64e84"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report/1.6.1/tracer-crash-report-1.6.1.module",
+    "file": "tracer-crash-report-1.6.1.module",
+    "sha256": "c89f67be346da40c0ab27b25ba730883aaddfc5c165efa6996428a475a7a56bf"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report/1.6.1/tracer-crash-report-1.6.1.aar",
+    "file": "tracer-crash-report-1.6.1.aar",
+    "sha256": "73705261115574c0a1df5a948965f38caeea8312d9971c3c08f9cd23c7ac1501"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report-native/1.6.1/tracer-crash-report-native-1.6.1.pom",
+    "file": "tracer-crash-report-native-1.6.1.pom",
+    "sha256": "52c0fbd32df0f7827323f88aec87452629ddeeb2760bbd7d548e27caba907975"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report-native/1.6.1/tracer-crash-report-native-1.6.1.module",
+    "file": "tracer-crash-report-native-1.6.1.module",
+    "sha256": "5b95b2392e44c5482183a2e4c5fbe597c22229849debd576d4809f4172f2eb6b"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-crash-report-native/1.6.1/tracer-crash-report-native-1.6.1.aar",
+    "file": "tracer-crash-report-native-1.6.1.aar",
+    "sha256": "13ab28eb6ae54a95e895d3b04ce99e5c6fabdfdca197e46c8d3c52a8c55faad7"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-disk-usage/1.6.1/tracer-disk-usage-1.6.1.pom",
+    "file": "tracer-disk-usage-1.6.1.pom",
+    "sha256": "fce1cc9a18bbfd76b13293ad2f543fe5f9d0d908f15bdaf2334156685f164077"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-disk-usage/1.6.1/tracer-disk-usage-1.6.1.module",
+    "file": "tracer-disk-usage-1.6.1.module",
+    "sha256": "648bb6f828876ef680eed4f4c26e53253248323a62654cdd3bcca7ad0bf81bee"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-disk-usage/1.6.1/tracer-disk-usage-1.6.1.aar",
+    "file": "tracer-disk-usage-1.6.1.aar",
+    "sha256": "005d1532f7724097f0875a035fa9ed8240c811fa8753ef77d708aebe8bf62ebe"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-heap-dumps/1.6.1/tracer-heap-dumps-1.6.1.pom",
+    "file": "tracer-heap-dumps-1.6.1.pom",
+    "sha256": "15c540686200e73de6ce2c3327c010558c380d2b7da71704bac6d58181c416b6"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-heap-dumps/1.6.1/tracer-heap-dumps-1.6.1.module",
+    "file": "tracer-heap-dumps-1.6.1.module",
+    "sha256": "1769000fc3c8a3f51c1b597925eafd96d20c072ded304b328382d1c8f5c57cc7"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-heap-dumps/1.6.1/tracer-heap-dumps-1.6.1.aar",
+    "file": "tracer-heap-dumps-1.6.1.aar",
+    "sha256": "92984c4558b88f23adf4b23ca8b7070e83b7c57bc2c05fee653e7618b7851c93"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-commons/1.6.1/tracer-lite-commons-1.6.1.pom",
+    "file": "tracer-lite-commons-1.6.1.pom",
+    "sha256": "e26ab3501bc2d74b88e6cf24d9f86ace62f66d2cc6f1266a0ebb0eeeb3bb1120"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-commons/1.6.1/tracer-lite-commons-1.6.1.module",
+    "file": "tracer-lite-commons-1.6.1.module",
+    "sha256": "bedcbb4212f7e487ab9db9756287c37e90956f3f9e4ff8f201f266dcc79bf007"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-crash-report/1.6.1/tracer-lite-crash-report-1.6.1.pom",
+    "file": "tracer-lite-crash-report-1.6.1.pom",
+    "sha256": "cc00f2f461c89a359bede7837a55f092c127237a60c34113ac4802a499a2ee33"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-crash-report/1.6.1/tracer-lite-crash-report-1.6.1.module",
+    "file": "tracer-lite-crash-report-1.6.1.module",
+    "sha256": "3ae0e7969835f03d1d907b314953c43a8e8ea463491f4cbb5c6268fae39d08b5"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-performance-metrics/1.6.1/tracer-lite-performance-metrics-1.6.1.pom",
+    "file": "tracer-lite-performance-metrics-1.6.1.pom",
+    "sha256": "2274d0c0be00ea516f51854d3fdaab2c17e40262ad02b8e3ba5aece7d0eb91e1"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-lite-performance-metrics/1.6.1/tracer-lite-performance-metrics-1.6.1.module",
+    "file": "tracer-lite-performance-metrics-1.6.1.module",
+    "sha256": "b1ae07118e69eb8b9afc5201d9dbdf97c797fd8487d4245a942018de984f07b4"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-manifest/1.6.1/tracer-manifest-1.6.1.pom",
+    "file": "tracer-manifest-1.6.1.pom",
+    "sha256": "97967ec6cca80ac85b09be8fabb98bbb9ffb8de0f60af9ba2d947eb2a5283061"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-manifest/1.6.1/tracer-manifest-1.6.1.module",
+    "file": "tracer-manifest-1.6.1.module",
+    "sha256": "9f07f40e997fe542fe5a9984c32f9565fac216cb1aacff704635cbe5c5cf8ee6"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-manifest/1.6.1/tracer-manifest-1.6.1.aar",
+    "file": "tracer-manifest-1.6.1.aar",
+    "sha256": "95da9c19f938427c7777d43ec197d6fba5d1fbaf6746334bc2235914af73bff0"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-opentelemetry/1.6.1/tracer-opentelemetry-1.6.1.pom",
+    "file": "tracer-opentelemetry-1.6.1.pom",
+    "sha256": "039bf61a4843443a9b754a496a228dd8888b6ea9d579c0542214681839480d35"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-opentelemetry/1.6.1/tracer-opentelemetry-1.6.1.module",
+    "file": "tracer-opentelemetry-1.6.1.module",
+    "sha256": "e38c54b4d496a6496fe3b66812b0573d0d87ed15f3baa789ae5c79b12d02e58e"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-performance-metrics/1.6.1/tracer-performance-metrics-1.6.1.pom",
+    "file": "tracer-performance-metrics-1.6.1.pom",
+    "sha256": "85669a97573164a58f768ce73064bf45fc3d2a36d2cb27c67915f540dc1a9094"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-performance-metrics/1.6.1/tracer-performance-metrics-1.6.1.module",
+    "file": "tracer-performance-metrics-1.6.1.module",
+    "sha256": "8c54fc196e0cf191e064a3fb22b936660a25bc176aa99368067943299679f305"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-profiler-sampling/1.6.1/tracer-profiler-sampling-1.6.1.pom",
+    "file": "tracer-profiler-sampling-1.6.1.pom",
+    "sha256": "94a8f439bdbeb1772b283a9f015ccf01fc438f7a3a6baf02f749eb0af230e246"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-profiler-sampling/1.6.1/tracer-profiler-sampling-1.6.1.module",
+    "file": "tracer-profiler-sampling-1.6.1.module",
+    "sha256": "00c395353bc37ed562ff3bfe86e179d55b950c747ec4cb14019d13fc45f938b8"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-profiler-systrace/1.6.1/tracer-profiler-systrace-1.6.1.pom",
+    "file": "tracer-profiler-systrace-1.6.1.pom",
+    "sha256": "ecddde1c4aff9d8e5c78d0ab9b98f5b8b31cdc33afda2292a627c9ca6c9a1ff7"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-profiler-systrace/1.6.1/tracer-profiler-systrace-1.6.1.module",
+    "file": "tracer-profiler-systrace-1.6.1.module",
+    "sha256": "7ebb58059b337a0a742a113aa6e7849735d11dae4b8ca97e531c35674d0ad09e"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-sample-upload/1.6.1/tracer-sample-upload-1.6.1.pom",
+    "file": "tracer-sample-upload-1.6.1.pom",
+    "sha256": "f8705cf15fd314e703ccdfeb501f52202df5ce05c5248d3118a7a852894b71e2"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-sample-upload/1.6.1/tracer-sample-upload-1.6.1.module",
+    "file": "tracer-sample-upload-1.6.1.module",
+    "sha256": "52d6ac169c68c17ab543521d6826f04fa8c7b303c84bd00232d131d80b036fd5"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-user-sample/1.6.1/tracer-user-sample-1.6.1.pom",
+    "file": "tracer-user-sample-1.6.1.pom",
+    "sha256": "14f7e0fa05ff80bffdb6b8e679c9590b9b763d8e32e6fe198d256d9e6e3c799a"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-user-sample/1.6.1/tracer-user-sample-1.6.1.module",
+    "file": "tracer-user-sample-1.6.1.module",
+    "sha256": "e422566c9549e0e56cf4785f57ea5402e450148853a41c5d4805e3d00ce1f681"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-native-bindings/0.1.41-android/tracer-native-bindings-0.1.41-android.pom",
+    "file": "tracer-native-bindings-0.1.41-android.pom",
+    "sha256": "0b5016420e65872481f2612d28e54555cd96d755b2a1d0569ab0cae186ec60a2"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-native-bindings/0.1.41-android/tracer-native-bindings-0.1.41-android.module",
+    "file": "tracer-native-bindings-0.1.41-android.module",
+    "sha256": "62bec555c853e368b1e5d39c9c19a68415dcbf2e94ab942569ec0dd3c22920f0"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/ru/ok/tracer/tracer-native-bindings/0.1.41-android/tracer-native-bindings-0.1.41-android.aar",
+    "file": "tracer-native-bindings-0.1.41-android.aar",
+    "sha256": "d5b67b1d7c36741df61c547bced2a6eed3045d410edc2c2a4984f04b223722cb"
+  }
+]
