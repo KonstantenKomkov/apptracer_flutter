@@ -1,0 +1,237 @@
+{
+  "date": "2026-11-10",
+  "baselineCommit": "453f2ea",
+  "sdk": "1.6.1",
+  "plugin": "1.6.1",
+  "agp": "8.9.1",
+  "gradle": "8.12",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "flutter": "3.47.4",
+  "builds": [
+    {
+      "case": "r8-on_mapping-on",
+      "minified": true,
+      "mappingFlag": true,
+      "nativeFlag": false,
+      "pluginTokenPresent": true,
+      "buildUuid": "0ee0d5a0-dd1a-11f1-85f9-9e593dfa3dac",
+      "apkSha256": "66ad007b9d37c37f92ad55a57dc259d0c7115ec9e46e60043fd0d22282cca004",
+      "resourceSha256": "0b0aa514e8ea01fd373e92696f873748ce74534551ca27cf091c1184b10338f0",
+      "mappingUploadTasks": 1,
+      "nativeUploadTasks": 0,
+      "uploadTasksDisabledByGuard": true,
+      "mappingSha256": "4416852a08fe84dad9082a6911eec7ebb273220bd64ebad25268084d31df6f6d"
+    },
+    {
+      "case": "r8-on_mapping-off",
+      "minified": true,
+      "mappingFlag": false,
+      "nativeFlag": false,
+      "pluginTokenPresent": false,
+      "buildUuid": "00000000-0000-0000-0000-000000000000",
+      "apkSha256": "f60de8aade098cda0f070cda5b8a13091c2bb74a7237a44693176c49287a6c88",
+      "resourceSha256": "4dc6393c4551fa64bf8571cf84e449037424c3bfa05804495613740fbf1ebd99",
+      "mappingUploadTasks": 0,
+      "nativeUploadTasks": 0,
+      "uploadTasksDisabledByGuard": true,
+      "mappingSha256": "6315de4ec908a181aa4c743fb9f9905bf2c85c8d4c712f6944d3737541bf4a31"
+    },
+    {
+      "case": "r8-off_mapping-on",
+      "minified": false,
+      "mappingFlag": true,
+      "nativeFlag": false,
+      "pluginTokenPresent": true,
+      "buildUuid": "00000000-0000-0000-0000-000000000000",
+      "apkSha256": "e4a64680ae741c31bc606bb2ff30e77121a627a63ede51b5c8c5ac403688dce5",
+      "resourceSha256": "4dc6393c4551fa64bf8571cf84e449037424c3bfa05804495613740fbf1ebd99",
+      "mappingUploadTasks": 0,
+      "nativeUploadTasks": 0,
+      "uploadTasksDisabledByGuard": true
+    },
+    {
+      "case": "r8-off_mapping-off",
+      "minified": false,
+      "mappingFlag": false,
+      "nativeFlag": false,
+      "pluginTokenPresent": false,
+      "buildUuid": "00000000-0000-0000-0000-000000000000",
+      "apkSha256": "0cd3270c3944647f8ad940685bd0e6e6e1aeddc86b0a7a5549cf62c9a35a11ea",
+      "resourceSha256": "4dc6393c4551fa64bf8571cf84e449037424c3bfa05804495613740fbf1ebd99",
+      "mappingUploadTasks": 0,
+      "nativeUploadTasks": 0,
+      "uploadTasksDisabledByGuard": true
+    },
+    {
+      "case": "defaults",
+      "minified": true,
+      "mappingFlag": null,
+      "nativeFlag": null,
+      "pluginTokenPresent": true,
+      "buildUuid": "2673d690-dd1a-11f1-85f9-9e593dfa3dac",
+      "apkSha256": "1b43c5d390fc3745368074a3bfe76342b204339ea5ec6fe81a793a8af10a7f79",
+      "resourceSha256": "24aebc5e84f25499dec56632e7ddd46acda65477aa593e8086066dad8a038d26",
+      "mappingUploadTasks": 1,
+      "nativeUploadTasks": 1,
+      "uploadTasksDisabledByGuard": true,
+      "mappingSha256": "4416852a08fe84dad9082a6911eec7ebb273220bd64ebad25268084d31df6f6d"
+    },
+    {
+      "case": "r8-on_mapping-off_repeat",
+      "minified": true,
+      "mappingFlag": false,
+      "nativeFlag": false,
+      "pluginTokenPresent": false,
+      "buildUuid": "00000000-0000-0000-0000-000000000000",
+      "apkSha256": "cc208bd2607ee2c204a2fa717379b74dcf726f891349d6665e007617ed249844",
+      "resourceSha256": "4dc6393c4551fa64bf8571cf84e449037424c3bfa05804495613740fbf1ebd99",
+      "mappingUploadTasks": 0,
+      "nativeUploadTasks": 0,
+      "uploadTasksDisabledByGuard": true,
+      "mappingSha256": "6315de4ec908a181aa4c743fb9f9905bf2c85c8d4c712f6944d3737541bf4a31"
+    },
+    {
+      "case": "native-only",
+      "minified": true,
+      "mappingFlag": false,
+      "nativeFlag": true,
+      "pluginTokenPresent": true,
+      "buildUuid": "00000000-0000-0000-0000-000000000000",
+      "apkSha256": "acd3359008291ebacfe1912126e093966d5f6a63e287246235ba9d7f000ad24b",
+      "resourceSha256": "4dc6393c4551fa64bf8571cf84e449037424c3bfa05804495613740fbf1ebd99",
+      "mappingUploadTasks": 0,
+      "nativeUploadTasks": 1,
+      "uploadTasksDisabledByGuard": true,
+      "mappingSha256": "6315de4ec908a181aa4c743fb9f9905bf2c85c8d4c712f6944d3737541bf4a31"
+    }
+  ],
+  "taskGraphs": {
+    "r8-on_mapping-on": [
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:minifyReleaseWithR8",
+        "enabled": true
+      },
+      {
+        "path": ":app:uploadTracerMappingForRelease",
+        "enabled": false,
+        "mapping": "example/build/app/outputs/mapping/release/mapping.txt",
+        "dependencies": [
+          ":app:minifyReleaseWithR8"
+        ]
+      }
+    ],
+    "r8-on_mapping-off": [
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:minifyReleaseWithR8",
+        "enabled": true
+      }
+    ],
+    "r8-off_mapping-on": [
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      }
+    ],
+    "r8-off_mapping-off": [
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      }
+    ],
+    "defaults": [
+      {
+        "path": ":app:generateTracerNativeSymbolsForRelease",
+        "enabled": false
+      },
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:minifyReleaseWithR8",
+        "enabled": true
+      },
+      {
+        "path": ":app:uploadTracerMappingForRelease",
+        "enabled": false,
+        "mapping": "example/build/app/outputs/mapping/release/mapping.txt",
+        "dependencies": [
+          ":app:minifyReleaseWithR8"
+        ]
+      }
+    ],
+    "r8-on_mapping-off_repeat": [
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:minifyReleaseWithR8",
+        "enabled": true
+      }
+    ],
+    "native-only": [
+      {
+        "path": ":app:generateTracerNativeSymbolsForRelease",
+        "enabled": false
+      },
+      {
+        "path": ":app:generateTracerManifestSourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:generateTracerManifestResourcesForRelease",
+        "enabled": true
+      },
+      {
+        "path": ":app:minifyReleaseWithR8",
+        "enabled": true
+      }
+    ]
+  },
+  "negativeChecks": [
+    "missing app token rejected even with uploads disabled",
+    "missing plugin token rejected for mapping-only",
+    "missing plugin token rejected for native-only",
+    "invalid upload boolean rejected"
+  ],
+  "scope": "No vendor uploads; guarded enabled cases verify wiring only. Zero UUID/resources repeat, not byte-identical APK reproducibility.",
+  "ciHelper": {
+    "androidJUnit": 31,
+    "sdkReleaseR8": "passed without plugin token",
+    "noSdkReleaseR8": "passed"
+  }
+}

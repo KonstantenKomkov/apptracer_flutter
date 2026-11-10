@@ -319,3 +319,12 @@ even with off-main-thread heap dumping; offline sample uploads can discard
 files and return success. No optional module is added to the default graph,
 public Dart API or supported deferred cleanup. Combining the optional fixture
 with deferred mode fails the build explicitly.
+
+## Mapping controls (Android №18)
+
+[Gradle verification](android-sdk-1.6.1-gradle.md) and
+[matrix evidence](android-sdk-1.6.1-mappings.json) cover the four R8/mapping
+combinations, omitted defaults, native-only and repeated clean builds. Both
+uploads can be disabled without a plugin token; the app token remains required.
+The UUID resource is zero unless R8 and mapping upload are both enabled. No
+live upload or full APK reproducibility is claimed.

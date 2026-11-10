@@ -61,9 +61,24 @@ env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
   --obfuscate --split-debug-info=build/symbols
 ```
 
-`android/app/tracer.gradle` валит сборку, если `tracer.enabled=true` передан
-без обоих токенов, — вместо того чтобы выпустить релиз, чьи краши уходят в
-никуда. Настоящее приложение применяет плагин безусловно, см.
+`android/app/tracer.gradle` требует `TRACER_APP_TOKEN`, если SDK включён.
+Флаги `tracer.uploadMapping` (именно в единственном числе) и
+`tracer.uploadNativeSymbols` независимы и по умолчанию равны `true`.
+`TRACER_PLUGIN_TOKEN` обязателен, пока включён хотя бы один из этих флагов.
+Для CI без загрузок можно собрать SDK с одним app token:
+
+```sh
+env 'ORG_GRADLE_PROJECT_tracer.enabled=true' \
+    'ORG_GRADLE_PROJECT_tracer.uploadMapping=false' \
+    'ORG_GRADLE_PROJECT_tracer.uploadNativeSymbols=false' \
+    flutter build apk --release
+```
+
+При выключенной загрузке mappings SDK 1.6.1 использует нулевой `buildUuid`;
+случайный UUID появляется только при включённых mappings и R8. Проверка матрицы:
+`python3 tool/check_android_mapping_matrix.py --output /tmp/tracer-mappings`
+из корня репозитория. Это не гарантия побайтовой воспроизводимости APK.
+Настоящее приложение применяет плагин безусловно, см.
 [README](../README.md#android).
 
 После обфусцированной сборки проверьте, что файл символов соответствует

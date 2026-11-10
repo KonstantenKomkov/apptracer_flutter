@@ -18,6 +18,16 @@ apply plugin: 'ru.ok.tracer'
 // configuration cache as a bonus.
 def tracerAppToken = providers.environmentVariable('TRACER_APP_TOKEN').getOrNull()
 def tracerPluginToken = providers.environmentVariable('TRACER_PLUGIN_TOKEN').getOrNull()
+def booleanSetting = { String name, boolean defaultValue ->
+    def value = providers.gradleProperty(name).getOrNull()
+    if (value != null && !(value in ['true', 'false'])) {
+        throw new GradleException("${name} must be true or false")
+    }
+    value == null ? defaultValue : value == 'true'
+}
+// Keep production upload defaults; CI can explicitly disable both operations.
+def mappingUploadEnabled = booleanSetting('tracer.uploadMapping', true)
+def nativeUploadEnabled = booleanSetting('tracer.uploadNativeSymbols', true)
 // Native acceptance fixtures only; production defaults remain unchanged.
 def verificationApiUrl = providers.gradleProperty('tracer.verificationApiUrl').getOrElse('')
 if (verificationApiUrl && !(verificationApiUrl ==~ /http:\/\/127\.0\.0\.1:[0-9]{1,5}/)) {
@@ -26,11 +36,14 @@ if (verificationApiUrl && !(verificationApiUrl ==~ /http:\/\/127\.0\.0\.1:[0-9]{
 def verificationBuildDisabled = providers.gradleProperty('tracer.verificationBuildDisabled')
     .getOrElse('false') == 'true'
 
-if (!tracerAppToken || !tracerPluginToken) {
+if (!tracerAppToken) {
     throw new GradleException(
-        'tracer.enabled=true requires TRACER_APP_TOKEN and TRACER_PLUGIN_TOKEN ' +
-        'in the environment. Failing the build rather than shipping a release ' +
-        'whose crashes silently go nowhere.')
+        'tracer.enabled=true requires TRACER_APP_TOKEN in the environment.')
+}
+if ((mappingUploadEnabled || nativeUploadEnabled) && !tracerPluginToken) {
+    throw new GradleException(
+        'TRACER_PLUGIN_TOKEN is required while tracer.uploadMapping or ' +
+        'tracer.uploadNativeSymbols is enabled. Disable both explicitly for CI builds.')
 }
 
 android {
@@ -71,8 +84,8 @@ tracer {
         pluginToken = tracerPluginToken
         disabled = verificationBuildDisabled
 
-        uploadMapping = true
-        uploadNativeSymbols = true
+        uploadMapping = mappingUploadEnabled
+        uploadNativeSymbols = nativeUploadEnabled
         uploadRetryCount = 2
 
         // Optional: upload Dart AOT symbols through the native-symbol channel.

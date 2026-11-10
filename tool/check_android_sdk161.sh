@@ -22,10 +22,11 @@ if [[ $# -eq 1 ]]; then
     ln -s "$wrapper_distributions" "$GRADLE_USER_HOME/wrapper"
   fi
 fi
-# The example still requires both values until mappings configuration task 18.
-# These placeholders cannot upload: vendor upload task types are disabled above.
+# CI needs only a placeholder app token with both uploads disabled. The init
+# script independently blocks vendor upload task types as a verification guard.
 export TRACER_APP_TOKEN=android-sdk161-build-placeholder
-export TRACER_PLUGIN_TOKEN=android-sdk161-plugin-placeholder
+unset TRACER_PLUGIN_TOKEN
+gradle_args+=(-Ptracer.uploadMapping=false -Ptracer.uploadNativeSymbols=false)
 cd "$repo_root/packages/apptracer_flutter/example"
 # Flutter must generate the release registrant, excluding dev-only native
 # plugins such as integration_test, before Gradle compiles the application.

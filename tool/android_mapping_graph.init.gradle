@@ -1,0 +1,19 @@
+// Verification-only graph evidence; not used by the configuration-cache gate.
+import groovy.json.JsonOutput
+
+gradle.taskGraph.whenReady { graph ->
+    def destination = gradle.startParameter.projectProperties['tracer.verificationGraph']
+    if (!destination || !graph.allTasks.any { it.path == ':app:assembleRelease' }) return
+    def entries = graph.allTasks.findAll { task ->
+        task.path.startsWith(':app:') &&
+            (task.name.toLowerCase().contains('tracer') || task.name.contains('R8'))
+    }.collect { task ->
+        def entry = [path: task.path, enabled: task.enabled]
+        if (task.hasProperty('pathToMapping')) {
+            entry.mapping = task.pathToMapping.get().asFile.absolutePath
+            entry.dependencies = task.taskDependencies.getDependencies(task)*.path.sort()
+        }
+        entry
+    }
+    new File(destination).text = JsonOutput.prettyPrint(JsonOutput.toJson(entries))
+}
