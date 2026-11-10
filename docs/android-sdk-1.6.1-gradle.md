@@ -108,3 +108,61 @@ and native upload remained off. Separate diff review checked flavor isolation,
 actual obfuscation, provider-selected mapping inputs and the observer's limited
 scope. Java/Kotlin symbolication in Tracer remains №21; nothing here establishes
 native-symbol or Dart AOT symbolication support.
+
+## Configuration cache (Android №19)
+
+`tool/check_android_configuration_cache.py --output /tmp/tracer-cache-results`
+runs every build with `--configuration-cache --configuration-cache-problems=fail`.
+It uses the same command twice without clean, checks explicit reuse, changes a
+tracked input, and verifies recalculation and changed output. Vendor uploads
+remain disabled or blocked by the verification guard. No graph-observer init
+script is used in cached builds.
+
+**Completed in the plan's native-reproducer fallback, 2026-11-10.**
+[Results and log hashes](android-sdk-1.6.1-cache.json), Gradle 8.12 / AGP 8.9.1 /
+Kotlin 2.1.0 / JDK 21.0.8 / Flutter 3.47.4:
+
+- Minimal Android fixture with SDK: first `assembleAlphaRelease` stores the
+  cache; second explicitly reuses it. Changing `tracer.uploadMapping=false` to
+  true in `gradle.properties`, with the **same command**, reports that this file
+  changed and recalculates. The generated UUID changes from zero to nonzero;
+  the newly selected mapping task is SKIPPED by the guard. The fourth run reuses
+  the changed configuration and retains that UUID.
+- Minimal fixture without SDK/plugin application: first stores, second reuses.
+  The generated Tracer UUID resource is absent.
+- Actual Flutter example's `generateReleaseResValues` and
+  `generateTracerManifestSourcesForRelease`: store/reuse succeeds. Changing
+  `TRACER_APP_TOKEN` between identical commands explicitly invalidates the cache
+  and updates the generated resource. This verifies the example's provider-based
+  settings and Tracer generation tasks, **not full APK assembly**.
+- Full Flutter `assembleRelease`, with SDK and without SDK: both first and second
+  runs fail to store the cache with the same upstream task ownership. No full
+  Flutter cache reuse is claimed.
+
+### Open blocker: full Flutter assemble
+
+Flutter 3.47.4's `FlutterPlugin.kt`, in the `variant.outputs.forEach` /
+`assembleTask.doLast` block around line 392, captures the legacy
+`ApkVariantOutputImpl`. Its object graph includes Gradle Project, configuration
+containers, dependency handlers and a Kotlin build service that cannot be
+serialized. Gradle reports seven problems (five distinct categories) and discards
+the cache. The stack names `FlutterPlugin$addFlutterTasks$2$1$1.$output`; the
+same failure occurs when Tracer is not applied. The source also uses the legacy
+variant to copy the APK into Flutter's output directory. Removing that action
+would break the normal Flutter build contract and is not a fix in this repo.
+
+The full-build blocker remains [open in the active plan](tasks/development_android_1.6.1.md#blocker-flutter-configuration-cache).
+Resolution requires a compatible Flutter Gradle implementation/toolchain, then
+successful strict store/reuse/invalidation for the full SDK and no-SDK commands.
+Do not enable configuration cache for production Flutter assemble on the basis
+of the passing native fixture or generation-task checks.
+
+CI now has a dedicated job pinned to the audited Flutter 3.47.4 / JDK 21
+combination. It runs the native gate and records the full Flutter limitation in
+artifacts; unrelated failures are not accepted. The fallback recognizer requires
+all cache problem task entries to be `:app:assembleRelease` and the diagnostic to
+name both FlutterPlugin and ApkVariantOutputImpl. `--require-full-flutter` turns
+this known limitation into a failing exit status; `--native-only` runs only the
+minimal strict gate. Local validation passed; a remote CI run is separate
+execution evidence. Separate diff review checked strict failure handling,
+invalidation without clean, output verification and the absence of graph hooks.

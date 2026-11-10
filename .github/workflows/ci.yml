@@ -252,3 +252,38 @@ jobs:
             echo "::endgroup::"
           done
           exit "$failed"
+
+  android-configuration-cache:
+    name: Android SDK 1.6.1 configuration cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          # Audited toolchain for this gate; other jobs retain their baseline.
+          flutter-version: "3.47.4"
+          channel: stable
+          cache: true
+      - name: Install audited Android platforms
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-35" "platforms;android-36" "build-tools;36.0.0"
+      - name: Strict cache reuse and invalidation
+        run: |
+          python3 tool/check_android_configuration_cache.py \
+            --output "$RUNNER_TEMP/tracer-configuration-cache"
+      - name: Upload cache evidence and explicit Flutter limitation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-configuration-cache
+          path: |
+            ${{ runner.temp }}/tracer-configuration-cache/*.json
+            ${{ runner.temp }}/tracer-configuration-cache/*.log
+            ${{ runner.temp }}/tracer-configuration-cache/native-*/*.log
+          retention-days: 14

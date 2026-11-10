@@ -1,0 +1,67 @@
+{
+  "native": {
+    "sdk": {
+      "first": "stored",
+      "second": "reused",
+      "invalidatedBy": "gradle.properties: tracer.uploadMapping false -> true",
+      "newBuildUuid": "a3bc85a0-dd1c-11f1-af61-9e07e9d996f7",
+      "changedConfiguration": "stored then reused",
+      "enabledMappingTask": "SKIPPED by guard"
+    },
+    "no-sdk": {
+      "first": "stored",
+      "second": "reused"
+    }
+  },
+  "fullFlutter": {
+    "sdk": {
+      "first": "blocked",
+      "second": "blocked",
+      "owner": "FlutterPlugin assembleRelease action captures ApkVariantOutputImpl",
+      "cache": "discarded; no reuse claim"
+    },
+    "no-sdk": {
+      "first": "blocked",
+      "second": "blocked",
+      "owner": "FlutterPlugin assembleRelease action captures ApkVariantOutputImpl",
+      "cache": "discarded; no reuse claim"
+    }
+  },
+  "flutterConfigurationTasks": {
+    "first": "stored",
+    "second": "reused",
+    "invalidatedBy": "TRACER_APP_TOKEN",
+    "generatedResourceUpdated": true,
+    "scope": "resource/manifest generation only; assemble remains blocked"
+  },
+  "date": "2026-11-10",
+  "baselineCommit": "0acdb4a",
+  "sdk": "1.6.1",
+  "plugin": "1.6.1",
+  "agp": "8.9.1",
+  "gradle": "8.12",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "flutter": "3.47.4",
+  "strictArguments": [
+    "--configuration-cache",
+    "--configuration-cache-problems=fail"
+  ],
+  "logSha256": {
+    "flutter-config-tasks-first.log": "58563be5f7ed411eb9b0ad9e08afdb18d6263e35492fe98bcd2206bd88e29ca1",
+    "flutter-sdk-first.log": "5a52f1df786a670e56c5d77fb0563150ff672ef216f17a00a85898a600a9575d",
+    "flutter-no-sdk-second.log": "3a6415a77fa3b8ed68924997f13ea084889d8a16b54c482c4f2ffce8db062a60",
+    "flutter-no-sdk-first.log": "4f8865b7b7028fead1e2c3c0fe4418da55a4a31f4eaed6f1b93328a23f24caad",
+    "flutter-config-tasks-second.log": "c7f35f8a8108618c5f8a5276b841275c0d50d4f15b665ac35688abeddd5f944a",
+    "flutter-sdk-second.log": "9295c1da941dff81a4e3f8a7b8781e3b580615a74a338c4e23dcefc255caeb46",
+    "flutter-config-tasks-invalidated.log": "a11c0c28feb205901b6f9ac055cfd6eb896f8b09404dd615082d4a14aeb5646c",
+    "flutter-config.log": "90c3f04652d6eec7de0f946e75185ca0697d0b988f87759ba5001ae8a2149497",
+    "native-sdk/invalidated.log": "8ce58ff9aa995e17e2fa186c3f98bb169cda5920496d903ca8fb074e149d07f4",
+    "native-sdk/first.log": "8e423b41d52ee1bd37dadbb0263f75171038643508ac72dff402e9f62a885e9f",
+    "native-sdk/second.log": "039d1d55b4c5fd5c363f4515890e937b0629f509d8a8069294b7d77ab46c10e3",
+    "native-sdk/changed-reused.log": "84fededdfc35db76fe44b87f54788561b2d6e89355da400caf3cacd914556be3",
+    "native-no-sdk/first.log": "b2aedc020272d4deac3d864017b63082218aeda0a82f972cf48ed94b6cb8858c",
+    "native-no-sdk/second.log": "35f9debd1704c5d94318e587369e90c3186461f286819dc5378c9d3d2a756309"
+  },
+  "ci": "Dedicated audited-toolchain job added; local protocol passed with explicit full-Flutter limitation. Remote runner result is separate."
+}

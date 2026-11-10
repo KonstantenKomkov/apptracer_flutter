@@ -871,3 +871,48 @@ mapping, native symbols и Dart AOT symbols.
 AGP. Mapping и buildUuid соответствуют выбранному варианту; нет смешивания
 файлов между вариантами и ошибок после R8. Символизация Java/Kotlin в Tracer
 подтверждается в №21; поддержка Dart AOT из этого исправления не выводится.
+
+<a id="task-android-19"></a>
+
+## Android П. 19. Регрессия Gradle configuration cache
+
+**Завершено 10 ноября 2026 в предусмотренном native fallback; полный Flutter
+assemble остаётся открытым внешним блокером.** Добавлены
+`tool/check_android_configuration_cache.py` и CI job с проверенной локально
+комбинацией Flutter 3.47.4 / JDK 21. Все проверки используют
+`--configuration-cache --configuration-cache-problems=fail`, без clean между
+парными запусками. [Протокол](../android-sdk-1.6.1-gradle.md#configuration-cache-android-19),
+[результаты / хеши логов](../android-sdk-1.6.1-cache.json).
+
+Native SDK/no-SDK assemble сохраняют и повторно используют кеш. Изменение
+флага mappings в gradle.properties при неизменной команде инвалидирует кеш,
+меняет UUID и корректно добавляет отключённую guard-задачу upload; четвёртый
+запуск повторно использует новую конфигурацию. В самом Flutter example задачи
+генерации ресурсов/Tracer manifest проходят reuse и инвалидацию по app token
+с проверкой обновлённого ресурса.
+
+Полный Flutter assemble дважды с SDK и дважды без SDK падает одинаково:
+FlutterPlugin assemble action захватывает ApkVariantOutputImpl → Project,
+configuration/dependency containers и Kotlin build service. Кеш discarded,
+полный reuse не заявлен. [Блокер сохранён отдельно](development_android_1.6.1.md#blocker-flutter-configuration-cache).
+Runner принимает только эту конкретную сигнатуру fallback, неизвестные ошибки
+проваливают gate; `--require-full-flutter` проваливает и известный блокер.
+Выполнено отдельное ревью проверки reuse/выходов/инвалидации и no-upload guard.
+Remote CI execution не подменяется локальным прогоном; живых загрузок не было.
+
+**Исходный объём и приёмка:**
+
+**Сделать.** Добавить воспроизводимую проверку: два запуска одной сборочной
+команды с `--configuration-cache --configuration-cache-problems=fail`, без
+очистки между ними. Проверять сборку с Tracer и контрольную без него.
+В Tracer-конфигурации использовать отключённые внешние загрузки из №18.
+
+После успешного повторного использования кеша изменить значимый вход
+конфигурации, например флаг mappings, и проверить корректную инвалидацию.
+Убедиться, что provider-based чтение настроек и новые ветки Gradle-скриптов
+совместимы с кешем. Разделить ошибки Tracer и ограничения Flutter/AGP.
+
+**Приёмка.** Второй запуск явно сообщает reuse configuration cache; изменение
+входа приводит к пересчёту и корректному результату. Команды и версии записаны,
+CI проверяет этот сценарий. Если полный Flutter build блокирует чужая задача,
+есть минимальный Android reproducer и отдельный открытый блокер полной сборки.
