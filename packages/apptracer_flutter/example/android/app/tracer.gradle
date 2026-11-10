@@ -110,4 +110,11 @@ dependencies {
     implementation platform('ru.ok.tracer:tracer-platform:1.6.1')
     implementation 'ru.ok.tracer:tracer-crash-report'
     implementation 'ru.ok.tracer:tracer-crash-report-native'
+    if (providers.gradleProperty('tracer.diagnostics').getOrElse('false') == 'true') {
+        implementation 'ru.ok.tracer:tracer-heap-dumps'
+        implementation 'ru.ok.tracer:tracer-disk-usage'
+        // WorkSpec inspection is confined to the optional verification flavor.
+        implementation 'androidx.work:work-runtime:2.7.1'
+        implementation 'androidx.room:room-runtime:2.2.5'
+    }
 }

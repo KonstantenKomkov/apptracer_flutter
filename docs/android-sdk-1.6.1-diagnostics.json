@@ -1,0 +1,284 @@
+{
+  "date": "2026-11-10",
+  "baselineCommit": "8c197b6",
+  "sdk": "1.6.1",
+  "workManager": "2.7.1",
+  "gradle": "8.12",
+  "agp": "8.9.1",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "flutter": "3.47.4",
+  "device": {
+    "type": "emulator",
+    "api": 35,
+    "abi": "arm64-v8a"
+  },
+  "apkSha256": "87b0a351b71a7b46f759010baf7c71c617cfc5b7f61b0e82ed807340ee5acf41",
+  "minified": true,
+  "uploadsDuringBuild": "mapping/native SKIPPED",
+  "transport": "local loopback HTTP sink via adb reverse; no vendor console acceptance",
+  "phases": {
+    "offline": {
+      "stage": "complete-offline",
+      "work": [
+        {
+          "id": "0928551e-e103-47cb-9bb9-93a243a4e933",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "1e755adb-f39a-4d2c-b558-43c28a6288aa",
+          "worker": "ru.ok.tracer.heap.dumps.exceptions.ShrinkDumpWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "1ffa394a-4bf6-431d-9665-9ede60322b34",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "8b01c49e-33aa-4298-bc74-02c1e0747357",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "91ba5fa8-35eb-48c2-acc3-ebe5cdce58e9",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "a34e8dc4-4854-4e93-b923-6fc0a454cc9e",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "da86fe11-492d-4367-81c6-65f2f4b1a76b",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "ENQUEUED",
+          "attempts": 0,
+          "network": "UNMETERED",
+          "charging": false,
+          "idle": true,
+          "batteryNotLow": true,
+          "intervalMs": 86400000,
+          "putConstraints": true
+        }
+      ],
+      "connected": false,
+      "plugged": 0,
+      "uiTicks": 130,
+      "maxUiGapMs": 3934,
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 0
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 3917
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 3916,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    },
+    "online": {
+      "stage": "complete-online",
+      "work": [
+        {
+          "id": "202c9c55-2275-4f68-a264-ae4eca588ece",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "792a6b5d-818b-4732-8537-f632bb66a255",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "84a675a0-98ca-4d83-ac8b-23955a1ac519",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "ENQUEUED",
+          "attempts": 0,
+          "network": "UNMETERED",
+          "charging": false,
+          "idle": true,
+          "batteryNotLow": true,
+          "intervalMs": 86400000,
+          "putConstraints": true
+        },
+        {
+          "id": "86d1b231-320c-4778-8363-13597ba3564f",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "b0a2d159-49ea-4ad2-9ce0-ee7079ff3245",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "b552ffab-3673-49b2-b7f4-d2f3654eb985",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "cbf0912e-7d44-427b-b501-328455b560b7",
+          "worker": "ru.ok.tracer.heap.dumps.exceptions.ShrinkDumpWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        }
+      ],
+      "connected": true,
+      "plugged": 0,
+      "uiTicks": 254,
+      "maxUiGapMs": 4523,
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 0
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 4506
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 4506,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    }
+  },
+  "http": [
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 917,
+      "sha256": "a7994c434ebd0e0bfe21e6e149fe44485cb1f22607b827a2081fb1c673ca3eaf",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 917,
+      "sha256": "9704bfff249be98907a493a6ea8e938b86ba71e605fcfbdca29eebe9cdb96a86",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 667,
+      "sha256": "57fd6f1a2580a6b3cd4813d39d2973240e09459620565442803e81b7fc7fbe30",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 667,
+      "sha256": "b523281a564111f315655131bab3f5afcb6546ed7d5c1a8fa730b1d132ea131c",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 929,
+      "sha256": "25ef289a09ceb14cb9b22d9c28672d07ea1e911efe5683859a522134f535ca67",
+      "feature": "HEAP_DUMP"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 7903518,
+      "sha256": "83edb376d5382ad86d0819ffc306500d393d97743681c70ee0e2c517841af6b7",
+      "feature": "HEAP_DUMP"
+    }
+  ]
+}

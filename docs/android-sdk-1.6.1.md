@@ -308,3 +308,14 @@ revocation overriding `preservePreviousReports`.
 Handled-event recovery and local transport acceptance do not establish ANR
 watchdog/native crash recovery or delivery/symbolication in the Tracer console.
 Those remain explicit №21 acceptance; package publication is not implied.
+
+## Optional runNow verification (Android №16)
+
+The separate diagnostics flavor and [runtime protocol](android-sdk-1.6.1-diagnostics.md)
+verify manual disk/heap work without network/charging and actual local HTTP
+delivery in a fresh online run. [Evidence](android-sdk-1.6.1-diagnostics.json)
+records WorkSpecs and APK hash. Observed VM/UI pauses remain several seconds
+even with off-main-thread heap dumping; offline sample uploads can discard
+files and return success. No optional module is added to the default graph,
+public Dart API or supported deferred cleanup. Combining the optional fixture
+with deferred mode fails the build explicitly.

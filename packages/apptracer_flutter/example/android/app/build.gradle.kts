@@ -8,6 +8,13 @@ plugins {
 // Enable only for the separate native-consent verification entrypoint.
 // Ordinary example builds keep their existing flavorless automatic behavior.
 val deferredCollection = providers.gradleProperty("tracer.deferred").orNull == "true"
+val optionalDiagnostics = providers.gradleProperty("tracer.diagnostics").orNull == "true"
+check(!optionalDiagnostics || !deferredCollection) {
+    "HeapDumps/DiskUsage WorkManager jobs are not supported by deferred consent cleanup"
+}
+check(!optionalDiagnostics || providers.gradleProperty("tracer.enabled").orNull == "true") {
+    "tracer.diagnostics requires tracer.enabled=true"
+}
 
 android {
     if (deferredCollection) {
@@ -16,6 +23,15 @@ android {
             create("consent") {
                 dimension = "collection"
                 applicationIdSuffix = ".consent"
+            }
+        }
+    }
+    if (optionalDiagnostics) {
+        flavorDimensions += "diagnostics"
+        productFlavors {
+            create("diagnostics") {
+                dimension = "diagnostics"
+                applicationIdSuffix = ".diagnostics"
             }
         }
     }

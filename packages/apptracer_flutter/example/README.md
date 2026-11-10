@@ -176,3 +176,14 @@ Android использует SDK и Gradle-плагин 1.5.2 из Nexus вен�
 `TracerHostApplication` включает экспериментальные tombstones на Android 12+.
 Модуль нативных крэшей сохранён для старых Android.
 См. [настройку tombstones](../README.md#android-tombstones-sdk-152).
+
+### Опциональные HeapDumps / DiskUsage (Android 1.6.1)
+
+Отдельная проверочная конфигурация `-Ptracer.diagnostics=true` добавляет flavor
+`diagnostics` с собственным application ID. Она не совместима с управляемым
+`tracer.deferred`: очистка заданий WorkManager этих модулей не поддерживается.
+Обычный пример не подключает эти зависимости.
+
+[Команды, протокол и ограничения](../../../docs/android-sdk-1.6.1-diagnostics.md):
+heap dump вызывается в фоне, но может приостановить VM/UI; снятие constraints
+не гарантирует сохранение и последующую доставку результатов без сети.
