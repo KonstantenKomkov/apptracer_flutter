@@ -174,3 +174,66 @@ together with their adapter helpers, then runs each test's `main` with `java`.
 The maintained `tool/check_sdk140*` commands are updated in №14.
 Full Flutter release/R8, fresh-cache resolution, device lifecycle, delivery,
 duplicates and Java/Kotlin symbolication remain explicit acceptance in №14–21.
+
+## Dependency migration (Android №14)
+
+The Android library retains `compileOnly`; its compile/test dependencies and
+the example BOM/Gradle plugin now use 1.6.1. All three VK repository declarations
+were removed (library, example dependencies and plugin management). Google,
+Central and the Gradle plugin portal remain in their appropriate scopes.
+No optional diagnostic module was added to the application.
+
+Version checks accept exactly 1.4.0, 1.5.2 and 1.6.1. The queue/buffer tools
+recognize the new hashes; the 1.6.1 buffer check also pins the base JAR.
+Consumer R8 rules already preserve the inspected names and need no additional
+keep directives. Historical `Sdk140*` names remain unchanged.
+
+Migration checks completed locally:
+
+- 24 Android JUnit tests on 1.6.1; Android Flutter analysis and two channel tests.
+- Queue, endpoint, diagnostic-buffer and fatal-handler scripts on each of
+  1.4.0, 1.5.2 and 1.6.1, with matched runtime JARs.
+- R8 8.10.9-dev classfile optimization of the updated plugin and 1.6.1 SDK,
+  using actual consumer/vendor rules; `check_sdk140_reflection.sh` passed.
+  The corresponding SDK-absent optimized plugin passed
+  `check_missing_sdk_lifecycle.sh`. Libraries included Android 35, JDK 21,
+  Flutter embedding, Kotlin stdlib, javax.inject and JetBrains annotations.
+
+The reproducible APK gate is `bash tool/check_android_sdk161.sh --fresh-cache`.
+It uses an empty Maven/transform cache and a separate project cache, sharing
+only the Gradle executable distribution. It builds clean ARM64 release/R8 APKs
+with and without SDK, with placeholder tokens, and rejects VK Maven repository
+declarations. `android_no_upload.init.gradle` disables the vendor upload task
+types for verification. Production mappings settings are changed separately in
+№18. With Flutter 3.47.4, the gate first runs `flutter build apk --config-only`
+with pub enabled: `--no-pub` also skips release registrant regeneration and
+can leave a dev-only `integration_test` reference in the release Java sources.
+The initial direct-Gradle run exposed that problem; after fixing the harness,
+both clean APK builds passed using the same initially empty, isolated Maven
+cache. No dependency/transform caches were copied from the usual Gradle home.
+
+**Completed 2026-11-10:** 24 JUnit tests passed with no failures/skips. Both
+`minifyReleaseWithR8` tasks succeeded. The SDK APK contains 60 Tracer class
+definitions; the SDK-absent APK contains none and no `libtracernative.so`.
+Twelve required reflection class names retain identity mappings. Neither
+heap-dump nor disk-usage classes are present. Flutter targets ARM64; the SDK
+additionally packages its own ARMv7/x86_64 native libraries, which does not
+establish Flutter support on those ABIs. Both vendor upload tasks were SKIPPED.
+The [build evidence](android-sdk-1.6.1-builds.json) records toolchain, APK hashes
+and packaged libraries. This closes the build/dependency migration, not runtime
+enable or device/live acceptance. Flutter's automatic AGP-9 migration flags
+were not retained as part of this AGP-8 change.
+
+Legacy hosts can retain the vendor repository in both plugin and dependency
+repositories when needed:
+
+```kotlin
+maven("https://nexus-external.vkteam.ru/repository/maven/") {
+    content { includeGroup("ru.ok.tracer") }
+}
+```
+
+This is a legacy host configuration, not a requirement for 1.6.1. The JVM
+regressions do not renew device certification of older SDK releases. Full
+device acceptance of 1.6.1 remains №15/21; package versions have not been bumped
+and no package was published by this migration.

@@ -21,9 +21,18 @@ class CollectionLifecycleTest {
             isAccessible = true
             set(null, null)
         }
-        Tracer::class.java.getDeclaredField("isDisabled").apply {
-            isAccessible = true
-            setBoolean(null, false)
+        val version = Class.forName("ru.ok.tracer.BuildConfig")
+            .getField("LIBRARY_VERSION").get(null)
+        val fields = if (version == "1.6.1") {
+            listOf("disabledOnBuild", "disabledInRuntime")
+        } else {
+            listOf("isDisabled")
+        }
+        for (name in fields) {
+            Tracer::class.java.getDeclaredField(name).apply {
+                isAccessible = true
+                setBoolean(null, false)
+            }
         }
     }
 

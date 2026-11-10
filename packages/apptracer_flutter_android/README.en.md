@@ -27,6 +27,14 @@ The Tracer SDK is a `compileOnly` dependency here, so the host application adds
 it — along with the `ru.ok.tracer` Gradle plugin, which is where `appToken`
 comes from. See the [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
 
+The current checkout compiles against **1.6.1**. Use the matching 1.6.1 BOM
+and Gradle plugin with `mavenCentral()` in plugin and dependency repositories;
+keep `google()` for Android dependencies. No VK repository is required for
+1.6.1. Hosts pinned to the previously audited 1.4.0/1.5.2 remain accepted;
+retain their vendor repository configuration if their artifacts need it.
+The old versions have no runtime `enable()` API. Full stop/clear still requires
+a process restart. See the [1.6.1 audit and acceptance limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1.md).
+
 The one piece of SDK configuration this package needs, it applies itself, with
 no line of manifest: the non-fatal rate limit (10 per hour instead of a hard 8
 per session — and every Dart error here is a non-fatal). It is installed by
@@ -75,5 +83,5 @@ This setting applies to automatic and deferred startup. It is configured on
 Android before SDK initialization, not through `TracerOptions` in Dart.
 Deferred collection still requires the manifest provider removal and explicit
 `startCollection`; enabling the feature does not start collection by itself.
-Keep `nexus-external.vkteam.ru/repository/maven/` in both plugin and dependency
-repositories and perform a clean build after updating.
+Perform a clean build after updating. The vendor Nexus configuration applies
+to legacy SDK hosts; 1.6.1 uses Maven Central as described above.

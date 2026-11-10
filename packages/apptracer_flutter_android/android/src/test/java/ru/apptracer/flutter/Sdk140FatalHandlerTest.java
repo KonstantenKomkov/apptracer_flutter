@@ -66,7 +66,9 @@ public final class Sdk140FatalHandlerTest {
         Class<?> crash = Class.forName("ru.ok.tracer.crash.report.TracerCrashReport");
         Field logger = crash.getDeclaredField("crashLoggerInternal"); logger.setAccessible(true);
         Object previousLogger = logger.get(null);
-        Field disabled = Class.forName("ru.ok.tracer.Tracer").getDeclaredField("isDisabled");
+        Object version = Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
+        Field disabled = Class.forName("ru.ok.tracer.Tracer").getDeclaredField(
+                "1.6.1".equals(version) ? "disabledInRuntime" : "isDisabled");
         disabled.setAccessible(true);
         boolean previousDisabled = disabled.getBoolean(null);
         Field configDisabled = crash.getDeclaredField("isConfigDisabled");

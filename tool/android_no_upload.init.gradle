@@ -1,0 +1,26 @@
+// Build verification only. Production upload settings remain in tracer.gradle.
+// Also inspect repositories in included builds (the Flutter Gradle plugin).
+def rejectVk = { repo ->
+    if (repo instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository &&
+            repo.url.host?.endsWith('vkteam.ru')) {
+        throw new GradleException('Android 1.6.1 verification must not use VK Maven')
+    }
+}
+gradle.beforeSettings { settings ->
+    settings.pluginManagement.repositories.all(rejectVk)
+    settings.dependencyResolutionManagement.repositories.all(rejectVk)
+}
+gradle.beforeProject { project ->
+    project.repositories.all(rejectVk)
+    project.buildscript.repositories.all(rejectVk)
+    project.tasks.configureEach { task ->
+        def type = task.class
+        while (type != null) {
+            if (type.name in ['ru.ok.tracer.mapping_plugin.UploadMappingTask',
+                              'ru.ok.tracer.nativesym.CollectSymbolsTask']) {
+                task.enabled = false
+            }
+            type = type.superclass
+        }
+    }
+}

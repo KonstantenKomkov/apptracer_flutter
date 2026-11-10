@@ -33,7 +33,7 @@ public final class Sdk140ReflectionTest {
         writer.getMethod("getInstance");
         writer.getMethod("uninstallMinidumpWriter");
         Object version = type("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
-        if (!"1.4.0".equals(version) && !"1.5.2".equals(version)) {
+        if (!"1.4.0".equals(version) && !"1.5.2".equals(version) && !"1.6.1".equals(version)) {
             throw new AssertionError("unverified SDK version");
         }
         System.out.println("Sdk140Reflection: " + version + " startup, queue, buffer and writer names retained");

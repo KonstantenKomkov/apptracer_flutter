@@ -23,6 +23,9 @@ case "$(shasum -a 256 "$commons" | awk '{print $1}')" in
     verify_hash "$crash" aeffc371b708e60032942074603aeaa1d8aa9c77e0442e332408bf71c46bf6dd ;;
   9cb045087b426cc8215d00556815a5cf0560c18c96fcf91c21ddd59b53fc82ae)
     verify_hash "$crash" d0825dfe7b270ae62b3eb7e120236aec74f07aaff862887127c7633fe923d925 ;;
+  3be4caa6cfea92c7f3e44eb191c1ef0a8ad3e9cbc831839aee119fbcdc8a4d67)
+    verify_hash "$crash" a97c68cdc9eabce8d04be28eb5ea18b739ed848bdc6f6f50a70cbd4a9b333258
+    verify_hash "$base" b0331c5a4eeedf279b2abc80d4ea42067b4e4ea844f90a966b18a4a508e935e6 ;;
   *) echo "Unverified SDK commons artifact: re-audit before updating its hash" >&2; exit 1 ;;
 esac
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"

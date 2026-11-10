@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-/** Revokes the extra SequentialExecutor queue installed by Tracer 1.4.0 / 1.5.2. */
+/** Revokes the extra SequentialExecutor queue installed by Tracer 1.4.0 / 1.5.2 / 1.6.1. */
 final class Sdk140BackgroundExecutor implements Executor {
     private final RevocableExecutor executor;
     private final RevocableExecutor.FailureHandler failures;

@@ -46,7 +46,7 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
         background = new Sdk140BackgroundExecutor(executor(core.getBgExecutor$tracer_commons_release(), true),
                 Sdk140ConsentRuntime::executorFailed);
         endpoint = new Sdk140Endpoint(io, original::getApiUrl);
-        // Copy every core field (unchanged in 1.4.0 and 1.5.2). Providers remain
+        // Copy every core field (unchanged in 1.4.0, 1.5.2 and 1.6.1). Providers remain
         // dynamic; no token is copied to Dart, a log or a separate persistent store.
         CoreTracerConfiguration.Builder builder = new CoreTracerConfiguration.Builder()
                 .provideApiUrl(endpoint::get)

@@ -1,0 +1,46 @@
+{
+  "with-sdk": {
+    "sha256": "5f68bb4ba3192809405a7285e679caaf0c50b5491c41ac05b59fe5b6628f5b3a",
+    "sdk_class_count": 60,
+    "native_libraries": [
+      "lib/arm64-v8a/libapp.so",
+      "lib/arm64-v8a/libflutter.so",
+      "lib/arm64-v8a/libtracernative.so",
+      "lib/armeabi-v7a/libtracernative.so",
+      "lib/x86_64/libtracernative.so"
+    ]
+  },
+  "without-sdk": {
+    "sha256": "c601ed28f8353a3314e2043739775a3b232c537896ac9a09f2dfc8dd3d341ab4",
+    "sdk_class_count": 0,
+    "native_libraries": [
+      "lib/arm64-v8a/libapp.so",
+      "lib/arm64-v8a/libflutter.so"
+    ]
+  },
+  "junit": {
+    "tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "date": "2026-11-10",
+  "scope": "Android task 14: release/R8 packaging and JVM; no device/live acceptance",
+  "flutter": "3.47.4",
+  "gradle": "8.12",
+  "agp": "8.9.1",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "sdk": "1.6.1",
+  "fresh_cache": "Created empty for this verification; retried in that same isolated cache after fixing release registrant generation. Only Gradle distribution shared.",
+  "uploads": "uploadTracerMappingForRelease and generateTracerNativeSymbolsForRelease SKIPPED",
+  "application_sdk": {
+    "min": 24,
+    "target": 36,
+    "compile": 36
+  },
+  "library_sdk": {
+    "min": 21,
+    "compile": 35
+  }
+}
