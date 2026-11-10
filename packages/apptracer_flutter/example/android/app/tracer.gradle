@@ -116,5 +116,6 @@ dependencies {
         // WorkSpec inspection is confined to the optional verification flavor.
         implementation 'androidx.work:work-runtime:2.7.1'
         implementation 'androidx.room:room-runtime:2.2.5'
+        testImplementation 'junit:junit:4.13.2'
     }
 }

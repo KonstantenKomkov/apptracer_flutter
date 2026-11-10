@@ -108,6 +108,7 @@ class DiagnosticsActivity : Activity() {
             .put("connected", connected)
             .put("plugged", battery?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1))
             .put("uiTicks", ticks.get()).put("maxUiGapMs", maxGap.get())
+            .put("heapProviderThreads", JSONArray(DiagnosticsHeapDecision.readThreads.toList()))
             .put("invocations", JSONArray(synchronized(invocations) { invocations.map { JSONObject(it) } }))
             .put("details", extra)
         val output = File(getExternalFilesDir(null), "diagnostics.json")
@@ -124,6 +125,7 @@ class DiagnosticsActivity : Activity() {
             // Let startup install its periodic job, which must retain constraints.
             Thread.sleep(2000)
             check(!requestDisk() && !requestHeap(CountDownLatch(1)))
+            check(DiagnosticsHeapDecision.readThreads.isEmpty()) { "Heap decision evaluated before use" }
             val before = objects(work())
             check(before.none { it.getLong("intervalMs") == 0L })
             val periodic = before.single { it.getString("worker").contains("DiskUsageWorker") }
@@ -134,6 +136,7 @@ class DiagnosticsActivity : Activity() {
             val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))!!
             check(battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == 0) { "Unplug simulated battery before probe" }
             Tracer.enable()
+            DiagnosticsHeapDecision.allowed.set(true)
             permitted.set(true)
             val dispatched = CountDownLatch(1)
             val heaps = CountDownLatch(2)
@@ -152,6 +155,8 @@ class DiagnosticsActivity : Activity() {
             check(dispatched.await(10, TimeUnit.SECONDS))
             dispatchFailure.get()?.let { throw it }
             check(heaps.await(60, TimeUnit.SECONDS))
+            check(DiagnosticsHeapDecision.readThreads.size == 2 &&
+                DiagnosticsHeapDecision.readThreads.all { it == "diagnostics-runNow" })
             val deadline = SystemClock.elapsedRealtime() + 120000
             var collected = false
             while (!destroyed.get() && SystemClock.elapsedRealtime() < deadline) {
@@ -170,6 +175,7 @@ class DiagnosticsActivity : Activity() {
             }
             check(collected) { "Diagnostic work did not complete" }
             val details = JSONObject().put("mainDispatchMs", dispatchTime.get())
+                .put("heapProviderReadsBeforeUse", 0)
             snapshot(if (online) "collected-online" else "collected-offline", details)
             // SUCCEEDED only means the worker returned. The external HTTP sink
             // must separately prove delivery; this SDK drops samples on I/O errors.
@@ -186,6 +192,7 @@ class DiagnosticsActivity : Activity() {
             }
             check(uploadsFinished) { "Sample workers did not finish" }
             permitted.set(false)
+            DiagnosticsHeapDecision.allowed.set(false)
             Tracer.disable()
             val beforeRevoke = objects(work()).map { it.getString("id") }.toSet()
             check(!requestDisk() && !requestHeap(CountDownLatch(1)))
@@ -195,6 +202,7 @@ class DiagnosticsActivity : Activity() {
                 .put("postRevokeRejected", true).put("purgeSupported", false))
         } catch (failure: Throwable) {
             permitted.set(false)
+            DiagnosticsHeapDecision.allowed.set(false)
             Tracer.disable()
             snapshot("error", JSONObject().put("error", failure.toString()))
         }
@@ -203,6 +211,7 @@ class DiagnosticsActivity : Activity() {
     override fun onDestroy() {
         destroyed.set(true)
         permitted.set(false)
+        DiagnosticsHeapDecision.allowed.set(false)
         main.removeCallbacks(heartbeat)
         workers.shutdown()
         super.onDestroy()

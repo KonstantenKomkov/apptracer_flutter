@@ -27,6 +27,7 @@ android {
         }
     }
     if (optionalDiagnostics) {
+        testOptions.unitTests.isReturnDefaultValues = true
         flavorDimensions += "diagnostics"
         productFlavors {
             create("diagnostics") {

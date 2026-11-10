@@ -109,3 +109,46 @@ reverse for the online phase. Raw heap/disk bodies, headers and tokens are not
 saved: evidence contains only selected feature names, byte counts and hashes.
 Do not build this fixture with live credentials. Mapping/native uploads are
 skipped via the init script; service-side acceptance remains Android №21.
+
+## Lazy heap decision (Android №17)
+
+The host now supplies `DiagnosticsHeapDecision.configuration()` using the actual
+singular `HeapDumpConfiguration.Builder().provideEnabled(...)` API. Its atomic
+permission defaults to false; the provider also checks `!Tracer.isDisabled`.
+The builder stores this synchronous function without computing a decision.
+The fixture records provider read threads solely for acceptance; real callbacks
+should do inexpensive, thread-safe work and avoid I/O or asynchronous waits.
+
+The SDK reads the provider every time its enabled getter is used, on that
+caller's thread. `HeapDumps.runNow` checks global disable first, then reads the
+provider before atomic dump admission. Two competing calls can therefore read
+the provider twice while producing only one dump. Changing the atomic value
+does not trigger a callback, start diagnostics, cancel existing work or revoke
+a dump that has already passed admission. There is no subscription/cache-refresh
+contract. `setEnabled` installs a fixed provider; the last builder setter wins,
+and later builder mutation does not replace the provider in an already built
+configuration.
+
+A thrown `Exception` or null result makes the SDK getter return false. An `Error`
+is not caught by that getter. A provider must not rely on the SDK suppressing
+all failures. The custom `HasTracerConfiguration` host continues to own the
+configuration; the Flutter plugin does not replace it.
+
+This example still cannot be combined with managed deferred cleanup. Its lazy
+decision does not broaden the crash-only initializer allowlist or establish
+WorkManager purge semantics. Default applications still do not include HeapDumps.
+
+Run the native builder tests with the same build flags as above and task
+`:app:testDiagnosticsReleaseUnitTest`. Device verification uses the same Python
+runner; `heapProviderThreads` records actual reads and
+`heapProviderReadsBeforeUse` records that no evaluation occurred during host
+configuration construction/startup. Results are recorded separately in
+[provider evidence](android-sdk-1.6.1-provider.json), preserving the №16 baseline.
+
+Completed: five real-SDK JVM tests passed with no failures/skips. In both
+release/R8 offline and online runs there were zero provider reads before use,
+then exactly two reads on `diagnostics-runNow` threads, with one actual heap
+dump. Local HTTP acceptance still observed two disk and one heap upload.
+No live credentials or raw sample bodies were retained. Separate diff review
+confirmed that permission changes do not trigger diagnostics and the optional
+source set/test dependency remains absent from normal builds.

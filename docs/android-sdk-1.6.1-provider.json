@@ -1,0 +1,296 @@
+{
+  "date": "2026-11-10",
+  "baselineCommit": "93d450c",
+  "sdk": "1.6.1",
+  "agp": "8.9.1",
+  "gradle": "8.12",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "device": {
+    "api": 35,
+    "abi": "arm64-v8a",
+    "type": "emulator"
+  },
+  "apkSha256": "c73d50f163a1c81ecfd9172478daf2c2305647bef52f3d48c32f2ff90b3b6f56",
+  "minified": true,
+  "unitTests": {
+    "count": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "phases": {
+    "offline": {
+      "stage": "complete-offline",
+      "work": [
+        {
+          "id": "08e4ee20-14ea-4d15-a979-996f82810d41",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "2802c88f-be3c-4e1b-a5c3-54bb5188cf64",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "34b56ac3-fb4d-41c0-8ae8-cc4f36b431e0",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "a0aee4d1-c64b-499d-a453-fbbedd06d54c",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "ENQUEUED",
+          "attempts": 0,
+          "network": "UNMETERED",
+          "charging": false,
+          "idle": true,
+          "batteryNotLow": true,
+          "intervalMs": 86400000,
+          "putConstraints": true
+        },
+        {
+          "id": "b167be36-3f9d-42c9-bca0-ee56feb96738",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "d7b34002-f1f4-4195-93dd-f70a9239e965",
+          "worker": "ru.ok.tracer.heap.dumps.exceptions.ShrinkDumpWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "e6812692-a7cf-456f-b463-06249e5cd5a2",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        }
+      ],
+      "connected": false,
+      "plugged": 0,
+      "uiTicks": 101,
+      "maxUiGapMs": 3161,
+      "heapProviderThreads": [
+        "diagnostics-runNow",
+        "diagnostics-runNow"
+      ],
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 0
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 3163
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 3157,
+        "heapProviderReadsBeforeUse": 0,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    },
+    "online": {
+      "stage": "complete-online",
+      "work": [
+        {
+          "id": "2a0b923a-e2ea-44ad-8cbd-c932cd188c41",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "3be93d10-04a9-4d1e-bf45-2a912915d44a",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "3d85fa88-1efc-456f-810a-c8a9f4e56b57",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "6f2e141e-5267-4257-a4ae-4a00e761b712",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        },
+        {
+          "id": "7cc20e59-17ed-41a1-a356-7b2e2cc361fc",
+          "worker": "ru.ok.tracer.upload.SampleUploadWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": true,
+          "sampleFileExists": false
+        },
+        {
+          "id": "aa084222-2bd3-47f9-b32b-e0a7c6400581",
+          "worker": "ru.ok.tracer.disk.usage.DiskUsageWorker",
+          "state": "ENQUEUED",
+          "attempts": 0,
+          "network": "UNMETERED",
+          "charging": false,
+          "idle": true,
+          "batteryNotLow": true,
+          "intervalMs": 86400000,
+          "putConstraints": true
+        },
+        {
+          "id": "bebfe8f0-eff9-4b7e-b557-0992a950ad47",
+          "worker": "ru.ok.tracer.heap.dumps.exceptions.ShrinkDumpWorker",
+          "state": "SUCCEEDED",
+          "attempts": 1,
+          "network": "NOT_REQUIRED",
+          "charging": false,
+          "idle": false,
+          "batteryNotLow": false,
+          "intervalMs": 0,
+          "putConstraints": false
+        }
+      ],
+      "connected": true,
+      "plugged": 0,
+      "uiTicks": 215,
+      "maxUiGapMs": 3634,
+      "heapProviderThreads": [
+        "diagnostics-runNow",
+        "diagnostics-runNow"
+      ],
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 1
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 3606
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 3605,
+        "heapProviderReadsBeforeUse": 0,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    }
+  },
+  "http": [
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 917,
+      "sha256": "7cb2f9cf0e14ff98a5919f7b5e9ca17425186153661f52dd06c278b30fef565c",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 917,
+      "sha256": "242802c36d261cab926460809163ceff14f5b73325a51dda6801b2ab2f619a3a",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 667,
+      "sha256": "94ba2c334e160c5af4ea02022c4cf8cf4d9e39786a64b4126e02ea31b359a014",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 667,
+      "sha256": "a13054d7f9ee88afd4841e5cb075d455ac22ca58a3ffe192cfc88cda972d9fae",
+      "feature": "DISK_USAGE"
+    },
+    {
+      "path": "/api/sample/initUpload",
+      "bytes": 929,
+      "sha256": "f240a640d517a2fb60e80da04a0c1206da2ad16fd9c5bd3793c2332c9f3af6ff",
+      "feature": "HEAP_DUMP"
+    },
+    {
+      "path": "/api/sample/upload",
+      "bytes": 7904247,
+      "sha256": "b9715d7c7862807bbd7b4f91e8014224f3412456945b951df573aefc4913b99f",
+      "feature": "HEAP_DUMP"
+    }
+  ],
+  "acceptanceScope": "Actual lazy provider and local synthetic delivery, not deferred WorkManager purge or vendor live acceptance"
+}
