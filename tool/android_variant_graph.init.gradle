@@ -1,0 +1,27 @@
+// Verification-only observers: real AGP wrappers, no synthetic variant proxies.
+import groovy.json.JsonOutput
+
+def variants = [:]
+gradle.beforeProject { project ->
+    project.plugins.withId('com.android.application') {
+        project.androidComponents.onVariants(project.androidComponents.selector().all()) { variant ->
+            variants[variant.name] = [type: variant.class.name,
+                applicationId: variant.applicationId.get(), minified: variant.minifyEnabled]
+        }
+    }
+}
+gradle.taskGraph.whenReady { graph ->
+    def destination = gradle.startParameter.projectProperties['tracer.verificationGraph']
+    if (!destination || variants.isEmpty()) return
+    def uploads = graph.allTasks.findAll { it.hasProperty('pathToMapping') }.collect { task ->
+        [path: task.path, enabled: task.enabled,
+         mapping: task.pathToMapping.get().asFile.absolutePath,
+         buildUuid: task.manifest.get().buildUuid,
+         applicationId: task.manifest.get().applicationId,
+         dependencies: task.taskDependencies.getDependencies(task)*.path.sort()]
+    }
+    new File(destination).text = JsonOutput.prettyPrint(JsonOutput.toJson([
+        variants: variants, uploads: uploads,
+        tasks: graph.allTasks*.path
+    ]))
+}

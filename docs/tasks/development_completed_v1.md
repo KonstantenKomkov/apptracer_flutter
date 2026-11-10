@@ -830,3 +830,44 @@ CI helper прошёл 31 Android JUnit и SDK/no-SDK release/R8 без plugin t
 загрузкой не отличаются из-за Tracer `buildUuid`; это не объявляется доказательством
 полной побайтовой воспроизводимости APK. CI может собирать SDK без plugin token,
 когда обе загрузки отключены. Продакшен-конфигурация сохраняет нужные загрузки.
+
+<a id="task-android-20"></a>
+
+## Android П. 20. Mappings в AnalyticsEnabledApplicationVariant
+
+**Завершено 10 ноября 2026.** Реальная обёртка AGP 8.9.1 воспроизведена
+штатным `android.enableProfileJson=true`; обычный Flutter пример выдаёт
+ApplicationVariantImpl. Это локальное профилирование сборки, не аналитика
+приложения. Ветка public ApplicationVariant в Tracer 1.6.1 подтверждена.
+
+[Протокол](../android-sdk-1.6.1-gradle.md#analytics-enabled-variants-android-20),
+[8 APK / types / UUID / mapping hashes / graphs](../android-sdk-1.6.1-variants.json).
+Добавлены минимальная fixture `tool/fixtures/android-sdk161` и runner
+`tool/check_android_variants.py`. Alpha/beta содержат разные Java/Kotlin
+failure-классы, оба реально обфусцируются. Для release mappings-on каждый
+upload input/UUID/applicationId принадлежит своему варианту и зависит от
+своего R8; SHA-256 mappings различаются. Debug не имеет mapping/upload и
+использует нулевой UUID. Mappings-off оставляет R8, но удаляет upload tasks и
+использует нулевой UUID. Все варианты наблюдались как реальные analytics wrappers.
+
+Upload tasks SKIPPED, native upload выключен, живые секреты не использованы.
+Выполнено отдельное ревью изоляции вариантов, файлов/UUID и границ observer.
+Символизация Java/Kotlin в Tracer остаётся №21; выводов о native/Dart AOT
+символах из этого исправления не делаем.
+
+**Исходный объём и приёмка:**
+
+**Сделать.** По коду/артефактам Gradle-плагина уточнить исправленный сценарий
+`AnalyticsEnabledApplicationVariant` и воспроизвести его на совместимом AGP.
+Не трактовать название внутреннего класса как новую аналитику приложения.
+Если текущий пример не достигает этой ветки, подготовить минимальную fixture.
+
+Проверить minified release, неминифицированный вариант и два различимых
+варианта приложения: задача выбирает mapping именно своей сборки, корректно
+связана с R8 и пропускается при отключённой загрузке. Разделить Java/Kotlin
+mapping, native symbols и Dart AOT symbols.
+
+**Приёмка.** Есть reproducer исправленной ветки и результаты для используемого
+AGP. Mapping и buildUuid соответствуют выбранному варианту; нет смешивания
+файлов между вариантами и ошибок после R8. Символизация Java/Kotlin в Tracer
+подтверждается в №21; поддержка Dart AOT из этого исправления не выводится.

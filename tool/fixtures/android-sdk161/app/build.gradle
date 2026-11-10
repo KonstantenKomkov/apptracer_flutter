@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+def sdkEnabled = providers.gradleProperty('tracer.enabled').getOrElse('true') == 'true'
+def mappingEnabled = providers.gradleProperty('tracer.uploadMapping').getOrElse('false') == 'true'
+android {
+    namespace 'audit.tracer161'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'audit.tracer161'
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName '1'
+    }
+    buildFeatures { resValues true }
+    flavorDimensions 'probe'
+    productFlavors {
+        alpha { dimension 'probe'; applicationIdSuffix '.alpha' }
+        beta { dimension 'probe'; applicationIdSuffix '.beta' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_11; targetCompatibility JavaVersion.VERSION_11 }
+    kotlinOptions { jvmTarget = '11' }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+if (sdkEnabled) {
+    apply plugin: 'ru.ok.tracer'
+    tracer {
+        create('defaultConfig') {
+            appToken = 'android-sdk161-fixture-placeholder'
+            if (mappingEnabled) pluginToken = 'android-sdk161-plugin-placeholder'
+            uploadMapping = mappingEnabled
+            uploadNativeSymbols = false
+        }
+    }
+    dependencies {
+        implementation platform('ru.ok.tracer:tracer-platform:1.6.1')
+        implementation 'ru.ok.tracer:tracer-crash-report'
+    }
+}

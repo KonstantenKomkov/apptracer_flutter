@@ -63,3 +63,48 @@ release/R8 builds, with no plugin token. Separate diff review verified defaults,
 independent flags, negative checks and the task graph guard. The graph-inspection
 init script is intentionally limited to this uncached matrix and is not used
 for the subsequent configuration-cache test.
+
+## Analytics-enabled variants (Android №20)
+
+Normal example configuration exposes `ApplicationVariantImpl_Decorated`.
+With the standard AGP option `android.enableProfileJson=true`, the same AGP
+8.9.1 exposes `AnalyticsEnabledApplicationVariant_Decorated`. This is local
+Gradle build profiling, not a new analytics SDK for the application. No user's
+telemetry opt-in setting is changed. Inspection of AGP's `ProjectOptions`,
+`VariantManager` and `ApplicationVariantImpl.createUserVisibleVariantObject`
+confirms that profiling creates the stats builder used by the wrapper.
+
+The 1.6.1 Tracer plugin first tests concrete implementation classes, then the
+public `ApplicationVariant`/`LibraryVariant` interfaces to obtain minification
+state. The analytics wrapper implements the public application interface but
+is not an `ApplicationVariantImpl`. The reproduced branch therefore exercises
+the added interface fallback instead of just building another plain variant.
+
+`tool/fixtures/android-sdk161` is an independent minimal application with
+alpha/beta flavors, Java/Kotlin failure classes unique to each flavor, minified
+release and unminified debug. `tool/check_android_variants.py` copies it to a
+fresh output directory and builds all four variants with mappings on, then off.
+The observer records actual wrapper types; it does not manufacture a proxy or
+replace plugin callbacks.
+
+**Completed 2026-11-10:** eight APKs on Gradle 8.12 / AGP 8.9.1 / Kotlin 2.1.0 /
+JDK 21.0.8 / compileSdk 35 / minSdk 21.
+[Portable evidence: types, UUIDs, APK/mapping hashes and task graphs](android-sdk-1.6.1-variants.json).
+
+- Both release upload tasks consume their own `outputs/mapping/<variant>/mapping.txt`
+  and depend on their own `minify<Variant>WithR8` task. Their manifest application
+  IDs and build UUIDs match the corresponding generated resource and APK.
+- Alpha and beta release UUIDs differ when mappings are enabled. Mapping hashes
+  differ and contain only their own Java/Kotlin failure classes. Actual R8 names
+  are `b.a` / `b.b` in each variant, corresponding to different source classes;
+  this demonstrates why selecting the wrong variant's mapping would be incorrect.
+- Debug variants have a zero UUID, no mapping file and no upload task.
+- Mapping-off release variants still run R8 and produce their separate mappings,
+  but have a zero UUID and no upload task. All four variants still use the real
+  analytics wrapper in this control run.
+
+No vendor upload was attempted: enabled mapping tasks were SKIPPED by the guard,
+and native upload remained off. Separate diff review checked flavor isolation,
+actual obfuscation, provider-selected mapping inputs and the observer's limited
+scope. Java/Kotlin symbolication in Tracer remains №21; nothing here establishes
+native-symbol or Dart AOT symbolication support.
