@@ -22,8 +22,8 @@ import ru.ok.tracer.crash.report.CrashReportConfiguration
  *    dispatched.
  *  * `setSendAnr(true)` — ANR reporting, needed by check 8 of the
  *    live-verification plan.
- *  * `setExperimentalTombstoneEnabled(true)` — system native crash reports on
- *    Android 12+, without requiring the native crash module.
+ *  * Experimental tombstones require an explicit verification flag; enable
+ *    them without the native module to avoid two reports for one SIGSEGV.
  *
  * The non-fatal rate limit is deliberately left at its default: changing it
  * mid-verification would make it unclear whether a missing event was dropped
@@ -49,7 +49,7 @@ class TracerHostApplication : Application(), HasTracerConfiguration {
             },
             CrashReportConfiguration.build {
                 setSendAnr(true)
-                setExperimentalTombstoneEnabled(true)
+                setExperimentalTombstoneEnabled(resources.getBoolean(R.bool.apptracer_verification_tombstones))
                 // Optional: setExperimentalAnrSnapshotsEnabled(true).
                 //
                 // Off by default. Without it a report logs "No main snapshots

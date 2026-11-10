@@ -28,13 +28,17 @@ def booleanSetting = { String name, boolean defaultValue ->
 // Keep production upload defaults; CI can explicitly disable both operations.
 def mappingUploadEnabled = booleanSetting('tracer.uploadMapping', true)
 def nativeUploadEnabled = booleanSetting('tracer.uploadNativeSymbols', true)
-// Native acceptance fixtures only; production defaults remain unchanged.
+// Native acceptance fixtures only.
 def verificationApiUrl = providers.gradleProperty('tracer.verificationApiUrl').getOrElse('')
 if (verificationApiUrl && !(verificationApiUrl ==~ /http:\/\/127\.0\.0\.1:[0-9]{1,5}/)) {
     throw new GradleException('tracer.verificationApiUrl must be a loopback HTTP endpoint')
 }
 def verificationBuildDisabled = providers.gradleProperty('tracer.verificationBuildDisabled')
     .getOrElse('false') == 'true'
+def verificationNativeModule = booleanSetting('tracer.verificationNativeModule', true)
+// Opt in separately: enabling this alongside the native module emits both a
+// TOMBSTONE and a MINIDUMP for the same SIGSEGV on API 31+.
+def verificationTombstones = booleanSetting('tracer.verificationTombstones', false)
 
 if (!tracerAppToken) {
     throw new GradleException(
@@ -65,6 +69,7 @@ android {
 
     defaultConfig {
         resValue 'string', 'apptracer_verification_api_url', verificationApiUrl
+        resValue 'bool', 'apptracer_verification_tombstones', verificationTombstones.toString()
         if (verificationApiUrl) {
             manifestPlaceholders.put('apptracerVerificationCleartext', 'true')
         }
@@ -122,7 +127,9 @@ tracer {
 dependencies {
     implementation platform('ru.ok.tracer:tracer-platform:1.6.1')
     implementation 'ru.ok.tracer:tracer-crash-report'
-    implementation 'ru.ok.tracer:tracer-crash-report-native'
+    if (verificationNativeModule) {
+        implementation 'ru.ok.tracer:tracer-crash-report-native'
+    }
     if (providers.gradleProperty('tracer.diagnostics').getOrElse('false') == 'true') {
         implementation 'ru.ok.tracer:tracer-heap-dumps'
         implementation 'ru.ok.tracer:tracer-disk-usage'

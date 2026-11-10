@@ -1,0 +1,16 @@
+# compiler: R8
+# compiler_version: 8.9.32
+# min_api: 24
+# common_typos_disable
+# {"id":"com.android.tools.r8.mapping","version":"2.2"}
+ru.apptracer.verification.JavaCrashProbe -> u0.a:
+# {"id":"sourceFile","fileName":"JavaCrashProbe.java"}
+    1:4:void <init>():4:4 -> <init>
+    1:20:void crash(java.lang.String):6:6 -> a
+ru.apptracer.verification.KotlinCrashProbe -> u0.b:
+# {"id":"sourceFile","fileName":"KotlinCrashProbe.kt"}
+    ru.apptracer.verification.KotlinCrashProbe INSTANCE -> a
+      # {"id":"com.android.tools.r8.residualsignature","signature":"Lu0/b;"}
+    1:8:void <clinit>():0:0 -> <clinit>
+    1:4:void <init>():4:4 -> <init>
+    6:17:java.lang.Void crash(java.lang.String):6:6 -> a

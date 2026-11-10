@@ -1,0 +1,4 @@
+java.lang.IllegalStateException: Android Java fatal verification: sdk161-20261110-final
+	at ru.apptracer.verification.JavaCrashProbe.crash(JavaCrashProbe.java:6)
+java.lang.IllegalStateException: Android Kotlin fatal verification: sdk161-20261110-final
+	at ru.apptracer.verification.KotlinCrashProbe.crash(KotlinCrashProbe.kt:6)

@@ -74,6 +74,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "verificationContext" -> result.success(mapOf(
                         "scenario" to (intent.getStringExtra("apptracerScenario") ?: "inspect"),
+                        "runId" to (intent.getStringExtra("apptracerRun") ?: ""),
                         "cachePath" to cacheDir.absolutePath,
                         "filesPath" to filesDir.absolutePath,
                         "outputPath" to java.io.File(getExternalFilesDir(null), "verification").absolutePath
@@ -113,7 +114,13 @@ class MainActivity : FlutterActivity() {
                         // from SIGSEGV. This is an explicit verification action.
                         result.success(null)
                         Handler(Looper.getMainLooper()).post {
-                            throw IllegalStateException("Native consent JVM fatal probe")
+                            ru.apptracer.verification.JavaCrashProbe.crash(intent.getStringExtra("apptracerRun") ?: "legacy")
+                        }
+                    }
+                    "crashKotlin" -> {
+                        result.success(null)
+                        Handler(Looper.getMainLooper()).post {
+                            ru.apptracer.verification.KotlinCrashProbe.crash(intent.getStringExtra("apptracerRun") ?: "legacy")
                         }
                     }
 

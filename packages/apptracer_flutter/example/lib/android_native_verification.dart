@@ -28,6 +28,15 @@ Future<void> main() async {
   final context =
       (await _native.invokeMapMethod<String, String>('verificationContext'))!;
   final scenario = context['scenario']!;
+  final runId = context['runId'] ?? '';
+  String tag(String value) => runId.isEmpty ? value : '$runId/$value';
+  String fatalMethod() => scenario.contains('jvm')
+      ? 'crashJvm'
+      : scenario.contains('kotlin')
+          ? 'crashKotlin'
+          : scenario.contains('native')
+              ? 'crashNatively'
+              : 'blockMainThread';
   final automatic = scenario == 'runtime-enable-automatic';
   final output = Directory(context['outputPath']!);
   await output.create(recursive: true);
@@ -46,8 +55,11 @@ Future<void> main() async {
       if (await dir.exists()) {
         await for (final f in dir.list(recursive: true, followLinks: false)) {
           if (f is File) {
-            found['$root/${f.path.substring(dir.path.length + 1)}'] =
-                await f.length();
+            // Upload completion may remove a report between listing and stat.
+            final stat = await f.stat();
+            if (stat.type == FileSystemEntityType.file) {
+              found['$root/${f.path.substring(dir.path.length + 1)}'] = stat.size;
+            }
           }
         }
       }
@@ -59,6 +71,7 @@ Future<void> main() async {
       [Map<String, Object?> extra = const {}]) async {
     final data = <String, Object?>{
       'scenario': scenario,
+      'runId': runId,
       'stage': stage,
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'enabled': Tracer.isEnabled,
@@ -98,10 +111,11 @@ Future<void> main() async {
         bytes.addAll(chunk);
       }
       requests.add(request.uri.path);
+      final requestNumber = requests.length;
       // Synthetic local probes only; bodies may contain SDK credentials.
-      await File('${output.path}/$scenario-${requests.length}.body')
+      await File('${output.path}/$scenario-$requestNumber.body')
           .writeAsBytes(bytes);
-      await File('${output.path}/$scenario-${requests.length}.headers')
+      await File('${output.path}/$scenario-$requestNumber.headers')
           .writeAsString(
               'Content-Type: ${request.headers.contentType}\r\nContent-Encoding: ${request.headers.value('content-encoding') ?? ''}\r\n');
       if (hold) {
@@ -122,11 +136,15 @@ Future<void> main() async {
           scenario.contains('recovery') || scenario == 'account-b',
       captureZoneErrors: false,
       debug: true,
+      initialCustomKeys: runId.isEmpty
+          ? const {}
+          : {'verificationRun': runId, 'verificationScenario': scenario},
     );
     await Tracer.initialize(options: options, appRunner: () {});
     final cold = await Tracer.getCollectionState();
-    if (!automatic && Tracer.isEnabled)
+    if (!automatic && Tracer.isEnabled) {
       throw StateError('Cold bootstrap enabled the SDK');
+    }
     await save(automatic ? 'automatic' : 'cold', {'state': cold.state.name});
     if (scenario == 'build-disabled') {
       final result = await Tracer.startCollection(options);
@@ -208,6 +226,13 @@ Future<void> main() async {
       throw StateError('Start: ${started.state.name}/${started.reason}');
     }
     await save('started', {'state': started.state.name});
+    if (scenario.startsWith('resumed-')) {
+      await _native.invokeMethod<void>('disableSdkForVerification');
+      await Future<void>.delayed(const Duration(seconds: 6));
+      if (!(await Tracer.startCollection(options)).isEnabled) {
+        throw StateError('Runtime pause did not resume before fatal probe');
+      }
+    }
     if (scenario == 'runtime-enable' || automatic) {
       int crashes() =>
           requests.where((p) => p.contains('/crash/upload')).length;
@@ -351,15 +376,16 @@ Future<void> main() async {
         : scenario == 'account-b'
             ? 'ANDROID_ACCOUNT_B_927'
             : 'android-$scenario';
-    await Tracer.setUserId(marker);
+    await Tracer.setUserId(tag(marker));
     await Tracer.setCustomKey(key: marker, value: marker);
     await Tracer.recordLog(marker);
     final fatal = scenario.contains('jvm') ||
+        scenario.contains('kotlin') ||
         scenario.contains('native') ||
         scenario.contains('anr');
     if (!fatal && !scenario.contains('recovery')) {
-      await Tracer.recordError(StateError(marker), StackTrace.current,
-          issueKey: 'android-consent-probe');
+      await Tracer.recordError(StateError(tag(marker)), StackTrace.current,
+          issueKey: tag('android-consent-probe'));
       if (!vendor) {
         for (var i = 0;
             i < 40 && !requests.any((p) => p.contains('/crash/upload'));
@@ -375,11 +401,7 @@ Future<void> main() async {
     }
     if (scenario.endsWith('-enabled')) {
       await save('crashing-enabled', {'requests': requests});
-      await _native.invokeMethod<void>(scenario.startsWith('jvm')
-          ? 'crashJvm'
-          : scenario.startsWith('native')
-              ? 'crashNatively'
-              : 'blockMainThread');
+      await _native.invokeMethod<void>(fatalMethod());
       return;
     }
     final before = requests.length;
@@ -408,11 +430,7 @@ Future<void> main() async {
     if (fatal) {
       await save('crashing-revoked',
           {'requests': requests, 'state': stopped.state.name});
-      await _native.invokeMethod<void>(scenario.startsWith('jvm')
-          ? 'crashJvm'
-          : scenario.startsWith('native')
-              ? 'crashNatively'
-              : 'blockMainThread');
+      await _native.invokeMethod<void>(fatalMethod());
       return;
     }
     await Future<void>.delayed(const Duration(seconds: 35));

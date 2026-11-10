@@ -1,0 +1,3030 @@
+{
+  "status": "blocked_kotlin_console_source_file_and_line",
+  "date": "2026-11-10",
+  "sourceBaseCommit": "6387293",
+  "toolchain": {
+    "sdkBomPlugin": "1.6.1",
+    "nativeBindings": "0.1.41-android",
+    "flutter": "3.47.4",
+    "dart": "3.13.3",
+    "gradle": "8.12",
+    "agp": "8.9.1",
+    "kotlin": "2.1.0",
+    "r8": "8.9.32",
+    "jdk": "21.0.8",
+    "api": 35,
+    "abi": "arm64-v8a"
+  },
+  "checks": {
+    "androidJUnit": 31,
+    "providerJUnit": 5,
+    "facadeDart": 84,
+    "androidChannel": 2,
+    "iosChannel": 3,
+    "webChrome": 5,
+    "exampleWidget": 1,
+    "analyze": "passed",
+    "sdk140ScriptsOn161": "passed",
+    "r8WithAndWithoutSdk": "passed",
+    "runtimeLegacyMatrix": [
+      "1.4.0: restartRequired",
+      "1.5.2: restartRequired",
+      "1.6.1: enabled"
+    ],
+    "decodedAccountBContainsAccountA": false
+  },
+  "builds": {
+    "local": {
+      "apkSha256": "110df237f070531f623eeb0a654320f3f9ec77a6e93c9883cbfa21f0f8323cc8",
+      "mappingSha256": "cf29d2a21da7c42db901427bbc3a478c46270ad98532081a54b6b64e2acc4c23"
+    },
+    "counter-fix": {
+      "apkSha256": "7a618d7b59df0e0c393d15598b0dae36f777254a44a369e05bd1ae66be79ca23"
+    },
+    "live": {
+      "apkSha256": "0752c1ebfd24e67e6af8e7ef8b1b93bee5d5a0302a401de7039f0e1bc04039cb",
+      "mappingSha256": "23268edab46219556f6780e37ffc3f4f4955c4dcac80861bde62d96fc069189c",
+      "buildUuid": "bdd84260-dd1e-11f1-85f9-dd19426a3bd9"
+    },
+    "live-final": {
+      "apkSha256": "1883238ea234722bc00c83f30fbe69d79d1fae8324ed1dac169c1edffb401c55",
+      "mappingSha256": "23268edab46219556f6780e37ffc3f4f4955c4dcac80861bde62d96fc069189c",
+      "buildUuid": "9ff5fc30-dd26-11f1-85f9-dd19426a3bd9",
+      "app.apk": "1883238ea234722bc00c83f30fbe69d79d1fae8324ed1dac169c1edffb401c55",
+      "mapping.txt": "23268edab46219556f6780e37ffc3f4f4955c4dcac80861bde62d96fc069189c",
+      "sourceBaseCommit": "6387293",
+      "sourceSha256": {
+        "packages/apptracer_flutter/example/lib/android_native_verification.dart": "302ffcf8bd672cac67e891630ba2eced446b17b606c46b9b8435858f679b308b",
+        "packages/apptracer_flutter/example/android/app/tracer.gradle": "b6163f0756ab0057ec83787e3e08254c2f5e303e8fd4fe9154ed2462d619f24f",
+        "packages/apptracer_flutter/example/android/app/proguard-rules.pro": "4b5b16b11c8ef9f722a2a28dc54f1136d6fe7c87dbcdb36f60e13ab142a91c95",
+        "packages/apptracer_flutter/example/android/app/src/main/kotlin/ru/apptracer/flutter/apptracer_flutter_example/MainActivity.kt": "d24622e828c536da9209be4ebf2320bea61498e739dccb103306020b14f0d11c",
+        "packages/apptracer_flutter/example/android/app/src/tracer/kotlin/ru/apptracer/flutter/apptracer_flutter_example/TracerHostApplication.kt": "57fa19e9b5c76d1773352b290b26ac33eeb1077634fb2c0c6616410d645293a0",
+        "packages/apptracer_flutter/example/android/app/src/main/java/ru/apptracer/verification/JavaCrashProbe.java": "ce29a286bb06025af330d60f59fe48a36aab14e58881de72a646867172789dfb",
+        "packages/apptracer_flutter/example/android/app/src/main/kotlin/ru/apptracer/verification/KotlinCrashProbe.kt": "fbbe0d4e4263841fe6fcd1b9fadd06b0d00856c0d966c9c2b42c2d9940ccec69"
+      },
+      "uploadVerification": {
+        "buildUuid": "9ff5fc30-dd26-11f1-85f9-dd19426a3bd9",
+        "uploadedMappingSha256": "23268edab46219556f6780e37ffc3f4f4955c4dcac80861bde62d96fc069189c",
+        "matchesArchivedMapping": true
+      }
+    },
+    "tombstone-on": {
+      "apkSha256": "a49899633cb8994c57594f6685123995fce5b3ddeed7937a709d22c686b67ca8",
+      "mappingSha256": "addc76597564ca13e561d541703bd05eb82abb9ea63fe590e9f67061840c4706",
+      "buildUuid": "007135a0-dd1f-11f1-85f9-dd19426a3bd9"
+    },
+    "tombstone-off": {
+      "apkSha256": "60e3596fba410d52be89fcece93831499e5a6740bfbe7d1860019845552c1d69"
+    },
+    "automatic": {
+      "apkSha256": "008e13b0fba0ce0e2a5ed0b30f46b9675b0c8f2dab1a48f98722f93b0ce69b33"
+    },
+    "build-disabled": {
+      "apkSha256": "b71c8499b968e803a9ed604581194127077552a505f3bae2d32fb884920ba692"
+    },
+    "missing-sdk": {
+      "apkSha256": "68d3b8bbc3c17634e5b265dff159d69f846aac77e1abfd25fd06a49f2022d551"
+    },
+    "diagnostics": {
+      "apkSha256": "be4400f8b9809bfe69e3e4338bc0dbbd10390aedd627e7a363a3e99c6fd9cc1c"
+    }
+  },
+  "deviceRuns": {
+    "final-events": [
+      {
+        "scenario": "kotlin-enabled",
+        "observations": [
+          {
+            "scenario": "kotlin-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:45:47.641508Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "kotlin-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:45:48.002062Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1126,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 4,
+        "systemTrace": false
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:45:56.620047Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1124,
+              "cachePath/logs/a.log": 34,
+              "cachePath/crashes/CRASH_1794329148072/stacktrace": 856,
+              "cachePath/crashes/CRASH_1794329148072/system_info": 998,
+              "cachePath/crashes/CRASH_1794329148072/all_stacktraces": 7148,
+              "cachePath/crashes/CRASH_1794329148072/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "disabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:45:56.885138Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1261,
+              "cachePath/logs/a.log": 34,
+              "cachePath/crashes/CRASH_1794329148072/stacktrace": 856,
+              "cachePath/crashes/CRASH_1794329148072/system_info": 998,
+              "cachePath/crashes/CRASH_1794329148072/all_stacktraces": 7148,
+              "cachePath/crashes/CRASH_1794329148072/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:46:17.079118Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:46:52.159044Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "CRASH",
+            "format": "JVM_STACKTRACE",
+            "severity": "CRASH",
+            "payloadSha256": "0bd3b01dc417b9ee67b43464ee22d28e9a2d87be7be35f23b7090d31f35da5a4",
+            "buildUuid": null,
+            "sessionUuid": "2610feb4-c55a-477f-9ab0-11879dbc06d0",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "kotlin-enabled",
+              "userId": "sdk161-20261110-local/android-kotlin-enabled",
+              "date": "2026-11-10T19:45:48+03:00"
+            },
+            "probeLines": [
+              "java.lang.IllegalStateException: Android Kotlin fatal verification: sdk161-20261110-local",
+              "\tat u0.b.a(SourceFile:14)"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:46:55.198918Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:46:55.462779Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:46:59.909563Z",
+            "enabled": true,
+            "files": {
+              "cachePath/minidump/e30098e6-cd77-427e-ea58319f-8a29601c.dmp": 1130768,
+              "cachePath/session.data": 1262,
+              "cachePath/crashes/TOMBSTONE_1794329219903/stacktrace": 286257,
+              "cachePath/crashes/TOMBSTONE_1794329219903/system_info": 952,
+              "cachePath/crashes/TOMBSTONE_1794329219903/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:47:20.079962Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadTombstone",
+              "/api/crash/uploadNative"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:47:55.123031Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadTombstone",
+              "/api/crash/uploadNative"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "TOMBSTONE",
+            "format": "TOMBSTONE",
+            "payloadSha256": "5a86007ed7fb464d21877e692a1ad032364b4125cd3b538e374113b5764c49a7",
+            "buildUuid": null,
+            "sessionUuid": "5b2e3240-1fd9-481c-ab27-4d39f6995485",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "native-enabled",
+              "userId": "sdk161-20261110-local/android-native-enabled",
+              "date": "2026-11-10T19:46:56+03:00"
+            }
+          },
+          {
+            "type": "MINIDUMP",
+            "format": "MINIDUMP",
+            "severity": "CRASH",
+            "payloadSha256": "8a6bf37e576fa3283fbd204b4b7f59a3532e509d713c26b26a7e510e92cc2c21",
+            "buildUuid": null,
+            "sessionUuid": "5b2e3240-1fd9-481c-ab27-4d39f6995485",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "native-enabled",
+              "userId": "sdk161-20261110-local/android-native-enabled",
+              "date": "2026-11-10T19:46:56+03:00"
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "anr-enabled",
+        "observations": [
+          {
+            "scenario": "anr-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:47:58.170960Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 6,
+        "systemTrace": true
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:48:38.523021Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1253,
+              "cachePath/crashes/ANR_1794329318518/stacktrace": 46054,
+              "cachePath/crashes/ANR_1794329318518/system_info": 941,
+              "cachePath/crashes/ANR_1794329318518/all_logs": 55,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "recovery-observed",
+            "timestamp": "2026-11-10T16:48:59.118358Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1148,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ],
+            "exitInfo": [
+              {
+                "reason": 6,
+                "timestamp": 1794329314995,
+                "pid": 15311,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329275294,
+                "pid": 15001,
+                "hasTrace": false
+              },
+              {
+                "reason": 5,
+                "timestamp": 1794329216549,
+                "pid": 14916,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329212402,
+                "pid": 14605,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794329153138,
+                "pid": 14517,
+                "hasTrace": false
+              },
+              {
+                "reason": 16,
+                "timestamp": 1794329125817,
+                "pid": 14385,
+                "hasTrace": false
+              },
+              {
+                "reason": 9,
+                "timestamp": 1794328996069,
+                "pid": 14276,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794328971690,
+                "pid": 13958,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794328913017,
+                "pid": 13844,
+                "hasTrace": false
+              },
+              {
+                "reason": 16,
+                "timestamp": 1794328903485,
+                "pid": 13502,
+                "hasTrace": false
+              }
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:48:59.150481Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:49:34.219562Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "ANR",
+            "format": "ANDROID_ANR",
+            "payloadSha256": "21bd5b4f8434e97fdd5e497c449c48c5da7bd3419a15f4758fed6a63164873f4",
+            "buildUuid": null,
+            "sessionUuid": "c30b4413-e137-4eaf-8957-518dd7362c3d",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "anr-enabled",
+              "userId": "sdk161-20261110-local/android-anr-enabled",
+              "date": "2026-11-10T19:48:34+03:00"
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "resumed-anr-enabled",
+        "observations": [
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:49:37.185349Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:49:37.530157Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1024,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:49:43.652661Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1146,
+              "cachePath/logs/a.log": 39,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 6,
+        "systemTrace": true
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:50:25.098856Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1274,
+              "cachePath/logs/a.log": 39,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "recovery-observed",
+            "timestamp": "2026-11-10T16:50:45.238298Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1172,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ],
+            "exitInfo": [
+              {
+                "reason": 6,
+                "timestamp": 1794329420572,
+                "pid": 15725,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329374671,
+                "pid": 15419,
+                "hasTrace": false
+              },
+              {
+                "reason": 6,
+                "timestamp": 1794329314995,
+                "pid": 15311,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329275294,
+                "pid": 15001,
+                "hasTrace": false
+              },
+              {
+                "reason": 5,
+                "timestamp": 1794329216549,
+                "pid": 14916,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329212402,
+                "pid": 14605,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794329153138,
+                "pid": 14517,
+                "hasTrace": false
+              },
+              {
+                "reason": 16,
+                "timestamp": 1794329125817,
+                "pid": 14385,
+                "hasTrace": false
+              },
+              {
+                "reason": 9,
+                "timestamp": 1794328996069,
+                "pid": 14276,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794328971690,
+                "pid": 13958,
+                "hasTrace": false
+              }
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:50:45.268070Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:51:20.327414Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadAnr"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "ANR",
+            "format": "ANDROID_ANR",
+            "payloadSha256": "d2ccb90fb49c99f736d1076b64c9ae58deeeea736ff03897ecb5eddc7f344a12",
+            "buildUuid": null,
+            "sessionUuid": "1dd869c6-053c-42cf-8597-e16dc00838b2",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "resumed-anr-enabled",
+              "userId": "sdk161-20261110-local/android-resumed-anr-enabled",
+              "date": "2026-11-10T19:50:20+03:00"
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "jvm-revoked",
+        "observations": [
+          {
+            "scenario": "jvm-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-revoked",
+            "timestamp": "2026-11-10T16:51:23.719852Z",
+            "enabled": false,
+            "files": {},
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "state": "restartRequired"
+          }
+        ],
+        "reports": [],
+        "exitReason": 9,
+        "systemTrace": false
+      },
+      {
+        "scenario": "revoked-recovery",
+        "observations": [
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:51:41.493695Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1021,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:52:01.691913Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:52:36.776759Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "kotlin-revoked",
+        "observations": [
+          {
+            "scenario": "kotlin-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-revoked",
+            "timestamp": "2026-11-10T16:52:39.781754Z",
+            "enabled": false,
+            "files": {},
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "state": "restartRequired"
+          }
+        ],
+        "reports": [],
+        "exitReason": 4,
+        "systemTrace": false
+      },
+      {
+        "scenario": "revoked-recovery",
+        "observations": [
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:52:42.871404Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:53:02.986677Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:53:38.038731Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "native-revoked",
+        "observations": [
+          {
+            "scenario": "native-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:53:41.236564Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "native-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-revoked",
+            "timestamp": "2026-11-10T16:53:41.557072Z",
+            "enabled": false,
+            "files": {},
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "state": "restartRequired"
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "revoked-recovery",
+        "observations": [
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:53:46.748790Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1021,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:54:06.908068Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:54:41.981234Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "anr-revoked",
+        "observations": [
+          {
+            "scenario": "anr-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:54:44.750263Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "anr-revoked",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-revoked",
+            "timestamp": "2026-11-10T16:54:45.219363Z",
+            "enabled": false,
+            "files": {},
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "state": "restartRequired"
+          }
+        ],
+        "reports": [],
+        "exitReason": 6,
+        "systemTrace": true
+      },
+      {
+        "scenario": "revoked-recovery",
+        "observations": [
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:55:26.202560Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:55:26.413733Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1021,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:55:46.568066Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          },
+          {
+            "scenario": "revoked-recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:56:21.631537Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "cold",
+        "observations": [
+          {
+            "scenario": "cold",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:56:24.270627Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "cold",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:56:34.329925Z",
+            "enabled": false,
+            "files": {},
+            "requests": [],
+            "state": "disabled"
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "offline",
+        "observations": [
+          {
+            "scenario": "offline",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:56:37.288323Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "offline",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:56:37.735377Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "offline",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:56:38.831480Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ]
+          },
+          {
+            "scenario": "offline",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:57:13.886444Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "8a61240289ab722f981f5ae320addc6d8622107593418612237103bc2383f1b2",
+            "buildUuid": null,
+            "sessionUuid": "9b13d82f-aced-42a1-b99d-521cf9cd250a",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "offline",
+              "userId": "sdk161-20261110-local/android-offline",
+              "issueKey": "sdk161-20261110-local/android-co",
+              "date": "2026-11-10T19:56:37+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: sdk161-20261110-local/android-offline"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "inflight",
+        "observations": [
+          {
+            "scenario": "inflight",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:57:17.113797Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "inflight",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:57:18.330030Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ]
+          },
+          {
+            "scenario": "inflight",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:57:53.378597Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "d705400f08ffccd6c50da1db6d4d5cd631a21b4ae66eb5edc54bd3268fad2af4",
+            "buildUuid": null,
+            "sessionUuid": "698908e0-e29c-463f-ab97-c01599224fa8",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "inflight",
+              "userId": "sdk161-20261110-local/android-inflight",
+              "issueKey": "sdk161-20261110-local/android-co",
+              "date": "2026-11-10T19:57:17+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: sdk161-20261110-local/android-inflight"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "account-a",
+        "observations": [
+          {
+            "scenario": "account-a",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:57:56.282155Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1014,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "account-a",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:57:57.456423Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ]
+          },
+          {
+            "scenario": "account-a",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:58:32.472469Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "df45b8a1449b56231a6b76bb43640b0247e2cb4db260ea77cbca591c38b4bcdb",
+            "buildUuid": null,
+            "sessionUuid": "b9756657-ec64-4d18-9d37-83348288021c",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "account-a",
+              "userId": "sdk161-20261110-local/ANDROID_ACCOUNT_A_821",
+              "ANDROID_ACCOUNT_A_821": "ANDROID_ACCOUNT_A_821",
+              "issueKey": "sdk161-20261110-local/android-co",
+              "date": "2026-11-10T19:57:56+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: sdk161-20261110-local/ANDROID_ACCOUNT_A_821"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "account-b",
+        "observations": [
+          {
+            "scenario": "account-b",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:58:33.036399Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1014,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "account-b",
+            "runId": "sdk161-20261110-local",
+            "stage": "recovery-observed",
+            "timestamp": "2026-11-10T16:58:53.049732Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1051,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "exitInfo": [
+              {
+                "reason": 10,
+                "timestamp": 1794329912529,
+                "pid": 18320,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329873688,
+                "pid": 18096,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329834036,
+                "pid": 17872,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329794865,
+                "pid": 17769,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329781793,
+                "pid": 17463,
+                "hasTrace": false
+              },
+              {
+                "reason": 6,
+                "timestamp": 1794329722422,
+                "pid": 17360,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329682219,
+                "pid": 17054,
+                "hasTrace": false
+              },
+              {
+                "reason": 5,
+                "timestamp": 1794329622387,
+                "pid": 16971,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794329618524,
+                "pid": 16665,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794329559795,
+                "pid": 16594,
+                "hasTrace": false
+              }
+            ]
+          },
+          {
+            "scenario": "account-b",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:58:54.074776Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ]
+          },
+          {
+            "scenario": "account-b",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:59:29.093977Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/upload"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "00e80229b6db5cd76bdbb143a2d2b03c50414d3d4ba5e34ed1e2e481f94baa78",
+            "buildUuid": null,
+            "sessionUuid": "d1490f17-24bc-4080-82ab-ff73d9d0eeef",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "account-b",
+              "userId": "sdk161-20261110-local/ANDROID_ACCOUNT_B_927",
+              "ANDROID_ACCOUNT_B_927": "ANDROID_ACCOUNT_B_927",
+              "issueKey": "sdk161-20261110-local/android-co",
+              "date": "2026-11-10T19:58:53+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: sdk161-20261110-local/ANDROID_ACCOUNT_B_927"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "multi-engine",
+        "observations": [
+          {
+            "scenario": "multi-engine",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:59:31.939421Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1017,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "multi-engine",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:59:35.478100Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "secondaryEngines": 3,
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "activity",
+        "observations": [
+          {
+            "scenario": "activity",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:59:38.450807Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1013,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "activity",
+            "runId": "sdk161-20261110-local",
+            "stage": "recreating",
+            "timestamp": "2026-11-10T16:59:39.704360Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired"
+          },
+          {
+            "scenario": "cold-after-recreate",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:59:41.295971Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired"
+          },
+          {
+            "scenario": "cold-after-recreate",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:59:51.390860Z",
+            "enabled": false,
+            "files": {},
+            "requests": [],
+            "state": "restartRequired"
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "05da345433ad6d63bd3fd603c90ab367f318283c90a4f506850031c60d6ff6cb",
+            "buildUuid": null,
+            "sessionUuid": "d4dd75c6-2296-42e0-9698-d7417d3f123d",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "activity",
+              "userId": "sdk161-20261110-local/android-activity",
+              "issueKey": "sdk161-20261110-local/android-co",
+              "date": "2026-11-10T19:59:38+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: sdk161-20261110-local/android-activity"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "runtime-enable",
+        "observations": [
+          {
+            "scenario": "runtime-enable",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:59:55.269310Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "runtime-enable",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:59:55.851893Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "runtime-enable",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:00:33.071622Z",
+            "enabled": false,
+            "files": {},
+            "pause": {
+              "reason": "sdk_runtime_disabled",
+              "state": "disabled"
+            },
+            "resume": "enabled",
+            "stop": "restartRequired",
+            "restartReason": "native_runtime_retired",
+            "cleanupVerified": true,
+            "crashRequests": 2,
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "edfb8e31bf7ce7e55490573fbe39beadd971dd60a1c257dab1d2950ccc5a6ba6",
+            "buildUuid": null,
+            "sessionUuid": "a1e55a55-86e5-4faa-bd27-808ca541ce5c",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "runtime-enable",
+              "issueKey": "enable-before",
+              "date": "2026-11-10T19:59:55+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: enable-before"
+            ]
+          },
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "bd94f21a83161396781a6f7d4e20327e5dd73f04b37ade18adeb3d87f9bffc80",
+            "buildUuid": null,
+            "sessionUuid": "a1e55a55-86e5-4faa-bd27-808ca541ce5c",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "runtime-enable",
+              "issueKey": "enable-after",
+              "date": "2026-11-10T19:59:56+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: enable-after"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "initial-cleanup-failure",
+        "observations": [
+          {
+            "scenario": "initial-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:00:36.416351Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "initial-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:00:36.869362Z",
+            "enabled": false,
+            "files": {},
+            "requests": [],
+            "failedStarts": 2
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "stop-cleanup-failure",
+        "observations": [
+          {
+            "scenario": "stop-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:00:40.478948Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "stop-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:00:41.755015Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "stop-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "failure-observed",
+            "timestamp": "2026-11-10T17:01:17.115069Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1062,
+              "cachePath/verification-undeletable": 7,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "error",
+            "reason": "native_stop_or_cleanup_failed",
+            "requestsAfterStop": 0
+          },
+          {
+            "scenario": "stop-cleanup-failure",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:01:17.150232Z",
+            "enabled": false,
+            "files": {},
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": []
+      }
+    ],
+    "native-single-events": [
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:10:25.060856Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:10:26.392618Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1189,
+              "cachePath/logs/a.log": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:10:31.553194Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1325,
+              "cachePath/crashes/MINIDUMP_1794330631497/stacktrace": 1131128,
+              "cachePath/crashes/MINIDUMP_1794330631497/system_info": 1015,
+              "cachePath/crashes/MINIDUMP_1794330631497/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:10:51.705004Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadNative"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:11:26.726681Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadNative"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "MINIDUMP",
+            "format": "MINIDUMP",
+            "severity": "CRASH",
+            "payloadSha256": "a4959634ce681a220a6c7c3ff8edfb06347804b25f29e994514d14c7aa26e2e6",
+            "buildUuid": "9ff5fc30-dd26-11f1-85f9-dd19426a3bd9",
+            "sessionUuid": "e68cfa09-f6a4-446f-91ef-080e9d084c68",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local-final",
+              "verificationScenario": "native-enabled",
+              "userId": "sdk161-20261110-local-final/android-native-enabled",
+              "date": "2026-11-10T20:10:26+03:00"
+            }
+          }
+        ]
+      }
+    ],
+    "tombstone-local-events": [
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:39:37.333528Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:39:37.712365Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1070,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:39:41.284908Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1177,
+              "cachePath/logs/a.log": 34,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "disabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:39:41.582969Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1313,
+              "cachePath/crashes/TOMBSTONE_1794328781544/stacktrace": 285789,
+              "cachePath/crashes/TOMBSTONE_1794328781544/system_info": 1003,
+              "cachePath/crashes/TOMBSTONE_1794328781544/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:40:01.739206Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadTombstone"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:40:36.761488Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession",
+              "/api/crash/uploadTombstone"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "TOMBSTONE",
+            "format": "TOMBSTONE",
+            "payloadSha256": "29851a597c29c17d168cd3efa02a8a7ff10f5afd26ec6ae841470438f1eda482",
+            "buildUuid": "007135a0-dd1f-11f1-85f9-dd19426a3bd9",
+            "sessionUuid": "208f0bb9-165d-47b7-98c9-fea73d9d95fb",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "native-enabled",
+              "userId": "sdk161-20261110-local/android-native-enabled",
+              "date": "2026-11-10T19:39:38+03:00"
+            }
+          }
+        ]
+      }
+    ],
+    "tombstone-off-events": [
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:40:43.256999Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:40:43.614497Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1126,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "recovery",
+        "observations": [
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:40:47.657098Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1261,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:41:07.732696Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          },
+          {
+            "scenario": "recovery",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:41:42.821869Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [
+              "/api/crash/trackSession"
+            ],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      }
+    ],
+    "build-disabled-events": [
+      {
+        "scenario": "build-disabled",
+        "observations": [
+          {
+            "scenario": "build-disabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:01:24.046850Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "build-disabled",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:01:29.252637Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled",
+            "reason": "sdk_build_disabled",
+            "requests": []
+          }
+        ],
+        "reports": []
+      }
+    ],
+    "missing-sdk-events": [
+      {
+        "scenario": "missing-sdk",
+        "observations": [
+          {
+            "scenario": "missing-sdk",
+            "runId": "sdk161-20261110-local",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:01:34.887178Z",
+            "enabled": false,
+            "files": {},
+            "state": "unsupported"
+          },
+          {
+            "scenario": "missing-sdk",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:01:39.975117Z",
+            "enabled": false,
+            "files": {},
+            "state": "unsupported",
+            "reason": "sdk_missing",
+            "requests": []
+          }
+        ],
+        "reports": []
+      }
+    ],
+    "automatic-events": [
+      {
+        "scenario": "runtime-enable-automatic",
+        "observations": [
+          {
+            "scenario": "runtime-enable-automatic",
+            "runId": "sdk161-20261110-local",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:01:45.152457Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1198,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "runtime-enable-automatic",
+            "runId": "sdk161-20261110-local",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:02:22.361971Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1220,
+              "cachePath/logs/a.log": 429,
+              "filesPath/device_id.txt": 36
+            },
+            "pause": {
+              "reason": "sdk_runtime_disabled",
+              "state": "disabled"
+            },
+            "resume": "enabled",
+            "stop": "restartRequired",
+            "restartReason": "collection_stopped",
+            "cleanupVerified": false,
+            "crashRequests": 2,
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": [
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "0292e0361c4e0fd9be094e9e273d3254c417559709895dcbbb787b528d480a99",
+            "buildUuid": null,
+            "sessionUuid": "074ea691-6ad9-4419-862f-9fe96b0cbc01",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "runtime-enable-automatic",
+              "issueKey": "enable-before",
+              "date": "2026-11-10T20:01:45+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: enable-before"
+            ]
+          },
+          {
+            "type": "NON_FATAL",
+            "format": "JVM_STACKTRACE",
+            "severity": "ERROR",
+            "payloadSha256": "1ab82050193e40e2e4433863ed33e37f5bf559c34ed9a2063aae78d86a6c0c0e",
+            "buildUuid": null,
+            "sessionUuid": "074ea691-6ad9-4419-862f-9fe96b0cbc01",
+            "versionName": "1.0.0",
+            "versionCode": 1,
+            "packageName": "ru.apptracer.flutter.apptracer_flutter_example",
+            "properties": {
+              "osVersionSdkInt": "35",
+              "verificationRun": "sdk161-20261110-local",
+              "verificationScenario": "runtime-enable-automatic",
+              "issueKey": "enable-after",
+              "date": "2026-11-10T20:01:46+03:00"
+            },
+            "probeLines": [
+              "DartError: StateError: Bad state: enable-after"
+            ]
+          }
+        ]
+      }
+    ],
+    "live-final-events": [
+      {
+        "scenario": "vendor-dart",
+        "observations": [
+          {
+            "scenario": "vendor-dart",
+            "runId": "sdk161-20261110-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:02:27.774205Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "vendor-dart",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:02:28.116654Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1067,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-dart",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:02:48.281273Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-dart",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:03:23.417045Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "jvm-enabled",
+        "observations": [
+          {
+            "scenario": "jvm-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:03:26.867184Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "jvm-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:03:27.822141Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1165,
+              "cachePath/logs/a.log": 31,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 4,
+        "systemTrace": false
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:03:38.118072Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1310,
+              "cachePath/logs/a.log": 31,
+              "cachePath/crashes/CRASH_1794330207901/stacktrace": 854,
+              "cachePath/crashes/CRASH_1794330207901/system_info": 1037,
+              "cachePath/crashes/CRASH_1794330207901/all_stacktraces": 7234,
+              "cachePath/crashes/CRASH_1794330207901/all_logs": 55,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:03:58.236245Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:04:33.256789Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "kotlin-enabled",
+        "observations": [
+          {
+            "scenario": "kotlin-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:04:33.905524Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1070,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "kotlin-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:04:33.916925Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 0,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 9,
+        "systemTrace": false
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:04:54.729020Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1319,
+              "cachePath/logs/a.log": 34,
+              "cachePath/crashes/CRASH_1794330273924/stacktrace": 856,
+              "cachePath/crashes/CRASH_1794330273924/system_info": 1048,
+              "cachePath/crashes/CRASH_1794330273924/all_stacktraces": 7148,
+              "cachePath/crashes/CRASH_1794330273924/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:05:14.900012Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:05:50.017201Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:05:54.132238Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1070,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:05:54.183947Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1177,
+              "cachePath/logs/a.log": 34,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:05:58.450844Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1320,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:06:18.546085Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:06:53.580077Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "anr-enabled",
+        "observations": [
+          {
+            "scenario": "anr-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:06:57.322899Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "anr-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:06:57.721986Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1165,
+              "cachePath/logs/a.log": 31,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 6,
+        "systemTrace": true
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:07:38.836433Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1165,
+              "cachePath/logs/a.log": 31,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "disabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:07:39.172400Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1308,
+              "cachePath/crashes/ANR_1794330459069/stacktrace": 47806,
+              "cachePath/crashes/ANR_1794330459069/system_info": 992,
+              "cachePath/crashes/ANR_1794330459069/all_logs": 55,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "recovery-observed",
+            "timestamp": "2026-11-10T17:07:59.355572Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1206,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [],
+            "exitInfo": [
+              {
+                "reason": 6,
+                "timestamp": 1794330455069,
+                "pid": 21729,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330413785,
+                "pid": 21418,
+                "hasTrace": false
+              },
+              {
+                "reason": 5,
+                "timestamp": 1794330355008,
+                "pid": 21338,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330350589,
+                "pid": 21032,
+                "hasTrace": false
+              },
+              {
+                "reason": 9,
+                "timestamp": 1794330293348,
+                "pid": 20923,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330273400,
+                "pid": 20609,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794330212971,
+                "pid": 20521,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330203690,
+                "pid": 20151,
+                "hasTrace": false
+              },
+              {
+                "reason": 16,
+                "timestamp": 1794330143178,
+                "pid": 19758,
+                "hasTrace": false
+              },
+              {
+                "reason": 16,
+                "timestamp": 1794330089776,
+                "pid": 19610,
+                "hasTrace": false
+              }
+            ]
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:07:59.385615Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:08:34.449068Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      },
+      {
+        "scenario": "resumed-anr-enabled",
+        "observations": [
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "cold",
+            "timestamp": "2026-11-10T17:08:37.335272Z",
+            "enabled": false,
+            "files": {},
+            "state": "disabled"
+          },
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:08:37.786627Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1075,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "resumed-anr-enabled",
+            "runId": "sdk161-20261110-final",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T17:08:43.891349Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1197,
+              "cachePath/logs/a.log": 39,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 6,
+        "systemTrace": true
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "started",
+            "timestamp": "2026-11-10T17:09:25.263580Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1332,
+              "cachePath/crashes/ANR_1794330565248/stacktrace": 43822,
+              "cachePath/crashes/ANR_1794330565248/system_info": 1024,
+              "cachePath/crashes/ANR_1794330565248/all_logs": 63,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "recovery-observed",
+            "timestamp": "2026-11-10T17:09:45.511919Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1230,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [],
+            "exitInfo": [
+              {
+                "reason": 6,
+                "timestamp": 1794330561073,
+                "pid": 22170,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330514776,
+                "pid": 21851,
+                "hasTrace": false
+              },
+              {
+                "reason": 6,
+                "timestamp": 1794330455069,
+                "pid": 21729,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330413785,
+                "pid": 21418,
+                "hasTrace": false
+              },
+              {
+                "reason": 5,
+                "timestamp": 1794330355008,
+                "pid": 21338,
+                "hasTrace": true
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330350589,
+                "pid": 21032,
+                "hasTrace": false
+              },
+              {
+                "reason": 9,
+                "timestamp": 1794330293348,
+                "pid": 20923,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330273400,
+                "pid": 20609,
+                "hasTrace": false
+              },
+              {
+                "reason": 4,
+                "timestamp": 1794330212971,
+                "pid": 20521,
+                "hasTrace": false
+              },
+              {
+                "reason": 10,
+                "timestamp": 1794330203690,
+                "pid": 20151,
+                "hasTrace": false
+              }
+            ]
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T17:09:45.709264Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-final",
+            "stage": "complete",
+            "timestamp": "2026-11-10T17:10:20.794402Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      }
+    ],
+    "tombstone-live-events": [
+      {
+        "scenario": "native-enabled",
+        "observations": [
+          {
+            "scenario": "native-enabled",
+            "runId": "sdk161-20261110-tombstone",
+            "stage": "crashing-enabled",
+            "timestamp": "2026-11-10T16:38:32.053178Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1185,
+              "cachePath/logs/a.log": 34,
+              "filesPath/device_id.txt": 36
+            },
+            "requests": [
+              "/api/crash/trackSession"
+            ]
+          }
+        ],
+        "reports": [],
+        "exitReason": 5,
+        "systemTrace": false
+      },
+      {
+        "scenario": "vendor-recovery",
+        "observations": [
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-tombstone",
+            "stage": "cold",
+            "timestamp": "2026-11-10T16:38:36.004258Z",
+            "enabled": false,
+            "files": {
+              "cachePath/session.data": 1185,
+              "cachePath/logs/a.log": 34,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "disabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-tombstone",
+            "stage": "started",
+            "timestamp": "2026-11-10T16:38:36.417657Z",
+            "enabled": true,
+            "files": {
+              "cachePath/session.data": 1328,
+              "cachePath/crashes/TOMBSTONE_1794328716414/stacktrace": 287336,
+              "cachePath/crashes/TOMBSTONE_1794328716414/system_info": 1011,
+              "cachePath/crashes/TOMBSTONE_1794328716414/all_logs": 58,
+              "filesPath/device_id.txt": 36
+            },
+            "state": "enabled"
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-tombstone",
+            "stage": "stopped",
+            "timestamp": "2026-11-10T16:38:56.639554Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": []
+          },
+          {
+            "scenario": "vendor-recovery",
+            "runId": "sdk161-20261110-tombstone",
+            "stage": "complete",
+            "timestamp": "2026-11-10T16:39:31.708722Z",
+            "enabled": false,
+            "files": {},
+            "state": "restartRequired",
+            "requests": [],
+            "requestsAfterStop": 0
+          }
+        ],
+        "reports": []
+      }
+    ]
+  },
+  "localJavaCrash": [
+    {
+      "scenario": "jvm-enabled",
+      "observations": [
+        {
+          "scenario": "jvm-enabled",
+          "runId": "sdk161-20261110-local",
+          "stage": "cold",
+          "timestamp": "2026-11-10T16:41:47.617487Z",
+          "enabled": false,
+          "files": {},
+          "state": "disabled"
+        },
+        {
+          "scenario": "jvm-enabled",
+          "runId": "sdk161-20261110-local",
+          "stage": "crashing-enabled",
+          "timestamp": "2026-11-10T16:41:47.956610Z",
+          "enabled": true,
+          "files": {
+            "cachePath/session.data": 1114,
+            "cachePath/logs/a.log": 31,
+            "filesPath/device_id.txt": 36
+          },
+          "requests": [
+            "/api/crash/trackSession"
+          ]
+        }
+      ],
+      "reports": [],
+      "exitReason": 4,
+      "systemTrace": false
+    },
+    {
+      "scenario": "recovery",
+      "observations": [
+        {
+          "scenario": "recovery",
+          "runId": "sdk161-20261110-local",
+          "stage": "started",
+          "timestamp": "2026-11-10T16:41:56.052534Z",
+          "enabled": true,
+          "files": {
+            "cachePath/session.data": 1252,
+            "cachePath/logs/a.log": 31,
+            "cachePath/crashes/CRASH_1794328908002/stacktrace": 854,
+            "cachePath/crashes/CRASH_1794328908002/system_info": 986,
+            "cachePath/crashes/CRASH_1794328908002/all_stacktraces": 7148,
+            "cachePath/crashes/CRASH_1794328908002/all_logs": 55,
+            "filesPath/device_id.txt": 36
+          },
+          "state": "enabled"
+        },
+        {
+          "scenario": "recovery",
+          "runId": "sdk161-20261110-local",
+          "stage": "stopped",
+          "timestamp": "2026-11-10T16:42:16.199743Z",
+          "enabled": false,
+          "files": {},
+          "state": "restartRequired",
+          "requests": [
+            "/api/crash/trackSession",
+            "/api/crash/upload"
+          ]
+        },
+        {
+          "scenario": "recovery",
+          "runId": "sdk161-20261110-local",
+          "stage": "complete",
+          "timestamp": "2026-11-10T16:42:51.247234Z",
+          "enabled": false,
+          "files": {},
+          "state": "restartRequired",
+          "requests": [
+            "/api/crash/trackSession",
+            "/api/crash/upload"
+          ],
+          "requestsAfterStop": 0
+        }
+      ],
+      "reports": [
+        {
+          "type": "CRASH",
+          "format": "JVM_STACKTRACE",
+          "severity": "CRASH",
+          "payloadSha256": "d04ae42aec516cc1150438b8cbf7d6b466a960bea573e452c43319b0edbc41b7",
+          "buildUuid": null,
+          "sessionUuid": "c53335e5-3f53-49c7-855e-eacded4b18c4",
+          "versionName": "1.0.0",
+          "versionCode": 1,
+          "packageName": "ru.apptracer.flutter.apptracer_flutter_example.consent",
+          "properties": {
+            "osVersionSdkInt": "35",
+            "verificationRun": "sdk161-20261110-local",
+            "verificationScenario": "jvm-enabled",
+            "userId": "sdk161-20261110-local/android-jvm-enabled",
+            "date": "2026-11-10T19:41:47+03:00"
+          },
+          "probeLines": [
+            "java.lang.IllegalStateException: Android Java fatal verification: sdk161-20261110-local",
+            "\tat u0.a.a(SourceFile:17)"
+          ]
+        }
+      ]
+    }
+  ],
+  "optionalDiagnostics": {
+    "offline": {
+      "stage": "complete-offline",
+      "connected": false,
+      "plugged": 0,
+      "uiTicks": 109,
+      "maxUiGapMs": 4133,
+      "heapProviderThreads": [
+        "diagnostics-runNow",
+        "diagnostics-runNow"
+      ],
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 0
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 4118
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 4115,
+        "heapProviderReadsBeforeUse": 0,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    },
+    "online": {
+      "stage": "complete-online",
+      "connected": true,
+      "plugged": 0,
+      "uiTicks": 248,
+      "maxUiGapMs": 3903,
+      "heapProviderThreads": [
+        "diagnostics-runNow",
+        "diagnostics-runNow"
+      ],
+      "invocations": [
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 0
+        },
+        {
+          "thread": "diagnostics-runNow",
+          "durationMs": 3889
+        }
+      ],
+      "details": {
+        "mainDispatchMs": 3886,
+        "heapProviderReadsBeforeUse": 0,
+        "prePermissionRejected": true,
+        "postRevokeRejected": true,
+        "purgeSupported": false
+      }
+    },
+    "requests": [
+      {
+        "path": "/api/sample/initUpload",
+        "bytes": 866,
+        "sha256": "1077bc97ef6f83157b96ebdc6f7dc80e12e57c7e398e02d533b124b886bf139e",
+        "feature": "DISK_USAGE"
+      },
+      {
+        "path": "/api/sample/initUpload",
+        "bytes": 866,
+        "sha256": "1077bc97ef6f83157b96ebdc6f7dc80e12e57c7e398e02d533b124b886bf139e",
+        "feature": "DISK_USAGE"
+      },
+      {
+        "path": "/api/sample/upload",
+        "bytes": 680,
+        "sha256": "506bb3f0b9b220897d42e23c5f377e3d81b9418433d25b2af6264da608564947",
+        "feature": "DISK_USAGE"
+      },
+      {
+        "path": "/api/sample/upload",
+        "bytes": 680,
+        "sha256": "04d2db5845291055dee1d85ff282dfad92257101d86f1c6f7fc5cbd134101090",
+        "feature": "DISK_USAGE"
+      },
+      {
+        "path": "/api/sample/initUpload",
+        "bytes": 878,
+        "sha256": "92ba6de8a0a3005c53a199615c6aa881634f9d97020707ffa84b0a1d76a356f6",
+        "feature": "HEAP_DUMP"
+      },
+      {
+        "path": "/api/sample/upload",
+        "bytes": 7902363,
+        "sha256": "930516110f385bfd394c32e659f2b29d72d0f7f02e1e7fef40e095707268bf0a",
+        "feature": "HEAP_DUMP"
+      }
+    ]
+  },
+  "console": {
+    "kotlin": {
+      "url": "https://apptracer.ru/24745424/crashes/report/CRASH/2a21f9a6980066848ff7d126fbe9e16280d7202437cdba392ad454daf72288cd/11f1-dd28-db14f490-b11d-b937c5e462d2/filter/date=LAST_24H&extended=1%2C1%2CCRASH%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-kotlin-enabled",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "kotlin-enabled",
+      "date": "10.11.2026 20:04:33",
+      "api": "35",
+      "probeFrames": [
+        "ru.apptracer.verification.KotlinCrashProbe.crash(KotlinCrashProbe.java:14)"
+      ],
+      "expectedFrame": "ru.apptracer.verification.KotlinCrashProbe.crash(KotlinCrashProbe.kt:6)",
+      "symbolicationPassed": false
+    },
+    "native": {
+      "url": "https://apptracer.ru/24745424/crashes/report/NATIVE/44b3e18d5c931c81cea96a83f41b863464bca6c0d3ffcfd28000df042c143d53/11f1-dd29-03bfb8d0-8747-d7646dd76cd5/filter/date=LAST_24H&extended=1%2C1%2CNATIVE%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-native-enabled",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "native-enabled",
+      "date": "10.11.2026 20:05:54",
+      "api": "35",
+      "probeFrames": []
+    },
+    "dart": {
+      "url": "https://apptracer.ru/24745424/crashes/report/ERROR/59c5e1ab613270d36ea568cd0b0e1662e622e6de50f44952339eb2d58a223956/11f1-dd28-83ca0040-8f84-253dad88c2c1/filter/date=LAST_24H&extended=1%2C1%2CERROR%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-vendor-dart",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "vendor-dart",
+      "date": "10.11.2026 20:02:28",
+      "api": "35",
+      "probeFrames": []
+    },
+    "tombstone": {
+      "url": "https://apptracer.ru/24745424/crashes/report/TOMBSTONE/f71286bea4bdc5aa50dacf7cd556e87a3bc7ef61cf16ed3f9109e6dd62f9396c/11f1-dd25-2eb2bc30-8747-d7646dd76cd5/filter/date=LAST_24H&extended=1%2C1%2CTOMBSTONE%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-tombstone/android-native-enabled",
+      "verificationRun": "sdk161-20261110-tombstone",
+      "verificationScenario": "native-enabled",
+      "date": "10.11.2026 19:38:32",
+      "api": "35",
+      "probeFrames": []
+    },
+    "java": {
+      "url": "https://apptracer.ru/24745424/crashes/report/CRASH/d4d5c9b6f33038584128bfb8487d21811ce7382b5aa90392a3e76f5c2b3eee75/11f1-dd1f-07447e50-8747-d7646dd76cd5/filter/date=LAST_24H&extended=1%2C1%2CCRASH%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-jvm-enabled",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "jvm-enabled",
+      "date": "10.11.2026 20:03:27",
+      "api": "35",
+      "probeFrames": [
+        "ru.apptracer.verification.JavaCrashProbe.crash(JavaCrashProbe.java:6)"
+      ],
+      "expectedFrame": "ru.apptracer.verification.JavaCrashProbe.crash(JavaCrashProbe.java:6)",
+      "symbolicationPassed": true
+    },
+    "anr-resumed": {
+      "url": "https://apptracer.ru/24745424/crashes/report/ANR/73afcc99e3ccdb60fba31b50cb4b022b76f4f363e0b3ee3ae4af0ae39993ae85/11f1-dd29-7d0abf52-9adb-bb347c409873/filter/date=LAST_24H&extended=1%2C1%2CANR%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-resumed-anr-enabled",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "resumed-anr-enabled",
+      "date": "10.11.2026 20:09:21",
+      "api": "35"
+    },
+    "anr": {
+      "url": "https://apptracer.ru/24745424/crashes/report/ANR/73afcc99e3ccdb60fba31b50cb4b022b76f4f363e0b3ee3ae4af0ae39993ae85/11f1-dd29-3e3d5300-8747-d7646dd76cd5/filter/date=LAST_24H&extended=1%2C1%2CANR%2C0%2C0%2CTYPE%2Cnull/",
+      "userId": "sdk161-20261110-final/android-anr-enabled",
+      "verificationRun": "sdk161-20261110-final",
+      "verificationScenario": "anr-enabled",
+      "date": "10.11.2026 20:07:35",
+      "api": "35"
+    }
+  },
+  "consoleFinalSeriesCounts": {
+    "dart": 1,
+    "java": 1,
+    "kotlin": 1,
+    "native": 1,
+    "anr": 2,
+    "tombstoneSeparateRun": 1
+  },
+  "consoleCumulativeCounts": {
+    "java": 2,
+    "anr": 4,
+    "kotlin": 1,
+    "native": 1,
+    "dartFinalGroup": 1,
+    "tombstone": 1
+  },
+  "consoleBaselineCountsBeforeFinalSeries": {
+    "java": 1,
+    "anr": 2
+  },
+  "symbolication": {
+    "java": "passed",
+    "kotlin": "class and method restored; incorrect source file and line in formatted and plain views",
+    "expectedKotlin": "KotlinCrashProbe.kt:6",
+    "observedKotlin": "KotlinCrashProbe.java:14",
+    "exactR8Retrace": "passed",
+    "uploadedFullMappingMatchesArchive": true
+  },
+  "limitations": [
+    "Full Flutter assemble configuration cache remains blocked by FlutterPlugin serialization (task 19).",
+    "Automatic legacy stop does not prove purge; cleanupVerified=false.",
+    "Optional offline sample workers may delete failed samples; runNow is not a retry guarantee.",
+    "Native and Dart symbolication are not certified by this acceptance.",
+    "Remote GitHub CI was not inspected; local checks are recorded."
+  ]
+}
