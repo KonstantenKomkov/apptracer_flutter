@@ -91,7 +91,7 @@ executor creation, queue restoration, handler installation or file recovery.
 
 | State | Policy for the Flutter adapter |
 | --- | --- |
-| Already initialized, only vendor runtime flag disabled | Eligible for guarded `enable()` in №15; verify effective crash-module state and new events |
+| Already initialized, only vendor runtime flag disabled | Guarded `enable()` implemented in №15; effective crash state and handled-event recovery verified |
 | SDK absent or build-time disabled | Remain disabled; never claim enabled or initialize through `enable()` |
 | Deferred, never started | Use the existing authorized startup path; never bypass it with `enable()` |
 | Managed `stopCollection` after startup | Keep `restartRequired`: executors/endpoints are permanently revoked, watchdog stopped, fatal/native writer detached, stores cleared |
@@ -237,3 +237,74 @@ This is a legacy host configuration, not a requirement for 1.6.1. The JVM
 regressions do not renew device certification of older SDK releases. Full
 device acceptance of 1.6.1 remains №15/21; package versions have not been bumped
 and no package was published by this migration.
+
+## Runtime enable implementation (Android №15)
+
+`startCollection` now observes the native state even if Dart still caches an
+active session. For an initialized 1.6.1 crash runtime paused only by the host's
+`Tracer.disable()`, it checks build/configuration gates, calls `enable()` via a
+version-guarded reflection call, and verifies the effective crash state. A
+concurrent Dart stop supersedes a pending observation/start. Repeated start
+while already enabled does not reinitialize the SDK or duplicate handlers.
+The normal `initialize`/state-observation paths never implicitly resume a pause.
+
+Reasons distinguish `sdk_runtime_disabled`, `sdk_build_disabled`,
+`sdk_not_initialized` and `sdk_collection_disabled`. A managed full stop remains
+`restartRequired/native_runtime_retired`: revoked queues, endpoints and writers
+are not recreated. Pending/failed cleanup remains blocked; an exception during
+managed enable leaves collection disabled and records `native_enable_failed`.
+Old audited SDKs 1.4.0/1.5.2 retain `restartRequired` for a native runtime pause.
+Automatic legacy `stopCollection` stays terminal (`collection_stopped`) and
+**does not establish purge guarantees**. Use the supported deferred integration
+for managed stop/clear; an already automatic unmanaged runtime cannot be safely
+converted to that integration within the same process.
+
+The native release harness adds `runtime-enable`, `runtime-enable-automatic`
+and `build-disabled`. It uses synthetic events and a loopback sink; uploads of
+mappings/native symbols are disabled by the verification init script. The
+ordinary automatic build keeps cleartext traffic disabled; only an explicit
+loopback fixture enables it. No live credentials or captured payloads are
+committed. `tracer.verificationBuildDisabled=true` tests the real SDK resource
+without pretending that an absent SDK is a build-disabled SDK.
+
+Validation uses SDK 1.6.1 / Gradle 8.12 / AGP 8.9.1 / Kotlin 2.1.0 / JDK 21.0.8 /
+Flutter 3.47.4, an ARM64 API 35 emulator, and minified release APKs. APK hashes
+and sanitized device results are in [runtime evidence](android-sdk-1.6.1-runtime.json).
+JVM evidence: 31 Android JUnit tests, including seven new native resume cases;
+84 facade Flutter tests, including stale Dart state and stop/start races; two
+Android channel Flutter tests and analysis; the
+R8 classfile reflection gate and SDK-absent lifecycle gate. The new
+`tool/check_sdk_runtime_enable.sh` runs the compiled current adapter against
+matched, unoptimized 1.4.0/1.5.2/1.6.1 runtime JARs; all three passed. It accepts
+`compiled-plugin.jar` and the runtime classpath (commons/crash/base/manifest,
+Kotlin stdlib, javax.inject, Android stubs). This verifies linkage and flags,
+not on-device certification of the older releases.
+
+Release reproduction (from `packages/apptracer_flutter/example`):
+
+```sh
+flutter build apk --release --config-only \
+  --target=lib/android_native_verification.dart --target-platform=android-arm64 \
+  --android-skip-build-dependency-validation
+cd android
+TRACER_APP_TOKEN=android-sdk161-build-placeholder \
+TRACER_PLUGIN_TOKEN=android-sdk161-plugin-placeholder \
+./gradlew :app:assembleConsentRelease -Ptracer.enabled=true -Ptracer.deferred=true \
+  -Ptarget=lib/android_native_verification.dart -Ptarget-platform=android-arm64 \
+  -PskipDependencyChecks=true -I ../../../../tool/android_no_upload.init.gradle
+```
+
+Install on a chosen emulator and launch `MainActivity` with the string extra
+`apptracerScenario=runtime-enable`. Results are written under the application's
+external files `verification/` directory. For automatic mode use
+`:app:assembleRelease -Ptracer.deferred=false
+-Ptracer.verificationApiUrl=http://127.0.0.1:37017` and scenario
+`runtime-enable-automatic`. For the negative fixtures use the consent variant,
+respectively `-Ptracer.verificationBuildDisabled=true` / `build-disabled` and
+`-Ptracer.enabled=false` / `missing-sdk`. Start a new process between scenarios;
+keep application data between `account-a` and `account-b` to exercise persisted
+revocation overriding `preservePreviousReports`.
+
+Handled-event recovery and local transport acceptance do not establish ANR
+watchdog/native crash recovery or delivery/symbolication in the Tracer console.
+Those remain explicit №21 acceptance; package publication is not implied.

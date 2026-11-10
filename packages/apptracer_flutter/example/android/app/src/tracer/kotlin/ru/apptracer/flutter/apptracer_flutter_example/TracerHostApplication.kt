@@ -39,8 +39,10 @@ class TracerHostApplication : Application(), HasTracerConfiguration {
             CoreTracerConfiguration.build {
                 setDebugUpload(true)
                 // The explicit consent acceptance harness can use a loopback sink.
-                val verificationUrl = getSharedPreferences("apptracer_verification", MODE_PRIVATE)
-                    .getString("api_url", null)
+                val verificationUrl = getString(R.string.apptracer_verification_api_url)
+                    .takeIf { it.isNotEmpty() }
+                    ?: getSharedPreferences("apptracer_verification", MODE_PRIVATE)
+                        .getString("api_url", null)
                 if (verificationUrl != null && verificationUrl.startsWith("http://127.0.0.1:")) {
                     provideApiUrl { verificationUrl }
                 }

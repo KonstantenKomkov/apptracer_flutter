@@ -28,6 +28,7 @@ Future<void> main() async {
   final context =
       (await _native.invokeMapMethod<String, String>('verificationContext'))!;
   final scenario = context['scenario']!;
+  final automatic = scenario == 'runtime-enable-automatic';
   final output = Directory(context['outputPath']!);
   await output.create(recursive: true);
   final status = ValueNotifier<String>('Preparing $scenario');
@@ -89,7 +90,8 @@ Future<void> main() async {
   }
 
   if (!vendor) {
-    sink = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    sink = await HttpServer.bind(
+        InternetAddress.loopbackIPv4, automatic ? 37017 : 0);
     sink.listen((request) async {
       final bytes = <int>[];
       await for (final chunk in request) {
@@ -113,7 +115,9 @@ Future<void> main() async {
     await _native.invokeMethod<void>('configureVerification',
         {'apiUrl': sink == null ? null : 'http://127.0.0.1:${sink.port}'});
     final options = TracerOptions(
-      nativeInitialization: TracerNativeInitialization.deferred,
+      nativeInitialization: automatic
+          ? TracerNativeInitialization.automatic
+          : TracerNativeInitialization.deferred,
       preservePreviousReports:
           scenario.contains('recovery') || scenario == 'account-b',
       captureZoneErrors: false,
@@ -121,8 +125,28 @@ Future<void> main() async {
     );
     await Tracer.initialize(options: options, appRunner: () {});
     final cold = await Tracer.getCollectionState();
-    if (Tracer.isEnabled) throw StateError('Cold bootstrap enabled the SDK');
-    await save('cold', {'state': cold.state.name});
+    if (!automatic && Tracer.isEnabled)
+      throw StateError('Cold bootstrap enabled the SDK');
+    await save(automatic ? 'automatic' : 'cold', {'state': cold.state.name});
+    if (scenario == 'build-disabled') {
+      final result = await Tracer.startCollection(options);
+      if (result.state != TracerCollectionState.disabled ||
+          result.reason != 'sdk_build_disabled' ||
+          Tracer.isEnabled) {
+        throw StateError(
+            'Build disable was bypassed: ${result.state}/${result.reason}');
+      }
+      await Future<void>.delayed(const Duration(seconds: 5));
+      if (requests.isNotEmpty || (await files()).isNotEmpty) {
+        throw StateError('Build-disabled SDK created diagnostics');
+      }
+      await save('complete', {
+        'state': result.state.name,
+        'reason': result.reason,
+        'requests': requests
+      });
+      return;
+    }
     if (scenario == 'missing-sdk' || scenario == 'missing-token') {
       final expected = scenario == 'missing-sdk'
           ? TracerCollectionState.unsupported
@@ -184,6 +208,72 @@ Future<void> main() async {
       throw StateError('Start: ${started.state.name}/${started.reason}');
     }
     await save('started', {'state': started.state.name});
+    if (scenario == 'runtime-enable' || automatic) {
+      int crashes() =>
+          requests.where((p) => p.contains('/crash/upload')).length;
+      Future<void> expectCrashCount(int count) async {
+        for (var i = 0; i < 50 && crashes() < count; i++) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+        }
+        if (crashes() != count) {
+          throw StateError('Expected $count crash requests, got ${crashes()}');
+        }
+      }
+
+      await Tracer.recordError(StateError('enable-before'), StackTrace.current,
+          issueKey: 'enable-before');
+      await expectCrashCount(1);
+      await _native.invokeMethod<void>('disableSdkForVerification');
+      // Read through the raw channel so Dart's cached enabled flag remains
+      // stale; startCollection itself must discover and resume the native pause.
+      final paused = await const MethodChannel('ru.apptracer.flutter/tracer')
+          .invokeMapMethod<String, String>('getCollectionState');
+      if (paused?['state'] != 'disabled' ||
+          paused?['reason'] != 'sdk_runtime_disabled') {
+        throw StateError('Runtime disable was not observed: $paused');
+      }
+      await Tracer.recordError(
+          StateError('while-disabled-must-not-send'), StackTrace.current);
+      final resumed = await Tracer.startCollection(options);
+      final repeated = await Tracer.startCollection(options);
+      if (!resumed.isEnabled || !repeated.isEnabled) {
+        throw StateError('Resume failed: ${resumed.state}/${resumed.reason}');
+      }
+      await Tracer.recordError(StateError('enable-after'), StackTrace.current,
+          issueKey: 'enable-after');
+      await expectCrashCount(2);
+      final TracerCollectionResult stopped;
+      if (automatic) {
+        await Tracer.stopCollection();
+        stopped = await Tracer.getCollectionState();
+      } else {
+        stopped = await Tracer.stopAndClearCollection();
+      }
+      final afterStop = requests.length;
+      final retired = await Tracer.startCollection(options);
+      if (stopped.state != TracerCollectionState.restartRequired ||
+          retired.state != TracerCollectionState.restartRequired ||
+          retired.reason !=
+              (automatic ? 'collection_stopped' : 'native_runtime_retired')) {
+        throw StateError('Full cleanup was bypassed: ${retired.state}');
+      }
+      await Future<void>.delayed(const Duration(seconds: 35));
+      if (crashes() != 2 ||
+          requests.length != afterStop ||
+          (!automatic && (await files()).isNotEmpty)) {
+        throw StateError('Duplicate, post-stop upload or retained diagnostics');
+      }
+      await save('complete', {
+        'pause': paused,
+        'resume': resumed.state.name,
+        'stop': stopped.state.name,
+        'restartReason': retired.reason,
+        'cleanupVerified': !automatic,
+        'crashRequests': crashes(),
+        'requestsAfterStop': requests.length - afterStop,
+      });
+      return;
+    }
     if (scenario == 'stop-cleanup-failure') {
       try {
         await _native

@@ -18,6 +18,13 @@ apply plugin: 'ru.ok.tracer'
 // configuration cache as a bonus.
 def tracerAppToken = providers.environmentVariable('TRACER_APP_TOKEN').getOrNull()
 def tracerPluginToken = providers.environmentVariable('TRACER_PLUGIN_TOKEN').getOrNull()
+// Native acceptance fixtures only; production defaults remain unchanged.
+def verificationApiUrl = providers.gradleProperty('tracer.verificationApiUrl').getOrElse('')
+if (verificationApiUrl && !(verificationApiUrl ==~ /http:\/\/127\.0\.0\.1:[0-9]{1,5}/)) {
+    throw new GradleException('tracer.verificationApiUrl must be a loopback HTTP endpoint')
+}
+def verificationBuildDisabled = providers.gradleProperty('tracer.verificationBuildDisabled')
+    .getOrElse('false') == 'true'
 
 if (!tracerAppToken || !tracerPluginToken) {
     throw new GradleException(
@@ -44,6 +51,10 @@ android {
     }
 
     defaultConfig {
+        resValue 'string', 'apptracer_verification_api_url', verificationApiUrl
+        if (verificationApiUrl) {
+            manifestPlaceholders.put('apptracerVerificationCleartext', 'true')
+        }
         // Flutter substitutes ${applicationName} in AndroidManifest.xml from
         // this placeholder. Overriding it here rather than editing the
         // manifest keeps the manifest valid for a build without Tracer, where
@@ -58,6 +69,7 @@ tracer {
     create('defaultConfig') {
         appToken = tracerAppToken
         pluginToken = tracerPluginToken
+        disabled = verificationBuildDisabled
 
         uploadMapping = true
         uploadNativeSymbols = true

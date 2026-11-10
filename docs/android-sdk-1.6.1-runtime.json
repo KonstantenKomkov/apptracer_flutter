@@ -1,0 +1,193 @@
+{
+  "date": "2026-11-10",
+  "baselineCommit": "03766ec",
+  "implementation": "Android task 15 (commit containing this evidence)",
+  "sdk": "1.6.1",
+  "gradle": "8.12",
+  "agp": "8.9.1",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.8",
+  "flutter": "3.47.4",
+  "device": {
+    "type": "isolated Android emulator",
+    "api": 35,
+    "abi": "arm64-v8a"
+  },
+  "transport": "synthetic loopback HTTP; no vendor live delivery claimed",
+  "uploadTasks": "mapping/native uploads SKIPPED by android_no_upload.init.gradle",
+  "apks": {
+    "deferred": {
+      "sha256": "18ed00609f67f6e6eccaa1e938cd379f690f9506967148ec253572f19e38db7f",
+      "minified": true
+    },
+    "automatic": {
+      "sha256": "02f9806d7f42e838a0f6bf06b392dc0f95213bc335763bdebe97c8f5012ca361",
+      "minified": true,
+      "note": "Normal runtime path tested; subsequent host-logger Error guard verified by JVM test and final deferred APK."
+    },
+    "buildDisabled": {
+      "sha256": "2253b96ef8460af5e29748243cc09a2575157e200cac362107845d5089ca7eb2",
+      "minified": true
+    },
+    "missingSdk": {
+      "sha256": "2a40cbdd00378761576cf4dd6e31747e8d8cbe53f0e25cba537cb106145ffcca",
+      "minified": true
+    }
+  },
+  "results": [
+    {
+      "scenario": "runtime-enable-automatic",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:39:12.082502Z",
+      "enabled": false,
+      "files": {
+        "cachePath/session.data": 1023,
+        "cachePath/logs/a.log": 429,
+        "filesPath/device_id.txt": 36
+      },
+      "pause": {
+        "reason": "sdk_runtime_disabled",
+        "state": "disabled"
+      },
+      "resume": "enabled",
+      "stop": "restartRequired",
+      "restartReason": "collection_stopped",
+      "cleanupVerified": false,
+      "crashRequests": 2,
+      "requestsAfterStop": 0
+    },
+    {
+      "scenario": "build-disabled",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:40:09.084815Z",
+      "enabled": false,
+      "files": {},
+      "state": "disabled",
+      "reason": "sdk_build_disabled",
+      "requests": []
+    },
+    {
+      "scenario": "missing-sdk",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:41:12.568174Z",
+      "enabled": false,
+      "files": {},
+      "state": "unsupported",
+      "reason": "sdk_missing",
+      "requests": []
+    },
+    {
+      "scenario": "cold",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:50:40.406307Z",
+      "enabled": false,
+      "files": {},
+      "requests": [],
+      "state": "disabled"
+    },
+    {
+      "scenario": "runtime-enable",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:51:21.027499Z",
+      "enabled": false,
+      "files": {},
+      "pause": {
+        "reason": "sdk_runtime_disabled",
+        "state": "disabled"
+      },
+      "resume": "enabled",
+      "stop": "restartRequired",
+      "restartReason": "native_runtime_retired",
+      "cleanupVerified": true,
+      "crashRequests": 2,
+      "requestsAfterStop": 0
+    },
+    {
+      "scenario": "initial-cleanup-failure",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:51:24.707786Z",
+      "enabled": false,
+      "files": {},
+      "requests": [],
+      "failedStarts": 2
+    },
+    {
+      "scenario": "stop-cleanup-failure",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:52:04.455893Z",
+      "enabled": false,
+      "files": {},
+      "requests": [
+        "/api/crash/trackSession"
+      ]
+    },
+    {
+      "scenario": "inflight",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:52:44.362286Z",
+      "enabled": false,
+      "files": {},
+      "state": "restartRequired",
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/upload"
+      ],
+      "requestsAfterStop": 0
+    },
+    {
+      "scenario": "account-a",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:53:24.643254Z",
+      "enabled": false,
+      "files": {},
+      "state": "restartRequired",
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/upload"
+      ],
+      "requestsAfterStop": 0
+    },
+    {
+      "scenario": "account-b",
+      "stage": "complete",
+      "timestamp": "2026-11-10T14:54:24.731436Z",
+      "enabled": false,
+      "files": {},
+      "state": "restartRequired",
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/upload"
+      ],
+      "requestsAfterStop": 0
+    }
+  ],
+  "payloadMarkerRequestCounts": {
+    "runtime-enable": {
+      "enable-before": 1,
+      "enable-after": 1,
+      "while-disabled-must-not-send": 0
+    },
+    "runtime-enable-automatic": {
+      "enable-before": 1,
+      "enable-after": 1,
+      "while-disabled-must-not-send": 0
+    },
+    "account-b": {
+      "ANDROID_ACCOUNT_A_821": 0,
+      "ANDROID_ACCOUNT_B_927": 1
+    }
+  },
+  "checks": {
+    "androidJUnit": 31,
+    "facadeFlutter": 84,
+    "androidChannelFlutter": 2,
+    "analyze": "pass",
+    "r8Reflection": "pass",
+    "r8MissingSdk": "pass",
+    "runtimeLinkage": {
+      "1.4.0": "restartRequired",
+      "1.5.2": "restartRequired",
+      "1.6.1": "enabled"
+    }
+  }
+}

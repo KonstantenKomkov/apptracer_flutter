@@ -8,6 +8,8 @@ import 'fakes.dart';
 class LifecyclePlatform extends FakeTracerPlatform {
   Completer<void>? starting;
   Completer<void>? stopping;
+  Completer<void>? observing;
+  bool nativeDisabled = false;
   int purgeCalls = 0;
   final List<String> operations = [];
 
@@ -16,9 +18,20 @@ class LifecyclePlatform extends FakeTracerPlatform {
     operations.add('start');
     await starting?.future;
     await initialize(options);
+    nativeDisabled = false;
     return TracerCollectionResult(isEnabled
         ? TracerCollectionState.enabled
         : TracerCollectionState.error);
+  }
+
+  @override
+  Future<TracerCollectionResult> getCollectionState() async {
+    await observing?.future;
+    if (nativeDisabled) {
+      return const TracerCollectionResult(TracerCollectionState.disabled,
+          reason: 'sdk_runtime_disabled');
+    }
+    return super.getCollectionState();
   }
 
   @override
@@ -151,6 +164,35 @@ void main() {
       client.startCollection(const TracerOptions()),
       client.startCollection(const TracerOptions()),
     ]);
+    expect(platform.initializeCalls, 1);
+  });
+
+  test(
+      'explicit start resumes native disable despite cached Dart enabled state',
+      () async {
+    await client.startCollection(const TracerOptions());
+    platform.nativeDisabled = true;
+    expect(client.isEnabled, isTrue);
+    final resumed = await client.startCollection();
+    expect(resumed.isEnabled, isTrue);
+    expect(client.isEnabled, isTrue);
+    expect(platform.initializeCalls, 2);
+    await client.startCollection();
+    expect(platform.initializeCalls, 2);
+  });
+
+  test('stop during native state observation prevents a stale resume',
+      () async {
+    await client.startCollection(const TracerOptions());
+    platform.nativeDisabled = true;
+    platform.observing = Completer<void>();
+    final resuming = client.startCollection();
+    await Future<void>.delayed(Duration.zero);
+    final stopped = client.stopAndClearCollection();
+    platform.observing!.complete();
+    expect((await resuming).reason, 'superseded');
+    await stopped;
+    expect(client.isEnabled, isFalse);
     expect(platform.initializeCalls, 1);
   });
 

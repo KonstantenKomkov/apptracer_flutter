@@ -116,10 +116,17 @@ class TracerClient {
         _disableDart();
         return const TracerCollectionResult(TracerCollectionState.disabled);
       }
-      if (isEnabled) return platform.getCollectionState();
-      _options = requested;
-      _disableDart();
       try {
+        if (isEnabled) {
+          final current = await platform.getCollectionState();
+          if (generation != _generation) {
+            return const TracerCollectionResult(TracerCollectionState.disabled,
+                reason: 'superseded');
+          }
+          if (current.isEnabled) return current;
+        }
+        _options = requested;
+        _disableDart();
         final result = await platform.startCollection(requested);
         if (generation != _generation) {
           return const TracerCollectionResult(TracerCollectionState.disabled,

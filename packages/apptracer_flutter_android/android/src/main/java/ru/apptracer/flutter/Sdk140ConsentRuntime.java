@@ -19,7 +19,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import ru.ok.tracer.Tracer;
 import ru.ok.tracer.base.process.ProcessUtils;
+import ru.ok.tracer.base.apptoken.AppTokenUtils;
 import ru.ok.tracer.crash.report.TracerCrashReport;
+import ru.ok.tracer.crash.report.CrashReportConfiguration;
 import ru.ok.tracer.startup.TracerStartup;
 
 /** Process-scoped adapter for the inspected 1.4.0, 1.5.2 and 1.6.1 startup graphs.
@@ -47,28 +49,81 @@ public final class Sdk140ConsentRuntime {
     public static synchronized boolean ownsRuntime() { return host != null; }
 
     public static synchronized Map<String, String> snapshot() {
+        if ("enabled".equals(state)) return automaticSnapshot();
         return result(state, reason);
     }
 
     public static Map<String, String> automaticSnapshot() {
-        if (Tracer.isDisabled()) return result("restartRequired", null);
+        if (buildDisabled()) return result("disabled", "sdk_build_disabled");
         try {
             Tracer.INSTANCE.getRuntimeConfigs();
         } catch (IllegalStateException notInitialized) {
             return result("disabled", "sdk_not_initialized");
         }
+        if (Tracer.isDisabled()) return result(
+                supportsEnable() ? "disabled" : "restartRequired", "sdk_runtime_disabled");
         if (TracerCrashReport.INSTANCE.isDisabled$tracer_crash_report_release()) {
             return result("disabled", "sdk_collection_disabled");
         }
         return result("enabled", null);
     }
 
+    /** Resume only a live SDK session; never initialize or undo our revocation. */
+    public static synchronized Map<String, String> resumeRuntime() {
+        if (cleanupsPending != 0 || (host != null && !"enabled".equals(state))) return snapshot();
+        Map<String, String> current = automaticSnapshot();
+        if (!"sdk_runtime_disabled".equals(current.get("reason")) || !supportsEnable()) return current;
+        try {
+            // Inspect configuration before changing the global flag: enabling
+            // briefly could otherwise admit work from another SDK module.
+            if (!CrashReportConfiguration.Companion.get$tracer_crash_report_release()
+                    .getEnabled$tracer_crash_report_release()) {
+                return result("disabled", "sdk_collection_disabled");
+            }
+            Tracer.class.getMethod("enable").invoke(null);
+            current = automaticSnapshot();
+            if (!"enabled".equals(current.get("state"))) Tracer.disable();
+            return current;
+        } catch (Throwable failure) {
+            // disable sets its flag before logging; a throwing host logger
+            // must not hide the failure or make a managed session resumable.
+            try { Tracer.disable(); } catch (Throwable loggingFailure) { }
+            if (host != null) return setResult("error", "native_enable_failed");
+            return result("error", "native_enable_failed");
+        }
+    }
+
+    private static boolean supportsEnable() {
+        try {
+            return "1.6.1".equals(Class.forName("ru.ok.tracer.BuildConfig")
+                    .getField("LIBRARY_VERSION").get(null));
+        } catch (ReflectiveOperationException unavailable) { return false; }
+    }
+
+    private static boolean buildDisabled() {
+        if (!supportsEnable()) return false;
+        try {
+            return (Boolean) Tracer.class.getMethod("getDisabledOnBuild$tracer_commons_release")
+                    .invoke(Tracer.INSTANCE);
+        } catch (ReflectiveOperationException failure) {
+            throw new IllegalStateException("audited SDK build flag unavailable", failure);
+        }
+    }
+
+    public static boolean buildDisabled(Context context) {
+        return AppTokenUtils.isTracerBuildDisabled(context);
+    }
+
     public static synchronized Map<String, String> start(Context context, boolean preservePreviousReports) {
-        if (cleanupsPending != 0 || irreversible) return snapshot();
-        if ("enabled".equals(state)) return snapshot();
+        if (cleanupsPending != 0) return snapshot();
+        if ("enabled".equals(state)) return resumeRuntime();
+        if (irreversible) return snapshot();
         try {
             validateVersion();
             Application application = (Application) context.getApplicationContext();
+            if (AppTokenUtils.isTracerBuildDisabled(application)) {
+                return result("disabled", "sdk_build_disabled");
+            }
             if (!application.getPackageName().equals(ProcessUtils.getProcessName(application))) {
                 return result("unsupported", "deferred_secondary_process_unsupported");
             }
@@ -219,7 +274,8 @@ public final class Sdk140ConsentRuntime {
             // purge or the process itself. Its files must not be preserved by a
             // later preservePreviousReports request after withdrawal.
             synchronized (Sdk140ConsentRuntime.class) {
-                reply = setResult(irreversible ? "restartRequired" : "disabled", null);
+                reply = setResult(irreversible ? "restartRequired" : "disabled",
+                        irreversible ? "native_runtime_retired" : null);
             }
         } catch (Throwable failure) {
             synchronized (Sdk140ConsentRuntime.class) {

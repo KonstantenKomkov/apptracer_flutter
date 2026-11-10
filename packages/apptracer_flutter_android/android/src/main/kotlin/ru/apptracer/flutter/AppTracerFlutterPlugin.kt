@@ -106,7 +106,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return state
         }
         if (stopped) return collectionState()
-        initialize(call)
+        initialize(call, resumeRuntime = true)
         return collectionState()
     }
 
@@ -116,7 +116,10 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
         lifecycleError?.let { return mapOf("state" to "error", "reason" to it) }
         if (!isSdkOnClasspath()) return mapOf("state" to "unsupported", "reason" to "sdk_missing")
-        if (stopped || Tracer.isDisabled) return mapOf("state" to "restartRequired")
+        if (applicationContext?.let { Sdk140ConsentRuntime.buildDisabled(it) } == true) {
+            return mapOf("state" to "disabled", "reason" to "sdk_build_disabled")
+        }
+        if (stopped) return mapOf("state" to "restartRequired", "reason" to "collection_stopped")
         return Sdk140ConsentRuntime.automaticSnapshot()
     }
 
@@ -146,7 +149,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         Sdk140ConsentRuntime.stopAndClear(context) { state -> result.success(state) }
     }
 
-    private fun initialize(call: MethodCall): Boolean {
+    private fun initialize(call: MethodCall, resumeRuntime: Boolean = false): Boolean {
         debug = call.argument<Boolean>("debug") ?: false
         if (stopped || lifecycleError != null) return false
         if (call.argument<Boolean>("isCollectionEnabled") == false ||
@@ -196,24 +199,28 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return false
         }
 
-        // `isDisabled` is a Kotlin property on Tracer, not a method.
-        if (Tracer.isDisabled) {
-            logDebug("the Tracer SDK reports that it is disabled")
+        if (Sdk140ConsentRuntime.ownsRuntime()) {
+            // An automatic call cannot bypass a managed deferred lifecycle.
+            enabled = Sdk140ConsentRuntime.snapshot()["state"] == "enabled"
+            return enabled
+        }
+        if (applicationContext?.let { Sdk140ConsentRuntime.buildDisabled(it) } == true) {
             enabled = false
             return false
         }
-
-        enabled = Sdk140ConsentRuntime.automaticSnapshot()["state"] == "enabled"
+        val state = if (resumeRuntime) Sdk140ConsentRuntime.resumeRuntime()
+            else Sdk140ConsentRuntime.automaticSnapshot()
+        if (state["state"] == "error") lifecycleError = state["reason"]
+        enabled = state["state"] == "enabled"
         return enabled
     }
 
     /**
      * Stops collection.
      *
-     * `Tracer.disable()` sets a one-way flag inside the SDK: there is no
-     * documented way to re-enable it in the same process. That is the correct
-     * behaviour for a withdrawal of consent, and it is why a later
-     * `initialize` cannot restart native collection until the app restarts.
+     * Consent withdrawal remains terminal in this process. SDK 1.6.1's
+     * reversible runtime flag alone does not purge reports or restore revoked
+     * executors/writers. It must not bypass this stop through a later start.
      */
     private fun stopCollection() {
         enabled = false

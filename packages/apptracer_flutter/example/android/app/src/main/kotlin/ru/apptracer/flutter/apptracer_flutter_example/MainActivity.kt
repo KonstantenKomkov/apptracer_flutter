@@ -45,6 +45,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "disableSdkForVerification" -> {
+                        // Simulate a host's ordinary runtime pause, without
+                        // invoking the plugin's consent withdrawal/cleanup.
+                        try {
+                            Class.forName("ru.ok.tracer.Tracer").getMethod("disable").invoke(null)
+                            result.success(null)
+                        } catch (failure: ReflectiveOperationException) {
+                            result.error("sdk_unavailable", "Runtime pause unavailable", null)
+                        }
+                    }
                     "cleanupFailureFixture" -> {
                         val root = java.io.File(cacheDir, "tracer")
                         if (call.argument<Boolean>("enabled") == true) {
