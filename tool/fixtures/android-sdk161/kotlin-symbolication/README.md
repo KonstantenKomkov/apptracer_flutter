@@ -23,6 +23,8 @@ mapping by SHA-256; its multipart buildUuid also matches the tested APK.
 
 See the [acceptance protocol](../../../../docs/android-sdk-1.6.1-acceptance.md)
 for the exact APK/mapping hashes, buildUuid and console event link. Task 21
-remains open until the console also restores the Kotlin file and line. Keeping
+was accepted with an explicit release exception on 2026-11-13. The external
+Kotlin file/line defect remains open; local Retrace with the full exact-build
+mapping is the diagnostic workaround. Keeping
 the Kotlin probe unobfuscated or changing the expected output would hide the
 failed criterion, so neither is used as a workaround.

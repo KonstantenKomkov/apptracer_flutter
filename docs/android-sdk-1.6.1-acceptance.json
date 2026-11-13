@@ -1,5 +1,5 @@
 {
-  "status": "blocked_kotlin_console_source_file_and_line",
+  "status": "accepted_with_known_kotlin_console_source_file_and_line_limitation",
   "date": "2026-11-10",
   "sourceBaseCommit": "6387293",
   "toolchain": {
@@ -3026,5 +3026,13 @@
     "Optional offline sample workers may delete failed samples; runNow is not a retry guarantee.",
     "Native and Dart symbolication are not certified by this acceptance.",
     "Remote GitHub CI was not inspected; local checks are recorded."
-  ]
+  ],
+  "previousAcceptanceStatus": "blocked_kotlin_console_source_file_and_line",
+  "releaseDecision": {
+    "date": "2026-11-13",
+    "task21": "accepted_with_explicit_exception",
+    "kotlinDefect": "open_non_blocking",
+    "newLiveVerification": false,
+    "publication": "separate_task_22_and_publish_checks"
+  }
 }
