@@ -89,7 +89,7 @@ public final class HeapDumpProviderTest {
     @Test public void hostOwnsLazyConfigurationAndGlobalDisableStillWins() throws Exception {
         DiagnosticsApplication host = new DiagnosticsApplication();
         HeapDumpConfiguration heap = null;
-        for (TracerConfiguration config : host.getTracerConfiguration()) {
+        for (TracerConfiguration config : host.configurations(false)) {
             if (config instanceof HeapDumpConfiguration) heap = (HeapDumpConfiguration) config;
         }
         assertNotNull(heap);

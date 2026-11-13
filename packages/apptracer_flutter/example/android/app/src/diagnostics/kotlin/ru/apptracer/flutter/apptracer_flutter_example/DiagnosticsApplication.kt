@@ -9,8 +9,10 @@ import ru.ok.tracer.TracerConfiguration
 import ru.ok.tracer.crash.report.CrashFreeConfiguration
 import ru.ok.tracer.crash.report.CrashReportConfiguration
 import ru.ok.tracer.disk.usage.DiskUsageConfiguration
+import ru.ok.tracer.heap.dumps.HeapDumpConfiguration
+import ru.apptracer.flutter.TracerDiagnostics
 
-/** Isolated native experiment, never part of the supported deferred integration. */
+/** Isolated native/Dart experiments, never part of the supported deferred integration. */
 class DiagnosticsApplication : Application(), HasTracerConfiguration {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
@@ -20,15 +22,21 @@ class DiagnosticsApplication : Application(), HasTracerConfiguration {
     }
 
     override val tracerConfiguration: List<TracerConfiguration>
-        get() = listOf(
+        get() = configurations(resources.getBoolean(R.bool.apptracer_verification_dart_diagnostics))
+
+    // Keep configuration construction testable without an attached Android Context.
+    fun configurations(dartApi: Boolean): List<TracerConfiguration> = listOf(
             CoreTracerConfiguration.build {
                 // Keep production periodic constraints; this is a release APK.
                 setDebugUpload(false)
                 provideApiUrl { "http://127.0.0.1:37018" }
             },
-            CrashReportConfiguration.build { setEnabled(false) },
+            CrashReportConfiguration.build { setEnabled(dartApi) },
             CrashFreeConfiguration.build { setEnabled(false) },
-            DiagnosticsHeapDecision.configuration(),
+            if (dartApi)
+                HeapDumpConfiguration.Builder()
+                    .provideEnabled(TracerDiagnostics.heapDumpEnabledProvider()).build()
+            else DiagnosticsHeapDecision.configuration(),
             // Force a sample for this small synthetic app; the production
             // interesting-size default can legitimately discard its result.
             DiskUsageConfiguration.Builder().setEnabled(true).setInterestingSize(1).build(),

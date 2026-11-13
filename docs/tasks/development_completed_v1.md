@@ -995,3 +995,60 @@ placeholder app token; новых live-отчётов этот consumer не о�
 SHA-256 совпадают с метаданными pub.dev, все 39/118 файлов пакетов побайтно
 совпадают с релизным коммитом. Проверены версия зависимостей, паритет RU/EN,
 границы утверждений, ссылки и отсутствие изменений runtime-кода в подготовке.
+
+
+<a id="task-23"></a>
+
+## П. 23. Повторный сбор после logout/login и полнота API SDK
+
+**Завершено 13 ноября 2026 в согласованных границах.** Кандидаты: фасад 1.2.0,
+Android 0.4.0, platform interface 0.2.1; SDK/BOM/Gradle plugin 1.6.1.
+[Протокол, таблица API и воспроизведение](../task-23-collection-lifecycle.md),
+[машиночитаемые результаты](../task-23-collection-lifecycle.json).
+
+**Реализация:** public pause/resume сохраняют текущую разрешённую сессию;
+полный stop/clear отзывает работу и очищает данные. Новый явный старт после
+успешной deferred-очистки восстанавливает Android runtime: создаёт новые
+исполнители и SDK-хранилища, session/device ID, fatal/native writer и watchdog.
+Старые исполнители остаются закрытыми; ошибка очистки и поздние callbacks
+не разрешают новый сбор. Восстановление ограничено проверенной реализацией
+SDK 1.6.1 и защищено проверкой версии, структуры SDK, R8 keep rules и барьером
+очереди main thread. Старые SDK и automatic-mode не получают этой гарантии.
+
+**API SDK:** добавлены `runHeapDump(tag: ...)`, `runDiskUsage()` и
+`setHeapDumpEnabled(bool)` с явным host provider; модули не устанавливаются
+автоматически. Проверено официальное [объявление 1.6.1](https://t.me/tracer_changelog/185):
+все runtime-изменения покрыты, buildUuid/uploadMapping, configuration cache и
+AnalyticsEnabledApplicationVariant сопоставлены с отдельной Gradle-приёмкой.
+Новые API при будущих обновлениях должны явно попадать в таблицу покрытия.
+
+**Приёмка:** release/R8 на API 35 arm64 — четыре сессии в одном процессе,
+тот же/другой аккаунт, положительная доставка, отсутствие старого контекста,
+offline purge при preservePreviousReports, ошибки очистки, in-flight и несколько
+engines. После полного восстановления проверены JVM/native/ANR-падения и
+доставка их отчётов при recovery после самого тестового завершения процесса.
+Публичные Dart heap/disk-вызовы реально отправили образцы 8 007 710/803 байт;
+проверены default-false provider, true/false и запрет команд до старта,
+при паузе и после остановки. Локальный приёмник не заменяет Tracer console acceptance.
+
+**Farming:** исправлена гонка pending start между аккаунтами. Приложение использует
+Git-ревизию `690850f17940b35ace815a36b82a3279dd09b3ea` и BOM/plugin 1.6.1.
+Изолированный release APK с реальными repository/controller и SDK прошёл
+4 цикла пользователей 1 → 1 → 2 → 2 с 4 upload в одном PID, ожидая нового
+подтверждения согласия перед каждым стартом. Backend согласий синтетический;
+ручной вход в реальный аккаунт не заявляется. Полный анализ и 2680 тестов
+(3 skipped), повторные 64 теста с Git-зависимостями прошли.
+
+**Регрессии и ревью:** 90 facade-, 47 interface-тестов, остальные платформенные
+пакеты и Web/HTTP в Chrome; 35 Android JUnit и 5 host-provider tests, Swift storage/JVM executor checks,
+release/R8 с SDK и без SDK. Проверены изоляция, ошибки, await полной остановки,
+partial startup, main barrier, точные dependency floors и отсутствие optional
+production dependencies. RU/EN README, changelog и lifecycle/privacy согласованы.
+
+**Принятые ограничения:** пользователь прямо подтвердил 13 ноября 2026, что
+восстановление на iOS не ожидается от текущего SDK; `restartRequired` на OKTracer
+1.5.2 сохранён и не блокирует №23. Optional WorkManager-модули не входят в
+managed deferred purge; `invoked` не означает доставку, heap может приостановить
+VM. Существующие Kotlin file/line и Flutter full configuration-cache ограничения
+относятся к отдельному Android-плану. Публикация кандидатов на pub.dev — отдельная
+операция выпуска; farming уже использует проверенное исправление через Git.

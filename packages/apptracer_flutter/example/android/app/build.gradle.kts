@@ -9,6 +9,11 @@ plugins {
 // Ordinary example builds keep their existing flavorless automatic behavior.
 val deferredCollection = providers.gradleProperty("tracer.deferred").orNull == "true"
 val optionalDiagnostics = providers.gradleProperty("tracer.diagnostics").orNull == "true"
+val dartDiagnostics = providers.gradleProperty("tracer.dartDiagnostics").orNull == "true"
+check(!dartDiagnostics || (optionalDiagnostics &&
+    providers.gradleProperty("target").orNull?.endsWith("android_diagnostics_verification.dart") == true)) {
+    "tracer.dartDiagnostics requires the optional flavor and its Dart verification entrypoint"
+}
 check(!optionalDiagnostics || !deferredCollection) {
     "HeapDumps/DiskUsage WorkManager jobs are not supported by deferred consent cleanup"
 }

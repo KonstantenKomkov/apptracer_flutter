@@ -1,9 +1,10 @@
 # Task 23: runtime API coverage and logout/login investigation
 
-Status: **Android recovery implemented and verified; iOS/optional acceptance
-components remain open**, 2026-11-13. Candidate versions are facade **1.2.0**,
+Status: **completed with accepted platform limitations**, 2026-11-13.
+The user explicitly accepted iOS's unsupported restart capability as a platform
+limit, not a blocker for this task. Candidate versions are facade **1.2.0**,
 Android **0.4.0**, platform interface **0.2.1**; no pub.dev publication is claimed.
-[Active task](tasks/development_v1.md#task-23).
+[Completed task](tasks/development_completed_v1.md#task-23).
 
 Release/R8 on a disposable API-35 arm64 emulator verifies four authorized
 sessions in one process, same-account and different-account login, fresh
@@ -26,20 +27,27 @@ Artifact evidence is the exact Maven Central SDK inspected in
 `javap -public` and `javap -p -c` confirms the signatures and implementation behavior below.
 The locally cached 1.5.2 commons API was compared again: `Tracer.enable()` and
 the internal build-flag accessors are additions; no public methods were removed.
-The official [changelog channel](https://t.me/s/tracer_changelog) available to
-the web reader currently ends at the 1.5.2 announcement; it did not provide the
-1.6.1 release note. A complete release-note reconciliation remains open.
-This table covers the task's named API changes, not every optional SDK module.
+The official [1.6.1 announcement](https://t.me/tracer_changelog/185) became
+accessible in the final check and was reconciled with the exact artifact APIs.
+Its runtime changes are enable, manual heap/disk scheduling and the lazy heap
+provider; all are mapped below. Its build changes are UUID generation with
+mapping uploads disabled, configuration cache and mapping integration with
+AnalyticsEnabledApplicationVariant. Those are host Gradle behavior, covered by
+[the existing build verification](android-sdk-1.6.1-gradle.md), not Dart methods.
+The announcement calls heap work asynchronous; bytecode/device evidence shows
+that calling runNow can still suspend the VM, so the wrapper uses a worker and
+does not promise uninterrupted UI. The actual builder class name is singular
+`HeapDumpConfiguration`, despite the plural spelling in the announcement.
 
 | Native API/change | Adapter and public Flutter API | Verification and limits |
 | --- | --- | --- |
 | `Tracer.disable()` / `enable()` | `Sdk140ConsentRuntime.pauseRuntime/resumeRuntime`; `Tracer.pauseCollection/resumeCollection` | Real SDK JVM tests, Dart/channel race tests, API-35 release/R8 loopback. Only pauses a live session. Does not purge or cancel previously admitted uploads. |
 | Build/runtime disable separation | Existing build gate, surfaced by collection results | `sdk_build_disabled` cannot be overridden. Internal `$tracer_commons_release` setters are deliberately not exported as user controls. |
-| `HeapDumps.INSTANCE.runNow(String tag)` | `TracerDiagnostics.run`; `Tracer.runHeapDump(tag: ...)` | Explicit module required; no auto-install/init. Nonblank tag; dispatched to an adapter worker. VM suspension remains possible. JVM module/configuration checks and Dart/channel tests; new wrapper's positive device delivery remains open. |
-| `DiskUsage.INSTANCE.runNow()` / `(Context)` | `TracerDiagnostics.run`; `Tracer.runDiskUsage()` | Uses the initialized application's context through the no-argument overload; Flutter callers cannot supply an Android Context. Requests unconstrained one-time work, not a periodic schedule. Same acceptance limitation as heap. |
+| `HeapDumps.INSTANCE.runNow(String tag)` | `TracerDiagnostics.run`; `Tracer.runHeapDump(tag: ...)` | Explicit module required; no auto-install/init. Nonblank tag; dispatched to an adapter worker. VM suspension remains possible. JVM/channel checks and actual public Dart release/R8 delivery: one 8,007,710-byte heap sample. Disabled provider and lifecycle gates verified. |
+| `DiskUsage.INSTANCE.runNow()` / `(Context)` | `TracerDiagnostics.run`; `Tracer.runDiskUsage()` | Uses the initialized application's context through the no-argument overload; Flutter callers cannot supply an Android Context. Requests unconstrained one-time work, not a periodic schedule. Actual public Dart release/R8 delivery: one 803-byte disk sample. |
 | `HeapDumpConfiguration.Builder.provideEnabled(Provider<Boolean>)` | Host installs `TracerDiagnostics.heapDumpEnabledProvider()`; Dart calls `Tracer.setHeapDumpEnabled(bool)` | Actual 1.6.1 builder/provider tested on JVM. Synchronous native provider defaults false, observes global disable, resets on full stop. Arbitrary Dart callbacks on native/fatal threads are not supported. Host must install this exact provider before SDK startup. |
 | `runNow` scheduling/constraints changes | Forward to SDK without imposing old periodic constraints | `invoked` means the native void method returned, **not** that a sample was captured, admitted, uploaded or received by Tracer. SDK filters/rate limits still apply. |
-| Gradle `uploadMapping`, `uploadNativeSymbols`, build disable and variant compatibility | Host Gradle configuration, not MethodChannel methods | Covered separately by [Gradle verification](android-sdk-1.6.1-gradle.md). Runtime calls cannot upload a build's mappings or override build disable. |
+| Gradle `uploadMapping`, `uploadNativeSymbols`, build disable, UUID, configuration cache and variant compatibility | Host Gradle configuration, not MethodChannel methods | Covered separately by [Gradle verification](android-sdk-1.6.1-gradle.md). Runtime calls cannot upload a build's mappings or override build disable. |
 
 Optional diagnostic modules remain outside the managed deferred cleanup graph;
 commands return `unsupported / optional_diagnostics_outside_managed_cleanup`
@@ -70,7 +78,7 @@ await Tracer.stopAndClearCollection();
 // Only after the application confirms the next account's consent:
 final next = await Tracer.startCollection(options);
 // Android deferred 1.6.1: enabled after successful cleanup.
-// iOS 1.5.2: restartRequired (open component below).
+// iOS 1.5.2: restartRequired (accepted platform limit below).
 ```
 
 For optional diagnostics in an explicitly configured automatic Android host,
@@ -125,7 +133,7 @@ startup and optional WorkManager modules cannot use this recreation path.
 This uses private SDK implementation contracts, so every SDK update requires
 another bytecode/R8/lifecycle audit; matching public method names is insufficient.
 
-## Open iOS component and reproducer
+## Accepted iOS platform limit and reproducer
 
 OKTracer 1.5.2 exposes service start/stop but no verified drain/cancel/reset
 completion contract. Its process crash writer and retry work can survive stop.
@@ -141,9 +149,10 @@ Reproduce the supported adapter behavior with the iOS consent harness:
 explicit start → stop/clear → explicit start in one process. The last result is
 `restartRequired / native_restart_required`; both report paths remain sealed.
 Storage tests verify purge, blocked late writes, durable marker and next-process
-re-consent. **No new iOS device restart acceptance is claimed.** The iOS part
-remains open for a verified writer/task retirement mechanism and real device
-acceptance; Android success does not change this platform result.
+re-consent. **No new iOS device restart acceptance is claimed.** On 2026-11-13
+the user explicitly accepted this unsupported platform capability; it does not
+block task 23. Android success does not change the iOS result. A future iOS SDK
+providing the needed lifecycle can be evaluated separately.
 
 ## Farming verification
 
@@ -199,15 +208,54 @@ optional module admission, and the farming pending-start race. `tool/check.sh`
 covers all packages, shared native executor/storage checks, web and the example;
 Android JVM tests and release/R8 device checks are recorded separately.
 
-Open components (the full task is **not archived**):
+## Public optional Dart API acceptance
 
-- iOS same-process recreation and device acceptance, as described above.
-- Positive release delivery through optional heap/disk Flutter commands; their
-  native modules were tested separately, but invocation is not delivery evidence.
-- Reconcile SDK 1.6.1 official release notes when accessible; exact artifact API
-  audit and the explicitly requested methods are covered above.
-- Publish candidate packages after remaining release acceptance. Git-pinned
-  downstream integration can use the fix before pub.dev publication.
+The release/R8 `android_diagnostics_verification.dart` fixture uses the optional
+flavor and actual `Tracer` facade methods, channel and native modules. It starts
+with Dart collection off and the native runtime disabled. Before explicit start,
+heap/disk/provider-enable commands return disabled. With collection active, the
+installed provider initially denies heap capture; enabling it produces exactly
+one heap upload (8,007,710 bytes), while runDiskUsage produces one disk upload
+(803 bytes). Turning the provider off suppresses the next dump. Pause and full
+stop reject new commands; the final state is off. This checks actual uploaded
+bodies, not just `invoked`. Only sizes/features are stored, never raw dumps.
+
+The opt-in native configuration enables crash collection so the facade can use
+its normal automatic lifecycle and installs the adapter's exact heap provider.
+It does not change normal hosts, add production dependencies, or extend deferred
+cleanup to WorkManager. The original native-only fixture remains the default for
+`tracer.diagnostics=true`; the new behavior additionally requires
+`tracer.dartDiagnostics=true` and the exact Dart verification target.
+
+From the example directory, prepare the release registrant:
+
+```sh
+flutter build apk --release --config-only --target lib/android_diagnostics_verification.dart \
+  --target-platform android-arm64 --android-skip-build-dependency-validation
+```
+
+Then from the repository root:
+
+```sh
+TRACER_APP_TOKEN=task23-loopback-only packages/apptracer_flutter/example/android/gradlew \
+  -p packages/apptracer_flutter/example/android --no-configuration-cache \
+  -I "$PWD/tool/android_no_upload.init.gradle" -PskipDependencyChecks=true \
+  -Ptracer.enabled=true -Ptracer.diagnostics=true -Ptracer.dartDiagnostics=true \
+  -Ptracer.uploadMapping=false -Ptracer.uploadNativeSymbols=false \
+  -Ptarget-platform=android-arm64 -Ptarget=lib/android_diagnostics_verification.dart \
+  :app:assembleDiagnosticsRelease
+```
+
+On a disposable emulator only, install the diagnostics APK, clear only
+`ru.apptracer.flutter.apptracer_flutter_example.diagnostics`, and launch its
+MainActivity with `--es apptracerScenario dart-diagnostics`. Read external
+`files/verification/dart-diagnostics.json`: require `stage=complete`, final
+`enabled=false` and nonempty HEAP_DUMP/DISK_USAGE uploads. No adb reverse or
+external endpoint is needed; the Dart process hosts its own loopback receiver.
+
+Task 23 has no remaining implementation/acceptance blockers in the agreed scope.
+Candidate pub.dev publication is a separate release operation; farming already
+uses the verified Git revision. Existing SDK/Flutter limitations remain documented.
 
 For every future SDK upgrade, update the API table first: compare public bytecode
 and official release notes, map each runtime change to the facade and platform

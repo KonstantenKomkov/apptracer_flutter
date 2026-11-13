@@ -16,7 +16,9 @@ as pub.dev expects.
 - Recreate audited Android SDK 1.6.1 deferred sessions after successful full
   cleanup, including fresh executors, identifiers, native writer and ANR watchdog.
   Real release/R8 probes cover repeated same/different-account sessions, offline
-  purge, JVM/native/ANR recovery. iOS full restart remains an open component.
+  purge, JVM/native/ANR recovery. iOS full restart remains unsupported (accepted platform limit).
+- Verify public Dart heap/disk commands with real release/R8 sample uploads and
+  reconcile all SDK 1.6.1 announcement items.
 - Candidate versions: facade 1.2.0, Android 0.4.0, interface 0.2.1. Not published.
 
 ## [0.2.0] - 2026-10-03

@@ -10,7 +10,8 @@ request sizes/hashes. This is not Tracer console acceptance.
 `-Ptracer.diagnostics=true -Ptracer.enabled=true` adds a `diagnostics` flavor
 with its own application ID, native `DiagnosticsActivity`, host configuration,
 HeapDumps, DiskUsage and WorkManager 2.7.1. The default example and published
-Flutter packages gain no optional dependency or public Dart diagnostic API.
+Flutter packages gain no optional dependency. Task 23 subsequently adds opt-in
+public Dart commands; see [their release acceptance](task-23-collection-lifecycle.md#public-optional-dart-api-acceptance).
 The host supplies its own `HasTracerConfiguration`; crash collection is disabled
 in this experiment. The disk interesting-size threshold is lowered to one byte
 **only in this fixture**, so the small synthetic application produces samples.

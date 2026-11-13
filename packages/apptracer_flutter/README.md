@@ -690,4 +690,4 @@ MIT. SDK вендора лицензируются отдельно, см.
 до старта SDK. Deferred-очистка этих модулей не поддержана. `invoked` означает
 возврат из нативного метода, а не доставку. Используйте совместные path overrides
 фасада, Android и platform interface до подготовки нового выпуска.
-[Таблица API, настройка, проверки и открытые части №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).
+[Таблица API, настройка, проверки и принятые ограничения №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

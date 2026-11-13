@@ -1,6 +1,6 @@
 {
   "task": 23,
-  "status": "android_verified_open_ios_and_optional_components",
+  "status": "completed_with_accepted_platform_limits",
   "date": "2026-11-13",
   "baselineCommit": "287ee56bc266395a1ba2400143cfa798994b63b3",
   "candidateVersions": {
@@ -201,14 +201,10 @@
     "jvmExecutorAndFiles": "passed",
     "farmingTests": 2680,
     "farmingSkipped": 3,
-    "farmingFullAnalysis": "passed"
+    "farmingFullAnalysis": "passed",
+    "optionalHostJunit": 5
   },
-  "remaining": [
-    "iOS same-process writer/task retirement and real-device acceptance",
-    "Positive device delivery through optional heap/disk Flutter commands",
-    "Official SDK 1.6.1 release-note reconciliation",
-    "pub.dev publication"
-  ],
+  "remaining": [],
   "historicalBaseline": {
     "result": {
       "scenario": "public-pause",
@@ -408,6 +404,85 @@
       "fresh session/device identifiers and legacy preference purge",
       "receipt records off window before explicit new start"
     ],
-    "publishDryRun": "not release-ready: candidate dependencies not yet published, local overrides; no publication attempted"
+    "publishDryRun": "not release-ready: candidate dependencies not yet published, local overrides; no publication attempted",
+    "finalOptionalReview": "Passed: explicit build/target opt-in, unchanged native-only defaults, no raw dump persistence, public facade path, false provider and off gates; 5 existing host tests and 35 adapter tests pass"
+  },
+  "acceptedLimitations": [
+    "iOS 1.5.2 same-process full recreation is unsupported; accepted by user 2026-11-13, not a blocker for task 23",
+    "Optional modules remain outside managed deferred purge; host opt-in only",
+    "Invocation is not delivery; heap capture may suspend the VM",
+    "pub.dev publication is a separate release step; farming uses pinned Git candidate"
+  ],
+  "releaseNotes": {
+    "url": "https://t.me/tracer_changelog/185",
+    "checked": "2026-11-13",
+    "reconciled": [
+      "runtime enable versus build disable",
+      "manual heap/disk worker constraints",
+      "lazy heap enabled provider",
+      "buildUuid with uploadMapping=false",
+      "configuration cache",
+      "AnalyticsEnabledApplicationVariant mapping integration"
+    ],
+    "existingGradleEvidence": "android-sdk-1.6.1-gradle.md",
+    "note": "Native cache verification passes; existing full Flutter assemble cache limitation remains separately documented"
+  },
+  "optionalDartDiagnostics": {
+    "deviceReceipt": {
+      "stage": "complete",
+      "timestamp": "2026-11-13T12:31:23.296489Z",
+      "pid": 3988,
+      "enabled": false,
+      "results": {
+        "heapBeforeStart": "disabled/collection_disabled",
+        "diskBeforeStart": "disabled/collection_disabled",
+        "providerBeforeStart": "disabled/collection_disabled",
+        "heapDefaultOff": "invoked/null",
+        "providerTrue": "invoked/null",
+        "disk": "invoked/null",
+        "heap": "invoked/null",
+        "providerFalse": "invoked/null",
+        "heapProviderOff": "invoked/null",
+        "heapPaused": "disabled/collection_disabled",
+        "diskPaused": "disabled/collection_disabled",
+        "heapStopped": "disabled/collection_disabled",
+        "diskStopped": "disabled/collection_disabled",
+        "providerStopped": "disabled/collection_disabled"
+      },
+      "requests": [
+        {
+          "path": "/api/sample/initUpload",
+          "feature": "DISK_USAGE",
+          "bytes": 866
+        },
+        {
+          "path": "/api/sample/upload",
+          "bytes": 803,
+          "feature": "DISK_USAGE"
+        },
+        {
+          "path": "/api/sample/initUpload",
+          "feature": "HEAP_DUMP",
+          "bytes": 883
+        },
+        {
+          "path": "/api/sample/upload",
+          "bytes": 8007710,
+          "feature": "HEAP_DUMP"
+        }
+      ]
+    },
+    "apkSha256": "3ac17612d7fc5ceacea4699d6ab86d6e12477f4a64d62f177f2d7b9e7bd71e7d",
+    "mappingSha256": "38c3db8dd1c867538ab0b5535affb79290201e92dfb99a4d50af77f4361a3d92",
+    "transport": "loopback HTTP; synthetic token; raw bodies not retained",
+    "entrypoint": "packages/apptracer_flutter/example/lib/android_diagnostics_verification.dart",
+    "buildProperties": {
+      "tracer.enabled": true,
+      "tracer.diagnostics": true,
+      "tracer.dartDiagnostics": true,
+      "tracer.deferred": false,
+      "tracer.uploadMapping": false,
+      "tracer.uploadNativeSymbols": false
+    }
   }
 }

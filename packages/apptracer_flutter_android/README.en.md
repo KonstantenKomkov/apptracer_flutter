@@ -139,4 +139,4 @@ be installed before SDK startup. Managed deferred cleanup does not cover these
 modules. `invoked` means the native method returned, not successful delivery.
 Use the facade, Android and platform-interface path overrides together until a
 new release is prepared.
-[API coverage, setup, verification and open task 23 work](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).
+[API coverage, setup, verification and accepted task 23 limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

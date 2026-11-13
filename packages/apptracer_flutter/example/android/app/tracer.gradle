@@ -68,6 +68,7 @@ android {
     }
 
     defaultConfig {
+        resValue 'bool', 'apptracer_verification_dart_diagnostics', booleanSetting('tracer.dartDiagnostics', false).toString()
         resValue 'string', 'apptracer_verification_api_url', verificationApiUrl
         resValue 'bool', 'apptracer_verification_tombstones', verificationTombstones.toString()
         resValue 'bool', 'apptracer_verification_anr_snapshots', booleanSetting('tracer.verificationAnrSnapshots', false).toString()
