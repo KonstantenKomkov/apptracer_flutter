@@ -1,11 +1,11 @@
 # Publishing
 
-## Android SDK 1.6.1 — release candidates, 2026-11-13
+## Android SDK 1.6.1 — published, 2026-11-13
 
-Publish only the changed packages, in this order:
+Published from `6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0` (`v1.1.0`), in order:
 
-1. `apptracer_flutter_android 0.3.0`
-2. `apptracer_flutter 1.1.0` (requires Android `^0.3.0`)
+1. [apptracer_flutter_android 0.3.0](https://pub.dev/packages/apptracer_flutter_android/versions/0.3.0)
+2. [apptracer_flutter 1.1.0](https://pub.dev/packages/apptracer_flutter/versions/1.1.0) (requires Android `^0.3.0`)
 
 The Android adapter adds compatible runtime resume support on host SDK 1.6.1;
 its pre-1.0 minor version advances accordingly. The stable facade advances its
@@ -43,8 +43,30 @@ Local preparation passed on Flutter 3.47.4 / Dart 3.13.3 / JDK 21.0.10:
   this is a pre-publication check only. Remove the override and repeat against
   hosted Android 0.3.0 before publishing the facade.
 
-Current execution evidence is recorded under `build/android-1.6.1-release/`.
-This candidate section alone does not assert successful publication.
+Both final exports resolved hosted dependencies without overrides and passed
+publication dry-runs with **zero warnings and zero hints**. The facade was
+validated again after Android became available; the temporary preparation
+hint above was eliminated. Pub.dev index propagation briefly delayed resolution;
+no dependency constraints were weakened to bypass it.
+
+[Release CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43387799399)
+passed all 11 jobs on the exact published source commit. A newly generated
+Android app then resolved facade 1.1.0 and Android 0.3.0 entirely from pub.dev,
+without path/Git dependencies or overrides. Analysis and an arm64 release build
+passed on the audited toolchain, using Maven Central without VK Nexus, placeholder
+app token and both uploads disabled. This consumer check proves installation and
+compilation; the earlier device/live acceptance retains its separate scope.
+
+Downloaded archive hashes match pub.dev metadata; every packaged file matches
+the release commit:
+
+| Package | Files | Archive SHA-256 |
+|---|---:|---|
+| `apptracer_flutter_android 0.3.0` | 39 | `f09b0a034ca7ffce74225502cbdaa4aab668f66f0c78a05e9ca4fa73e2aff222` |
+| `apptracer_flutter 1.1.0` | 118 | `e6e269afe227ffdf145451f551259a92bdc9ed451219e6cd094443bd435f4e01` |
+
+[Machine-readable release receipt](android-sdk-1.6.1-release.json).
+Full local logs, exports and consumer evidence: `build/android-1.6.1-release/`.
 
 ## Before the first release — settled
 

@@ -9,7 +9,10 @@ wrong. Exact-build local Retrace is the workaround. The external defect remains
 open and does not block this release. Full Flutter configuration cache remains
 unsupported on the audited toolchain, including without Tracer. Optional
 heap/disk diagnostics retain VM-pause and offline-loss limits.
-Release preparation/publication is tracked in [publishing.md](publishing.md).
+Android adapter **0.3.0** and facade **1.1.0** are published. All 11 release CI
+jobs passed; a fresh hosted Android consumer built without overrides. Archive
+hashes and every packaged file match the release commit.
+[Publication record](publishing.md#android-sdk-161--published-2026-11-13).
 Historical evidence below retains its original SDK versions and scope.
 
 An honest ledger of what has actually been exercised, so that nothing here is

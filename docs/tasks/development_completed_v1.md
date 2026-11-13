@@ -952,3 +952,46 @@ automatic legacy stop не подтверждает purge. Опциональн�
 **Ревью:** сверены точные APK/mapping/buildUuid и результаты протокола;
 машиночитаемый итог сохраняет прежний статус и дату нового решения. Исправление
 Kotlin-символизации и фактическая публикация не объявлены выполненными.
+
+
+<a id="task-android-22"></a>
+
+## Android П. 22. Документация, подготовка и выпуск SDK 1.6.1
+
+**Завершено 13 ноября 2026.** Опубликованы `apptracer_flutter_android 0.3.0`
+и `apptracer_flutter 1.1.0` из `6db9e2f`, тег выпуска `v1.1.0`.
+[Запись публикации](../publishing.md#android-sdk-161--published-2026-11-13) и
+[машиночитаемая квитанция](../android-sdk-1.6.1-release.json).
+
+**Изменения:** RU/EN README фасада и Android-пакета, пример, status, platform
+matrix, lifecycle и symbolication согласованы с Maven Central и SDK/BOM/Gradle
+plugin 1.6.1. Описаны runtime pause/enable, неизменность build-time disable,
+новый процесс после полного stop/clear, optional runNow/provideEnabled и
+раздельные uploadMapping/uploadNativeSymbols. Обновлены версии/changelog и
+минимальная Android-зависимость фасада. Исторический аудит 1.5.2 сохранён.
+
+**Принятые ограничения:** внешний дефект Kotlin file/line явно описан в обоих
+языках и changelog; точный mapping сохраняется для локального Retrace. Полный
+Flutter configuration cache и ограничения optional diagnostics также сохранены.
+Новые гарантии native/Dart-символизации или physical-device acceptance не заявлены.
+
+**Проверки:** 137 Dart-тестов, один widget-тест примера, 31 Android JUnit,
+анализ/форматирование и clean release/R8 с SDK и без него. Чистый checkout
+прошёл native cache reuse/invalidation и распознал известное ограничение
+Flutter assemble. Исправлены два сбоя предыдущего CI: генерация отсутствующего
+Gradle wrapper до native fixture и форматирование verification-примера.
+Релизный CI прошёл все 11 задач.
+
+**Внешний consumer:** сначала проверен изолированный Android-кандидат с hosted
+интерфейсом без overrides; после публикации новое приложение разрешило фасад
+1.1.0 и Android 0.3.0 только из pub.dev, без path/Git/overrides. Анализ и
+arm64 release-сборка прошли на Flutter 3.47.4 / JDK 21.0.10 / AGP 8.9.1 /
+Kotlin 2.1.0 / Gradle 8.12, без VK Nexus. Uploads выключены, использован
+placeholder app token; новых live-отчётов этот consumer не отправлял.
+
+**Публикация и ревью:** оба финальных dry-run прошли без предупреждений и hints.
+Временный override фасада использовался только до публикации Android и удалён
+перед окончательной проверкой. В архивах нет overrides, env-файлов и mapping;
+SHA-256 совпадают с метаданными pub.dev, все 39/118 файлов пакетов побайтно
+совпадают с релизным коммитом. Проверены версия зависимостей, паритет RU/EN,
+границы утверждений, ссылки и отсутствие изменений runtime-кода в подготовке.

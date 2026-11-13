@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-13",
+  "sourceCommit": "6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0",
+  "releaseTag": "v1.1.0",
+  "published": [
+    {
+      "package": "apptracer_flutter_android",
+      "version": "0.3.0",
+      "sourceCommit": "6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0",
+      "archiveSha256": "f09b0a034ca7ffce74225502cbdaa4aab668f66f0c78a05e9ca4fa73e2aff222",
+      "matchedFiles": 39,
+      "pubdevPublishedAt": "2026-11-13T07:48:48.441555Z",
+      "verified": true
+    },
+    {
+      "package": "apptracer_flutter",
+      "version": "1.1.0",
+      "sourceCommit": "6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0",
+      "archiveSha256": "e6e269afe227ffdf145451f551259a92bdc9ed451219e6cd094443bd435f4e01",
+      "matchedFiles": 118,
+      "pubdevPublishedAt": "2026-11-13T07:52:56.343319Z",
+      "verified": true
+    }
+  ],
+  "ci": {
+    "id": 43387799399,
+    "head_sha": "6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0",
+    "html_url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43387799399",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "localChecks": {
+    "dartTests": 137,
+    "exampleWidgetTests": 1,
+    "androidJUnitTests": 31,
+    "androidR8WithSdk": "passed",
+    "androidR8WithoutSdk": "passed",
+    "freshCheckoutConfigurationCache": "native store/reuse/invalidation passed; expected full Flutter limitation recorded",
+    "finalDryRunWarnings": {
+      "apptracer_flutter_android": 0,
+      "apptracer_flutter": 0
+    },
+    "finalDryRunHints": {
+      "apptracer_flutter_android": 0,
+      "apptracer_flutter": 0
+    }
+  },
+  "hostedConsumer": {
+    "facade": "1.1.0",
+    "android": "0.3.0",
+    "allDependenciesHosted": true,
+    "overrides": false,
+    "vkRepository": false,
+    "flutter": "3.47.4",
+    "dart": "3.13.3",
+    "jdk": "21.0.10",
+    "agp": "8.9.1",
+    "kotlin": "2.1.0",
+    "gradle": "8.12",
+    "target": "android-arm64 release",
+    "analysis": "passed",
+    "build": "passed",
+    "apkSha256": "8f77d02b4ed9729820298e626f29d2a49c51f31fbe274ef231bb01b1fb2759b1",
+    "scope": "dependency resolution and release compilation; no new device/live claim"
+  },
+  "knownLimitations": [
+    "Tracer Kotlin console source file/line incorrect; local exact-build R8 Retrace works.",
+    "Full Flutter assemble configuration cache remains unsupported on audited toolchain.",
+    "Full stop/clear requires new process; build-time disable cannot be undone at runtime.",
+    "Optional heap dumps can pause VM/UI; offline samples may be lost without retry."
+  ]
+}
