@@ -43,6 +43,8 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         SyntheticIssueKey,
         TracerBreadcrumb,
         TracerEvent,
+        TracerDiagnosticResult,
+        TracerDiagnosticState,
         TracerOptions,
         TracerNativeInitialization,
         TracerCollectionState,
@@ -164,6 +166,34 @@ abstract final class Tracer {
   /// Use [startCollection] to resume without bootstrapping the app again.
   /// Native restart and cleanup capabilities depend on the platform.
   static Future<void> stopCollection() => _client.stop();
+
+  /// Pauses a live session without deleting its reports, keys or user ID.
+  /// Android SDK 1.6.1 only; other backends return unsupported.
+  /// Does not cancel uploads. Use stopAndClearCollection for logout.
+  static Future<TracerCollectionResult> pauseCollection() =>
+      _client.pauseCollection();
+
+  /// Resumes a pause in the same authorized session, without initialization.
+  /// Cannot undo stop/clear, cleanup errors or build-time disable.
+  static Future<TracerCollectionResult> resumeCollection() =>
+      _client.resumeCollection();
+
+  /// Invokes Android SDK 1.6.1 HeapDumps.runNow off the platform thread.
+  /// Requires an explicitly installed/initialized optional module in automatic
+  /// mode. Heap capture can pause the VM; invoked does not confirm delivery.
+  static Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
+      _client.runHeapDump(tag: tag);
+
+  /// Requests an unconstrained one-time Android disk usage sample.
+  /// Requires the optional module; does not install it or wait for delivery.
+  static Future<TracerDiagnosticResult> runDiskUsage() =>
+      _client.runDiskUsage();
+
+  /// Updates the native provider explicitly installed by the Android host via
+  /// TracerDiagnostics.heapDumpEnabledProvider(). Defaults to false; cannot
+  /// enable a disabled SDK. No Dart callback is invoked from a crashing thread.
+  static Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
+      _client.setHeapDumpEnabled(enabled);
 
   /// Explicitly starts collection after the application's decision.
   /// Does not invoke appRunner or create another zone.

@@ -70,6 +70,7 @@ android {
     defaultConfig {
         resValue 'string', 'apptracer_verification_api_url', verificationApiUrl
         resValue 'bool', 'apptracer_verification_tombstones', verificationTombstones.toString()
+        resValue 'bool', 'apptracer_verification_anr_snapshots', booleanSetting('tracer.verificationAnrSnapshots', false).toString()
         if (verificationApiUrl) {
             manifestPlaceholders.put('apptracerVerificationCleartext', 'true')
         }

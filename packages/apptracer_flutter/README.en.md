@@ -149,8 +149,9 @@ Four more things that are easy to trip over:
   replaces the package's settings whole. To keep the rate limit, subclass
   `ru.apptracer.flutter.TracerApplication` and add yours to
   `super.tracerConfiguration`.
-* `Tracer.stopCollection()` calls the SDK's `Tracer.disable()`, which cannot be
-  undone before the process restarts. That is deliberate; see
+* `Tracer.stopCollection()` fully stops collection. Use `pauseCollection()` /
+  `resumeCollection()` for a temporary pause. Android adapter 0.4.0 candidate
+  supports a fresh authorized session after deferred cleanup on SDK 1.6.1; see
   [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 * `TracerOptions.environment` is ignored on Android too — the SDK takes it from
   the Gradle plugin, defaulting to the build variant name. Set it in the
@@ -195,9 +196,10 @@ Nexus is not required for this version. Perform a clean release build. Older
 repository configuration.
 
 - `startCollection` can resume an initialized SDK 1.6.1 after native
-  `Tracer.disable()`. It cannot undo build-time disable or recreate a runtime
-  retired by full `stopCollection`/`stopAndClearCollection`. Full stop requires
-  a new process; build-time disable requires a build configuration change.
+  `Tracer.disable()`. Android adapter 0.4.0 candidate also recreates a fresh
+  session after successful full deferred cleanup on SDK 1.6.1. SDK 1.4.0/1.5.2
+  and automatic initialization still require a new process after full stop.
+  Build-time disable requires a build configuration change.
   Observing state never implicitly resumes collection.
 - The Gradle DSL flags are `uploadMapping` and `uploadNativeSymbols`. With both
   `false`, only `appToken` is required; either upload requires `pluginToken`.
@@ -212,8 +214,8 @@ repository configuration.
   without Tracer. Use Gradle `--no-configuration-cache` or set
   `org.gradle.configuration-cache=false` in `gradle.properties`.
 - `HeapDumps.runNow`, `DiskUsage.runNow` and lazy `provideEnabled` belong to
-  optional native modules. They are not exposed by the Dart API or enabled by
-  default. Heap dumps can pause the VM/UI even when called from a background
+  optional native modules. The published version does not expose them through
+  Dart or enable them by default. Heap dumps can pause the VM/UI even when called from a background
   thread; offline samples can be deleted without retry. Their WorkManager
   lifecycle is outside the supported deferred cleanup contract.
 - Enabling both the native module and experimental tombstones can produce a
@@ -696,3 +698,19 @@ vendor confirmed as much — so decoding stays a manual step. Details in
 
 MIT. The vendor SDKs are licensed separately; see
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
+
+## New runtime APIs — unreleased
+
+The workspace provides `Tracer.pauseCollection()` / `resumeCollection()` for
+an existing authorized Android SDK 1.6.1 session. Pause retains data and does
+not cancel uploads. Logout still requires `stopAndClearCollection`; restarting
+after successful cleanup recreates collection on Android 1.6.1 in deferred
+mode. iOS 1.5.2 still returns `restartRequired`.
+
+`runHeapDump(tag: ...)`, `runDiskUsage()` and `setHeapDumpEnabled(bool)` require
+explicit host installation of the optional modules; the heap provider must also
+be installed before SDK startup. Managed deferred cleanup does not cover these
+modules. `invoked` means the native method returned, not successful delivery.
+Use the facade, Android and platform-interface path overrides together until a
+new release is prepared.
+[API coverage, setup, verification and open task 23 work](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

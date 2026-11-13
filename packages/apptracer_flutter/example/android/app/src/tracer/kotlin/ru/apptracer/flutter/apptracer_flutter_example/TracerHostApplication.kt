@@ -49,6 +49,7 @@ class TracerHostApplication : Application(), HasTracerConfiguration {
             },
             CrashReportConfiguration.build {
                 setSendAnr(true)
+                setExperimentalAnrSnapshotsEnabled(resources.getBoolean(R.bool.apptracer_verification_anr_snapshots))
                 setExperimentalTombstoneEnabled(resources.getBoolean(R.bool.apptracer_verification_tombstones))
                 // Optional: setExperimentalAnrSnapshotsEnabled(true).
                 //

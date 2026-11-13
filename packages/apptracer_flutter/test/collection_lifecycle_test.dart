@@ -10,6 +10,9 @@ class LifecyclePlatform extends FakeTracerPlatform {
   Completer<void>? stopping;
   Completer<void>? observing;
   bool nativeDisabled = false;
+  Completer<void>? resuming;
+  int pauseCalls = 0;
+  int resumeCalls = 0;
   int purgeCalls = 0;
   final List<String> operations = [];
 
@@ -22,6 +25,21 @@ class LifecyclePlatform extends FakeTracerPlatform {
     return TracerCollectionResult(isEnabled
         ? TracerCollectionState.enabled
         : TracerCollectionState.error);
+  }
+
+  @override
+  Future<TracerCollectionResult> pauseCollection() async {
+    pauseCalls++;
+    await super.stopCollection();
+    return const TracerCollectionResult(TracerCollectionState.disabled);
+  }
+
+  @override
+  Future<TracerCollectionResult> resumeCollection() async {
+    resumeCalls++;
+    await resuming?.future;
+    await super.initialize(const TracerOptions());
+    return const TracerCollectionResult(TracerCollectionState.enabled);
   }
 
   @override
@@ -64,6 +82,87 @@ void main() {
     await client.recordLog('private log');
     await client.recordError(StateError('private error'), StackTrace.current);
   }
+
+  test('pause rejects new events and resume preserves the authorized context',
+      () async {
+    await client.startCollection(const TracerOptions());
+    await emit();
+    final keys = client.customKeys;
+    final breadcrumbs = client.breadcrumbs;
+    final events = platform.events.length;
+    await client.pauseCollection();
+    expect(client.isEnabled, isFalse);
+    expect(client.hasInstalledHandlers, isFalse);
+    await emit();
+    expect(platform.events.length, events);
+    expect(client.customKeys, keys);
+    expect(client.breadcrumbs, breadcrumbs);
+    expect((await client.resumeCollection()).isEnabled, isTrue);
+    expect(client.hasInstalledHandlers, isTrue);
+    expect(client.customKeys, keys);
+    expect(client.breadcrumbs, breadcrumbs);
+    expect(platform.purgeCalls, 0);
+    await client.stop();
+  });
+
+  test('resume never authorizes collection before start or after clear',
+      () async {
+    expect((await client.resumeCollection()).reason, 'no_live_pause');
+    await client.startCollection(const TracerOptions());
+    await client.pauseCollection();
+    await client.stopAndClearCollection();
+    expect((await client.resumeCollection()).reason, 'no_live_pause');
+    expect(platform.resumeCalls, 0);
+    expect(client.isEnabled, isFalse);
+    expect(client.customKeys, isEmpty);
+  });
+
+  test('late resume cannot reinstall handlers after revocation', () async {
+    await client.startCollection(const TracerOptions());
+    await client.pauseCollection();
+    platform.resuming = Completer<void>();
+    final resumed = client.resumeCollection();
+    await Future<void>.delayed(Duration.zero);
+    final stopped = client.stopAndClearCollection();
+    platform.resuming!.complete();
+    expect((await resumed).reason, 'superseded');
+    await stopped;
+    expect(client.isEnabled, isFalse);
+    expect(client.hasInstalledHandlers, isFalse);
+  });
+
+  test('pause supersedes a queued start instead of starting native collection',
+      () async {
+    final started = client.startCollection(const TracerOptions());
+    await client.pauseCollection();
+    expect((await started).reason, 'superseded');
+    expect((await client.resumeCollection()).reason, 'no_live_pause');
+    expect(platform.initializeCalls, 0);
+  });
+
+  test('older backends explicitly reject pause, resume and diagnostics',
+      () async {
+    final older = FakeTracerPlatform();
+    expect((await older.pauseCollection()).state,
+        TracerCollectionState.unsupported);
+    expect((await older.resumeCollection()).state,
+        TracerCollectionState.unsupported);
+    expect((await older.runHeapDump(tag: 'test')).state,
+        TracerDiagnosticState.unsupported);
+    expect(
+        (await older.runDiskUsage()).state, TracerDiagnosticState.unsupported);
+    expect((await older.setHeapDumpEnabled(true)).state,
+        TracerDiagnosticState.unsupported);
+  });
+
+  test('optional diagnostics cannot authorize collection', () async {
+    expect((await client.runHeapDump(tag: 'test')).state,
+        TracerDiagnosticState.disabled);
+    expect((await client.runDiskUsage()).state, TracerDiagnosticState.disabled);
+    expect((await client.setHeapDumpEnabled(true)).state,
+        TracerDiagnosticState.disabled);
+    expect(client.isEnabled, isFalse);
+  });
 
   test('disabled collection retains no events, keys, breadcrumbs or user',
       () async {

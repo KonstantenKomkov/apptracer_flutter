@@ -34,6 +34,8 @@ public final class Sdk140ConsentRuntime {
     private static String state = "disabled";
     private static String reason;
     private static boolean irreversible;
+    private static boolean restartReady;
+    private static boolean runtimeRecreatable;
     private static int cleanupsPending;
     private static Thread.UncaughtExceptionHandler previousHandler;
     private static Thread.UncaughtExceptionHandler sdkHandler;
@@ -93,6 +95,16 @@ public final class Sdk140ConsentRuntime {
         }
     }
 
+    /** Vendor runtime flag only: queued/in-flight uploads are not cancelled. */
+    public static synchronized Map<String, String> pauseRuntime() {
+        if (!supportsEnable()) return result("unsupported", "runtime_pause_requires_sdk_1_6_1");
+        if (cleanupsPending != 0 || (host != null && !"enabled".equals(state))) return snapshot();
+        Map<String, String> current = automaticSnapshot();
+        if (!"enabled".equals(current.get("state"))) return current;
+        Tracer.disable();
+        return automaticSnapshot();
+    }
+
     private static boolean supportsEnable() {
         try {
             return "1.6.1".equals(Class.forName("ru.ok.tracer.BuildConfig")
@@ -117,7 +129,8 @@ public final class Sdk140ConsentRuntime {
     public static synchronized Map<String, String> start(Context context, boolean preservePreviousReports) {
         if (cleanupsPending != 0) return snapshot();
         if ("enabled".equals(state)) return resumeRuntime();
-        if (irreversible) return snapshot();
+        final boolean restarting = irreversible && restartReady && supportsEnable();
+        if (irreversible && !restarting) return snapshot();
         try {
             validateVersion();
             Application application = (Application) context.getApplicationContext();
@@ -128,7 +141,7 @@ public final class Sdk140ConsentRuntime {
                 return result("unsupported", "deferred_secondary_process_unsupported");
             }
             validateInitializers(application);
-            try {
+            if (!restarting) try {
                 Tracer.INSTANCE.getRuntimeConfigs();
                 return result("error", "sdk_already_initialized");
             } catch (IllegalStateException notInitialized) {
@@ -144,9 +157,18 @@ public final class Sdk140ConsentRuntime {
             if (!marker.edit().putBoolean("purge_required", false).commit()) {
                 return setResult("error", "purge_marker_write_failed");
             }
-            sdkContext = new ConsentTracerApplication(application);
+            if (restarting) {
+                restartReady = false;
+                runtimeRecreatable = false;
+                Sdk161SessionRuntime.prepare();
+                fatalHandler = null;
+                sdkHandler = null;
+            }
+            runtimeRecreatable = false;
+            sdkContext = new ConsentTracerApplication(application, restarting);
             previousHandler = Thread.getDefaultUncaughtExceptionHandler();
             irreversible = true; // SDK initialization itself is one-shot.
+            if (restarting) Tracer.class.getMethod("enable").invoke(null);
             TracerStartup.init(sdkContext); // preserves vendor dependency ordering
             if (Thread.getDefaultUncaughtExceptionHandler() != previousHandler) {
                 fatalHandler = Sdk140FatalHandler.attach(previousHandler);
@@ -160,6 +182,7 @@ public final class Sdk140ConsentRuntime {
                 stopAndClear(application, ignored -> { });
                 return result("error", "sdk_collection_disabled");
             }
+            runtimeRecreatable = true;
             return setResult("enabled", null);
         } catch (Throwable failure) {
             if (sdkContext != null) {
@@ -201,6 +224,7 @@ public final class Sdk140ConsentRuntime {
 
     /** Called on the platform thread. Revocation precedes all asynchronous work. */
     public static synchronized void stopAndClear(Context context, Completion completion) {
+        restartReady = false;
         Application application = host != null ? host : (Application) context.getApplicationContext();
         try {
             validateVersion();
@@ -273,21 +297,27 @@ public final class Sdk140ConsentRuntime {
             // A fatal/native callback that was already running may outlive this
             // purge or the process itself. Its files must not be preserved by a
             // later preservePreviousReports request after withdrawal.
-            synchronized (Sdk140ConsentRuntime.class) {
-                reply = setResult(irreversible ? "restartRequired" : "disabled",
-                        irreversible ? "native_runtime_retired" : null);
-            }
+            boolean retired = irreversible && (!supportsEnable() || !runtimeRecreatable);
+            reply = result(retired ? "restartRequired" : "disabled",
+                    retired ? "native_runtime_retired" : null);
         } catch (Throwable failure) {
             synchronized (Sdk140ConsentRuntime.class) {
                 reply = setResult("error", "native_stop_or_cleanup_failed");
             }
         }
-        synchronized (Sdk140ConsentRuntime.class) {
-            cleanupsPending--;
-            if (cleanupsPending != 0) setResult("disabled", "cleanup_pending");
-        }
         final Map<String, String> delivered = reply;
-        new Handler(Looper.getMainLooper()).post(() -> completion.complete(delivered));
+        // Keep starts blocked until all already posted main callbacks have
+        // crossed this barrier with the old executors still revoked.
+        new Handler(Looper.getMainLooper()).post(() -> {
+            synchronized (Sdk140ConsentRuntime.class) {
+                cleanupsPending--;
+                if (cleanupsPending == 0) {
+                    restartReady = "disabled".equals(delivered.get("state")) && sdkContext != null && supportsEnable();
+                    setResult(delivered.get("state"), delivered.get("reason"));
+                } else setResult("disabled", "cleanup_pending");
+            }
+            completion.complete(delivered);
+        });
     }
 
     private static void stopWatchdogs() throws Exception {
@@ -322,6 +352,13 @@ public final class Sdk140ConsentRuntime {
         catch (ClassNotFoundException javaOnly) { return; }
         Object writer = type.getMethod("getInstance").invoke(null);
         type.getMethod("uninstallMinidumpWriter").invoke(writer);
+        if (supportsEnable()) {
+            // 0.1.41-android leaves this Java flag true after uninstall. Do not
+            // uninstall a second time when 1.6.1 installs the next session.
+            Field installed = type.getDeclaredField("installedMinidumpWriter");
+            installed.setAccessible(true);
+            installed.setBoolean(writer, false);
+        }
     }
 
     private static void validateVersion() throws Exception {
@@ -353,6 +390,10 @@ public final class Sdk140ConsentRuntime {
         // stable device identifier under files/tracer. Both outlive one process.
         DiagnosticFiles.clear(root(application));
         DiagnosticFiles.clear(new File(application.getFilesDir(), "tracer"));
+        if (supportsEnable() && !application.getSharedPreferences("tracer", Context.MODE_PRIVATE)
+                .edit().remove("device_id").commit()) {
+            throw new IllegalStateException("legacy device identifier cleanup failed");
+        }
     }
 
     private static SharedPreferences marker(Application application) {

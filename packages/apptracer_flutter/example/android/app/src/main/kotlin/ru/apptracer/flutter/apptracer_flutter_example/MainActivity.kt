@@ -45,6 +45,42 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "collectionRuntimeSnapshot" -> {
+                        val writer = Class.forName("ru.ok.tracer.minidump.Minidump").getMethod("getInstance").invoke(null)
+                        val installed = writer.javaClass.getDeclaredField("installedMinidumpWriter").apply { isAccessible = true }.getBoolean(writer)
+                        result.success(mapOf(
+                            "pid" to Process.myPid(),
+                            "nativeInstalled" to installed,
+                            "watchdogs" to Thread.getAllStackTraces().keys.count { it.javaClass.name == "ru.ok.tracer.crash.report.AnrWatchdogThread" }
+                        ))
+                    }
+                    "probeRetiredSdkStartup" -> {
+                        // Explicit reproducer after managed stop/clear. Never
+                        // reset vendor singletons or enable the retired runtime.
+                        val type = Class.forName("ru.ok.tracer.Tracer")
+                        val tracer = type.getField("INSTANCE").get(null)
+                        val context = type.getMethod("getContext").invoke(tracer) as android.content.Context
+                        val handler = Thread.getDefaultUncaughtExceptionHandler()
+                        Class.forName("ru.ok.tracer.startup.TracerStartup")
+                            .getMethod("init", android.content.Context::class.java).invoke(null, context)
+                        val initializedAgain = try {
+                            type.getMethod("init\$tracer_commons_release", android.content.Context::class.java)
+                                .invoke(tracer, context)
+                            "returned"
+                        } catch (failure: java.lang.reflect.InvocationTargetException) {
+                            failure.targetException.message ?: failure.targetException.javaClass.simpleName
+                        }
+                        val runtime = Class.forName("ru.apptracer.flutter.Sdk140ConsentRuntime")
+                        val sdkContext = runtime.getDeclaredField("sdkContext").apply { isAccessible = true }.get(null)
+                        val io = sdkContext.javaClass.getDeclaredField("io").apply { isAccessible = true }.get(sdkContext)
+                        val open = io.javaClass.getDeclaredMethod("isOpen").apply { isAccessible = true }.invoke(io)
+                        result.success(mapOf(
+                            "coreReinitialize" to initializedAgain,
+                            "ioOpenAfterStartup" to open,
+                            "handlerUnchanged" to (handler === Thread.getDefaultUncaughtExceptionHandler()),
+                            "disabled" to type.getMethod("isDisabled").invoke(null)
+                        ))
+                    }
                     "disableSdkForVerification" -> {
                         // Simulate a host's ordinary runtime pause, without
                         // invoking the plugin's consent withdrawal/cleanup.

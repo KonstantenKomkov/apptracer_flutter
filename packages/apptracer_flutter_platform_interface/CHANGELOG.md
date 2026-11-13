@@ -7,7 +7,17 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## Unreleased
+
+- Add explicit runtime pause/resume and optional heap/disk diagnostic commands,
+  with unsupported defaults for other backends and race-safe Dart revocation.
+- Android SDK 1.6.1 heap decisions use an opt-in synchronous native provider;
+  no optional modules are installed automatically. Invocation is not delivery.
+- Recreate audited Android SDK 1.6.1 deferred sessions after successful full
+  cleanup, including fresh executors, identifiers, native writer and ANR watchdog.
+  Real release/R8 probes cover repeated same/different-account sessions, offline
+  purge, JVM/native/ANR recovery. iOS full restart remains an open component.
+- Candidate versions: facade 1.2.0, Android 0.4.0, interface 0.2.1. Not published.
 
 ## [0.2.0] - 2026-10-03
 

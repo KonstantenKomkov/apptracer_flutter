@@ -1,6 +1,16 @@
 # Native collection lifecycle: verified implementation
 
-Android 1.6.1 update (2026-11-13): see [the SDK audit](android-sdk-1.6.1.md) and
+Task 23 candidate update (2026-11-13): Android adapter 0.4.0 recreates a fresh
+SDK 1.6.1 deferred crash session after successful full cleanup and new explicit
+permission. Release/R8 verifies repeated same/different-account sessions,
+offline purge and JVM/native/ANR collectors. Public pause/resume retains the
+current session and is separate from logout. iOS, automatic Android startup
+and SDK 1.4.0/1.5.2 still require a new process after active stop. See
+[the task 23 protocol](task-23-collection-lifecycle.md) for evidence, migration,
+private-SDK audit constraints and remaining components. Candidates are not yet
+published; historical acceptance below describes earlier adapter versions.
+
+Earlier published Android 0.3.0 update (2026-11-13): see [the SDK audit](android-sdk-1.6.1.md) and
 [release acceptance](android-sdk-1.6.1-acceptance.md). The adapter accepts audited
 1.4.0/1.5.2/1.6.1 hosts. On 1.6.1, explicit `startCollection` can resume a runtime
 paused only by native `Tracer.disable()`, provided it is already initialized

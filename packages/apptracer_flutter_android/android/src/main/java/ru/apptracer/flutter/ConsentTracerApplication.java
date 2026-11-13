@@ -25,6 +25,10 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
     private boolean collecting = true;
 
     ConsentTracerApplication(Application host) {
+        this(host, false);
+    }
+
+    ConsentTracerApplication(Application host, boolean freshSession) {
         this.host = host;
         attachBaseContext(host);
         List<TracerConfiguration> supplied = host instanceof HasTracerConfiguration
@@ -53,7 +57,7 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
                 .provideOverrideAppToken(original::getOverrideAppToken)
                 .setDebugUpload(core.getDebugUpload())
                 .setExperimentalMaxKeysCount(core.getMaxKeysCount$tracer_commons_release())
-                .setInitialKeys(core.getInitialKeys$tracer_commons_release())
+                .setInitialKeys(freshSession ? Collections.emptyMap() : core.getInitialKeys$tracer_commons_release())
                 .setTrafficStatsTag(core.getTrafficStatsTag$tracer_commons_release())
                 .setIoExecutor(io)
                 .setBgExecutor(background);

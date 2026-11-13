@@ -48,6 +48,52 @@ class RuntimeEnableTest {
     }
 
     @Test
+    fun `public pause returns disabled and resumes without initializing`() {
+        assertEquals("disabled", Sdk140ConsentRuntime.pauseRuntime()["state"])
+        assertTrue(Tracer.isDisabled)
+        assertEquals("sdk_runtime_disabled", Sdk140ConsentRuntime.pauseRuntime()["reason"])
+        assertEquals("enabled", Sdk140ConsentRuntime.resumeRuntime()["state"])
+        assertFalse(Tracer.isDisabled)
+    }
+
+    @Test
+    fun `optional commands do not initialize modules or change collection`() {
+        var reply: Map<String, String>? = null
+        TracerDiagnostics.run(true, " ") { reply = it }
+        assertEquals("heap_tag_required", reply!!["reason"])
+        TracerDiagnostics.run(true, "manual") { reply = it }
+        assertEquals("diagnostic_module_not_initialized", reply!!["reason"])
+        TracerDiagnostics.run(false, null) { reply = it }
+        assertEquals("diagnostic_module_not_initialized", reply!!["reason"])
+        assertEquals("heap_provider_not_installed", TracerDiagnostics.setHeapEnabled(true)["reason"])
+        assertFalse(TracerDiagnostics.heapDumpEnabledProvider().get())
+        assertFalse(Tracer.isDisabled)
+        Tracer.disable()
+        TracerDiagnostics.run(false, null) { reply = it }
+        assertEquals("collection_disabled", reply!!["reason"])
+        assertTrue(Tracer.isDisabled)
+    }
+
+    @Test
+    fun `heap decision provider changes dynamically and remains false while disabled`() {
+        val heap = ru.ok.tracer.heap.dumps.HeapDumpConfiguration.Builder()
+            .provideEnabled(TracerDiagnostics.heapDumpEnabledProvider()).build()
+        val crash = CrashReportConfiguration.Builder().setEnabled(true).build()
+        replace(Tracer::class.java, "runtimeConfigs", mapOf(heap.getFeature() to heap, crash.getFeature() to crash))
+        TracerDiagnostics.revoke()
+        assertFalse(TracerDiagnostics.heapDumpEnabledProvider().get())
+        assertEquals("invoked", TracerDiagnostics.setHeapEnabled(true)["state"])
+        assertTrue(TracerDiagnostics.heapDumpEnabledProvider().get())
+        Tracer.disable()
+        assertFalse(TracerDiagnostics.heapDumpEnabledProvider().get())
+        assertEquals("disabled", TracerDiagnostics.setHeapEnabled(true)["state"])
+        Sdk140ConsentRuntime.resumeRuntime()
+        assertTrue(TracerDiagnostics.heapDumpEnabledProvider().get())
+        TracerDiagnostics.revoke()
+        assertFalse(TracerDiagnostics.heapDumpEnabledProvider().get())
+    }
+
+    @Test
     fun `runtime disable is observed and repeated resume restores the real flag`() {
         repeat(2) {
             Tracer.disable()

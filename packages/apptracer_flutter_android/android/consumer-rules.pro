@@ -48,3 +48,19 @@
 # Fatal admission and startup-writer stack tracking rely on these names/fields.
 -keep class ru.ok.tracer.utils.ChainedUncaughtExceptionHandler { *; }
 -keep class ru.ok.tracer.crash.report.TracerUncaughtExceptionHandler { *; }
+
+# Optional SDK 1.6.1 commands. These rules do not add modules to the application.
+-keep class ru.ok.tracer.heap.dumps.HeapDumps { *; }
+-keep class ru.ok.tracer.heap.dumps.HeapDumpConfiguration { *; }
+-keep class ru.ok.tracer.disk.usage.DiskUsage { *; }
+
+# Version-bound 1.6.1 managed session recreation after drain/purge/main barrier.
+-keep class ru.ok.tracer.startup.TracerStartup { *; }
+-keep class ru.ok.tracer.utils.TracerThreads { *; }
+-keep class ru.ok.tracer.utils.TracerThreads$ioExecutor$2 { *; }
+-keep class ru.ok.tracer.utils.TracerThreads$bgExecutor$2 { *; }
+-keep class ru.ok.tracer.Tracer$httpClient$2 { *; }
+-keep class ru.ok.tracer.Tracer$dropManager$2 { *; }
+-keep class kotlin.SynchronizedLazyImpl { *; }
+-keep class ru.ok.tracer.base.deviceid.DeviceIdUtils { *; }
+-keep class ru.ok.tracer.base.sessionuuuid.SessionUuidHolder { *; }

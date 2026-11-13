@@ -11,6 +11,7 @@ export 'src/models/dart_stack_frame.dart';
 export 'src/models/dart_stack_trace.dart';
 export 'src/models/tracer_breadcrumb.dart';
 export 'src/models/tracer_event.dart';
+export 'src/models/tracer_diagnostic_result.dart';
 export 'src/models/tracer_options.dart';
 export 'src/models/tracer_severity.dart';
 export 'src/synthetic_issue_key.dart';

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
 
@@ -88,6 +89,32 @@ abstract class TracerPlatform extends PlatformInterface {
   ///
   /// Must be idempotent.
   Future<void> stopCollection();
+
+  /// Temporarily disables a live SDK without purging reports or account data.
+  /// This is not consent withdrawal or cancellation of in-flight uploads.
+  Future<TracerCollectionResult> pauseCollection() async =>
+      const TracerCollectionResult(TracerCollectionState.unsupported,
+          reason: 'runtime_pause_unsupported');
+
+  /// Resumes a live pause. Must never initialize a stopped SDK or bypass purge.
+  Future<TracerCollectionResult> resumeCollection() async =>
+      const TracerCollectionResult(TracerCollectionState.unsupported,
+          reason: 'runtime_resume_unsupported');
+
+  /// Runs the optional heap module. Never installs or enables it implicitly.
+  Future<TracerDiagnosticResult> runHeapDump({required String tag}) async =>
+      const TracerDiagnosticResult(TracerDiagnosticState.unsupported,
+          reason: 'heap_dumps_unsupported');
+
+  /// Requests an unconstrained one-time disk sample from an installed module.
+  Future<TracerDiagnosticResult> runDiskUsage() async =>
+      const TracerDiagnosticResult(TracerDiagnosticState.unsupported,
+          reason: 'disk_usage_unsupported');
+
+  /// Updates the opt-in native provider installed by the Android host.
+  Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) async =>
+      const TracerDiagnosticResult(TracerDiagnosticState.unsupported,
+          reason: 'heap_dump_provider_unsupported');
 
   /// Explicit start without bootstrapping the application. Older backends
   /// remain source compatible but cannot claim deferred native support.

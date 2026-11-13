@@ -36,6 +36,7 @@ class TracerClient {
   final Map<String, String> _customKeys = <String, String>{};
   ErrorHandlerChain? _chain;
   bool _started = false;
+  bool _paused = false;
   int _generation = 0;
   Future<void> _lifecycleTail = Future<void>.value();
 
@@ -47,12 +48,17 @@ class TracerClient {
   }
 
   void _disableDart() {
-    _started = false;
-    _chain?.restore();
-    _chain = null;
+    _paused = false;
+    _suspendDart();
     _deduplicator.clear();
     _breadcrumbs.clear();
     _customKeys.clear();
+  }
+
+  void _suspendDart() {
+    _started = false;
+    _chain?.restore();
+    _chain = null;
   }
 
   /// The platform implementation in use.
@@ -167,6 +173,89 @@ class TracerClient {
       return TracerCollectionResult(TracerCollectionState.error,
           reason: 'state_failed: $error');
     }
+  }
+
+  /// Runs an opt-in Android heap dump off the platform thread.
+  Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
+      _diagnostic(() => platform.runHeapDump(tag: tag));
+
+  /// Requests a one-time sample from an already installed disk module.
+  Future<TracerDiagnosticResult> runDiskUsage() =>
+      _diagnostic(platform.runDiskUsage);
+
+  /// Changes the host-installed native heap decision provider.
+  Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
+      _diagnostic(() => platform.setHeapDumpEnabled(enabled),
+          allowDisabled: !enabled);
+
+  Future<TracerDiagnosticResult> _diagnostic(
+      Future<TracerDiagnosticResult> Function() operation,
+      {bool allowDisabled = false}) async {
+    if (!isEnabled && !allowDisabled) {
+      return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
+          reason: 'collection_disabled');
+    }
+    final generation = _generation;
+    try {
+      final result = await operation();
+      return generation == _generation
+          ? result
+          : const TracerDiagnosticResult(TracerDiagnosticState.disabled,
+              reason: 'superseded');
+    } catch (_) {
+      return const TracerDiagnosticResult(TracerDiagnosticState.error,
+          reason: 'native_diagnostic_failed');
+    }
+  }
+
+  /// Pauses the current session, retaining its diagnostic context.
+  /// Unlike stop/clear, this does not revoke consent or purge native queues.
+  Future<TracerCollectionResult> pauseCollection() {
+    _paused = _paused || _started;
+    final generation = ++_generation;
+    _suspendDart();
+    return _serialize(() async {
+      if (generation != _generation) {
+        return const TracerCollectionResult(TracerCollectionState.disabled,
+            reason: 'superseded');
+      }
+      try {
+        return await platform.pauseCollection();
+      } catch (error) {
+        return TracerCollectionResult(TracerCollectionState.error,
+            reason: 'pause_failed: $error');
+      }
+    });
+  }
+
+  /// Resumes only a previously authorized, paused Dart session.
+  Future<TracerCollectionResult> resumeCollection() {
+    final generation = _generation;
+    return _serialize(() async {
+      if (generation != _generation || !_paused) {
+        return const TracerCollectionResult(TracerCollectionState.disabled,
+            reason: 'no_live_pause');
+      }
+      try {
+        final result = await platform.resumeCollection();
+        if (generation != _generation) {
+          return const TracerCollectionResult(TracerCollectionState.disabled,
+              reason: 'superseded');
+        }
+        if (result.isEnabled && platform.isEnabled) {
+          _paused = false;
+          _started = true;
+          _installHandlers();
+        } else if (result.isEnabled) {
+          return const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'enabled_state_not_confirmed');
+        }
+        return result;
+      } catch (error) {
+        return TracerCollectionResult(TracerCollectionState.error,
+            reason: 'resume_failed: $error');
+      }
+    });
   }
 
   void _installHandlers() {

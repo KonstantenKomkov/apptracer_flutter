@@ -15,6 +15,73 @@ void main() {
   });
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
+  test('pause and resume use public channel methods', () async {
+    final methods = <String>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      methods.add(call.method);
+      return {
+        'state': call.method == 'pauseCollection' ? 'disabled' : 'enabled'
+      };
+    });
+    await platform.startCollection(const TracerOptions());
+    final pause = platform.pauseCollection();
+    expect(platform.isEnabled, isFalse);
+    await pause;
+    expect((await platform.resumeCollection()).isEnabled, isTrue);
+    expect(platform.isEnabled, isTrue);
+    expect(methods, ['startCollection', 'pauseCollection', 'resumeCollection']);
+  });
+
+  test('late resume answer cannot enable after clear', () async {
+    final reply = Completer<Map<String, String>>();
+    messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => call.method == 'resumeCollection'
+            ? reply.future
+            : {'state': 'disabled'});
+    final resume = platform.resumeCollection();
+    await Future<void>.delayed(Duration.zero);
+    await platform.stopAndClearCollection();
+    reply.complete({'state': 'enabled'});
+    expect((await resume).reason, 'superseded');
+    expect(platform.isEnabled, isFalse);
+  });
+
+  test(
+      'optional commands preserve arguments and distinguish invocation from delivery',
+      () async {
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return {
+        'state': call.method == 'startCollection' ? 'enabled' : 'invoked'
+      };
+    });
+    expect(
+        (await platform.runDiskUsage()).state, TracerDiagnosticState.disabled);
+    expect(calls, isEmpty);
+    await platform.startCollection(const TracerOptions());
+    expect((await platform.runHeapDump(tag: 'manual')).state,
+        TracerDiagnosticState.invoked);
+    expect(calls.last.arguments, {'tag': 'manual'});
+    await platform.runDiskUsage();
+    expect(calls.last.method, 'runDiskUsage');
+    await platform.setHeapDumpEnabled(true);
+    expect(calls.last.arguments, {'enabled': true});
+  });
+
+  test('missing optional commands and malformed replies fail explicitly',
+      () async {
+    messenger.setMockMethodCallHandler(
+        channel, (_) async => {'state': 'enabled'});
+    await platform.startCollection(const TracerOptions());
+    expect((await platform.runDiskUsage()).reason, 'invalid_native_result');
+    messenger.setMockMethodCallHandler(
+        channel, (_) async => throw MissingPluginException());
+    expect((await platform.runDiskUsage()).state,
+        TracerDiagnosticState.unsupported);
+  });
+
   test('native state and reason survive the channel', () async {
     messenger.setMockMethodCallHandler(
         channel,

@@ -129,6 +129,16 @@ class _ConsentPageState extends State<_ConsentPage> {
             onPressed: () => _operation(Tracer.stopAndClearCollection),
             child: const Text('Revoke / logout: stop and clear'),
           ),
+          if (android) ...[
+            OutlinedButton(
+              onPressed: () => _operation(Tracer.pauseCollection),
+              child: const Text('Pause current session (keeps data)'),
+            ),
+            OutlinedButton(
+              onPressed: () => _operation(Tracer.resumeCollection),
+              child: const Text('Resume paused session'),
+            ),
+          ],
           TextButton(
             onPressed: () => _operation(Tracer.getCollectionState),
             child: const Text('Query actual state'),

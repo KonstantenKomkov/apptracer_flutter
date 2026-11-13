@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
 import 'tracer_platform.dart';
@@ -60,6 +61,62 @@ class MethodChannelTracer extends TracerPlatform {
     ++_generation;
     _enabled = false;
     await _invoke<void>('stopCollection', null);
+  }
+
+  @override
+  Future<TracerCollectionResult> pauseCollection() {
+    ++_generation;
+    _enabled = false;
+    return _lifecycle('pauseCollection', null);
+  }
+
+  @override
+  Future<TracerCollectionResult> resumeCollection() async {
+    final generation = ++_generation;
+    final result = await _lifecycle('resumeCollection', null);
+    if (generation != _generation) {
+      return const TracerCollectionResult(TracerCollectionState.disabled,
+          reason: 'superseded');
+    }
+    _enabled = result.isEnabled;
+    return result;
+  }
+
+  @override
+  Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
+      _diagnostic('runHeapDump', {'tag': tag});
+
+  @override
+  Future<TracerDiagnosticResult> runDiskUsage() =>
+      _diagnostic('runDiskUsage', null);
+
+  @override
+  Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
+      _diagnostic('setHeapDumpEnabled', {'enabled': enabled},
+          allowDisabled: !enabled);
+
+  Future<TracerDiagnosticResult> _diagnostic(String method, Object? arguments,
+      {bool allowDisabled = false}) async {
+    if (!_enabled && !allowDisabled) {
+      return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
+          reason: 'collection_disabled');
+    }
+    final generation = _generation;
+    try {
+      final map =
+          await _channel.invokeMapMethod<Object?, Object?>(method, arguments);
+      if (generation != _generation) {
+        return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
+            reason: 'superseded');
+      }
+      return TracerDiagnosticResult.fromMap(map ?? const {});
+    } on MissingPluginException {
+      return const TracerDiagnosticResult(TracerDiagnosticState.unsupported,
+          reason: 'native_operation_missing');
+    } catch (_) {
+      return const TracerDiagnosticResult(TracerDiagnosticState.error,
+          reason: 'native_diagnostic_failed');
+    }
   }
 
   @override

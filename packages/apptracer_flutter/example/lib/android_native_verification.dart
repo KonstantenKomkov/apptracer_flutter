@@ -226,6 +226,91 @@ Future<void> main() async {
       throw StateError('Start: ${started.state.name}/${started.reason}');
     }
     await save('started', {'state': started.state.name});
+    if (scenario.startsWith('session-restart')) {
+      final offlineQueue = scenario.endsWith('-offline');
+      int crashes() =>
+          requests.where((p) => p.contains('/crash/upload')).length;
+      Future<void> delivered(int count) async {
+        for (var i = 0; i < 100 && crashes() < count; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+        }
+        if (crashes() != count) {
+          throw StateError('Expected $count crash requests, got ${crashes()}');
+        }
+      }
+
+      final states = <String>[];
+      final snapshots = <Map<String, Object?>>[];
+      for (var cycle = 0; cycle < 4; cycle++) {
+        if (cycle > 0) {
+          final result = await Tracer.startCollection(
+              options.copyWith(preservePreviousReports: true));
+          states.add('${result.state.name}/${result.reason}');
+          if (!result.isEnabled) {
+            throw StateError('Cycle $cycle: ${result.state}/${result.reason}');
+          }
+        }
+        Map<String, Object?>? runtime;
+        for (var wait = 0; wait < 50; wait++) {
+          runtime = await _native
+              .invokeMapMethod<String, Object?>('collectionRuntimeSnapshot');
+          if (runtime?['watchdogs'] == 1) break;
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+        if (runtime?['watchdogs'] != 1 || runtime?['nativeInstalled'] != true) {
+          throw StateError('Collectors missing: $runtime');
+        }
+        snapshots.add(runtime!);
+        await Tracer.setUserId('account-${cycle ~/ 2}');
+        await Tracer.setCustomKey(
+            key: 'private-$cycle', value: 'private-value-$cycle');
+        Tracer.log('private-breadcrumb-$cycle');
+        await Tracer.recordError(
+            StateError('session-$cycle'), StackTrace.current,
+            issueKey: 'session-$cycle');
+        await delivered(offlineQueue ? cycle * 2 + 1 : cycle + 1);
+        if (offlineQueue) {
+          online = false;
+          await Tracer.recordError(
+              StateError('offline-private-$cycle'), StackTrace.current);
+          await delivered(cycle * 2 + 2);
+        }
+        final stopped = await Tracer.stopAndClearCollection();
+        if (stopped.state != TracerCollectionState.disabled) {
+          throw StateError('Stop $cycle: ${stopped.state}/${stopped.reason}');
+        }
+        final offRuntime = await _native
+            .invokeMapMethod<String, Object?>('collectionRuntimeSnapshot');
+        if (offRuntime?['nativeInstalled'] != false ||
+            offRuntime?['watchdogs'] != 0) {
+          throw StateError('Collectors survived stop: $offRuntime');
+        }
+        final offRequests = requests.length;
+        await Tracer.recordError(StateError('off-$cycle'), StackTrace.current);
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        if (requests.length != offRequests || (await files()).isNotEmpty) {
+          throw StateError('Post-stop diagnostics');
+        }
+        online = true;
+      }
+      await save('complete', {
+        'cycles': 4,
+        'starts': states,
+        'collectors': snapshots,
+        'crashRequests': crashes(),
+        'requests': requests
+      });
+      return;
+    }
+    if (scenario.startsWith('restarted-')) {
+      final stopped = await Tracer.stopAndClearCollection();
+      final restarted = await Tracer.startCollection(options);
+      if (stopped.state != TracerCollectionState.disabled ||
+          !restarted.isEnabled) {
+        throw StateError(
+            'Full recreation failed: ${restarted.state}/${restarted.reason}');
+      }
+    }
     if (scenario.startsWith('resumed-')) {
       await _native.invokeMethod<void>('disableSdkForVerification');
       await Future<void>.delayed(const Duration(seconds: 6));
@@ -233,7 +318,9 @@ Future<void> main() async {
         throw StateError('Runtime pause did not resume before fatal probe');
       }
     }
-    if (scenario == 'runtime-enable' || automatic) {
+    if (scenario == 'runtime-enable' ||
+        scenario == 'public-pause' ||
+        automatic) {
       int crashes() =>
           requests.where((p) => p.contains('/crash/upload')).length;
       Future<void> expectCrashCount(int count) async {
@@ -248,18 +335,28 @@ Future<void> main() async {
       await Tracer.recordError(StateError('enable-before'), StackTrace.current,
           issueKey: 'enable-before');
       await expectCrashCount(1);
-      await _native.invokeMethod<void>('disableSdkForVerification');
-      // Read through the raw channel so Dart's cached enabled flag remains
-      // stale; startCollection itself must discover and resume the native pause.
-      final paused = await const MethodChannel('ru.apptracer.flutter/tracer')
-          .invokeMapMethod<String, String>('getCollectionState');
+      final Map<String, String>? paused;
+      final TracerCollectionResult resumed;
+      if (scenario == 'public-pause') {
+        final pause = await Tracer.pauseCollection();
+        paused = {'state': pause.state.name, 'reason': pause.reason ?? ''};
+        await Tracer.recordError(
+            StateError('paused-must-not-send'), StackTrace.current);
+        await Future<void>.delayed(const Duration(seconds: 6));
+        resumed = await Tracer.resumeCollection();
+      } else {
+        await _native.invokeMethod<void>('disableSdkForVerification');
+        // Read the native state without updating Dart's cached enabled flag.
+        paused = await const MethodChannel('ru.apptracer.flutter/tracer')
+            .invokeMapMethod<String, String>('getCollectionState');
+        await Tracer.recordError(
+            StateError('disabled-must-not-send'), StackTrace.current);
+        resumed = await Tracer.startCollection(options);
+      }
       if (paused?['state'] != 'disabled' ||
           paused?['reason'] != 'sdk_runtime_disabled') {
         throw StateError('Runtime disable was not observed: $paused');
       }
-      await Tracer.recordError(
-          StateError('while-disabled-must-not-send'), StackTrace.current);
-      final resumed = await Tracer.startCollection(options);
       final repeated = await Tracer.startCollection(options);
       if (!resumed.isEnabled || !repeated.isEnabled) {
         throw StateError('Resume failed: ${resumed.state}/${resumed.reason}');
@@ -275,12 +372,11 @@ Future<void> main() async {
         stopped = await Tracer.stopAndClearCollection();
       }
       final afterStop = requests.length;
-      final retired = await Tracer.startCollection(options);
-      if (stopped.state != TracerCollectionState.restartRequired ||
-          retired.state != TracerCollectionState.restartRequired ||
-          retired.reason !=
-              (automatic ? 'collection_stopped' : 'native_runtime_retired')) {
-        throw StateError('Full cleanup was bypassed: ${retired.state}');
+      if (stopped.state !=
+          (automatic
+              ? TracerCollectionState.restartRequired
+              : TracerCollectionState.disabled)) {
+        throw StateError('Unexpected stop: ${stopped.state}/${stopped.reason}');
       }
       await Future<void>.delayed(const Duration(seconds: 35));
       if (crashes() != 2 ||
@@ -292,7 +388,6 @@ Future<void> main() async {
         'pause': paused,
         'resume': resumed.state.name,
         'stop': stopped.state.name,
-        'restartReason': retired.reason,
         'cleanupVerified': !automatic,
         'crashRequests': crashes(),
         'requestsAfterStop': requests.length - afterStop,
@@ -355,7 +450,7 @@ Future<void> main() async {
       for (var i = 0; i < 2; i++) {
         final off = await _native
             .invokeMapMethod<String, dynamic>('checkSecondaryEngine');
-        if (off?['before']['state'] != 'restartRequired' ||
+        if (off?['before']['state'] != 'disabled' ||
             off?['initialized'] != false) {
           throw StateError('Secondary engine bypassed revocation');
         }
@@ -414,7 +509,7 @@ Future<void> main() async {
       await respond(r);
     }
     final stopped = await stopping;
-    if (stopped.state != TracerCollectionState.restartRequired) {
+    if (stopped.state != TracerCollectionState.disabled) {
       throw StateError('Stop: ${stopped.state.name}/${stopped.reason}');
     }
     online = true;
@@ -440,13 +535,15 @@ Future<void> main() async {
     if ((await files()).isNotEmpty) {
       throw StateError('Diagnostic files remained after stop');
     }
-    if ((await Tracer.startCollection(options)).isEnabled) {
-      throw StateError('Restarted in revoked process');
+    final requestsAfterStop = requests.length - before;
+    if (!(await Tracer.startCollection(options)).isEnabled) {
+      throw StateError('Explicit restart failed');
     }
+    await Tracer.stopAndClearCollection();
     await save('complete', {
       'state': stopped.state.name,
       'requests': requests,
-      'requestsAfterStop': requests.length - before
+      'requestsAfterStop': requestsAfterStop
     });
   } catch (error) {
     await Tracer.stopAndClearCollection();

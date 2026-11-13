@@ -139,8 +139,9 @@ androidPluginToken=...
   целиком. Чтобы не потерять рейт-лимит, наследуйте его от
   `ru.apptracer.flutter.TracerApplication` и добавляйте своё к
   `super.tracerConfiguration`.
-* `Tracer.stopCollection()` вызывает `Tracer.disable()` нативного SDK, а его
-  нельзя отменить до перезапуска процесса. Это сделано намеренно, см.
+* `Tracer.stopCollection()` полностью останавливает сбор; для временной паузы
+  используйте `pauseCollection()` / `resumeCollection()`. Повторный старт после
+  очистки поддерживается кандидатом адаптера 0.4.0 в deferred-режиме SDK 1.6.1. См.
   [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 * `TracerOptions.environment` на Android тоже игнорируется — SDK берёт его из
   Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
@@ -184,9 +185,10 @@ release-сборку. Старые host SDK 1.4.0/1.5.2 остаются доп�
 ограничениями и настройкой их репозиториев.
 
 - `startCollection` может возобновить уже инициализированный SDK 1.6.1 после
-  нативного `Tracer.disable()`. Это не отменяет build-time disable и не
-  восстанавливает SDK после полного `stopCollection`/`stopAndClearCollection`.
-  После полной остановки нужен новый процесс; build-time disable меняется сборкой.
+  нативного `Tracer.disable()`. В кандидате Android-адаптера 0.4.0 он также
+  создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1.
+  Для SDK 1.4.0/1.5.2 и автоматической инициализации сохраняется требование
+  нового процесса. Build-time disable меняется только сборкой.
   Наблюдение состояния само сбор не включает.
 - Флаги Gradle DSL называются `uploadMapping` и `uploadNativeSymbols`.
   При обоих `false` нужен только `appToken`; если включён хотя бы один upload,
@@ -202,8 +204,8 @@ release-сборку. Старые host SDK 1.4.0/1.5.2 остаются доп�
   в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
   или `org.gradle.configuration-cache=false` в `gradle.properties`.
 - `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
-  опциональным нативным модулям. Они не добавлены в Dart API и не подключаются
-  по умолчанию. Heap dump может приостановить VM/UI даже при фоновом вызове;
+  опциональным нативным модулям. В опубликованной версии они не представлены
+  в Dart API и не подключаются по умолчанию. Heap dump может приостановить VM/UI даже при фоновом вызове;
   offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
   в поддерживаемую deferred-очистку.
 - Одновременное включение native module и experimental tombstones может дать
@@ -674,3 +676,18 @@ flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 
 MIT. SDK вендора лицензируются отдельно, см.
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
+
+## Новые runtime API — ещё не опубликованы
+
+В рабочей версии доступны `Tracer.pauseCollection()` / `resumeCollection()`
+для текущей разрешённой Android-сессии SDK 1.6.1. Пауза сохраняет данные и не
+отменяет выполняющиеся отправки. Для logout нужен `stopAndClearCollection`;
+новый разрешённый `startCollection` восстанавливает сбор на Android 1.6.1
+в deferred-режиме. iOS 1.5.2 пока возвращает `restartRequired`.
+
+Добавлены `runHeapDump(tag: ...)`, `runDiskUsage()` и `setHeapDumpEnabled(bool)`.
+Модули подключает приложение явно; heap provider также устанавливается хостом
+до старта SDK. Deferred-очистка этих модулей не поддержана. `invoked` означает
+возврат из нативного метода, а не доставку. Используйте совместные path overrides
+фасада, Android и platform interface до подготовки нового выпуска.
+[Таблица API, настройка, проверки и открытые части №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

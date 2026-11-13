@@ -102,5 +102,7 @@ dependencies {
 
     testImplementation 'ru.ok.tracer:tracer-crash-report:1.6.1'
     testImplementation 'ru.ok.tracer:tracer-commons:1.6.1'
+    testImplementation 'ru.ok.tracer:tracer-heap-dumps:1.6.1'
+    testImplementation 'ru.ok.tracer:tracer-disk-usage:1.6.1'
     testImplementation 'junit:junit:4.13.2'
 }

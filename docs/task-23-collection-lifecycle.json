@@ -1,0 +1,413 @@
+{
+  "task": 23,
+  "status": "android_verified_open_ios_and_optional_components",
+  "date": "2026-11-13",
+  "baselineCommit": "287ee56bc266395a1ba2400143cfa798994b63b3",
+  "candidateVersions": {
+    "facade": "1.2.0",
+    "android": "0.4.0",
+    "interface": "0.2.1"
+  },
+  "flutter": "3.47.4",
+  "dart": "3.13.3",
+  "sdk": "1.6.1",
+  "gradle": "8.12",
+  "agp": "8.9.1",
+  "kotlin": "2.1.0",
+  "jdk": "21.0.10",
+  "device": {
+    "type": "disposable emulator",
+    "api": 35,
+    "abi": "arm64-v8a"
+  },
+  "transport": "loopback HTTP only; placeholder token; no Tracer console delivery claimed",
+  "sessions": [
+    {
+      "scenario": "session-restart",
+      "cycles": 4,
+      "sameProcess": true,
+      "uploads": 4,
+      "distinctSessionIds": 4,
+      "distinctDeviceIds": 4,
+      "accountIsolation": true,
+      "nativeWriterAndWatchdog": true,
+      "offlineQueuePurged": false,
+      "emptyAfterStop": true,
+      "deviceReceipt": {
+        "scenario": "session-restart",
+        "runId": "task23-collectors",
+        "stage": "complete",
+        "timestamp": "2026-11-13T11:42:02.048101Z",
+        "enabled": false,
+        "files": {},
+        "cycles": 4,
+        "starts": [
+          "enabled/null",
+          "enabled/null",
+          "enabled/null"
+        ],
+        "collectors": [
+          {
+            "pid": 3848,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 3848,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 3848,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 3848,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          }
+        ],
+        "crashRequests": 4,
+        "requests": [
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload"
+        ]
+      }
+    },
+    {
+      "scenario": "session-restart-offline",
+      "cycles": 4,
+      "sameProcess": true,
+      "uploads": 8,
+      "distinctSessionIds": 4,
+      "distinctDeviceIds": 4,
+      "accountIsolation": true,
+      "nativeWriterAndWatchdog": true,
+      "offlineQueuePurged": true,
+      "emptyAfterStop": true,
+      "deviceReceipt": {
+        "scenario": "session-restart-offline",
+        "runId": "task23-offline",
+        "stage": "complete",
+        "timestamp": "2026-11-13T11:47:31.207510Z",
+        "enabled": false,
+        "files": {},
+        "cycles": 4,
+        "starts": [
+          "enabled/null",
+          "enabled/null",
+          "enabled/null"
+        ],
+        "collectors": [
+          {
+            "pid": 4473,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 4473,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 4473,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          },
+          {
+            "pid": 4473,
+            "nativeInstalled": true,
+            "watchdogs": 1
+          }
+        ],
+        "crashRequests": 8,
+        "requests": [
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/upload",
+          "/api/crash/trackSession",
+          "/api/crash/upload",
+          "/api/crash/upload"
+        ]
+      }
+    }
+  ],
+  "fatalAfterRecreation": {
+    "native": {
+      "scenario": "native-recovery",
+      "runId": "task23-native-recovery",
+      "stage": "crashing-revoked",
+      "timestamp": "2026-11-13T11:43:22.148586Z",
+      "enabled": false,
+      "files": {},
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/uploadNative"
+      ],
+      "state": "disabled",
+      "note": "Intentional fatal exit after clear/restart; delivery on next process; pre-final harness artifact, runtime code equivalent"
+    },
+    "jvm": {
+      "scenario": "recovery",
+      "runId": "task23-jvm-recovery",
+      "stage": "stopped",
+      "timestamp": "2026-11-13T11:44:32.236384Z",
+      "enabled": false,
+      "files": {},
+      "state": "disabled",
+      "requests": [
+        "/api/crash/upload",
+        "/api/crash/trackSession"
+      ],
+      "note": "Intentional fatal exit after clear/restart; delivery on next process; pre-final harness artifact, runtime code equivalent"
+    },
+    "anr": {
+      "scenario": "recovery",
+      "runId": "task23-anr-recovery",
+      "stage": "stopped",
+      "timestamp": "2026-11-13T11:46:50.393465Z",
+      "enabled": false,
+      "files": {},
+      "state": "disabled",
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/uploadAnr"
+      ],
+      "note": "Intentional fatal exit after clear/restart; delivery on next process; pre-final harness artifact, runtime code equivalent"
+    }
+  },
+  "checks": {
+    "androidJunit": 35,
+    "androidJunitFailures": 0,
+    "facadeTests": 90,
+    "interfaceTests": 47,
+    "interfaceSkipped": 1,
+    "otherPackages": "HTTP, Sentry, Android, iOS, Web tests/analyze passed; web/HTTP browser tests in Chrome",
+    "example": "analysis and widget test passed",
+    "swiftStorage": "passed",
+    "jvmExecutorAndFiles": "passed",
+    "farmingTests": 2680,
+    "farmingSkipped": 3,
+    "farmingFullAnalysis": "passed"
+  },
+  "remaining": [
+    "iOS same-process writer/task retirement and real-device acceptance",
+    "Positive device delivery through optional heap/disk Flutter commands",
+    "Official SDK 1.6.1 release-note reconciliation",
+    "pub.dev publication"
+  ],
+  "historicalBaseline": {
+    "result": {
+      "scenario": "public-pause",
+      "runId": "task23-audited-startup",
+      "stage": "complete",
+      "timestamp": "2026-11-13T09:24:35.850077Z",
+      "enabled": false,
+      "files": {},
+      "pause": {
+        "state": "disabled",
+        "reason": "sdk_runtime_disabled"
+      },
+      "resume": "enabled",
+      "stop": "restartRequired",
+      "restartState": "restartRequired",
+      "restartReason": "native_runtime_retired",
+      "logoutLoginAccepted": false,
+      "nativeRestartProbe": {
+        "coreReinitialize": "Tracer already initialized!",
+        "ioOpenAfterStartup": false,
+        "handlerUnchanged": true,
+        "disabled": true
+      },
+      "cleanupVerified": true,
+      "crashRequests": 2,
+      "requestsAfterStop": 0
+    },
+    "artifacts": {
+      "consent.apk": {
+        "sha256": "bc6bb3f2da4d1468ac30780072167472fd5b6583cfd2d8be073a61bc51e282c3"
+      },
+      "mapping.txt": {
+        "sha256": "739e0bfab0a34f6b0c9d422b14d53d8bc02ad4eff8ba010891e317632e20f1a0"
+      },
+      "no-sdk.apk": {
+        "sha256": "d376608f8f21bdea148b476188380930c5dd732ce58ff45ed84a7bab72f31bbb"
+      }
+    },
+    "note": "Before Android recreation implementation, not current behavior"
+  },
+  "farming": {
+    "result": "PASS",
+    "pid": 5130,
+    "cycles": 4,
+    "accountSequence": [
+      1,
+      1,
+      2,
+      2
+    ],
+    "crashUploads": 4,
+    "sameProcess": true,
+    "freshConsentGateEachLogin": true,
+    "offAfterLogout": true,
+    "fixture": "integration_test/crash_collection_lifecycle_test.dart",
+    "apkSha256": "91c3d2cc3265db96f248fb5c9d8fcfacfb5600ee90c022560400610502427491",
+    "applicationId": "ru.farming.app.diagnostics",
+    "build": "release, stage flavor, synthetic loopback host; AGP 9.1.1; Gradle 9.3.1",
+    "manualRealAccountLogin": false
+  },
+  "additionalScenarios": {
+    "public-pause": {
+      "scenario": "public-pause",
+      "runId": "task23-final-pause",
+      "stage": "complete",
+      "timestamp": "2026-11-13T11:48:47.918597Z",
+      "enabled": false,
+      "files": {},
+      "pause": {
+        "state": "disabled",
+        "reason": "sdk_runtime_disabled"
+      },
+      "resume": "enabled",
+      "stop": "disabled",
+      "cleanupVerified": true,
+      "crashRequests": 2,
+      "requestsAfterStop": 0
+    },
+    "inflight": {
+      "scenario": "inflight",
+      "runId": "task23-inflight",
+      "stage": "complete",
+      "timestamp": "2026-11-13T11:50:56.926161Z",
+      "enabled": false,
+      "files": {},
+      "state": "disabled",
+      "requests": [
+        "/api/crash/trackSession",
+        "/api/crash/upload",
+        "/api/crash/trackSession"
+      ],
+      "requestsAfterStop": 1,
+      "measurementNote": "The no-new-request assertion passed over 35 seconds; displayed delta includes trackSession from the subsequent explicitly authorized restart. Final harness records the delta before that start."
+    },
+    "stop-cleanup-failure": {
+      "scenario": "stop-cleanup-failure",
+      "runId": "task23-cleanup-failure",
+      "stage": "complete",
+      "timestamp": "2026-11-13T11:52:06.339094Z",
+      "enabled": false,
+      "files": {},
+      "requests": [
+        "/api/crash/trackSession"
+      ]
+    },
+    "multi-engine": {
+      "scenario": "multi-engine",
+      "runId": "task23-engines",
+      "stage": "complete",
+      "timestamp": "2026-11-13T11:53:52.471628Z",
+      "enabled": false,
+      "files": {},
+      "state": "disabled",
+      "secondaryEngines": 3,
+      "requestsAfterStop": 0
+    }
+  },
+  "artifacts": {
+    "consent.apk": {
+      "sha256": "537640d8e4b4621eef32501b2c65b20ff671384e968b0711e396f1f9979af561"
+    },
+    "mapping.txt": {
+      "sha256": "1ecfd6563b3c573878017a92db548dfef29cc601dd256d01243985a27c09c0c9"
+    },
+    "no-sdk.apk": {
+      "sha256": "c7e7f400a5b8d73dacc2942dd9f26ba1d7a008784fc171523d2cba12f13bf20a"
+    }
+  },
+  "finalOfflineReceipt": {
+    "scenario": "session-restart-offline",
+    "runId": "task23-reviewed-final",
+    "stage": "complete",
+    "timestamp": "2026-11-13T11:57:57.292426Z",
+    "enabled": false,
+    "files": {},
+    "cycles": 4,
+    "starts": [
+      "enabled/null",
+      "enabled/null",
+      "enabled/null"
+    ],
+    "collectors": [
+      {
+        "pid": 5444,
+        "nativeInstalled": true,
+        "watchdogs": 1
+      },
+      {
+        "pid": 5444,
+        "nativeInstalled": true,
+        "watchdogs": 1
+      },
+      {
+        "pid": 5444,
+        "nativeInstalled": true,
+        "watchdogs": 1
+      },
+      {
+        "pid": 5444,
+        "nativeInstalled": true,
+        "watchdogs": 1
+      }
+    ],
+    "crashRequests": 8,
+    "requests": [
+      "/api/crash/trackSession",
+      "/api/crash/upload",
+      "/api/crash/upload",
+      "/api/crash/trackSession",
+      "/api/crash/upload",
+      "/api/crash/upload",
+      "/api/crash/trackSession",
+      "/api/crash/upload",
+      "/api/crash/upload",
+      "/api/crash/trackSession",
+      "/api/crash/upload",
+      "/api/crash/upload"
+    ]
+  },
+  "missingSdkResult": {
+    "scenario": "missing-sdk",
+    "runId": "task23-reviewed-nosdk",
+    "stage": "complete",
+    "timestamp": "2026-11-13T11:58:37.482353Z",
+    "enabled": false,
+    "files": {},
+    "state": "unsupported",
+    "reason": "sdk_missing",
+    "requests": []
+  },
+  "review": {
+    "separateDiffReview": "passed after fixes",
+    "fixedDuringReview": [
+      "await managed stopCollection completion",
+      "main queue barrier before next startup",
+      "partial startup cannot become restartable",
+      "fresh session/device identifiers and legacy preference purge",
+      "receipt records off window before explicit new start"
+    ],
+    "publishDryRun": "not release-ready: candidate dependencies not yet published, local overrides; no publication attempted"
+  }
+}

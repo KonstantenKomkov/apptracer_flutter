@@ -45,12 +45,21 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             when (call.method) {
                 "initialize" -> result.success(initialize(call))
                 "startCollection" -> result.success(startCollection(call))
+                "pauseCollection" -> result.success(pauseCollection())
+                "resumeCollection" -> result.success(resumeCollection())
+                "runHeapDump", "runDiskUsage" -> {
+                    if (!enabled) result.success(mapOf("state" to "disabled", "reason" to "collection_disabled"))
+                    else TracerDiagnostics.run(call.method == "runHeapDump", call.argument<String>("tag")) { result.success(it) }
+                }
+                "setHeapDumpEnabled" -> {
+                    val requested = call.argument<Boolean>("enabled") == true
+                    if (!isSdkOnClasspath()) result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
+                    else if (!enabled && requested) result.success(mapOf("state" to "disabled", "reason" to "collection_disabled"))
+                    else result.success(TracerDiagnostics.setHeapEnabled(requested))
+                }
                 "stopAndClearCollection" -> stopAndClearCollection(result)
                 "getCollectionState" -> result.success(collectionState())
-                "stopCollection" -> {
-                    stopCollection()
-                    result.success(null)
-                }
+                "stopCollection" -> stopCollection(result)
                 "recordError" -> {
                     recordError(call)
                     result.success(null)
@@ -80,7 +89,9 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             enabled = false
             logDebug("call ${call.method} failed: $error")
             lifecycleError = "native_call_failed"
-            if (call.method in listOf("startCollection", "stopAndClearCollection", "getCollectionState")) {
+            if (call.method in listOf("runHeapDump", "runDiskUsage", "setHeapDumpEnabled")) {
+                result.success(mapOf("state" to "error", "reason" to "native_diagnostic_failed"))
+            } else if (call.method in listOf("startCollection", "stopAndClearCollection", "getCollectionState", "pauseCollection", "resumeCollection")) {
                 result.success(collectionState())
             } else {
                 result.success(null)
@@ -103,11 +114,30 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val context = applicationContext ?: return mapOf("state" to "error", "reason" to "context_missing")
             val state = Sdk140ConsentRuntime.start(context, call.argument<Boolean>("preservePreviousReports") == true)
             enabled = state["state"] == "enabled"
+            if (enabled) runtimePaused = false
             return state
         }
         if (stopped) return collectionState()
         initialize(call, resumeRuntime = true)
         return collectionState()
+    }
+
+    private fun pauseCollection(): Map<String, String> {
+        if (!isSdkOnClasspath() || stopped || lifecycleError != null) return collectionState()
+        val current = Sdk140ConsentRuntime.pauseRuntime()
+        runtimePaused = current["reason"] == "sdk_runtime_disabled" && (enabled || runtimePaused)
+        enabled = false
+        return current
+    }
+
+    private fun resumeCollection(): Map<String, String> {
+        if (!runtimePaused || stopped || lifecycleError != null) {
+            return mapOf("state" to "disabled", "reason" to "no_live_pause")
+        }
+        val current = Sdk140ConsentRuntime.resumeRuntime()
+        enabled = current["state"] == "enabled"
+        if (enabled) runtimePaused = false
+        return current
     }
 
     private fun collectionState(): Map<String, String> {
@@ -136,6 +166,8 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun stopAndClearCollection(result: MethodChannel.Result) {
+        if (isSdkOnClasspath()) TracerDiagnostics.revoke()
+        runtimePaused = false
         enabled = false
         if (!isSdkOnClasspath()) {
             result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
@@ -215,24 +247,21 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return enabled
     }
 
-    /**
-     * Stops collection.
-     *
-     * Consent withdrawal remains terminal in this process. SDK 1.6.1's
-     * reversible runtime flag alone does not purge reports or restore revoked
-     * executors/writers. It must not bypass this stop through a later start.
-     */
-    private fun stopCollection() {
+    /** Full managed cleanup is awaited; only pause/resume retains a session. */
+    private fun stopCollection(result: MethodChannel.Result) {
+        if (isSdkOnClasspath()) TracerDiagnostics.revoke()
+        runtimePaused = false
         enabled = false
         if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
-            applicationContext?.let { Sdk140ConsentRuntime.stopAndClear(it) { } }
-            return
+            val context = applicationContext
+            if (context != null) {
+                Sdk140ConsentRuntime.stopAndClear(context) { result.success(null) }
+                return
+            }
         }
         stopped = true
-        if (!isSdkOnClasspath()) {
-            return
-        }
-        Tracer.disable()
+        if (isSdkOnClasspath()) Tracer.disable()
+        result.success(null)
     }
 
     private fun recordError(call: MethodCall) {
@@ -336,6 +365,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private companion object {
         // Engine and Activity lifetimes must not reset SDK process lifetime.
         var enabled = false
+        var runtimePaused = false
         var stopped = false
         var lifecycleError: String? = null
         const val TAG = "apptracer_flutter"
