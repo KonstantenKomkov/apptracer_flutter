@@ -7,19 +7,24 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## Unreleased
+## [0.2.1] - 2026-11-13
 
-- Add explicit runtime pause/resume and optional heap/disk diagnostic commands,
-  with unsupported defaults for other backends and race-safe Dart revocation.
-- Android SDK 1.6.1 heap decisions use an opt-in synchronous native provider;
-  no optional modules are installed automatically. Invocation is not delivery.
-- Recreate audited Android SDK 1.6.1 deferred sessions after successful full
-  cleanup, including fresh executors, identifiers, native writer and ANR watchdog.
-  Real release/R8 probes cover repeated same/different-account sessions, offline
-  purge, JVM/native/ANR recovery. iOS full restart remains unsupported (accepted platform limit).
-- Verify public Dart heap/disk commands with real release/R8 sample uploads and
-  reconcile all SDK 1.6.1 announcement items.
-- Candidate versions: facade 1.2.0, Android 0.4.0, interface 0.2.1. Not published.
+### Added
+
+- Add source-compatible `pauseCollection()`, `resumeCollection()`,
+  `runHeapDump(tag: ...)`, `runDiskUsage()` and `setHeapDumpEnabled(bool)` to
+  `TracerPlatform`, with unsupported defaults for existing implementations.
+- Add `TracerDiagnosticResult` and `TracerDiagnosticState` to distinguish
+  `invoked`, `disabled`, `unsupported` and `error`. Invocation does not imply
+  delivery of a diagnostic sample.
+
+### Fixed
+
+- Exclude test/build output and local development files from standalone
+  publication archives.
+
+- Guard method-channel lifecycle/diagnostic operations against stale
+  completions after pause, stop or cleanup; keep revoked collection closed.
 
 ## [0.2.0] - 2026-10-03
 
@@ -88,6 +93,7 @@ as pub.dev expects.
   set". That transport authenticates with `appToken`; `dsn` belongs to the
   Sentry one, and following the message would have left collection off.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+
+[0.2.1]: https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md

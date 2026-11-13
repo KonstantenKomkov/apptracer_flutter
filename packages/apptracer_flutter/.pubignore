@@ -10,3 +10,11 @@
 **/*.symbols
 **/*.keystore
 **/*.jks
+**/.gradle/
+**/.cxx/
+**/local.properties
+**/.flutter-plugins*
+**/.packages
+**/.DS_Store
+**/key.properties
+**/GeneratedPluginRegistrant.*

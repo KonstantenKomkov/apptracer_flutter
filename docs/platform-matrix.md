@@ -70,9 +70,13 @@ ANR dialog complained.
 SDK 1.6.1 is the current build target. The default configuration retains support
 for hosts on 1.4.0; tombstones are available on the audited 1.5.2/1.6.1 hosts.
 Deferred collection accepts only the explicitly inspected 1.4.0 / 1.5.2 / 1.6.1
-versions. Only 1.6.1 supports resuming a native runtime pause through `enable`;
-full stop/clear still requires a new process. Historical bytecode facts below
-retain their original source versions; the 1.6.1 audit records the new checks.
+versions. Only 1.6.1 supports resuming a native runtime pause through `enable`.
+Starting with `apptracer_flutter_android` 0.4.0, successful full cleanup in
+SDK 1.6.1 deferred mode permits a fresh session in the same process. Automatic
+initialization and SDK 1.4.0/1.5.2 still require a new process after full cleanup.
+See [task 23 acceptance](task-23-collection-lifecycle.md) and
+[release preparation](release-1.2.0.md). Historical bytecode facts below retain
+their original source versions; the 1.6.1 audit records the new checks.
 
 
 Not arbitrary. The vendor's own release notes make the older versions a bad

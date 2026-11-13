@@ -1,5 +1,13 @@
 # Publishing
 
+## Task 23 — release prepared, not published
+
+The next publication contains `apptracer_flutter_platform_interface` **0.2.1**,
+`apptracer_flutter_android` **0.4.0** and `apptracer_flutter` **1.2.0**, in that
+order. iOS, Web, HTTP and desktop packages retain their published versions.
+[Release notes, preparation checks and publication procedure](release-1.2.0.md).
+The published 1.1.0 record below remains historical evidence for that release.
+
 ## Android SDK 1.6.1 — published, 2026-11-13
 
 Published from `6db9e2fe94ece37f91b7aa0e6f3a9b2bc4bdcea0` (`v1.1.0`), in order:

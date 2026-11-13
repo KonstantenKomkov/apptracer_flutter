@@ -1,5 +1,13 @@
 # Verification status
 
+Task 23 release preparation, 2026-11-13: `apptracer_flutter` **1.2.0**,
+`apptracer_flutter_android` **0.4.0** and
+`apptracer_flutter_platform_interface` **0.2.1** are prepared, **not published**.
+Android SDK 1.6.1 deferred collection can restart after full cleanup in the
+same process; iOS SDK 1.5.2 retains `restartRequired`.
+[Release preparation](release-1.2.0.md),
+[task 23 acceptance](task-23-collection-lifecycle.md).
+
 Android update, 2026-11-13: SDK/BOM/Gradle plugin 1.6.1 from Maven Central and
 runtime pause/enable are accepted with an explicit Kotlin file/line limitation.
 [Acceptance](android-sdk-1.6.1-acceptance.md) covers release/R8 on an arm64 API 35

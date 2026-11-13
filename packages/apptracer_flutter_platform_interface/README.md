@@ -27,7 +27,15 @@ English version: [README.en.md](README.en.md).
   именованного кадра, для бэкендов, чья группировка не различает две ошибки
   Dart. Обеими нативными реализациями используется один и тот же.
 * Модели данных: `TracerOptions`, `TracerEvent`, `TracerBreadcrumb`,
-  `TracerSeverity`, `DartStackFrame`.
+  `TracerSeverity`, `DartStackFrame`, `TracerCollectionResult`,
+  `TracerCollectionState`, `TracerDiagnosticResult`, `TracerDiagnosticState`.
+
+Версия 0.2.1 добавляет `pauseCollection()`, `resumeCollection()`,
+`runHeapDump(tag: ...)`, `runDiskUsage()` и `setHeapDumpEnabled(bool)`.
+Базовые реализации возвращают `unsupported`. Диагностический результат
+различает `invoked`, `disabled`, `unsupported` и `error`; `invoked` означает
+вызов нативного метода, а не подтверждение доставки. Method channel защищён
+от устаревших завершений после паузы или отзыва разрешения на сбор.
 
 ## Как реализовать платформу
 

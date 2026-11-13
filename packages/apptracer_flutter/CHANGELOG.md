@@ -7,19 +7,35 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## Unreleased
+## [1.2.0] - 2026-11-13
 
-- Add explicit runtime pause/resume and optional heap/disk diagnostic commands,
-  with unsupported defaults for other backends and race-safe Dart revocation.
-- Android SDK 1.6.1 heap decisions use an opt-in synchronous native provider;
-  no optional modules are installed automatically. Invocation is not delivery.
-- Recreate audited Android SDK 1.6.1 deferred sessions after successful full
-  cleanup, including fresh executors, identifiers, native writer and ANR watchdog.
-  Real release/R8 probes cover repeated same/different-account sessions, offline
-  purge, JVM/native/ANR recovery. iOS full restart remains unsupported (accepted platform limit).
-- Verify public Dart heap/disk commands with real release/R8 sample uploads and
-  reconcile all SDK 1.6.1 announcement items.
-- Candidate versions: facade 1.2.0, Android 0.4.0, interface 0.2.1. Not published.
+### Added
+
+- Add `Tracer.pauseCollection()` and `resumeCollection()` for temporary pauses
+  of an authorized session, retaining context. Logout continues to use
+  `stopAndClearCollection()` followed by a new authorized `startCollection()`.
+- Expose `runHeapDump(tag: ...)`, `runDiskUsage()` and
+  `setHeapDumpEnabled(bool)` with typed diagnostic results. Optional Android
+  modules and a synchronous heap provider require explicit host installation;
+  `invoked` confirms native invocation, not successful delivery.
+
+### Changed
+
+- Require `apptracer_flutter_android ^0.4.0` and
+  `apptracer_flutter_platform_interface ^0.2.1` for the new lifecycle contract
+  and Android SDK 1.6.1 deferred session recreation after full cleanup.
+
+### Fixed
+
+- Invalidate pending Dart work when collection is paused or revoked, so stale
+  completions cannot reopen collection or restore a previous account's context.
+
+### Known limitations
+
+- Same-process restart after full cleanup requires Android SDK 1.6.1 deferred
+  initialization. iOS SDK 1.5.2 still reports `restartRequired`.
+- Optional heap/disk modules are outside managed deferred cleanup. Heap dumps
+  can pause the VM/UI; offline diagnostic samples may be lost without retry.
 
 ## [1.1.0] - 2026-11-13
 
@@ -219,3 +235,5 @@ as pub.dev expects.
 [0.1.2]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.2...v0.1.3
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.1...v0.1.2
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+
+[1.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md

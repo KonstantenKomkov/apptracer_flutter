@@ -1,0 +1,20 @@
+# Keep standalone release exports free of development wiring and test output.
+**/pubspec_overrides.yaml
+**/.dart_tool/
+**/build/
+**/coverage/
+**/pubspec.lock
+**/.env*
+**/*.log
+**/symbols/
+**/*.symbols
+**/*.keystore
+**/*.jks
+**/.gradle/
+**/.cxx/
+**/local.properties
+**/.flutter-plugins*
+**/.packages
+**/.DS_Store
+**/key.properties
+**/GeneratedPluginRegistrant.*

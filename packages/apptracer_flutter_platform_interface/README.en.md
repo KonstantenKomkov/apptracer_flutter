@@ -26,7 +26,15 @@ It contains:
   innermost named frame, for backends whose own grouping cannot tell two Dart
   errors apart. Both native implementations use the same one.
 * The data models: `TracerOptions`, `TracerEvent`, `TracerBreadcrumb`,
-  `TracerSeverity`, `DartStackFrame`.
+  `TracerSeverity`, `DartStackFrame`, `TracerCollectionResult`,
+  `TracerCollectionState`, `TracerDiagnosticResult`, `TracerDiagnosticState`.
+
+Version 0.2.1 adds `pauseCollection()`, `resumeCollection()`,
+`runHeapDump(tag: ...)`, `runDiskUsage()` and `setHeapDumpEnabled(bool)`.
+Base implementations return `unsupported`. Diagnostic results distinguish
+`invoked`, `disabled`, `unsupported` and `error`; `invoked` confirms native
+invocation, not delivery. The method channel guards against stale completions
+after a pause or collection revocation.
 
 ## Implementing a platform
 

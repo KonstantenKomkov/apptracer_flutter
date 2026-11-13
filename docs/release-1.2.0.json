@@ -1,0 +1,150 @@
+{
+  "date": "2026-11-13",
+  "status": "prepared_not_published",
+  "scope": "apptracer packages only; farming update is a separate task",
+  "implementation_commit": "d9c9c3797dbf7a07982578d38bf477b45a5f146a",
+  "implementation_ci": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43426116097",
+  "implementation_ci_jobs_passed": 11,
+  "toolchain": {
+    "flutter": "3.47.4",
+    "dart": "3.13.3"
+  },
+  "tests": {
+    "passed": 140,
+    "skipped": 1
+  },
+  "checks": [
+    {
+      "package": "apptracer_flutter_platform_interface",
+      "check": "get",
+      "exit_code": 0,
+      "log": "apptracer_flutter_platform_interface-get.log"
+    },
+    {
+      "package": "apptracer_flutter_platform_interface",
+      "check": "format",
+      "exit_code": 0,
+      "log": "apptracer_flutter_platform_interface-format.log"
+    },
+    {
+      "package": "apptracer_flutter_platform_interface",
+      "check": "analyze",
+      "exit_code": 0,
+      "log": "apptracer_flutter_platform_interface-analyze.log"
+    },
+    {
+      "package": "apptracer_flutter_platform_interface",
+      "check": "test",
+      "exit_code": 0,
+      "log": "apptracer_flutter_platform_interface-test.log"
+    },
+    {
+      "package": "apptracer_flutter_android",
+      "check": "get",
+      "exit_code": 0,
+      "log": "apptracer_flutter_android-get.log"
+    },
+    {
+      "package": "apptracer_flutter_android",
+      "check": "format",
+      "exit_code": 0,
+      "log": "apptracer_flutter_android-format.log"
+    },
+    {
+      "package": "apptracer_flutter_android",
+      "check": "analyze",
+      "exit_code": 0,
+      "log": "apptracer_flutter_android-analyze.log"
+    },
+    {
+      "package": "apptracer_flutter_android",
+      "check": "test",
+      "exit_code": 0,
+      "log": "apptracer_flutter_android-test.log"
+    },
+    {
+      "package": "apptracer_flutter",
+      "check": "get",
+      "exit_code": 0,
+      "log": "apptracer_flutter-get.log"
+    },
+    {
+      "package": "apptracer_flutter",
+      "check": "format",
+      "exit_code": 0,
+      "log": "apptracer_flutter-format.log"
+    },
+    {
+      "package": "apptracer_flutter",
+      "check": "analyze",
+      "exit_code": 0,
+      "log": "apptracer_flutter-analyze.log"
+    },
+    {
+      "package": "apptracer_flutter",
+      "check": "test",
+      "exit_code": 0,
+      "log": "apptracer_flutter-test.log"
+    },
+    {
+      "package": "apptracer_flutter/example",
+      "check": "get",
+      "exit_code": 0,
+      "log": "apptracer_flutter-example-get.log"
+    },
+    {
+      "package": "apptracer_flutter/example",
+      "check": "format",
+      "exit_code": 0,
+      "log": "apptracer_flutter-example-format.log"
+    },
+    {
+      "package": "apptracer_flutter/example",
+      "check": "analyze",
+      "exit_code": 0,
+      "log": "apptracer_flutter-example-analyze.log"
+    },
+    {
+      "package": "apptracer_flutter/example",
+      "check": "test",
+      "exit_code": 0,
+      "log": "apptracer_flutter-example-test.log"
+    }
+  ],
+  "package_file_audit": [
+    {
+      "package": "apptracer_flutter_platform_interface",
+      "file_count": 24,
+      "compressed_size_reported": "29 KB",
+      "warnings": 0,
+      "temporary_override_hints": 0,
+      "source_files_sha256": "d0952beb6760208299163fd4ea4bdc8348d8a21ac83dde2a2dd2af8a615f110d",
+      "version": "0.2.1"
+    },
+    {
+      "package": "apptracer_flutter_android",
+      "file_count": 42,
+      "compressed_size_reported": "49 KB",
+      "warnings": 0,
+      "temporary_override_hints": 1,
+      "source_files_sha256": "6edff52d45e96c5c6f4e47eb17d48df4ed502438ab430cfe1dce5ae5a048ef1f",
+      "version": "0.4.0"
+    },
+    {
+      "package": "apptracer_flutter",
+      "file_count": 119,
+      "compressed_size_reported": "182 KB",
+      "warnings": 0,
+      "temporary_override_hints": 2,
+      "source_files_sha256": "f6e14bc9b2dad4b80856c2d454032e6d271c38924d5061e066b29067ef87bd2b",
+      "version": "1.2.0"
+    }
+  ],
+  "manifest_digest_definition": "SHA-256 of UTF-8 lines sorted by relative path: <file sha256><two spaces><relative path><newline>. Not an uploaded archive hash.",
+  "log_directory": "build/release-1.2.0",
+  "pending_publication_checks": [
+    "Hosted resolution and zero-warning, zero-hint dry-run in dependency order",
+    "Fresh hosted example and Android consumer",
+    "Download pub.dev archives and verify metadata hashes and release source files"
+  ]
+}

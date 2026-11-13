@@ -27,7 +27,7 @@ The Tracer SDK is a `compileOnly` dependency here, so the host application adds
 it — along with the `ru.ok.tracer` Gradle plugin, which is where `appToken`
 comes from. See the [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
 
-Package **0.3.0** compiles against SDK **1.6.1**. Use the matching 1.6.1 BOM
+Package **0.4.0** compiles against SDK **1.6.1**. Use the matching 1.6.1 BOM
 and Gradle plugin with `mavenCentral()` in plugin and dependency repositories;
 keep `google()` for Android dependencies. No VK repository is required for
 1.6.1. Hosts pinned to the previously audited 1.4.0/1.5.2 remain accepted;
@@ -88,14 +88,14 @@ to legacy SDK hosts; 1.6.1 uses Maven Central as described above.
 
 ### Android 1.6.1: migration and limitations
 
-Use `apptracer_flutter ^1.1.0` (Android adapter `^0.3.0`) and matching BOM/Gradle
+Use `apptracer_flutter ^1.2.0` (Android adapter `^0.4.0`) and matching BOM/Gradle
 plugin 1.6.1. Add `mavenCentral()` to plugin and dependency repositories; VK
 Nexus is not required for this version. Perform a clean release build. Older
 1.4.0/1.5.2 host SDKs remain accepted with their previous runtime limits and
 repository configuration.
 
 - `startCollection` can resume an initialized SDK 1.6.1 after native
-  `Tracer.disable()`. Android adapter 0.4.0 candidate also recreates a fresh
+  `Tracer.disable()`. `apptracer_flutter_android` 0.4.0 also recreates a fresh
   session after successful full deferred cleanup on SDK 1.6.1. SDK 1.4.0/1.5.2
   and automatic initialization still require a new process after full stop.
   Build-time disable requires a build configuration change.
@@ -113,8 +113,8 @@ repository configuration.
   without Tracer. Use Gradle `--no-configuration-cache` or set
   `org.gradle.configuration-cache=false` in `gradle.properties`.
 - `HeapDumps.runNow`, `DiskUsage.runNow` and lazy `provideEnabled` belong to
-  optional native modules. The published version does not expose them through
-  Dart or enable them by default. Heap dumps can pause the VM/UI even when called from a background
+  optional native modules. `apptracer_flutter` 1.2.0 exposes them through
+  Dart; the application must install the modules explicitly. Heap dumps can pause the VM/UI even when called from a background
   thread; offline samples can be deleted without retry. Their WorkManager
   lifecycle is outside the supported deferred cleanup contract.
 - Enabling both the native module and experimental tombstones can produce a
@@ -125,9 +125,9 @@ certify physical devices or native/Dart symbolication.
 [Acceptance](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
 [diagnostic module limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).
 
-## New runtime APIs — unreleased
+## Runtime APIs in apptracer_flutter 1.2.0
 
-The workspace provides `Tracer.pauseCollection()` / `resumeCollection()` for
+`apptracer_flutter` 1.2.0 provides `Tracer.pauseCollection()` / `resumeCollection()` for
 an existing authorized Android SDK 1.6.1 session. Pause retains data and does
 not cancel uploads. Logout still requires `stopAndClearCollection`; restarting
 after successful cleanup recreates collection on Android 1.6.1 in deferred
@@ -137,6 +137,8 @@ mode. iOS 1.5.2 still returns `restartRequired`.
 explicit host installation of the optional modules; the heap provider must also
 be installed before SDK startup. Managed deferred cleanup does not cover these
 modules. `invoked` means the native method returned, not successful delivery.
-Use the facade, Android and platform-interface path overrides together until a
-new release is prepared.
+These APIs require `apptracer_flutter_android ^0.4.0` and
+`apptracer_flutter_platform_interface ^0.2.1`; `apptracer_flutter` declares
+these dependencies automatically.
+[Release status and publication order](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md).
 [API coverage, setup, verification and accepted task 23 limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

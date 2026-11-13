@@ -141,7 +141,7 @@ androidPluginToken=...
   `super.tracerConfiguration`.
 * `Tracer.stopCollection()` полностью останавливает сбор; для временной паузы
   используйте `pauseCollection()` / `resumeCollection()`. Повторный старт после
-  очистки поддерживается кандидатом адаптера 0.4.0 в deferred-режиме SDK 1.6.1. См.
+  очистки поддерживается `apptracer_flutter_android` 0.4.0 в deferred-режиме SDK 1.6.1. См.
   [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 * `TracerOptions.environment` на Android тоже игнорируется — SDK берёт его из
   Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
@@ -178,14 +178,14 @@ Dart AOT. Отчёты восстанавливаются при последу�
 
 ### Android 1.6.1: миграция и ограничения
 
-Используйте `apptracer_flutter ^1.1.0` (Android-адаптер `^0.3.0`), BOM и
+Используйте `apptracer_flutter ^1.2.0` (Android-адаптер `^0.4.0`), BOM и
 Gradle-плагин 1.6.1. Добавьте `mavenCentral()` в репозитории плагинов и
 зависимостей; VK Nexus для этой версии не требуется. Затем выполните чистую
 release-сборку. Старые host SDK 1.4.0/1.5.2 остаются допустимыми с прежними
 ограничениями и настройкой их репозиториев.
 
 - `startCollection` может возобновить уже инициализированный SDK 1.6.1 после
-  нативного `Tracer.disable()`. В кандидате Android-адаптера 0.4.0 он также
+  нативного `Tracer.disable()`. В `apptracer_flutter_android` 0.4.0 он также
   создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1.
   Для SDK 1.4.0/1.5.2 и автоматической инициализации сохраняется требование
   нового процесса. Build-time disable меняется только сборкой.
@@ -204,8 +204,8 @@ release-сборку. Старые host SDK 1.4.0/1.5.2 остаются доп�
   в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
   или `org.gradle.configuration-cache=false` в `gradle.properties`.
 - `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
-  опциональным нативным модулям. В опубликованной версии они не представлены
-  в Dart API и не подключаются по умолчанию. Heap dump может приостановить VM/UI даже при фоновом вызове;
+  опциональным нативным модулям. В `apptracer_flutter` 1.2.0 они доступны
+  через Dart API; модули подключаются явно приложением. Heap dump может приостановить VM/UI даже при фоновом вызове;
   offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
   в поддерживаемую deferred-очистку.
 - Одновременное включение native module и experimental tombstones может дать
@@ -677,9 +677,9 @@ flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
 MIT. SDK вендора лицензируются отдельно, см.
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
 
-## Новые runtime API — ещё не опубликованы
+## Runtime API в apptracer_flutter 1.2.0
 
-В рабочей версии доступны `Tracer.pauseCollection()` / `resumeCollection()`
+В `apptracer_flutter` 1.2.0 доступны `Tracer.pauseCollection()` / `resumeCollection()`
 для текущей разрешённой Android-сессии SDK 1.6.1. Пауза сохраняет данные и не
 отменяет выполняющиеся отправки. Для logout нужен `stopAndClearCollection`;
 новый разрешённый `startCollection` восстанавливает сбор на Android 1.6.1
@@ -688,6 +688,9 @@ MIT. SDK вендора лицензируются отдельно, см.
 Добавлены `runHeapDump(tag: ...)`, `runDiskUsage()` и `setHeapDumpEnabled(bool)`.
 Модули подключает приложение явно; heap provider также устанавливается хостом
 до старта SDK. Deferred-очистка этих модулей не поддержана. `invoked` означает
-возврат из нативного метода, а не доставку. Используйте совместные path overrides
-фасада, Android и platform interface до подготовки нового выпуска.
+возврат из нативного метода, а не доставку. Для этих API нужны
+`apptracer_flutter_android ^0.4.0` и
+`apptracer_flutter_platform_interface ^0.2.1`; `apptracer_flutter` задаёт эти
+зависимости автоматически.
+[Статус выпуска и порядок публикации](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md).
 [Таблица API, настройка, проверки и принятые ограничения №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

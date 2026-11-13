@@ -7,19 +7,41 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## Unreleased
+## [0.4.0] - 2026-11-13
 
-- Add explicit runtime pause/resume and optional heap/disk diagnostic commands,
-  with unsupported defaults for other backends and race-safe Dart revocation.
-- Android SDK 1.6.1 heap decisions use an opt-in synchronous native provider;
-  no optional modules are installed automatically. Invocation is not delivery.
-- Recreate audited Android SDK 1.6.1 deferred sessions after successful full
-  cleanup, including fresh executors, identifiers, native writer and ANR watchdog.
-  Real release/R8 probes cover repeated same/different-account sessions, offline
-  purge, JVM/native/ANR recovery. iOS full restart remains unsupported (accepted platform limit).
-- Verify public Dart heap/disk commands with real release/R8 sample uploads and
-  reconcile all SDK 1.6.1 announcement items.
-- Candidate versions: facade 1.2.0, Android 0.4.0, interface 0.2.1. Not published.
+### Added
+
+- Implement explicit runtime pause/resume on Android SDK 1.6.1.
+- Expose opt-in heap/disk commands with typed results and a synchronous native
+  heap-enabled provider. No optional modules are installed automatically.
+
+### Fixed
+
+- Exclude test/build output and local development files from standalone
+  publication archives.
+
+- Recreate Android SDK 1.6.1 deferred sessions after successful full cleanup,
+  with fresh executors, session/device identifiers, native writer and ANR
+  watchdog. Repeated login to the same or a different account can collect again
+  without restarting the application process.
+- Drain old writers and purge old reports/context before a new session starts;
+  stale engines and failed cleanup cannot silently reopen collection.
+
+### Changed
+
+- Require `apptracer_flutter_platform_interface ^0.2.1`.
+- Validate session recreation in release/R8 builds, including offline purge,
+  JVM/native/ANR recovery and public Dart heap/disk sample delivery.
+
+### Known limitations
+
+- Full cleanup with automatic initialization or SDK 1.4.0/1.5.2 still requires
+  a new process. Build-time disable cannot be reversed at runtime.
+- Optional diagnostic modules are outside managed deferred cleanup and require
+  explicit host setup. `invoked` is not delivery confirmation. Heap dumps may
+  pause the VM/UI; offline samples can be deleted without retry.
+- The previously documented Kotlin file/line recovery defect and full Flutter
+  configuration-cache limitation remain unchanged.
 
 ## [0.3.0] - 2026-11-13
 
@@ -159,8 +181,9 @@ as pub.dev expects.
   reports a `TracerOptions.appToken` and a `TracerOptions.environment` that
   were passed but are ignored on Android.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.1...HEAD
 [0.2.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.1]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
+
+[0.4.0]: https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md
