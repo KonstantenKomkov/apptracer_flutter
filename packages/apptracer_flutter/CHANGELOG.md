@@ -7,6 +7,28 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [1.1.0] - 2026-11-13
+
+### Added
+
+- Require Android adapter `^0.3.0` for Tracer SDK 1.6.1 runtime pause/enable
+  support through the existing `startCollection` API. Full stop/clear still
+  requires a new process; build-time disable cannot be undone at runtime.
+
+### Changed
+
+- Update Android setup and example to Maven Central, BOM/Gradle plugin 1.6.1,
+  and separate mapping/native upload controls. iOS, Web and optional desktop
+  retain their existing compatible implementations.
+
+### Known limitations
+
+- Tracer's Kotlin crash file/line recovery is incorrect in the accepted probe;
+  use local Retrace with the exact full mapping. Delivery and class/method
+  recovery passed. The external defect remains open.
+- Full Flutter assemble configuration cache remains unsupported on the audited
+  toolchain; optional heap/disk diagnostics retain VM-pause/offline-loss limits.
+
 ## [1.0.0] - 2026-10-24
 
 ### Added

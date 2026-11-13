@@ -187,9 +187,13 @@ env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
 Ограничения расшифровки Android native и оптимизированных Web-кадров описаны
 в журнале проверки.
 
-Android использует SDK и Gradle-плагин 1.5.2 из Nexus вендора.
-`TracerHostApplication` включает экспериментальные tombstones на Android 12+.
-Модуль нативных крэшей сохранён для старых Android.
+Android использует SDK/BOM и Gradle-плагин 1.6.1 из Maven Central.
+Модуль нативных крэшей включён; experimental tombstones выключены по умолчанию.
+Для отдельной tombstone-пробы используйте `-Ptracer.verificationTombstones=true`
+и `-Ptracer.verificationNativeModule=false`, иначе один крэш может дать два отчёта.
+Полный configuration cache выключайте: `--no-configuration-cache` для Gradle.
+Kotlin file/line в консоли Tracer остаются неточными; сохраняйте mapping для
+локального Retrace. [Приёмка и ограничения](../../../docs/android-sdk-1.6.1-acceptance.md).
 См. [настройку tombstones](../README.md#android-tombstones-sdk-152).
 
 ### Опциональные HeapDumps / DiskUsage (Android 1.6.1)

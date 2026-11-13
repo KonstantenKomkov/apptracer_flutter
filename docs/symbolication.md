@@ -1,5 +1,19 @@
 # Символизация
 
+**Android SDK 1.6.1, решение выпуска 13 ноября 2026:** точные Java file/line
+подтверждены в консоли. У Kotlin восстановлены класс и метод, но консоль
+показывает `KotlinCrashProbe.java:14` вместо `KotlinCrashProbe.kt:6`.
+Тот же исходный обфусцированный стек и загруженный mapping локально дают
+правильный результат в R8 Retrace 8.9.32. Сохраняйте полный `mapping.txt`
+точной minified-сборки для диагностики; Kotlin file/line в консоли не считайте
+достоверными до исправления внешнего дефекта. Это принятое ограничение выпуска,
+а не исправление. [Протокол](android-sdk-1.6.1-acceptance.md) и
+[минимальный reproducer с командой Retrace](../tool/fixtures/android-sdk161/kotlin-symbolication/README.md).
+Эта JVM-проверка не подтверждает native/Dart-символизацию. При
+`uploadMapping=false` SDK 1.6.1 генерирует нулевой `buildUuid`; загрузка native
+символов управляется независимым `uploadNativeSymbols`.
+
+
 **Windows, 24 октября 2026:** optional adapter восстанавливает исходные кадры
 на клиенте. Dart-карта: `data/apptracer-dart-symbols/<ELF-build-id>.json.gz`;
 native: `symbols/<pdb-name>/<GUID+age>/<pdb-name>.sym`. Проверяется совпадение

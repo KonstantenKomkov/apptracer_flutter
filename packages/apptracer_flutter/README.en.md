@@ -40,34 +40,31 @@ in — your application adds them.
 
 ### Android
 
-In `android/settings.gradle.kts`, keep the vendor repository for SDK 1.5.2
-and its Gradle plugin alongside Maven Central:
+Use Android SDK/BOM and Gradle plugin **1.6.1** from Maven Central. Keep the
+Flutter `includeBuild` in the existing `pluginManagement` block of
+`android/settings.gradle.kts`, configure repositories and add the plugin:
 
 ```kotlin
 pluginManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://nexus-external.vkteam.ru/repository/maven/") {
-            content { includeGroup("ru.ok.tracer") }
-        }
         gradlePluginPortal()
     }
 }
 
 plugins {
-    id("ru.ok.tracer") version "1.5.2" apply false
+    id("ru.ok.tracer") version "1.6.1" apply false
 }
 ```
 
-Add the same repository to dependency resolution (`allprojects.repositories`
+Use `google()` and `mavenCentral()` for dependency resolution (`allprojects.repositories`
 in `android/build.gradle.kts`, or `dependencyResolutionManagement.repositories`
 if your project manages repositories in settings):
 
 ```kotlin
-maven("https://nexus-external.vkteam.ru/repository/maven/") {
-    content { includeGroup("ru.ok.tracer") }
-}
+google()
+mavenCentral()
 ```
 
 In `android/app/build.gradle.kts`:
@@ -98,7 +95,7 @@ tracer {
 }
 
 dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.5.2"))
+    implementation(platform("ru.ok.tracer:tracer-platform:1.6.1"))
     implementation("ru.ok.tracer:tracer-crash-report")
     // Optional, for native crashes:
     implementation("ru.ok.tracer:tracer-crash-report-native")
@@ -171,7 +168,7 @@ them without a custom `Application`, add this inside `<application>` in
     android:value="true" />
 ```
 
-Requires Tracer Android **1.5.2** and **Android 12 / API 31+**. The feature is
+Requires Tracer Android **1.5.2 or 1.6.1** and **Android 12 / API 31+**. The feature is
 part of `tracer-crash-report`; `tracer-crash-report-native` is optional and
 remains useful for native crashes on older Android versions. System libraries
 can be symbolicated from tombstones; this does not guarantee Dart AOT
@@ -186,8 +183,46 @@ This setting applies to automatic and deferred startup. It is configured on
 Android before SDK initialization, not through `TracerOptions` in Dart.
 Deferred collection still requires the manifest provider removal and explicit
 `startCollection`; enabling the feature does not start collection by itself.
-Keep `nexus-external.vkteam.ru/repository/maven/` in both plugin and dependency
-repositories and perform a clean build after updating.
+Use Maven Central for SDK 1.6.1; keep vendor Nexus only for legacy SDK hosts.
+Perform a clean build after updating.
+
+### Android 1.6.1: migration and limitations
+
+Use `apptracer_flutter ^1.1.0` (Android adapter `^0.3.0`) and matching BOM/Gradle
+plugin 1.6.1. Add `mavenCentral()` to plugin and dependency repositories; VK
+Nexus is not required for this version. Perform a clean release build. Older
+1.4.0/1.5.2 host SDKs remain accepted with their previous runtime limits and
+repository configuration.
+
+- `startCollection` can resume an initialized SDK 1.6.1 after native
+  `Tracer.disable()`. It cannot undo build-time disable or recreate a runtime
+  retired by full `stopCollection`/`stopAndClearCollection`. Full stop requires
+  a new process; build-time disable requires a build configuration change.
+  Observing state never implicitly resumes collection.
+- The Gradle DSL flags are `uploadMapping` and `uploadNativeSymbols`. With both
+  `false`, only `appToken` is required; either upload requires `pluginToken`.
+  With `uploadMapping=false`, SDK 1.6.1 generates a zero `buildUuid`; service-side
+  JVM stack recovery is not promised in this mode.
+- **Known Tracer defect:** the tested Kotlin crash restores class/method but
+  displays `.java:14` instead of `.kt:6`. Delivery and Java source recovery
+  passed. Retain the full exact-build `mapping.txt` and raw obfuscated stack
+  for local R8 Retrace. This release accepts the limitation; it does not fix it.
+- Full Flutter `assembleRelease` cannot store configuration cache on the
+  audited Flutter 3.47.4 / AGP 8.9.1 / Gradle 8.12 / JDK 21 toolchain, including
+  without Tracer. Use Gradle `--no-configuration-cache` or set
+  `org.gradle.configuration-cache=false` in `gradle.properties`.
+- `HeapDumps.runNow`, `DiskUsage.runNow` and lazy `provideEnabled` belong to
+  optional native modules. They are not exposed by the Dart API or enabled by
+  default. Heap dumps can pause the VM/UI even when called from a background
+  thread; offline samples can be deleted without retry. Their WorkManager
+  lifecycle is outside the supported deferred cleanup contract.
+- Enabling both the native module and experimental tombstones can produce a
+  MINIDUMP and a TOMBSTONE for one crash. The example opts into tombstones separately.
+
+Acceptance used a release/R8 arm64 Android 15 / API 35 emulator. It does not
+certify physical devices or native/Dart symbolication.
+[Acceptance](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
+[diagnostic module limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).
 
 ### iOS
 

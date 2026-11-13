@@ -58,7 +58,8 @@ Future<void> main() async {
             // Upload completion may remove a report between listing and stat.
             final stat = await f.stat();
             if (stat.type == FileSystemEntityType.file) {
-              found['$root/${f.path.substring(dir.path.length + 1)}'] = stat.size;
+              found['$root/${f.path.substring(dir.path.length + 1)}'] =
+                  stat.size;
             }
           }
         }
@@ -115,9 +116,8 @@ Future<void> main() async {
       // Synthetic local probes only; bodies may contain SDK credentials.
       await File('${output.path}/$scenario-$requestNumber.body')
           .writeAsBytes(bytes);
-      await File('${output.path}/$scenario-$requestNumber.headers')
-          .writeAsString(
-              'Content-Type: ${request.headers.contentType}\r\nContent-Encoding: ${request.headers.value('content-encoding') ?? ''}\r\n');
+      await File('${output.path}/$scenario-$requestNumber.headers').writeAsString(
+          'Content-Type: ${request.headers.contentType}\r\nContent-Encoding: ${request.headers.value('content-encoding') ?? ''}\r\n');
       if (hold) {
         held.add(request);
       } else {

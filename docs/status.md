@@ -1,14 +1,21 @@
 # Verification status
 
-Android update, 2026-10-16: SDK / Gradle plugin 1.5.2 and opt-in tombstones
-are implemented. See [the upgrade audit](android-sdk-1.5.2.md) for current
-validation and remaining device acceptance. Historical results below retain
-the SDK versions on which they were obtained.
+Android update, 2026-11-13: SDK/BOM/Gradle plugin 1.6.1 from Maven Central and
+runtime pause/enable are accepted with an explicit Kotlin file/line limitation.
+[Acceptance](android-sdk-1.6.1-acceptance.md) covers release/R8 on an arm64 API 35
+emulator, delivery/fields/deduplication and consent lifecycle. Java source
+recovery passed; Kotlin class/method recovery passed but console file/line are
+wrong. Exact-build local Retrace is the workaround. The external defect remains
+open and does not block this release. Full Flutter configuration cache remains
+unsupported on the audited toolchain, including without Tracer. Optional
+heap/disk diagnostics retain VM-pause and offline-loss limits.
+Release preparation/publication is tracked in [publishing.md](publishing.md).
+Historical evidence below retains its original SDK versions and scope.
 
 An honest ledger of what has actually been exercised, so that nothing here is
 mistaken for a guarantee.
 
-Last updated: 2026-10-24.
+Last updated: 2026-11-13.
 
 **Stable 1.0.0 is published:** facade and optional desktop are both available on
 pub.dev. A fresh Windows release consumer using hosted dependencies only passed

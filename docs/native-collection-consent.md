@@ -1,8 +1,14 @@
 # Native collection lifecycle: verified implementation
 
-Android 1.5.2 update (2026-10-16): see [the new SDK audit](android-sdk-1.5.2.md).
-The adapter also accepts 1.5.2; dated 1.4.0 runtime evidence below remains
-specific to that version.
+Android 1.6.1 update (2026-11-13): see [the SDK audit](android-sdk-1.6.1.md) and
+[release acceptance](android-sdk-1.6.1-acceptance.md). The adapter accepts audited
+1.4.0/1.5.2/1.6.1 hosts. On 1.6.1, explicit `startCollection` can resume a runtime
+paused only by native `Tracer.disable()`, provided it is already initialized
+and build/configuration gates allow collection. Observation never resumes it.
+Build-time disable cannot be undone by `enable`; managed full stop/clear retires
+the native runtime and still requires a new process. Automatic legacy stop does
+not establish purge guarantees. Optional diagnostic modules are not part of
+managed deferred cleanup. Dated evidence below remains version-specific.
 
 Status, 2026-10-03: the Android SDK 1.4.0 and OKTracer 1.5.2 adapters are
 implemented. Physical iOS acceptance is complete, including native symbolication.

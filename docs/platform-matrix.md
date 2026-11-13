@@ -3,8 +3,10 @@
 Everything below was verified against the live artefacts on the dates shown, not
 copied from prose documentation. Where a fact could not be verified it says so.
 
-Baseline verified: 2026-08-25. Android SDK 1.5.2 update: 2026-10-16;
-see [artifact audit and validation scope](android-sdk-1.5.2.md).
+Baseline verified: 2026-08-25. Android SDK 1.6.1 release scope accepted: 2026-11-13;
+see [artifact audit](android-sdk-1.6.1.md) and [acceptance/limits](android-sdk-1.6.1-acceptance.md).
+Kotlin console file/line remain incorrect; local exact-build Retrace works.
+Full Flutter configuration cache is not supported on the audited toolchain.
 macOS 1.0.0 update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
 macOS 15 arm64 CI and isolated consumer checks:
 [automation and packaging evidence](macos-ci-consumer-acceptance.md).
@@ -51,9 +53,9 @@ ANR dialog complained.
 
 | Item | Value | How it was checked |
 |---|---|---|
-| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | vendor Nexus for 1.5.2; Maven Central for earlier releases |
-| Integrated version | `1.5.2` | vendor Nexus BOM and AARs, 2026-10-16 |
-| Gradle plugin | `id("ru.ok.tracer") version "1.5.2"`; retain `https://nexus-external.vkteam.ru/repository/maven/` for plugins and dependencies | vendor Nexus marker POM |
+| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | Maven Central for 1.6.1; vendor Nexus retained only for legacy hosts |
+| Integrated version | `1.6.1` | Maven Central BOM/AAR audit and release/R8 acceptance, 2026-11-10 |
+| Gradle plugin | `id("ru.ok.tracer") version "1.6.1"`; `mavenCentral()` for plugins and dependencies | Maven Central marker POM and clean-cache builds |
 | Tombstones | opt-in, Android 12+; only `tracer-crash-report` required | 1.5.2 `CrashReportConfiguration.Builder` and `ExitReporter` bytecode |
 | `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.5.2.aar` |
 | Permissions added | `INTERNET`, `ACCESS_NETWORK_STATE` | same manifest |
@@ -65,9 +67,12 @@ ANR dialog complained.
 
 ### Why 1.4.0 remains the compatibility floor
 
-SDK 1.5.2 is the current build target. The default configuration retains support
-for hosts on 1.4.0; tombstones require 1.5.2. Deferred collection rejects any
-version outside the explicitly inspected 1.4.0 / 1.5.2 pair.
+SDK 1.6.1 is the current build target. The default configuration retains support
+for hosts on 1.4.0; tombstones are available on the audited 1.5.2/1.6.1 hosts.
+Deferred collection accepts only the explicitly inspected 1.4.0 / 1.5.2 / 1.6.1
+versions. Only 1.6.1 supports resuming a native runtime pause through `enable`;
+full stop/clear still requires a new process. Historical bytecode facts below
+retain their original source versions; the 1.6.1 audit records the new checks.
 
 
 Not arbitrary. The vendor's own release notes make the older versions a bad

@@ -166,7 +166,25 @@ for scenarios and evidence limits. Collection, revocation and delivery verificat
 is complete for Android, iOS and Web. The evidence ledger records remaining
 symbolication limits for Android native and optimized Web frames.
 
-Android uses SDK and Gradle plugin 1.5.2 from the vendor Nexus repository.
-`TracerHostApplication` enables experimental tombstones on Android 12+.
-The native crash module remains included to cover older Android versions.
+Android uses SDK/BOM and Gradle plugin 1.6.1 from Maven Central.
+The native crash module is included; experimental tombstones are off by default.
+For a separate tombstone probe use `-Ptracer.verificationTombstones=true` with
+`-Ptracer.verificationNativeModule=false`; otherwise one crash can produce two reports.
+Disable full configuration cache with Gradle `--no-configuration-cache`.
+Kotlin file/line in Tracer remain inaccurate; retain the exact mapping for local
+Retrace. [Acceptance and limits](../../../docs/android-sdk-1.6.1-acceptance.md).
 See [tombstone setup](../README.en.md#android-tombstones-sdk-152).
+
+
+### Optional HeapDumps / DiskUsage (Android 1.6.1)
+
+`-Ptracer.diagnostics=true` adds a separate diagnostics flavor/application ID.
+It cannot be combined with managed `tracer.deferred`: WorkManager cleanup for
+these modules is unsupported. Normal builds do not include these dependencies.
+Heap dumps can pause the VM/UI; relaxed worker constraints do not guarantee
+retention or retry of offline samples. See the [commands and evidence](../../../docs/android-sdk-1.6.1-diagnostics.md).
+
+The example accepts `-Ptracer.uploadMapping=false` and
+`-Ptracer.uploadNativeSymbols=false` independently (both default to true).
+If both are false, only `TRACER_APP_TOKEN` is needed; otherwise also provide
+`TRACER_PLUGIN_TOKEN`. Mapping-off uses a zero build UUID on SDK 1.6.1.

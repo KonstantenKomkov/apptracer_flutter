@@ -39,34 +39,31 @@ English version: [README.en.md](README.en.md).
 
 ### Android
 
-В `android/settings.gradle.kts` сохраните репозиторий вендора для SDK 1.5.2
-и Gradle-плагина вместе с Maven Central:
+Для Android используйте SDK/BOM и Gradle-плагин **1.6.1** из Maven Central.
+В существующем `pluginManagement` файла `android/settings.gradle.kts` сохраните
+Flutter `includeBuild` и настройте репозитории; плагин добавьте в блок `plugins`:
 
 ```kotlin
 pluginManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://nexus-external.vkteam.ru/repository/maven/") {
-            content { includeGroup("ru.ok.tracer") }
-        }
         gradlePluginPortal()
     }
 }
 
 plugins {
-    id("ru.ok.tracer") version "1.5.2" apply false
+    id("ru.ok.tracer") version "1.6.1" apply false
 }
 ```
 
-Добавьте тот же репозиторий для зависимостей (`allprojects.repositories`
+Для зависимостей также нужны `google()` и `mavenCentral()` (`allprojects.repositories`
 в `android/build.gradle.kts` либо `dependencyResolutionManagement.repositories`,
 если репозитории управляются через settings):
 
 ```kotlin
-maven("https://nexus-external.vkteam.ru/repository/maven/") {
-    content { includeGroup("ru.ok.tracer") }
-}
+google()
+mavenCentral()
 ```
 
 В `android/app/build.gradle.kts`:
@@ -97,7 +94,7 @@ tracer {
 }
 
 dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.5.2"))
+    implementation(platform("ru.ok.tracer:tracer-platform:1.6.1"))
     implementation("ru.ok.tracer:tracer-crash-report")
     // По желанию, для нативных крашей:
     implementation("ru.ok.tracer:tracer-crash-report-native")
@@ -161,7 +158,7 @@ androidPluginToken=...
     android:value="true" />
 ```
 
-Нужны Tracer Android **1.5.2** и **Android 12 / API 31+**. Функция входит
+Нужны Tracer Android **1.5.2 или 1.6.1** и **Android 12 / API 31+**. Функция входит
 в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
 и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
 позволяют символизировать системные библиотеки, но не гарантируют символизацию
@@ -175,8 +172,47 @@ Dart AOT. Отчёты восстанавливаются при последу�
 Флаг работает при автоматическом и отложенном запуске. Он задаётся на Android
 до инициализации SDK, а не через Dart `TracerOptions`. Для отложенного сбора
 по-прежнему нужны удаление провайдеров из манифеста и явный `startCollection`;
-сам флаг сбор не запускает. Сохраните `nexus-external.vkteam.ru/repository/maven/`
-в репозиториях плагинов и зависимостей и выполните чистую сборку после обновления.
+сам флаг сбор не запускает. Для SDK 1.6.1 используйте Maven Central; vendor Nexus
+нужен только при сохранении старого SDK. После обновления выполните чистую сборку.
+
+### Android 1.6.1: миграция и ограничения
+
+Используйте `apptracer_flutter ^1.1.0` (Android-адаптер `^0.3.0`), BOM и
+Gradle-плагин 1.6.1. Добавьте `mavenCentral()` в репозитории плагинов и
+зависимостей; VK Nexus для этой версии не требуется. Затем выполните чистую
+release-сборку. Старые host SDK 1.4.0/1.5.2 остаются допустимыми с прежними
+ограничениями и настройкой их репозиториев.
+
+- `startCollection` может возобновить уже инициализированный SDK 1.6.1 после
+  нативного `Tracer.disable()`. Это не отменяет build-time disable и не
+  восстанавливает SDK после полного `stopCollection`/`stopAndClearCollection`.
+  После полной остановки нужен новый процесс; build-time disable меняется сборкой.
+  Наблюдение состояния само сбор не включает.
+- Флаги Gradle DSL называются `uploadMapping` и `uploadNativeSymbols`.
+  При обоих `false` нужен только `appToken`; если включён хотя бы один upload,
+  нужен `pluginToken`. При `uploadMapping=false` SDK 1.6.1 генерирует нулевой
+  `buildUuid`; восстановление JVM-стека в сервисе тогда не обещается.
+- **Известный дефект Tracer:** в проверенном Kotlin-крэше класс и метод
+  восстановлены, но консоль показывает `.java:14` вместо `.kt:6`. Доставка и
+  Java-символизация проверены. Сохраняйте полный `mapping.txt` точной сборки
+  и исходный обфусцированный стек для локального R8 Retrace. Дефект принят как
+  ограничение выпуска и остаётся открытым.
+- Полный Flutter `assembleRelease` не сохраняет configuration cache на
+  проверенной комбинации Flutter 3.47.4 / AGP 8.9.1 / Gradle 8.12 / JDK 21,
+  в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
+  или `org.gradle.configuration-cache=false` в `gradle.properties`.
+- `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
+  опциональным нативным модулям. Они не добавлены в Dart API и не подключаются
+  по умолчанию. Heap dump может приостановить VM/UI даже при фоновом вызове;
+  offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
+  в поддерживаемую deferred-очистку.
+- Одновременное включение native module и experimental tombstones может дать
+  MINIDUMP и TOMBSTONE для одного падения. В примере tombstone включается отдельно.
+
+Проверено на release/R8 arm64 эмуляторе Android 15 / API 35. Эта приёмка не
+сертифицирует физические устройства или native/Dart-символизацию.
+[Протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
+[ограничения diagnostic-модулей](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).
 
 ### iOS
 

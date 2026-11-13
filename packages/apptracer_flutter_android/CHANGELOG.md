@@ -7,7 +7,32 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [0.3.0] - 2026-11-13
+
+### Added
+
+- Resume an initialized SDK 1.6.1 runtime pause through `startCollection` and
+  the version-checked native `Tracer.enable()` API. Build-time disable and full
+  stop/clear remain terminal; full stop/clear requires a new process.
+
+### Changed
+
+- Compile and test against Tracer SDK 1.6.1 from Maven Central. The application
+  still supplies the matching SDK BOM and Gradle plugin; 1.4.0/1.5.2 hosts
+  remain accepted with their previous runtime limitations.
+- Document separate mapping/native upload controls, optional diagnostic module
+  behavior and release/R8 API 35 acceptance.
+
+### Known limitations
+
+- Tracer restores the tested Kotlin crash class/method but displays incorrect
+  source file/line. Exact-build R8 Retrace restores the correct `.kt` location;
+  retain the full mapping for local diagnosis. This external defect is accepted
+  for this release, not fixed by it.
+- Full Flutter assemble configuration cache fails on the audited toolchain,
+  including without Tracer. Use `--no-configuration-cache`.
+- Optional heap dumps can pause the VM/UI; offline diagnostic samples may be
+  deleted without retry. These modules are not enabled by default.
 
 ## [0.2.1] - 2026-10-16
 

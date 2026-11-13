@@ -26,7 +26,7 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
 `appToken`. См. [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
 
-Текущая рабочая версия компилируется с **1.6.1**. Используйте BOM и Gradle-плагин
+Версия пакета **0.3.0** компилируется с SDK **1.6.1**. Используйте BOM и Gradle-плагин
 1.6.1, `mavenCentral()` в репозиториях плагинов и зависимостей и `google()` для
 Android-зависимостей. VK-репозиторий для 1.6.1 не нужен. Ранее проверенные
 1.4.0/1.5.2 остаются допустимыми версиями host SDK; для них сохраните прежнюю
@@ -67,7 +67,7 @@ runtime API `enable()`. Полный stop/clear по-прежнему требу
     android:value="true" />
 ```
 
-Нужны Tracer Android **1.5.2** и **Android 12 / API 31+**. Функция входит
+Нужны Tracer Android **1.5.2 или 1.6.1** и **Android 12 / API 31+**. Функция входит
 в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
 и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
 позволяют символизировать системные библиотеки, но не гарантируют символизацию
@@ -84,3 +84,42 @@ Dart AOT. Отчёты восстанавливаются при последу�
 сам флаг сбор не запускает. После обновления выполните чистую сборку.
 Прежняя настройка vendor Nexus относится к старым host SDK; 1.6.1 использует
 Maven Central, как описано выше.
+
+### Android 1.6.1: миграция и ограничения
+
+Используйте `apptracer_flutter ^1.1.0` (Android-адаптер `^0.3.0`), BOM и
+Gradle-плагин 1.6.1. Добавьте `mavenCentral()` в репозитории плагинов и
+зависимостей; VK Nexus для этой версии не требуется. Затем выполните чистую
+release-сборку. Старые host SDK 1.4.0/1.5.2 остаются допустимыми с прежними
+ограничениями и настройкой их репозиториев.
+
+- `startCollection` может возобновить уже инициализированный SDK 1.6.1 после
+  нативного `Tracer.disable()`. Это не отменяет build-time disable и не
+  восстанавливает SDK после полного `stopCollection`/`stopAndClearCollection`.
+  После полной остановки нужен новый процесс; build-time disable меняется сборкой.
+  Наблюдение состояния само сбор не включает.
+- Флаги Gradle DSL называются `uploadMapping` и `uploadNativeSymbols`.
+  При обоих `false` нужен только `appToken`; если включён хотя бы один upload,
+  нужен `pluginToken`. При `uploadMapping=false` SDK 1.6.1 генерирует нулевой
+  `buildUuid`; восстановление JVM-стека в сервисе тогда не обещается.
+- **Известный дефект Tracer:** в проверенном Kotlin-крэше класс и метод
+  восстановлены, но консоль показывает `.java:14` вместо `.kt:6`. Доставка и
+  Java-символизация проверены. Сохраняйте полный `mapping.txt` точной сборки
+  и исходный обфусцированный стек для локального R8 Retrace. Дефект принят как
+  ограничение выпуска и остаётся открытым.
+- Полный Flutter `assembleRelease` не сохраняет configuration cache на
+  проверенной комбинации Flutter 3.47.4 / AGP 8.9.1 / Gradle 8.12 / JDK 21,
+  в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
+  или `org.gradle.configuration-cache=false` в `gradle.properties`.
+- `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
+  опциональным нативным модулям. Они не добавлены в Dart API и не подключаются
+  по умолчанию. Heap dump может приостановить VM/UI даже при фоновом вызове;
+  offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
+  в поддерживаемую deferred-очистку.
+- Одновременное включение native module и experimental tombstones может дать
+  MINIDUMP и TOMBSTONE для одного падения. В примере tombstone включается отдельно.
+
+Проверено на release/R8 arm64 эмуляторе Android 15 / API 35. Эта приёмка не
+сертифицирует физические устройства или native/Dart-символизацию.
+[Протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
+[ограничения diagnostic-модулей](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).

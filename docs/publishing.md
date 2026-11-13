@@ -1,5 +1,51 @@
 # Publishing
 
+## Android SDK 1.6.1 — release candidates, 2026-11-13
+
+Publish only the changed packages, in this order:
+
+1. `apptracer_flutter_android 0.3.0`
+2. `apptracer_flutter 1.1.0` (requires Android `^0.3.0`)
+
+The Android adapter adds compatible runtime resume support on host SDK 1.6.1;
+its pre-1.0 minor version advances accordingly. The stable facade advances its
+minor version. Interface/HTTP/iOS/Web and optional desktop keep their existing
+versions. The host still supplies SDK/BOM/Gradle plugin 1.6.1 from Maven Central.
+
+Task 21 was accepted with an explicit exception: Tracer's Kotlin file/line
+recovery remains wrong in the recorded probe, while exact-build local Retrace
+works. Keep the full mapping for diagnosis. This external defect is open and
+non-blocking; do not claim full Kotlin source recovery. Full Flutter assemble
+configuration cache remains unsupported on the audited toolchain; builds use
+`--no-configuration-cache`. [Acceptance and limits](android-sdk-1.6.1-acceptance.md).
+
+Prepare isolated exports without monorepo overrides. Validate/publish Android
+first, then resolve the facade against hosted Android 0.3.0 and repeat its dry
+run before publishing. Check a fresh Android consumer with hosted dependencies
+only after both uploads. Publication is complete only after version metadata,
+archive hashes and packaged source contents have been verified on pub.dev.
+
+Local preparation passed on Flutter 3.47.4 / Dart 3.13.3 / JDK 21.0.10:
+
+- 137 Dart tests across interface/Android/iOS/facade/Web, plus the example widget
+  test; package analysis and formatting passed.
+- 31 Android JUnit tests and clean release/R8 builds with and without SDK.
+- A fresh external Android consumer built with one isolated adapter dependency
+  and hosted interface dependencies, no overrides and no VK repository, using
+  AGP 8.9.1 / Kotlin 2.1.0 / Gradle 8.12. New Flutter templates must be aligned
+  to this audited toolchain when reproducing this check.
+- A clean source export passed native configuration-cache reuse/invalidation
+  and correctly reported the known full-Flutter limitation. The helper now
+  generates Flutter's ignored Gradle wrapper before invoking it; the prior CI
+  started without that file. The example formatting failure was also corrected.
+- Android staged dry-run passed with zero warnings/hints. Facade staged
+  dry-run passed with zero warnings and one temporary sibling-override hint;
+  this is a pre-publication check only. Remove the override and repeat against
+  hosted Android 0.3.0 before publishing the facade.
+
+Current execution evidence is recorded under `build/android-1.6.1-release/`.
+This candidate section alone does not assert successful publication.
+
 ## Before the first release — settled
 
 **The licence has been read** (edition of 29 May 2025) and does not prohibit
@@ -55,8 +101,8 @@ has to be on pub.dev before the next resolves.
 `apptracer_flutter_sentry` is the legacy manual transport and remains
 `publish_to: none`. Do not publish it as the new desktop backend.
 The optional `apptracer_flutter_desktop` is a stable **1.0.0** package using
-the official Sentry SDK for Windows, macOS and Ubuntu Linux. For this release,
-publish facade **1.0.0** first, then desktop **1.0.0**. The facade includes the
+the official Sentry SDK for Windows, macOS and Ubuntu Linux. For the historical
+1.0.0 release, facade **1.0.0** was published first, then desktop **1.0.0**. The facade includes the
 obfuscated `FlutterError` type-name fix. Platform-interface, Android, iOS, Web
 and HTTP packages retain their compatible published versions.
 

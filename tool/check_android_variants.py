@@ -22,7 +22,19 @@ def prepare_fixture(output):
     sdk = Path(os.environ.get('ANDROID_SDK_ROOT',
                os.environ.get('ANDROID_HOME', Path.home() / 'Library/Android/sdk'))).resolve()
     (project / 'local.properties').write_text('sdk.dir=' + str(sdk) + '\n')
-    wrapper = ROOT / 'packages/apptracer_flutter/example/android/gradlew'
+    example = ROOT / 'packages/apptracer_flutter/example'
+    wrapper = example / 'android/gradlew'
+    # Flutter generates these ignored files; a clean CI checkout has neither.
+    # Generate configuration only, before the native fixture invokes Gradle.
+    wrapper_jar = example / 'android/gradle/wrapper/gradle-wrapper.jar'
+    if not wrapper.is_file() or not wrapper_jar.is_file():
+        subprocess.run([
+            'flutter', 'build', 'apk', '--release', '--config-only',
+            '--target-platform=android-arm64',
+            '--android-skip-build-dependency-validation',
+        ], cwd=example, check=True)
+    if not wrapper.is_file() or not wrapper_jar.is_file():
+        raise RuntimeError('Flutter did not generate the Android Gradle wrapper')
     return project, sdk, wrapper
 
 
