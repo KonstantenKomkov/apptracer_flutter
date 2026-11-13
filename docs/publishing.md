@@ -1,12 +1,22 @@
 # Publishing
 
-## Task 23 — release prepared, not published
+## Task 23 — published, 2026-11-13
 
-The next publication contains `apptracer_flutter_platform_interface` **0.2.1**,
-`apptracer_flutter_android` **0.4.0** and `apptracer_flutter` **1.2.0**, in that
-order. iOS, Web, HTTP and desktop packages retain their published versions.
-[Release notes, preparation checks and publication procedure](release-1.2.0.md).
-The published 1.1.0 record below remains historical evidence for that release.
+Published from `78922a5b593aac9b47bf65db8b7b1316b9678579` (`v1.2.0`), in dependency order:
+
+1. [apptracer_flutter_platform_interface 0.2.1](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.2.1)
+2. [apptracer_flutter_android 0.4.0](https://pub.dev/packages/apptracer_flutter_android/versions/0.4.0)
+3. [apptracer_flutter 1.2.0](https://pub.dev/packages/apptracer_flutter/versions/1.2.0)
+
+All final publication dry-runs used hosted dependencies without overrides and
+reported zero warnings and zero hints. Downloaded archives match pub.dev hashes
+and every packaged file matches the source commit. The example passed analysis
+and its widget test with hosted dependencies. A fresh hosted Android consumer
+passed analysis and an arm64 release build without Git/path dependencies or
+overrides.
+[Release notes, archive hashes and verification](release-1.2.0.md).
+iOS, Web, HTTP and desktop retain their published versions. Updating farming
+is a separate task. The 1.1.0 record below remains historical evidence.
 
 ## Android SDK 1.6.1 — published, 2026-11-13
 

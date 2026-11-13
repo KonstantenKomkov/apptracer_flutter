@@ -1,8 +1,8 @@
-# Task 23 release preparation — 2026-11-13
+# apptracer_flutter 1.2.0 — published 2026-11-13
 
-**Prepared, not published.** This record covers the package release only.
-Updating farming is a separate task. No pub.dev upload or release tag has been
-created by this preparation.
+**Published to pub.dev.** All three packages below were uploaded from
+`78922a5b593aac9b47bf65db8b7b1316b9678579` (`v1.2.0`) on 2026-11-13. This record covers
+the package release only; updating farming is a separate task.
 
 | Publication order | Package | Version | Required sibling versions |
 | --- | --- | --- | --- |
@@ -127,5 +127,38 @@ absence of Git/path overrides. Download each pub.dev archive, verify its hash
 against pub.dev metadata and compare its files with the release commit.
 Only then record publication and the release-event tag `v1.2.0`.
 
-The final hosted checks and archive verification are pending publication;
-local preparation cannot substitute for them.
+## Publication verification
+
+All three packages passed final hosted dependency resolution and publication
+dry-runs with **zero warnings and zero hints**, without overrides. Pub.dev
+index propagation briefly delayed dependent packages; dependency constraints
+were not weakened. The versions below are available on pub.dev:
+
+| Package | Files matching source | Downloaded archive SHA-256 |
+| --- | ---: | --- |
+| [apptracer_flutter_platform_interface 0.2.1](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.2.1) | 24 | `1422427b25b203e354c9187a8b67971240dc665c7985d08e31d07b9bac3cbd2c` |
+| [apptracer_flutter_android 0.4.0](https://pub.dev/packages/apptracer_flutter_android/versions/0.4.0) | 42 | `2502da1204358ad9f1c044ba917f58770578f2cb2e11967adbcfbd34693c7d75` |
+| [apptracer_flutter 1.2.0](https://pub.dev/packages/apptracer_flutter/versions/1.2.0) | 119 | `ab63646943aab5377dc3c4cb87f175c3474f01085fff50e3e5b62c1caf438ca8` |
+
+Every downloaded archive matches its pub.dev metadata hash; every packaged file
+matches the release source commit. The example resolved all runtime packages
+from pub.dev without overrides and passed analysis and its widget test.
+
+A newly generated external Android app using `apptracer_flutter ^1.2.0`
+resolved `apptracer_flutter` 1.2.0, `apptracer_flutter_android` 0.4.0 and
+`apptracer_flutter_platform_interface` 0.2.1 from pub.dev. Analysis and an arm64
+release build passed with SDK/BOM/Gradle plugin 1.6.1, AGP 8.9.1, Kotlin 2.1.0,
+Gradle 8.12 and JDK 21.0.10. All package dependencies are hosted or Flutter SDK
+packages; there are no Git/path dependencies or overrides. The build uses
+Maven Central, a placeholder app token, disabled mapping/native uploads and
+`--no-configuration-cache`. This verifies installation and compilation; the
+previous task 23 device/runtime evidence retains its separate scope.
+
+The remaining [Ubuntu workflow](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794330)
+and [Windows native runtime checks](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429286985)
+have also completed successfully since the preparation snapshot above.
+
+Publication logs, downloaded archives, dependency locks and consumer build logs
+are in `build/release-1.2.0/publication/` (ignored). The JSON record includes the
+published timestamps, archive hashes and hosted consumer checks. The release
+event tag `v1.2.0` identifies the exact published source. Farming was not changed.

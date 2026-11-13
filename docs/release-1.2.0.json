@@ -1,6 +1,6 @@
 {
   "date": "2026-11-13",
-  "status": "prepared_not_published",
+  "status": "published_verified",
   "scope": "apptracer packages only; farming update is a separate task",
   "implementation_commit": "d9c9c3797dbf7a07982578d38bf477b45a5f146a",
   "implementation_ci": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43426116097",
@@ -142,11 +142,7 @@
   ],
   "manifest_digest_definition": "SHA-256 of UTF-8 lines sorted by relative path: <file sha256><two spaces><relative path><newline>. Not an uploaded archive hash.",
   "log_directory": "build/release-1.2.0",
-  "pending_publication_checks": [
-    "Hosted resolution and zero-warning, zero-hint dry-run in dependency order",
-    "Fresh hosted example and Android consumer",
-    "Download pub.dev archives and verify metadata hashes and release source files"
-  ],
+  "pending_publication_checks": [],
   "package_source_commit": "c2390283d7fbe801df6960f10f6891815587e82a",
   "consumer_validation_commit": "38688beb29f9166d6989f9741e9ecb5e668cb4a7",
   "ubuntu_candidate_resolution": {
@@ -222,5 +218,131 @@
   "supplemental_checks_at_preparation": {
     "repeated_ubuntu_runtime": "Still running on the validation-script commit; package sources are identical to the already successful ubuntu job.",
     "windows_native_runtime": "Additional native-runtime workflow still running; no completion claim."
+  },
+  "publication": {
+    "source_commit": "78922a5b593aac9b47bf65db8b7b1316b9678579",
+    "date": "2026-11-13",
+    "packages": [
+      {
+        "package": "apptracer_flutter_platform_interface",
+        "version": "0.2.1",
+        "source_commit": "78922a5b593aac9b47bf65db8b7b1316b9678579",
+        "archive_sha256": "1422427b25b203e354c9187a8b67971240dc665c7985d08e31d07b9bac3cbd2c",
+        "matched_files": 24,
+        "published_at": "2026-11-13T13:17:23.638996Z",
+        "verified": true,
+        "url": "https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.2.1"
+      },
+      {
+        "package": "apptracer_flutter_android",
+        "version": "0.4.0",
+        "source_commit": "78922a5b593aac9b47bf65db8b7b1316b9678579",
+        "archive_sha256": "2502da1204358ad9f1c044ba917f58770578f2cb2e11967adbcfbd34693c7d75",
+        "matched_files": 42,
+        "published_at": "2026-11-13T13:19:44.107365Z",
+        "verified": true,
+        "url": "https://pub.dev/packages/apptracer_flutter_android/versions/0.4.0"
+      },
+      {
+        "package": "apptracer_flutter",
+        "version": "1.2.0",
+        "source_commit": "78922a5b593aac9b47bf65db8b7b1316b9678579",
+        "archive_sha256": "ab63646943aab5377dc3c4cb87f175c3474f01085fff50e3e5b62c1caf438ca8",
+        "matched_files": 119,
+        "published_at": "2026-11-13T13:22:42.688555Z",
+        "verified": true,
+        "url": "https://pub.dev/packages/apptracer_flutter/versions/1.2.0"
+      }
+    ],
+    "final_dry_runs": {
+      "apptracer_flutter_platform_interface": {
+        "warnings": 0,
+        "hints": 0,
+        "overrides": false
+      },
+      "apptracer_flutter_android": {
+        "warnings": 0,
+        "hints": 0,
+        "overrides": false
+      },
+      "apptracer_flutter": {
+        "warnings": 0,
+        "hints": 0,
+        "overrides": false
+      }
+    },
+    "tag": "v1.2.0",
+    "example": {
+      "analysis": "passed",
+      "widget_tests": "passed",
+      "dependencies": {
+        "apptracer_flutter_example": {
+          "source": "root",
+          "version": "1.0.0+1"
+        },
+        "apptracer_flutter_http": {
+          "source": "hosted",
+          "version": "0.2.0"
+        },
+        "apptracer_flutter_platform_interface": {
+          "source": "hosted",
+          "version": "0.2.1"
+        },
+        "apptracer_flutter": {
+          "source": "hosted",
+          "version": "1.2.0"
+        },
+        "apptracer_flutter_web": {
+          "source": "hosted",
+          "version": "0.2.0"
+        },
+        "apptracer_flutter_ios": {
+          "source": "hosted",
+          "version": "0.2.0"
+        },
+        "apptracer_flutter_android": {
+          "source": "hosted",
+          "version": "0.4.0"
+        }
+      },
+      "overrides": false
+    },
+    "android_consumer": {
+      "dependency": "apptracer_flutter ^1.2.0",
+      "analysis": "passed",
+      "arm64_release_build": "passed",
+      "versions": {
+        "apptracer_flutter": "1.2.0",
+        "apptracer_flutter_web": "0.2.0",
+        "apptracer_flutter_platform_interface": "0.2.1",
+        "apptracer_flutter_http": "0.2.0",
+        "apptracer_flutter_ios": "0.2.0",
+        "apptracer_flutter_android": "0.4.0"
+      },
+      "all_dependencies_hosted": true,
+      "overrides": false,
+      "toolchain": {
+        "flutter": "3.47.4",
+        "dart": "3.13.3",
+        "agp": "8.9.1",
+        "kotlin": "2.1.0",
+        "gradle": "8.12",
+        "jdk": "21.0.10",
+        "tracer_sdk_bom_plugin": "1.6.1"
+      },
+      "scope": "Installation, analysis and release compilation; no new device or live-service acceptance claim."
+    },
+    "completed_additional_ci": [
+      {
+        "id": 43429794330,
+        "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794330",
+        "status": "Success"
+      },
+      {
+        "id": 43429286985,
+        "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429286985",
+        "status": "Success"
+      }
+    ]
   }
 }
