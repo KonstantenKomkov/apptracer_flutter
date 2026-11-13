@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Verify isolated Ubuntu package exports, publish dry-runs and a release consumer.
 
-Uses only a loopback DSN. --candidate-facade exports the current facade;
+Uses only a loopback DSN. --candidate-facade exports apptracer_flutter and its
+matching Android/platform-interface candidates;
 otherwise facade 1.0.0 resolves from pub.dev. Never publishes.
 --bundle runs the exported consumer on a separate Ubuntu machine without tools.
 """
@@ -73,6 +74,15 @@ Future<void> main() async {
   exit(0);
 }
 """
+
+
+def candidate_overrides(package, root, names):
+    """Wire unpublished siblings without changing the exported pubspecs."""
+    path = package / 'pubspec_overrides.yaml'
+    path.write_text('dependency_overrides:\n' + ''.join(
+        f'  {name}:\n    path: {os.path.relpath(root / name, package)}\n'
+        for name in names))
+    return path
 
 
 def runtime(bundle, output, candidate, windows=False):
@@ -206,6 +216,7 @@ def main():
         if expected:
             report['publish_warning'] = 'Intentional exact sentry_flutter 9.30.1 pin'
         elif result.returncode:
+            print(content[-6000:], file=sys.stderr, flush=True)
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
         return content
 
@@ -245,13 +256,23 @@ def main():
                     assert forbidden not in packed
                 report['adapter_publish_dry_run'] = True
                 facade_dep = '  apptracer_flutter: 1.0.0\n'
+                candidate_siblings = ('apptracer_flutter_android',
+                                      'apptracer_flutter_platform_interface')
+                allowed_overrides = set()
                 if args.candidate_facade:
+                    for name in candidate_siblings:
+                        export(name, root)
+                    allowed_overrides.add(candidate_overrides(
+                        root / 'apptracer_flutter_android', root,
+                        ('apptracer_flutter_platform_interface',)))
                     facade = export('apptracer_flutter', root)
+                    allowed_overrides.add(candidate_overrides(facade, root, candidate_siblings))
                     run(['flutter', 'pub', 'get', '--no-example'], facade)
                     run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], facade)
                     run(['flutter', 'test'], facade)
                     run(['dart', 'pub', 'publish', '--dry-run'], facade)
                     report['facade_publish_dry_run'] = True
+                    report['facade_publish_scope'] = 'Staged candidates; hosted validation pending publication'
                     facade_dep = '  apptracer_flutter:\n    path: ../apptracer_flutter\n'
                 app = root / 'consumer'
                 run(['flutter', 'create', '--platforms=linux', '--no-pub', '--project-name',
@@ -261,6 +282,8 @@ def main():
                     '  flutter:\n    sdk: flutter\n' + facade_dep +
                     '  apptracer_flutter_desktop:\n    path: ../apptracer_flutter_desktop\n'
                     'flutter:\n  uses-material-design: true\n')
+                if args.candidate_facade:
+                    allowed_overrides.add(candidate_overrides(app, root, candidate_siblings))
                 (app / 'lib/main.dart').write_text(MAIN)
                 shutil.rmtree(app / 'test')
                 (app / 'analysis_options.yaml').write_text('analyzer:\n  errors:\n    unused_import: error\n')
@@ -290,9 +313,12 @@ def main():
                 paths = {'apptracer_flutter_desktop'}
                 if args.candidate_facade:
                     paths.add('apptracer_flutter')
+                    paths.update(candidate_siblings)
                 for name, metadata in siblings.items():
                     assert metadata['source'] == ('path' if name in paths else 'hosted'), siblings
-                assert not list(root.rglob('pubspec_overrides.yaml'))
+                assert set(root.rglob('pubspec_overrides.yaml')) == allowed_overrides
+                report['candidate_dependency_overrides'] = [
+                    str(path.relative_to(root)) for path in sorted(allowed_overrides)]
                 report['dependencies'] = siblings
                 shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
                 run(['flutter', 'analyze', '--fatal-infos'], app)

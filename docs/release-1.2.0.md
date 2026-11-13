@@ -57,6 +57,14 @@ An isolated export excluded unrelated workspace changes. Only the new
 used local overrides; unchanged iOS/Web/HTTP packages resolved from pub.dev.
 The example additionally used the local `apptracer_flutter` package for tests.
 
+The Ubuntu external-consumer check now exports the matching Android/interface
+candidates as well. Its previous candidate mode tried to resolve unpublished
+versions from pub.dev. Candidate overrides are explicit, restricted to those
+two dependencies, checked against the resolved graph, and reported separately
+from the unchanged hosted-consumer check. Exported pubspecs retain their hosted
+version constraints. Local resolution of both the package and an external
+consumer passed; full Ubuntu build/runtime validation runs in CI.
+
 - Formatting and analysis passed for all three packages and the example.
 - Tests passed: 47 in `apptracer_flutter_platform_interface` (one browser-only
   test skipped in this VM run), 2 in `apptracer_flutter_android`, 90 in
