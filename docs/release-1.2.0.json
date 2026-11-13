@@ -146,5 +146,81 @@
     "Hosted resolution and zero-warning, zero-hint dry-run in dependency order",
     "Fresh hosted example and Android consumer",
     "Download pub.dev archives and verify metadata hashes and release source files"
-  ]
+  ],
+  "package_source_commit": "c2390283d7fbe801df6960f10f6891815587e82a",
+  "consumer_validation_commit": "38688beb29f9166d6989f9741e9ecb5e668cb4a7",
+  "ubuntu_candidate_resolution": {
+    "apptracer_flutter_platform_interface": {
+      "source": "path",
+      "version": "0.2.1"
+    },
+    "apptracer_flutter_android": {
+      "source": "path",
+      "version": "0.4.0"
+    },
+    "apptracer_flutter_desktop": {
+      "source": "path",
+      "version": "1.0.0"
+    },
+    "apptracer_flutter": {
+      "source": "path",
+      "version": "1.2.0"
+    },
+    "apptracer_flutter_web": {
+      "source": "hosted",
+      "version": "0.2.0"
+    },
+    "apptracer_flutter_http": {
+      "source": "hosted",
+      "version": "0.2.0"
+    },
+    "apptracer_flutter_ios": {
+      "source": "hosted",
+      "version": "0.2.0"
+    }
+  },
+  "release_ci": {
+    "commit": "38688beb29f9166d6989f9741e9ecb5e668cb4a7",
+    "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794446",
+    "conclusion": "success",
+    "jobs_passed": 11
+  },
+  "compatibility_checks": [
+    {
+      "name": "macOS desktop",
+      "commit": "c2390283d7fbe801df6960f10f6891815587e82a",
+      "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43428480106",
+      "conclusion": "success"
+    },
+    {
+      "name": "macOS Dart AOT symbols",
+      "commit": "c2390283d7fbe801df6960f10f6891815587e82a",
+      "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43428480049",
+      "conclusion": "success"
+    },
+    {
+      "name": "Windows desktop preparation",
+      "commit": "38688beb29f9166d6989f9741e9ecb5e668cb4a7",
+      "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794392",
+      "conclusion": "success"
+    },
+    {
+      "name": "Ubuntu runtime (ubuntu job only)",
+      "commit": "c2390283d7fbe801df6960f10f6891815587e82a",
+      "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43428480045",
+      "conclusion": "success",
+      "scope": "The ubuntu job passed; the separate consumer job failed and was fixed in the following commit."
+    },
+    {
+      "name": "Ubuntu external consumers (consumer job only)",
+      "commit": "38688beb29f9166d6989f9741e9ecb5e668cb4a7",
+      "url": "https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794330/job/131900151069",
+      "conclusion": "success",
+      "scope": "Hosted consumer plus apptracer_flutter candidate with matching Android/platform-interface exports."
+    }
+  ],
+  "supplemental_checks_at_preparation": {
+    "repeated_ubuntu_runtime": "Still running on the validation-script commit; package sources are identical to the already successful ubuntu job.",
+    "windows_native_runtime": "Additional native-runtime workflow still running; no completion claim."
+  }
 }

@@ -63,7 +63,7 @@ versions from pub.dev. Candidate overrides are explicit, restricted to those
 two dependencies, checked against the resolved graph, and reported separately
 from the unchanged hosted-consumer check. Exported pubspecs retain their hosted
 version constraints. Local resolution of both the package and an external
-consumer passed; full Ubuntu build/runtime validation runs in CI.
+consumer passed, followed by successful Ubuntu build/runtime validation in CI.
 
 - Formatting and analysis passed for all three packages and the example.
 - Tests passed: 47 in `apptracer_flutter_platform_interface` (one browser-only
@@ -81,6 +81,19 @@ consumer passed; full Ubuntu build/runtime validation runs in CI.
   reported compressed sizes 29 KB / 49 KB / 182 KB. Every listed file matches
   its source. Local overrides, locks, build caches, environment files, signing
   files and generated plugin registrants are absent from those lists.
+
+Final preparation CI on `38688be` passed all 11 main jobs, including Android
+release build/Kotlin tests, Web build and publication dry-runs:
+[CI result](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794446).
+The corrected [Ubuntu external-consumer job](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/43429794330/job/131900151069)
+also passed both hosted and staged candidate scenarios. Windows desktop
+preparation passed on the same commit. macOS desktop/symbol checks and the
+Ubuntu runtime job passed on `c239028`; all package files are identical between
+these two commits. The latter Ubuntu run's separate consumer failure is fixed
+by the successful consumer rerun above; its whole workflow is not reported as
+successful. The repeated Ubuntu runtime job and additional Windows native
+runtime workflow were still running at this preparation snapshot and are not
+claimed as completed. Exact links and scopes are recorded in the JSON receipt.
 
 Local logs and source-file manifests are in `build/release-1.2.0/` (ignored).
 The [machine-readable preparation record](release-1.2.0.json) records the checks
