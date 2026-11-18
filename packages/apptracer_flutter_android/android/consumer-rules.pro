@@ -13,7 +13,7 @@
 # the warning, it does not stop R8 from processing classes that do exist, and
 # ru.ok.tracer ships its own proguard.txt with whatever keeps it needs.
 -dontwarn ru.ok.tracer.**
-# SDK 1.4.0 / 1.5.2 / 1.6.1's CoreTracerConfiguration bytecode also references this optional
+# SDK 1.4.0 / 1.5.2 / 1.6.1/1.6.2's CoreTracerConfiguration bytecode also references this optional
 # transitive type. ConsentTracerApplication is only loaded after the SDK check.
 -dontwarn javax.inject.Provider
 
@@ -21,7 +21,7 @@
 # nothing in a static analysis proves these members are used.
 -keep class ru.apptracer.flutter.** { *; }
 
-# Deferred 1.4.0 / 1.5.2 / 1.6.1 adapter: runtime version check, watchdog shutdown and optional
+# Deferred 1.4.0 / 1.5.2 / 1.6.1/1.6.2 adapter: runtime version check, watchdog shutdown and optional
 # native writer uninstall use these exact verified JVM names.
 -keep class ru.ok.tracer.BuildConfig { public static java.lang.String LIBRARY_VERSION; }
 -keep class ru.ok.tracer.crash.report.AnrWatchdogThread { *; }
@@ -31,11 +31,13 @@
 -keep class ru.ok.tracer.utils.SequentialExecutor { *; }
 -keep class ru.ok.tracer.utils.SequentialExecutor$QueueRunnable { *; }
 
-# Terminal retirement of the 1.4.0 / 1.5.2 / 1.6.1 SDK's retained diagnostic stores.
+# Terminal retirement of the 1.4.0 / 1.5.2 / 1.6.1/1.6.2 SDK's retained diagnostic stores.
 -keep class ru.ok.tracer.Tracer { *; }
 -keep class ru.ok.tracer.CoreTracerConfiguration { *; }
 -keep class ru.ok.tracer.session.TagsStorage { *; }
 -keep class ru.ok.tracer.session.TagsStorage$PrevTagsState { *; }
+-keep class ru.ok.tracer.session.TestIdsStorage { *; }
+-keep class ru.ok.tracer.session.TestIdsStorage$PrevTestIdsState { *; }
 -keep class ru.ok.tracer.session.SessionStateStorage { *; }
 -keep class ru.ok.tracer.utils.SimpleFileKeyValueStorage { *; }
 -keep class ru.ok.tracer.crash.report.TracerCrashReport { *; }
@@ -49,12 +51,12 @@
 -keep class ru.ok.tracer.utils.ChainedUncaughtExceptionHandler { *; }
 -keep class ru.ok.tracer.crash.report.TracerUncaughtExceptionHandler { *; }
 
-# Optional SDK 1.6.1 commands. These rules do not add modules to the application.
+# Optional SDK 1.6.1/1.6.2 commands. These rules do not add modules to the application.
 -keep class ru.ok.tracer.heap.dumps.HeapDumps { *; }
 -keep class ru.ok.tracer.heap.dumps.HeapDumpConfiguration { *; }
 -keep class ru.ok.tracer.disk.usage.DiskUsage { *; }
 
-# Version-bound 1.6.1 managed session recreation after drain/purge/main barrier.
+# Version-bound 1.6.1/1.6.2 managed session recreation after drain/purge/main barrier.
 -keep class ru.ok.tracer.startup.TracerStartup { *; }
 -keep class ru.ok.tracer.utils.TracerThreads { *; }
 -keep class ru.ok.tracer.utils.TracerThreads$ioExecutor$2 { *; }

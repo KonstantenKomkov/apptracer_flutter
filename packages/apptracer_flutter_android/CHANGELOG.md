@@ -7,6 +7,12 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## 0.4.1
+
+- Support Tracer Android SDK 1.6.2 from VK Nexus, including the vendor
+  upload fix for Android API 23 and below. Deferred cleanup clears the new
+  SDK test ID store before another session can start.
+
 ## [0.4.0] - 2026-11-13
 
 ### Added

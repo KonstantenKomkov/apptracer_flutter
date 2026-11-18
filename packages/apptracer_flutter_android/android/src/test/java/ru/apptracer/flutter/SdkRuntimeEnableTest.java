@@ -14,12 +14,12 @@ public final class SdkRuntimeEnableTest {
     public static void main(String[] args) throws Exception {
         String version = (String) Class.forName("ru.ok.tracer.BuildConfig")
                 .getField("LIBRARY_VERSION").get(null);
-        if (!java.util.Arrays.asList("1.4.0", "1.5.2", "1.6.1").contains(version)) {
+        if (!java.util.Arrays.asList("1.4.0", "1.5.2", "1.6.1", "1.6.2").contains(version)) {
             throw new AssertionError("Unaudited runtime: " + version);
         }
         Class.forName("ru.ok.tracer.base.apptoken.AppTokenUtils")
                 .getMethod("isTracerBuildDisabled", android.content.Context.class);
-        boolean resumable = "1.6.1".equals(version);
+        boolean resumable = "1.6.1".equals(version) || "1.6.2".equals(version);
         Field disabled = field(Tracer.class, resumable ? "disabledInRuntime" : "isDisabled");
         Field configs = field(Tracer.class, "runtimeConfigs");
         Field configDisabled = field(TracerCrashReport.class, "isConfigDisabled");

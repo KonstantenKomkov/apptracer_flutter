@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the real AGP AnalyticsEnabledApplicationVariant with Tracer 1.6.1."""
+"""Exercise the real AGP AnalyticsEnabledApplicationVariant with Tracer 1.6.2."""
 import argparse
 import hashlib
 import json

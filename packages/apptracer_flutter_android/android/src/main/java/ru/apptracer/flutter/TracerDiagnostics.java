@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 import javax.inject.Provider;
 import ru.ok.tracer.Tracer;
 
-/** Explicit optional SDK 1.6.1 commands; never installs modules or starts the SDK. */
+/** Explicit optional SDK 1.6.1/1.6.2 commands; never installs modules or starts the SDK. */
 public final class TracerDiagnostics {
     public interface Completion { void complete(Map<String, String> result); }
     private static volatile boolean heapEnabled;
@@ -105,7 +105,7 @@ public final class TracerDiagnostics {
 
     private static Map<String, String> availability() {
         try {
-            if (!"1.6.1".equals(Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null))) {
+            if (!Sdk140ConsentRuntime.hasRuntimeEnable(Sdk140ConsentRuntime.sdkVersion())) {
                 return result("unsupported", "diagnostics_require_sdk_1_6_1");
             }
             if (Sdk140ConsentRuntime.ownsRuntime()) {

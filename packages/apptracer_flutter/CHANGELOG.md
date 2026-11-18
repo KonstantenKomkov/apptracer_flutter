@@ -7,6 +7,12 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## 1.2.1
+
+- Require `apptracer_flutter_android ^0.4.1` for Tracer Android SDK 1.6.2.
+  To get the upload fix on Android API 23 and below, update the host BOM and
+  Gradle plugin to 1.6.2 and add VK Nexus to plugin and dependency repositories.
+
 ## [1.2.0] - 2026-11-13
 
 ### Added

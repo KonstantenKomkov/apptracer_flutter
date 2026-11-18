@@ -166,7 +166,7 @@ for scenarios and evidence limits. Collection, revocation and delivery verificat
 is complete for Android, iOS and Web. The evidence ledger records remaining
 symbolication limits for Android native and optimized Web frames.
 
-Android uses SDK/BOM and Gradle plugin 1.6.1 from Maven Central.
+Android uses SDK/BOM and Gradle plugin 1.6.2 from [VK Nexus](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/).
 The native crash module is included; experimental tombstones are off by default.
 For a separate tombstone probe use `-Ptracer.verificationTombstones=true` with
 `-Ptracer.verificationNativeModule=false`; otherwise one crash can produce two reports.
@@ -176,7 +176,7 @@ Retrace. [Acceptance and limits](../../../docs/android-sdk-1.6.1-acceptance.md).
 See [tombstone setup](../README.en.md#android-tombstones-sdk-152).
 
 
-### Optional HeapDumps / DiskUsage (Android 1.6.1)
+### Optional HeapDumps / DiskUsage (Android 1.6.2)
 
 `-Ptracer.diagnostics=true` adds a separate diagnostics flavor/application ID.
 It cannot be combined with managed `tracer.deferred`: WorkManager cleanup for

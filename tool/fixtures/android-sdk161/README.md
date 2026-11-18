@@ -1,4 +1,4 @@
-# Android Tracer 1.6.1 Gradle fixture
+# Android Tracer 1.6.2 Gradle fixture
 
 Minimal AGP 8.9.1 / Kotlin 2.1.0 / compileSdk 35 application with alpha/beta
 flavors, minified release and unminified debug. Java/Kotlin failure classes

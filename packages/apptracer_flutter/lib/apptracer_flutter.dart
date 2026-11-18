@@ -168,7 +168,7 @@ abstract final class Tracer {
   static Future<void> stopCollection() => _client.stop();
 
   /// Pauses a live session without deleting its reports, keys or user ID.
-  /// Android SDK 1.6.1 only; other backends return unsupported.
+  /// Available on Android SDK 1.6.1 and 1.6.2.
   /// Does not cancel uploads. Use stopAndClearCollection for logout.
   static Future<TracerCollectionResult> pauseCollection() =>
       _client.pauseCollection();
@@ -178,7 +178,7 @@ abstract final class Tracer {
   static Future<TracerCollectionResult> resumeCollection() =>
       _client.resumeCollection();
 
-  /// Invokes Android SDK 1.6.1 HeapDumps.runNow off the platform thread.
+  /// Invokes Android HeapDumps.runNow off the platform thread.
   /// Requires an explicitly installed/initialized optional module in automatic
   /// mode. Heap capture can pause the VM; invoked does not confirm delivery.
   static Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>

@@ -13,16 +13,15 @@ import ru.ok.tracer.Tracer;
 import ru.ok.tracer.crash.report.TracerCrashReport;
 import ru.ok.tracer.startup.TracerStartup;
 
-/** Recreates the audited crash-only 1.6.1 graph after completed managed purge.
+/** Recreates the audited crash-only 1.6.1/1.6.2 graph after completed managed purge.
  * Never reopens old executors/stores. Called on main only after all old writers
  * drained and the main-queue cleanup barrier completed. No automatic-mode reset. */
 final class Sdk161SessionRuntime {
     private Sdk161SessionRuntime() { }
 
     static void prepare() throws Exception {
-        if (!"1.6.1".equals(Class.forName("ru.ok.tracer.BuildConfig")
-                .getField("LIBRARY_VERSION").get(null)) || !Tracer.isDisabled()) {
-            throw new IllegalStateException("restart requires a retired SDK 1.6.1");
+        if (!Sdk140ConsentRuntime.supportsEnable() || !Tracer.isDisabled()) {
+            throw new IllegalStateException("restart requires a retired SDK 1.6.1 or 1.6.2");
         }
         // Resolve every private contract before mutating any SDK object.
         List<LazyReset> resets = new ArrayList<>();

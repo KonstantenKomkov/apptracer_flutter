@@ -24,7 +24,7 @@ import ru.ok.tracer.crash.report.TracerCrashReport;
 import ru.ok.tracer.crash.report.CrashReportConfiguration;
 import ru.ok.tracer.startup.TracerStartup;
 
-/** Process-scoped adapter for the inspected 1.4.0, 1.5.2 and 1.6.1 startup graphs.
+/** Process-scoped adapter for the inspected 1.4.0, 1.5.2, 1.6.1 and 1.6.2 startup graphs.
  * The historical class name is retained for existing native integrations. */
 public final class Sdk140ConsentRuntime {
     public interface Completion { void complete(Map<String, String> result); }
@@ -105,10 +105,18 @@ public final class Sdk140ConsentRuntime {
         return automaticSnapshot();
     }
 
-    private static boolean supportsEnable() {
+    static String sdkVersion() throws ReflectiveOperationException {
+        // BuildConfig.LIBRARY_VERSION is a compile-time constant. Read the host runtime.
+        return (String) Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
+    }
+
+    static boolean hasRuntimeEnable(String version) {
+        return "1.6.1".equals(version) || "1.6.2".equals(version);
+    }
+
+    static boolean supportsEnable() {
         try {
-            return "1.6.1".equals(Class.forName("ru.ok.tracer.BuildConfig")
-                    .getField("LIBRARY_VERSION").get(null));
+            return hasRuntimeEnable(sdkVersion());
         } catch (ReflectiveOperationException unavailable) { return false; }
     }
 
@@ -290,6 +298,10 @@ public final class Sdk140ConsentRuntime {
                 Sdk140DiagnosticBuffers.clear(
                         read(Tracer.INSTANCE, "tagsStorage"), read(Tracer.INSTANCE, "stateStorage"),
                         read(TracerCrashReport.INSTANCE, "crashLoggerInternal"), controlled.coreConfiguration());
+                if ("1.6.2".equals(sdkVersion())) {
+                    Sdk140DiagnosticBuffers.clearTestIds(read(Tracer.INSTANCE, "testIdsStorage"),
+                            controlled.coreConfiguration());
+                }
             }
             if (!markerPersisted) throw new IllegalStateException("purge marker was not persisted");
             clearDiagnosticRoots(application);
@@ -354,7 +366,7 @@ public final class Sdk140ConsentRuntime {
         type.getMethod("uninstallMinidumpWriter").invoke(writer);
         if (supportsEnable()) {
             // 0.1.41-android leaves this Java flag true after uninstall. Do not
-            // uninstall a second time when 1.6.1 installs the next session.
+            // uninstall a second time when the SDK installs the next session.
             Field installed = type.getDeclaredField("installedMinidumpWriter");
             installed.setAccessible(true);
             installed.setBoolean(writer, false);
@@ -362,8 +374,8 @@ public final class Sdk140ConsentRuntime {
     }
 
     private static void validateVersion() throws Exception {
-        Object version = Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
-        if (!"1.4.0".equals(version) && !"1.5.2".equals(version) && !"1.6.1".equals(version)) {
+        String version = sdkVersion();
+        if (!"1.4.0".equals(version) && !"1.5.2".equals(version) && !hasRuntimeEnable(version)) {
             throw new IllegalStateException("unverified SDK version");
         }
     }
@@ -386,7 +398,7 @@ public final class Sdk140ConsentRuntime {
 
     private static File root(Application application) { return new File(application.getCacheDir(), "tracer"); }
     private static void clearDiagnosticRoots(Application application) throws Exception {
-        // SDK 1.4.0, 1.5.2 and 1.6.1 store crash/session queues under cache/tracer and the
+        // SDK 1.4.0, 1.5.2, 1.6.1 and 1.6.2 store crash/session queues under cache/tracer and the
         // stable device identifier under files/tracer. Both outlive one process.
         DiagnosticFiles.clear(root(application));
         DiagnosticFiles.clear(new File(application.getFilesDir(), "tracer"));

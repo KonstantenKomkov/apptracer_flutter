@@ -15,6 +15,10 @@ buildscript {
 
 rootProject.allprojects {
     repositories {
+        maven {
+            url = uri("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/")
+            content { includeGroup("ru.ok.tracer") }
+        }
         google()
         mavenCentral()
     }
@@ -88,6 +92,8 @@ if (kotlinExtension?.hasProperty('compilerOptions')) {
     }
 }
 
+def tracerSdkVersion = '1.6.2'
+
 dependencies {
     // Deliberately compileOnly.
     //
@@ -97,12 +103,12 @@ dependencies {
     // vendor SDK version inside someone else's build and would mean this
     // package redistributes a proprietary artefact. If the SDK is absent at
     // runtime the plugin reports "disabled" instead of crashing.
-    compileOnly 'ru.ok.tracer:tracer-crash-report:1.6.1'
-    compileOnly 'ru.ok.tracer:tracer-commons:1.6.1'
+    compileOnly "ru.ok.tracer:tracer-crash-report:$tracerSdkVersion"
+    compileOnly "ru.ok.tracer:tracer-commons:$tracerSdkVersion"
 
-    testImplementation 'ru.ok.tracer:tracer-crash-report:1.6.1'
-    testImplementation 'ru.ok.tracer:tracer-commons:1.6.1'
-    testImplementation 'ru.ok.tracer:tracer-heap-dumps:1.6.1'
-    testImplementation 'ru.ok.tracer:tracer-disk-usage:1.6.1'
+    testImplementation "ru.ok.tracer:tracer-crash-report:$tracerSdkVersion"
+    testImplementation "ru.ok.tracer:tracer-commons:$tracerSdkVersion"
+    testImplementation "ru.ok.tracer:tracer-heap-dumps:$tracerSdkVersion"
+    testImplementation "ru.ok.tracer:tracer-disk-usage:$tracerSdkVersion"
     testImplementation 'junit:junit:4.13.2'
 }

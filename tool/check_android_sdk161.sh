@@ -6,14 +6,14 @@ if [[ $# -gt 1 || ( $# -eq 1 && "$1" != --fresh-cache ) ]]; then
   echo "Usage: $0 [--fresh-cache]" >&2
   exit 2
 fi
-verification_dir="$(mktemp -d "${TMPDIR:-/tmp}/apptracer-sdk161-build.XXXXXX")"
+verification_dir="$(mktemp -d "${TMPDIR:-/tmp}/apptracer-sdk162-build.XXXXXX")"
 echo "Android verification artifacts: $verification_dir"
 gradle_args=(--console=plain --no-build-cache --no-configuration-cache
   -PskipDependencyChecks=true -Ptarget-platform=android-arm64
   --project-cache-dir "$verification_dir/project-cache"
   -I "$repo_root/tool/android_no_upload.init.gradle")
 if [[ $# -eq 1 ]]; then
-  # Do not seed dependency/transform caches: this is the Central migration test.
+  # Do not seed dependency/transform caches: this is a clean repository resolution test.
   wrapper_distributions="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper"
   export GRADLE_USER_HOME="$verification_dir/gradle-home"
   mkdir -p "$GRADLE_USER_HOME"
@@ -24,7 +24,7 @@ if [[ $# -eq 1 ]]; then
 fi
 # CI needs only a placeholder app token with both uploads disabled. The init
 # script independently blocks vendor upload task types as a verification guard.
-export TRACER_APP_TOKEN=android-sdk161-build-placeholder
+export TRACER_APP_TOKEN=android-sdk162-build-placeholder
 unset TRACER_PLUGIN_TOKEN
 gradle_args+=(-Ptracer.uploadMapping=false -Ptracer.uploadNativeSymbols=false)
 cd "$repo_root/packages/apptracer_flutter/example"

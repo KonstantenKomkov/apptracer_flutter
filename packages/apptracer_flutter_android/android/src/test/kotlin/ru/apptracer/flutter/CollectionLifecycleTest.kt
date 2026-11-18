@@ -23,7 +23,7 @@ class CollectionLifecycleTest {
         }
         val version = Class.forName("ru.ok.tracer.BuildConfig")
             .getField("LIBRARY_VERSION").get(null)
-        val fields = if (version == "1.6.1") {
+        val fields = if (version == "1.6.1" || version == "1.6.2") {
             listOf("disabledOnBuild", "disabledInRuntime")
         } else {
             listOf("isDisabled")

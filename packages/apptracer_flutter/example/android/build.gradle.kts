@@ -1,5 +1,8 @@
 allprojects {
     repositories {
+        maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
+            content { includeGroup("ru.ok.tracer") }
+        }
         google()
         mavenCentral()
     }

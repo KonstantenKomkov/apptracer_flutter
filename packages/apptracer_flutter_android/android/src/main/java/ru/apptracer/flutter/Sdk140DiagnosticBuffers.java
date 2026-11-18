@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Lazy;
 
-/** Terminal cleanup of inspected SDK 1.4.0 / 1.5.2 / 1.6.1 stores after all writers have stopped. */
+/** Terminal cleanup of inspected SDK 1.4.0 / 1.5.2 / 1.6.1 / 1.6.2 stores after all writers have stopped. */
 final class Sdk140DiagnosticBuffers {
     private Sdk140DiagnosticBuffers() { }
 
@@ -27,6 +27,20 @@ final class Sdk140DiagnosticBuffers {
             // The retired SDK must release that reference as well.
             write(core, "overrideAppTokenProvider", null);
         }
+    }
+
+    // Added in SDK 1.6.2. Retire both generations without scheduling a disk write.
+    static void clearTestIds(Object storage, Object core) throws Exception {
+        if (storage != null) {
+            requireType(storage, "ru.ok.tracer.session.TestIdsStorage");
+            Collection<?> current = (Collection<?>) read(storage, "testIdsData");
+            synchronized (current) { current.clear(); }
+            synchronized (read(storage, "lock")) {
+                write(storage, "prevTestIdsData", null);
+                terminalState(storage, "prevTestIdsState", "CLEAN");
+            }
+        }
+        write(core, "initialTestIds", Collections.emptySet());
     }
 
     private static void clearTags(Object storage) throws Exception {

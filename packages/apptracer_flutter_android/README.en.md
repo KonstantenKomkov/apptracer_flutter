@@ -27,13 +27,10 @@ The Tracer SDK is a `compileOnly` dependency here, so the host application adds
 it — along with the `ru.ok.tracer` Gradle plugin, which is where `appToken`
 comes from. See the [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
 
-Package **0.4.0** compiles against SDK **1.6.1**. Use the matching 1.6.1 BOM
-and Gradle plugin with `mavenCentral()` in plugin and dependency repositories;
-keep `google()` for Android dependencies. No VK repository is required for
-1.6.1. Hosts pinned to the previously audited 1.4.0/1.5.2 remain accepted;
-retain their vendor repository configuration if their artifacts need it.
-The old versions have no runtime `enable()` API. Full stop/clear still requires
-a process restart. See the [1.6.1 audit and acceptance limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1.md).
+Adapter **0.4.1** compiles against SDK **1.6.2**, which fixes uploads on Android
+API 23 and below. Add the [Tracer Maven repository](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/)
+to both plugin and dependency resolution in the host, and pin the BOM and
+Gradle plugin to 1.6.2. Keep Google Maven and Maven Central for other dependencies.
 
 The one piece of SDK configuration this package needs, it applies itself, with
 no line of manifest: the non-fatal rate limit (10 per hour instead of a hard 8
@@ -68,7 +65,7 @@ them without a custom `Application`, add this inside `<application>` in
     android:value="true" />
 ```
 
-Requires Tracer Android **1.5.2 or 1.6.1** and **Android 12 / API 31+**. The feature is
+Requires Tracer Android **1.5.2, 1.6.1 or 1.6.2** and **Android 12 / API 31+**. The feature is
 part of `tracer-crash-report`; `tracer-crash-report-native` is optional and
 remains useful for native crashes on older Android versions. System libraries
 can be symbolicated from tombstones; this does not guarantee Dart AOT
@@ -83,20 +80,17 @@ This setting applies to automatic and deferred startup. It is configured on
 Android before SDK initialization, not through `TracerOptions` in Dart.
 Deferred collection still requires the manifest provider removal and explicit
 `startCollection`; enabling the feature does not start collection by itself.
-Perform a clean build after updating. The vendor Nexus configuration applies
-to legacy SDK hosts; 1.6.1 uses Maven Central as described above.
+Perform a clean build after updating.
 
-### Android 1.6.1: migration and limitations
+### Upgrading to Android SDK 1.6.2
 
-Use `apptracer_flutter ^1.2.0` (Android adapter `^0.4.0`) and matching BOM/Gradle
-plugin 1.6.1. Add `mavenCentral()` to plugin and dependency repositories; VK
-Nexus is not required for this version. Perform a clean release build. Older
-1.4.0/1.5.2 host SDKs remain accepted with their previous runtime limits and
-repository configuration.
+Use `apptracer_flutter ^1.2.1` (Android adapter `^0.4.1`). Update the Android
+repository settings, BOM and plugin as shown above, then rebuild the app. Hosts
+pinned to 1.4.0, 1.5.2 or 1.6.1 retain their existing lifecycle behavior.
 
-- `startCollection` can resume an initialized SDK 1.6.1 after native
-  `Tracer.disable()`. `apptracer_flutter_android` 0.4.0 also recreates a fresh
-  session after successful full deferred cleanup on SDK 1.6.1. SDK 1.4.0/1.5.2
+- `startCollection` can resume an initialized SDK 1.6.1 or 1.6.2 after native
+  `Tracer.disable()`. `apptracer_flutter_android` 0.4.1 also recreates a fresh
+  session after successful full deferred cleanup on SDK 1.6.1/1.6.2. SDK 1.4.0/1.5.2
   and automatic initialization still require a new process after full stop.
   Build-time disable requires a build configuration change.
   Observing state never implicitly resumes collection.
@@ -120,7 +114,7 @@ repository configuration.
 - Enabling both the native module and experimental tombstones can produce a
   MINIDUMP and a TOMBSTONE for one crash. The example opts into tombstones separately.
 
-Acceptance used a release/R8 arm64 Android 15 / API 35 emulator. It does not
+SDK 1.6.1 acceptance used a release/R8 arm64 Android 15 / API 35 emulator. It does not
 certify physical devices or native/Dart symbolication.
 [Acceptance](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
 [diagnostic module limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).

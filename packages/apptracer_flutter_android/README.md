@@ -26,13 +26,10 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
 `appToken`. См. [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
 
-Версия пакета **0.4.0** компилируется с SDK **1.6.1**. Используйте BOM и Gradle-плагин
-1.6.1, `mavenCentral()` в репозиториях плагинов и зависимостей и `google()` для
-Android-зависимостей. VK-репозиторий для 1.6.1 не нужен. Ранее проверенные
-1.4.0/1.5.2 остаются допустимыми версиями host SDK; для них сохраните прежнюю
-настройку vendor-репозитория, если артефакты требуют её. На старых SDK нет
-runtime API `enable()`. Полный stop/clear по-прежнему требует нового процесса.
-См. [аудит 1.6.1 и границы приёмки](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1.md).
+Адаптер **0.4.1** компилируется с SDK **1.6.2**, который исправляет отправку
+данных на Android API 23 и ниже. Добавьте [Maven-репозиторий Tracer](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/)
+в репозитории плагинов и зависимостей приложения и укажите версию 1.6.2 для BOM
+и Gradle-плагина. Для остальных зависимостей сохраните Google Maven и Maven Central.
 
 Настройку SDK пакет ставит себе сам, без строчки в манифесте: рейт-лимит на
 нефатальные (10 в час вместо жёстких 8 за сессию — а каждая ошибка Dart здесь
@@ -67,7 +64,7 @@ runtime API `enable()`. Полный stop/clear по-прежнему требу
     android:value="true" />
 ```
 
-Нужны Tracer Android **1.5.2 или 1.6.1** и **Android 12 / API 31+**. Функция входит
+Нужны Tracer Android **1.5.2, 1.6.1 или 1.6.2** и **Android 12 / API 31+**. Функция входит
 в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
 и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
 позволяют символизировать системные библиотеки, но не гарантируют символизацию
@@ -82,20 +79,16 @@ Dart AOT. Отчёты восстанавливаются при последу�
 до инициализации SDK, а не через Dart `TracerOptions`. Для отложенного сбора
 по-прежнему нужны удаление провайдеров из манифеста и явный `startCollection`;
 сам флаг сбор не запускает. После обновления выполните чистую сборку.
-Прежняя настройка vendor Nexus относится к старым host SDK; 1.6.1 использует
-Maven Central, как описано выше.
 
-### Android 1.6.1: миграция и ограничения
+### Обновление до Android SDK 1.6.2
 
-Используйте `apptracer_flutter ^1.2.0` (Android-адаптер `^0.4.0`), BOM и
-Gradle-плагин 1.6.1. Добавьте `mavenCentral()` в репозитории плагинов и
-зависимостей; VK Nexus для этой версии не требуется. Затем выполните чистую
-release-сборку. Старые host SDK 1.4.0/1.5.2 остаются допустимыми с прежними
-ограничениями и настройкой их репозиториев.
+Используйте `apptracer_flutter ^1.2.1` (Android-адаптер `^0.4.1`). Обновите
+репозитории, BOM и Gradle-плагин по инструкции выше и пересоберите приложение.
+На SDK 1.4.0, 1.5.2 и 1.6.1 сохраняется прежнее поведение сбора.
 
-- `startCollection` может возобновить уже инициализированный SDK 1.6.1 после
-  нативного `Tracer.disable()`. В `apptracer_flutter_android` 0.4.0 он также
-  создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1.
+- `startCollection` может возобновить уже инициализированный SDK 1.6.1 или 1.6.2 после
+  нативного `Tracer.disable()`. В `apptracer_flutter_android` 0.4.1 он также
+  создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1/1.6.2.
   Для SDK 1.4.0/1.5.2 и автоматической инициализации сохраняется требование
   нового процесса. Build-time disable меняется только сборкой.
   Наблюдение состояния само сбор не включает.
@@ -120,7 +113,7 @@ release-сборку. Старые host SDK 1.4.0/1.5.2 остаются доп�
 - Одновременное включение native module и experimental tombstones может дать
   MINIDUMP и TOMBSTONE для одного падения. В примере tombstone включается отдельно.
 
-Проверено на release/R8 arm64 эмуляторе Android 15 / API 35. Эта приёмка не
+SDK 1.6.1 проверен в release/R8-сборке на эмуляторе Android 15 / API 35 (arm64). Эта приёмка не
 сертифицирует физические устройства или native/Dart-символизацию.
 [Протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
 [ограничения diagnostic-модулей](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).

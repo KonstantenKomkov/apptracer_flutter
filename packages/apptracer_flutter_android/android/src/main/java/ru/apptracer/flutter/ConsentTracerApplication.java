@@ -24,11 +24,11 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
     final Sdk140BackgroundExecutor background;
     private boolean collecting = true;
 
-    ConsentTracerApplication(Application host) {
+    ConsentTracerApplication(Application host) throws ReflectiveOperationException {
         this(host, false);
     }
 
-    ConsentTracerApplication(Application host, boolean freshSession) {
+    ConsentTracerApplication(Application host, boolean freshSession) throws ReflectiveOperationException {
         this.host = host;
         attachBaseContext(host);
         List<TracerConfiguration> supplied = host instanceof HasTracerConfiguration
@@ -50,8 +50,7 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
         background = new Sdk140BackgroundExecutor(executor(core.getBgExecutor$tracer_commons_release(), true),
                 Sdk140ConsentRuntime::executorFailed);
         endpoint = new Sdk140Endpoint(io, original::getApiUrl);
-        // Copy every core field (unchanged in 1.4.0, 1.5.2 and 1.6.1). Providers remain
-        // dynamic; no token is copied to Dart, a log or a separate persistent store.
+        // getApiUrl also preserves the host's choice of certificate endpoint on 1.6.2.
         CoreTracerConfiguration.Builder builder = new CoreTracerConfiguration.Builder()
                 .provideApiUrl(endpoint::get)
                 .provideOverrideAppToken(original::getOverrideAppToken)
@@ -63,6 +62,9 @@ final class ConsentTracerApplication extends Application implements HasTracerCon
                 .setBgExecutor(background);
         if (core.getOverrideEnvironment$tracer_commons_release() != null) {
             builder.setOverrideEnvironment(core.getOverrideEnvironment$tracer_commons_release());
+        }
+        if (!freshSession && "1.6.2".equals(Sdk140ConsentRuntime.sdkVersion())) {
+            builder.addInitialTestIds(core.getInitialTestIds$tracer_commons_release());
         }
         controlledCore = builder.build();
         combined.add(controlledCore);

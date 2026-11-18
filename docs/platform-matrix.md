@@ -53,11 +53,11 @@ ANR dialog complained.
 
 | Item | Value | How it was checked |
 |---|---|---|
-| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | Maven Central for 1.6.1; vendor Nexus retained only for legacy hosts |
-| Integrated version | `1.6.1` | Maven Central BOM/AAR audit and release/R8 acceptance, 2026-11-10 |
-| Gradle plugin | `id("ru.ok.tracer") version "1.6.1"`; `mavenCentral()` for plugins and dependencies | Maven Central marker POM and clean-cache builds |
+| Runtime artefacts | `ru.ok.tracer:tracer-platform` (BOM), `tracer-crash-report`, `tracer-crash-report-native`, `tracer-heap-dumps`, `tracer-disk-usage`, `tracer-profiler-sampling`, `tracer-profiler-systrace` | [VK Nexus](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/) for 1.6.2 |
+| Integrated version | `1.6.2` | Release/R8 example build with the 1.6.2 crash reporter and its bundled CA certificates |
+| Gradle plugin | `id("ru.ok.tracer") version "1.6.2"` | VK Nexus for plugin and dependency resolution |
 | Tombstones | opt-in, Android 12+; only `tracer-crash-report` required | 1.5.2 `CrashReportConfiguration.Builder` and `ExitReporter` bytecode |
-| `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.5.2.aar` |
+| `minSdkVersion` | **21** | `AndroidManifest.xml` inside `tracer-commons-1.6.2.aar` |
 | Permissions added | `INTERNET`, `ACCESS_NETWORK_STATE` | same manifest |
 | Initialisation | automatic, through `ru.ok.tracer.startup.InitializationProvider` (a content provider) plus `TracerInitializer` | same manifest |
 | Configuration | `Application` implementing `ru.ok.tracer.HasTracerConfiguration`, or `Tracer.runtimeConfigs` seeded before `Tracer.init` runs | `javap` on `tracer-commons` |
@@ -67,12 +67,12 @@ ANR dialog complained.
 
 ### Why 1.4.0 remains the compatibility floor
 
-SDK 1.6.1 is the current build target. The default configuration retains support
-for hosts on 1.4.0; tombstones are available on the audited 1.5.2/1.6.1 hosts.
-Deferred collection accepts only the explicitly inspected 1.4.0 / 1.5.2 / 1.6.1
-versions. Only 1.6.1 supports resuming a native runtime pause through `enable`.
+SDK 1.6.2 is the current build target. The default configuration retains support
+for hosts on 1.4.0; tombstones are available on 1.5.2/1.6.1/1.6.2 hosts.
+Deferred collection accepts only the explicitly inspected 1.4.0 / 1.5.2 / 1.6.1 / 1.6.2
+versions. Both 1.6.1 and 1.6.2 support resuming a native runtime pause through `enable`.
 Starting with `apptracer_flutter_android` 0.4.0, successful full cleanup in
-SDK 1.6.1 deferred mode permits a fresh session in the same process. Automatic
+SDK 1.6.1 deferred mode permits a fresh session in the same process. Adapter 0.4.1 extends this to SDK 1.6.2. Automatic
 initialization and SDK 1.4.0/1.5.2 still require a new process after full cleanup.
 See [task 23 acceptance](task-23-collection-lifecycle.md) and
 [release preparation](release-1.2.0.md). Historical bytecode facts below retain

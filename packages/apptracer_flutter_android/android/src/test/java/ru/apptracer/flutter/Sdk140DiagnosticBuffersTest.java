@@ -17,8 +17,11 @@ public final class Sdk140DiagnosticBuffersTest {
     public static void main(String[] args) throws Exception {
         loadedStoresAreRetired();
         uninitializedStoreIsNotLoaded();
+        if ("1.6.2".equals(Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null))) {
+            testIdsAreRetired();
+        }
         incompatibleStoreFails();
-        System.out.println("Sdk140DiagnosticBuffers: 3 vendor store checks passed");
+        System.out.println("Sdk140DiagnosticBuffers: vendor store checks passed");
     }
 
     private static void loadedStoresAreRetired() throws Exception {
@@ -93,6 +96,21 @@ public final class Sdk140DiagnosticBuffersTest {
         check(reads.get() == 0, "erasure touched disk supplier");
         check(!((Lazy<?>) get(files, "map$delegate")).isInitialized(), "erasure initialized file cache");
         check(get(sessions, "loaded").equals(true), "retired session store can reload");
+    }
+
+    private static void testIdsAreRetired() throws Exception {
+        Object store = empty("ru.ok.tracer.session.TestIdsStorage");
+        put(store, "lock", new Object());
+        put(store, "testIdsData", new java.util.HashSet<>(Collections.singleton(42L)));
+        put(store, "prevTestIdsData", Collections.singleton(7L));
+        Object core = empty("ru.ok.tracer.CoreTracerConfiguration");
+        put(core, "initialTestIds", Collections.singleton(12L));
+
+        Sdk140DiagnosticBuffers.clearTestIds(store, core);
+        check(((Collection<?>) get(store, "testIdsData")).isEmpty(), "current test IDs retained");
+        check(get(store, "prevTestIdsData") == null, "previous test IDs retained");
+        check(((Enum<?>) get(store, "prevTestIdsState")).name().equals("CLEAN"), "previous test IDs can reload");
+        check(((Collection<?>) get(core, "initialTestIds")).isEmpty(), "initial test IDs retained");
     }
 
     private static void incompatibleStoreFails() throws Exception {

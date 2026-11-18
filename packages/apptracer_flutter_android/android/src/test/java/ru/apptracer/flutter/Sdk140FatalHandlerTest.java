@@ -68,7 +68,7 @@ public final class Sdk140FatalHandlerTest {
         Object previousLogger = logger.get(null);
         Object version = Class.forName("ru.ok.tracer.BuildConfig").getField("LIBRARY_VERSION").get(null);
         Field disabled = Class.forName("ru.ok.tracer.Tracer").getDeclaredField(
-                "1.6.1".equals(version) ? "disabledInRuntime" : "isDisabled");
+                ("1.6.1".equals(version) || "1.6.2".equals(version)) ? "disabledInRuntime" : "isDisabled");
         disabled.setAccessible(true);
         boolean previousDisabled = disabled.getBoolean(null);
         Field configDisabled = crash.getDeclaredField("isConfigDisabled");

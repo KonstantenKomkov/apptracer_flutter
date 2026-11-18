@@ -254,7 +254,7 @@ jobs:
           exit "$failed"
 
   android-configuration-cache:
-    name: Android SDK 1.6.1 configuration cache
+    name: Android SDK 1.6.2 configuration cache
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

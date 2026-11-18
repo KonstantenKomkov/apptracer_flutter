@@ -40,13 +40,17 @@ in — your application adds them.
 
 ### Android
 
-Use Android SDK/BOM and Gradle plugin **1.6.1** from Maven Central. Keep the
+Use BOM and Gradle plugin **1.6.2** from VK Nexus for the SDK upload fix on
+Android API 23 and below. Keep the
 Flutter `includeBuild` in the existing `pluginManagement` block of
 `android/settings.gradle.kts`, configure repositories and add the plugin:
 
 ```kotlin
 pluginManagement {
     repositories {
+        maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
+            content { includeGroup("ru.ok.tracer") }
+        }
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -54,15 +58,18 @@ pluginManagement {
 }
 
 plugins {
-    id("ru.ok.tracer") version "1.6.1" apply false
+    id("ru.ok.tracer") version "1.6.2" apply false
 }
 ```
 
-Use `google()` and `mavenCentral()` for dependency resolution (`allprojects.repositories`
+Add VK Nexus alongside `google()` and `mavenCentral()` for dependency resolution (`allprojects.repositories`
 in `android/build.gradle.kts`, or `dependencyResolutionManagement.repositories`
 if your project manages repositories in settings):
 
 ```kotlin
+maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
+    content { includeGroup("ru.ok.tracer") }
+}
 google()
 mavenCentral()
 ```
@@ -95,7 +102,7 @@ tracer {
 }
 
 dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.6.1"))
+    implementation(platform("ru.ok.tracer:tracer-platform:1.6.2"))
     implementation("ru.ok.tracer:tracer-crash-report")
     // Optional, for native crashes:
     implementation("ru.ok.tracer:tracer-crash-report-native")
@@ -150,8 +157,8 @@ Four more things that are easy to trip over:
   `ru.apptracer.flutter.TracerApplication` and add yours to
   `super.tracerConfiguration`.
 * `Tracer.stopCollection()` fully stops collection. Use `pauseCollection()` /
-  `resumeCollection()` for a temporary pause. `apptracer_flutter_android` 0.4.0
-  supports a fresh authorized session after deferred cleanup on SDK 1.6.1; see
+  `resumeCollection()` for a temporary pause. `apptracer_flutter_android` 0.4.1
+  supports a fresh authorized session after deferred cleanup on SDK 1.6.1/1.6.2; see
   [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
 * `TracerOptions.environment` is ignored on Android too — the SDK takes it from
   the Gradle plugin, defaulting to the build variant name. Set it in the
@@ -169,7 +176,7 @@ them without a custom `Application`, add this inside `<application>` in
     android:value="true" />
 ```
 
-Requires Tracer Android **1.5.2 or 1.6.1** and **Android 12 / API 31+**. The feature is
+Requires Tracer Android **1.5.2, 1.6.1 or 1.6.2** and **Android 12 / API 31+**. The feature is
 part of `tracer-crash-report`; `tracer-crash-report-native` is optional and
 remains useful for native crashes on older Android versions. System libraries
 can be symbolicated from tombstones; this does not guarantee Dart AOT
@@ -184,20 +191,17 @@ This setting applies to automatic and deferred startup. It is configured on
 Android before SDK initialization, not through `TracerOptions` in Dart.
 Deferred collection still requires the manifest provider removal and explicit
 `startCollection`; enabling the feature does not start collection by itself.
-Use Maven Central for SDK 1.6.1; keep vendor Nexus only for legacy SDK hosts.
 Perform a clean build after updating.
 
-### Android 1.6.1: migration and limitations
+### Upgrading to Android SDK 1.6.2
 
-Use `apptracer_flutter ^1.2.0` (Android adapter `^0.4.0`) and matching BOM/Gradle
-plugin 1.6.1. Add `mavenCentral()` to plugin and dependency repositories; VK
-Nexus is not required for this version. Perform a clean release build. Older
-1.4.0/1.5.2 host SDKs remain accepted with their previous runtime limits and
-repository configuration.
+Use `apptracer_flutter ^1.2.1` (Android adapter `^0.4.1`). Update the Android
+repository settings, BOM and plugin as shown above, then rebuild the app. Hosts
+pinned to 1.4.0, 1.5.2 or 1.6.1 retain their existing lifecycle behavior.
 
-- `startCollection` can resume an initialized SDK 1.6.1 after native
-  `Tracer.disable()`. `apptracer_flutter_android` 0.4.0 also recreates a fresh
-  session after successful full deferred cleanup on SDK 1.6.1. SDK 1.4.0/1.5.2
+- `startCollection` can resume an initialized SDK 1.6.1 or 1.6.2 after native
+  `Tracer.disable()`. `apptracer_flutter_android` 0.4.1 also recreates a fresh
+  session after successful full deferred cleanup on SDK 1.6.1/1.6.2. SDK 1.4.0/1.5.2
   and automatic initialization still require a new process after full stop.
   Build-time disable requires a build configuration change.
   Observing state never implicitly resumes collection.
@@ -221,7 +225,7 @@ repository configuration.
 - Enabling both the native module and experimental tombstones can produce a
   MINIDUMP and a TOMBSTONE for one crash. The example opts into tombstones separately.
 
-Acceptance used a release/R8 arm64 Android 15 / API 35 emulator. It does not
+SDK 1.6.1 acceptance used a release/R8 arm64 Android 15 / API 35 emulator. It does not
 certify physical devices or native/Dart symbolication.
 [Acceptance](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
 [diagnostic module limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).

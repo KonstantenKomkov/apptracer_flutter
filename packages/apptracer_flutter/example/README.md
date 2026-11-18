@@ -187,7 +187,7 @@ env 'ORG_GRADLE_PROJECT_tracer.deferred=true' \
 Ограничения расшифровки Android native и оптимизированных Web-кадров описаны
 в журнале проверки.
 
-Android использует SDK/BOM и Gradle-плагин 1.6.1 из Maven Central.
+Android использует SDK/BOM и Gradle-плагин 1.6.2 из [VK Nexus](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/).
 Модуль нативных крэшей включён; experimental tombstones выключены по умолчанию.
 Для отдельной tombstone-пробы используйте `-Ptracer.verificationTombstones=true`
 и `-Ptracer.verificationNativeModule=false`, иначе один крэш может дать два отчёта.
@@ -196,7 +196,7 @@ Kotlin file/line в консоли Tracer остаются неточными; �
 локального Retrace. [Приёмка и ограничения](../../../docs/android-sdk-1.6.1-acceptance.md).
 См. [настройку tombstones](../README.md#android-tombstones-sdk-152).
 
-### Опциональные HeapDumps / DiskUsage (Android 1.6.1)
+### Опциональные HeapDumps / DiskUsage (Android 1.6.2)
 
 Отдельная проверочная конфигурация `-Ptracer.diagnostics=true` добавляет flavor
 `diagnostics` с собственным application ID. Она не совместима с управляемым
