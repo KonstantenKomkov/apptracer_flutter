@@ -1,5 +1,21 @@
 # Publishing
 
+## Android SDK 1.6.2 release (2026-11-18)
+
+The Android adapter and facade were published from `11854f2` (tag `v1.2.1`). Both hosted
+publication dry-runs passed without overrides, warnings or hints. Each downloaded
+archive matched its pub.dev SHA-256 and every packaged file matched the commit.
+[Release CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/44349588201).
+
+| Package | Files checked | Archive SHA-256 |
+| --- | ---: | --- |
+| [apptracer_flutter_android 0.4.1](https://pub.dev/packages/apptracer_flutter_android/versions/0.4.1) | 42 | `cd847836a27031333c31ccef6e6b4bc35090ee6534b3c652e6519d78f1fa2d48` |
+| [apptracer_flutter 1.2.1](https://pub.dev/packages/apptracer_flutter/versions/1.2.1) | 119 | `e866f5769f85ec05e0715f9307cb0b70ae9894c52c1087b2514e065e0f4a8477` |
+
+The example passed analysis and its widget test with hosted dependencies. A
+fresh Android app resolved both published versions without overrides and built
+an arm64 release APK with Tracer SDK/BOM and Gradle plugin 1.6.2 from VK Nexus.
+
 ## Task 23 — published, 2026-11-13
 
 Published from `78922a5b593aac9b47bf65db8b7b1316b9678579` (`v1.2.0`), in dependency order:

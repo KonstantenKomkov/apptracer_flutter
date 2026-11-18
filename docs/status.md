@@ -1,5 +1,10 @@
 # Verification status
 
+On 2026-11-18, `apptracer_flutter 1.2.1` and `apptracer_flutter_android 0.4.1`
+were published with support for Tracer Android SDK 1.6.2 from VK Nexus. The
+release APK includes the SDK’s bundled CA certificates. On-device upload on
+API 23 and below remains unverified. [Publication record](publishing.md#android-sdk-162-release-2026-11-18).
+
 Task 23 release, 2026-11-13: `apptracer_flutter` **1.2.0**,
 `apptracer_flutter_android` **0.4.0** and
 `apptracer_flutter_platform_interface` **0.2.1** are **published on pub.dev**.
