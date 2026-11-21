@@ -46,6 +46,8 @@ Combined unit-test coverage is written to `build/coverage/{index.html,summary.js
 Examples and generated files are excluded. Parser, `TracerClient`, lifecycle and
 HTTP transport also have a baseline comparison in `tool/coverage_baseline.json`;
 there is no arbitrary global threshold and coverage is not live-delivery proof.
+The desktop dry-run explicitly allows only pub's exact-pin warning for
+`sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
 
 ## Flutter compatibility
 

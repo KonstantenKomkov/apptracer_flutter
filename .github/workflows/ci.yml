@@ -382,7 +382,7 @@ jobs:
           for package in "${packages[@]}"
           do
             echo "::group::$package"
-            (cd "packages/$package" && dart pub publish --dry-run) || {
+            bash tool/publish_dry_run.sh "packages/$package" || {
               failed=1
               echo "::error::dry run failed for $package"
             }

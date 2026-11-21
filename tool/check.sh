@@ -71,7 +71,7 @@ if [[ "$mode" == full ]]; then
   while IFS= read -r package_path; do publishable+=("$package_path"); done < <(python3 tool/package_catalog.py publish)
   for package in "${publishable[@]}"; do
     echo "--> $package"
-    (cd "$package" && dart pub publish --dry-run) || failed=1
+    bash tool/publish_dry_run.sh "$package" || failed=1
   done
 fi
 
