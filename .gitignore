@@ -5,7 +5,7 @@
 .pub-cache/
 .pub/
 build/
-/packages/*/coverage/lcov.info
+coverage/
 pubspec.lock
 **/doc/api/
 
