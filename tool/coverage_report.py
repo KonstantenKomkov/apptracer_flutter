@@ -101,7 +101,7 @@ def main() -> None:
             html.escape(name), entry['covered'], entry['total'], entry['ratio'] * 100,
             '' if delta is None else f'{delta:+.2f} pp'))
     page = '''<!doctype html><meta charset="utf-8"><title>AppTracer coverage</title>
-<style>body{font-family:sans-serif}td,th{padding:.35em 1em;text-align:left}table{border-collapse:collapse}td{border-bottom:1px solid #ddd}</style>
+<style>body{{font-family:sans-serif}}td,th{{padding:.35em 1em;text-align:left}}table{{border-collapse:collapse}}td{{border-bottom:1px solid #ddd}}</style>
 <h1>Dart unit-test coverage</h1><p>Overall: {}/{} ({:.2f}%). Not evidence of live delivery.</p>
 <table><tr><th>Critical file</th><th>Lines</th><th>Coverage</th><th>Baseline delta</th></tr>{}</table>
 <p>Full data: summary.json and lcov.info.</p>'''.format(
