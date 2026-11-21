@@ -66,4 +66,8 @@ for package in "${packages[@]}"; do
   (cd "$package" && dart pub publish --dry-run) || failed=1
 done
 
+echo
+echo "==> source tree unchanged"
+bash tool/check_git_clean.sh || failed=1
+
 exit "$failed"

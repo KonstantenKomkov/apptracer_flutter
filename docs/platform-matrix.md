@@ -27,6 +27,16 @@ macOS 15 arm64 CI and isolated consumer checks:
 [status.md](status.md) for what has and has not been exercised against a real
 Tracer project.
 
+## Flutter toolchain
+
+The pubspec compatibility floor and the tested release pins are different claims.
+Flutter 3.22.0 is the declared minimum and has a dedicated analyze/unit-test CI
+job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.35.7 at
+this update). Latest stable is a diagnostic, non-blocking canary for all common
+packages and desktop unit tests; it does not replace either pin. Desktop release
+acceptance retains its separately audited 3.47.4 toolchain. See
+[contributing](contributing.md#flutter-compatibility) for update and local checks.
+
 **Aurora is a C/C++ project, not a Sentry one.** The vendor ships a native
 `libtracernative.so`, a C++ header and Python upload scripts; integration is
 `tracer_init(app_key, storage_dir)`, and crashes arrive as minidumps collected
