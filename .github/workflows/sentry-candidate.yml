@@ -1,0 +1,118 @@
+name: Desktop Sentry candidate
+
+on:
+  schedule:
+    - cron: '41 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  precheck:
+    name: Resolve and unit test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Resolve the accepted baseline before creating a candidate lock
+        working-directory: packages/apptracer_flutter_desktop
+        run: flutter pub get
+      - name: Resolve candidate without changing the production pin
+        working-directory: packages/apptracer_flutter_desktop
+        run: dart pub upgrade sentry_flutter --major-versions
+      - name: Analyze candidate
+        working-directory: packages/apptracer_flutter_desktop
+        run: flutter analyze --fatal-infos
+      - name: Unit test candidate
+        working-directory: packages/apptracer_flutter_desktop
+        run: flutter test
+      - name: Preserve candidate lock and toolchain
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentry-candidate-precheck-${{ matrix.os }}
+          path: |
+            packages/apptracer_flutter_desktop/pubspec.yaml
+            packages/apptracer_flutter_desktop/pubspec.lock
+          retention-days: 14
+
+  linux:
+    name: Linux release and runtime
+    needs: precheck
+    if: always()
+    uses: ./.github/workflows/linux.yml
+    with:
+      sentry_candidate: scheduled
+
+  macos:
+    name: macOS release and lifecycle
+    needs: precheck
+    if: always()
+    uses: ./.github/workflows/macos.yml
+    with:
+      sentry_candidate: scheduled
+
+  windows:
+    name: Windows release preparation
+    needs: precheck
+    if: always()
+    uses: ./.github/workflows/windows.yml
+    with:
+      sentry_candidate: scheduled
+
+  windows-runtime:
+    name: Windows native runtime
+    needs: windows
+    if: always()
+    uses: ./.github/workflows/windows-runtime.yml
+    with:
+      sentry_candidate: scheduled
+
+  symbols:
+    name: macOS exact-build symbols
+    needs: precheck
+    if: always()
+    uses: ./.github/workflows/macos-symbols.yml
+    with:
+      sentry_candidate: scheduled
+
+  summary:
+    name: Candidate compatibility report
+    needs: [precheck, linux, macos, windows-runtime, symbols]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download candidate lock
+        uses: actions/download-artifact@v4
+        with:
+          name: sentry-candidate-precheck-ubuntu-22.04
+          path: candidate-lock
+      - name: Write machine-readable result for every required scenario
+        run: |
+          python3 tool/sentry_candidate_report.py \
+            --lock candidate-lock/pubspec.lock \
+            --precheck '${{ needs.precheck.result }}' \
+            --linux '${{ needs.linux.result }}' \
+            --macos '${{ needs.macos.result }}' \
+            --windows '${{ needs.windows-runtime.result }}' \
+            --symbols '${{ needs.symbols.result }}' \
+            --output build/sentry-candidate/report.json
+          cat build/sentry-candidate/report.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish report without publishing a package
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentry-candidate-report
+          path: build/sentry-candidate/report.json
+          retention-days: 30
+      - name: Report candidate incompatibility
+        run: python3 -c "import json,sys; sys.exit(json.load(open('build/sentry-candidate/report.json'))['overall'] != 'passed')"

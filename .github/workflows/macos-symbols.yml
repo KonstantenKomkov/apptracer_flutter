@@ -43,6 +43,12 @@ on:
       - '!**/.gitignore'
       - '!**/.gitattributes'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      sentry_candidate:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -60,6 +66,10 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
+      - name: Resolve Sentry candidate in this disposable checkout
+        if: inputs.sentry_candidate != ''
+        working-directory: packages/apptracer_flutter_desktop
+        run: dart pub upgrade sentry_flutter --major-versions
       - name: Check rejection of missing and foreign symbols
         run: python3 -m unittest discover -s tool/tests -v
       - name: Build obfuscated release with separate symbols

@@ -19,12 +19,18 @@ on:
         description: 'Successful Windows preparation run from this branch (optional)'
         required: false
         type: string
+  workflow_call:
+    inputs:
+      sentry_candidate:
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
   actions: read
 jobs:
   native:
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
+    if: github.event.workflow_run.inputs.sentry_candidate != '' || github.event_name == 'workflow_call' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: windows-2022
     timeout-minutes: 40
     steps:

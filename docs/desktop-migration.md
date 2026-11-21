@@ -7,6 +7,14 @@ x86_64 VM evidence is in [linux-preparation.md](linux-preparation.md).
 Windows 11 x64 evidence is in [windows-local-acceptance.md](windows-local-acceptance.md).
 Aurora is not supported by this adapter.
 
+## Sentry upgrades
+
+The production pin remains `sentry_flutter 9.30.1` until a candidate passes every
+required acceptance stage. See the [internal API and native symbol inventory](desktop-sentry-dependencies.md).
+`/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
+checkouts, with per-OS machine-readable results. It never merges or publishes.
+A pin-changing PR additionally needs hosted consumer and live Tracer evidence.
+
 ## External application
 
 Install the facade and optional desktop adapter from pub.dev:
