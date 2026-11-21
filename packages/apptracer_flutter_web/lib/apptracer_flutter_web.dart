@@ -31,19 +31,22 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
 
+import 'src/indexed_db_queue_store.dart';
 import 'src/window_browser_facts.dart';
 
 export 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
+export 'src/indexed_db_queue_store.dart';
 export 'src/window_browser_facts.dart';
 
 /// The web [TracerPlatform] implementation.
 class AppTracerWeb extends TracerHttpTracer {
-  /// Creates the web implementation.
-  AppTracerWeb()
+  /// Creates the web implementation with persistent browser delivery storage.
+  AppTracerWeb({TracerQueueStore? queueStore})
       : super(
           facts: WindowBrowserFacts(),
           sdkVersion: packageVersion,
           backendName: 'web-tracer-http',
+          queueStore: queueStore ?? IndexedDbQueueStore(),
         );
 
   /// Version reported to Tracer as `tracerSdkVersion`.

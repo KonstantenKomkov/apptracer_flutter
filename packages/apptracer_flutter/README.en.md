@@ -343,6 +343,13 @@ re-symbolication — symbols apply only to events received after the upload.
 Nothing to add: the pure-Dart implementation is already inside the package. The
 token is the JS project's `appToken`, passed one step below.
 
+During a temporary network outage, events are stored in IndexedDB and retried
+after connectivity returns or the page reloads. The queue is limited to 100
+events, 1 MiB and a 24-hour TTL; stop/clear deletes it. An HTTP `sent` state does
+not guarantee that the event appears in the console, and a lost response after
+server acceptance can produce a duplicate. See the
+[web delivery protocol](../../docs/web-protocol.md#delivery-reliability) for the policy and its limits.
+
 The JS project's `pluginToken`, as on iOS, is not for events but for uploading
 source maps — without them a release build's stack traces stay minified. The
 vendor has no tool for this, so the package's command is the route:
