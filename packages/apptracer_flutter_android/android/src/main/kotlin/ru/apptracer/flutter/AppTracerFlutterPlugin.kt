@@ -169,6 +169,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
+        AndroidEventScope.clearPersistentProperties()
         if (!isSdkOnClasspath()) {
             result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
             return
@@ -252,6 +253,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
+        AndroidEventScope.clearPersistentProperties()
         if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
             val context = applicationContext
             if (context != null) {
@@ -286,17 +288,20 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         @Suppress("UNCHECKED_CAST")
         val customKeys = call.argument<Map<String, String>>("customKeys")
-        customKeys?.forEach { (key, value) -> Tracer.setCustomProperty(key, value) }
-
-        Tracer.setCustomProperty(KEY_DART_EXCEPTION_TYPE, exceptionType)
+        val eventProperties = mutableMapOf<String, String?>()
+        customKeys?.let { eventProperties.putAll(it) }
+        eventProperties[KEY_DART_EXCEPTION_TYPE] = exceptionType
         if (stack?.get("needsSymbolication") == true) {
-            Tracer.setCustomProperty(KEY_DART_NEEDS_SYMBOLICATION, "true")
-            (stack["buildId"] as? String)?.let {
-                Tracer.setCustomProperty(KEY_DART_BUILD_ID, it)
-            }
+            eventProperties[KEY_DART_NEEDS_SYMBOLICATION] = "true"
+            eventProperties[KEY_DART_BUILD_ID] = stack["buildId"] as? String
+        } else {
+            eventProperties[KEY_DART_NEEDS_SYMBOLICATION] = null
+            eventProperties[KEY_DART_BUILD_ID] = null
         }
 
-        TracerCrashReport.report(severity, throwable, issueKey)
+        AndroidEventScope.withEventProperties(eventProperties) {
+            TracerCrashReport.report(severity, throwable, issueKey)
+        }
     }
 
     private fun recordLog(message: String?) {
@@ -313,7 +318,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         // setCustomProperty rather than setKey: Tracer caps a key's value at
         // 31 characters but a custom property's at 128, and 31 is too short for
         // most of what callers actually want to attach.
-        Tracer.setCustomProperty(key, value)
+        AndroidEventScope.setPersistentProperty(key, value)
     }
 
     private fun setUserId(userId: String?) {
