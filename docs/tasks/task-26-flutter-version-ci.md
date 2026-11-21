@@ -1,6 +1,6 @@
 # П. 26. Матрица версий Flutter и немутирующие проверки CI
 
-**Статус:** реализация завершена; минимальная Flutter-матрица проверяется локально, canary выявил новые deprecation infos. **Приоритет:** P1. **Сложность:** M.
+**Статус:** выполнена; minimum 3.22.0 / Dart 3.4.0 и полный check проходят, desktop unit на 3.50.0 проходит. Новые analyze infos в latest canary оставлены отдельным non-blocking сигналом. **Приоритет:** P1. **Сложность:** M.
 
 [Матрица toolchain](../platform-matrix.md#flutter-toolchain) и [порядок проверок](../contributing.md#flutter-compatibility).
 

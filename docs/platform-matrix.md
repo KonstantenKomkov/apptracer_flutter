@@ -30,11 +30,14 @@ Tracer project.
 ## Flutter toolchain
 
 The pubspec compatibility floor and the tested release pins are different claims.
-Flutter 3.22.0 is the declared minimum and has a dedicated analyze/unit-test CI
+Flutter 3.22.0 / Dart 3.4.0 is the declared minimum and has a dedicated analyze/unit-test CI
 job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.35.7 at
 this update). Latest stable is a diagnostic, non-blocking canary for all common
 packages and desktop unit tests; it does not replace either pin. Desktop release
-acceptance retains its separately audited 3.47.4 toolchain. See
+acceptance retains its separately audited 3.47.4 toolchain. On 2026-11-21 the
+minimum matrix passed locally for all common packages, including Chrome; desktop
+unit tests also passed on 3.50.0. New analyze deprecations on that newer toolchain
+remain a separate canary finding, not a baseline failure. See
 [contributing](contributing.md#flutter-compatibility) for update and local checks.
 
 **Aurora is a C/C++ project, not a Sentry one.** The vendor ships a native
