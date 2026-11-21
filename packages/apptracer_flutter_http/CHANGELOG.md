@@ -9,6 +9,11 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.1]
+
+- Bound HTTP uploads by timeout, attempt count, queue size and age. Retry transient failures with jitter and support both forms of `Retry-After`.
+- Support injectable queue storage and delivery diagnostics. Stop/clear serializes cleanup with pending writes and reports cleanup failures.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added

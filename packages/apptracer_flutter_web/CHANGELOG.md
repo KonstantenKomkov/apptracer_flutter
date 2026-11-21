@@ -9,6 +9,11 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+## [0.2.1]
+
+- Recover pending HTTP events from IndexedDB on an authorized page reload. Web Locks protect the queue from simultaneous writers. A page without exclusive storage uses memory for that session.
+- Report failed cleanup and retry pending deletion before replay.
+
 ## [0.2.0] - 2026-10-03
 
 ### Changed

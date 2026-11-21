@@ -53,7 +53,10 @@ SDK.
 
 `startCollection` supports explicit opt-in after deferred bootstrap.
 `stopAndClearCollection` immediately disables collection, clears logs, custom keys
-and user ID, and returns `disabled`. This transport has no disk queue or retries.
+and user ID, and deletes the queue. Successful cleanup returns `disabled`; a failure
+returns `error`. The default in-memory queue holds up to 100 events or 1 MiB for
+24 hours. Transient failures are retried up to five total attempts with a 10-second
+request timeout.
 A later start works in the same process and creates a fresh owned HTTP client;
 diagnostics supplied while disabled are discarded. An already started request
 may complete. An injected `httpClient` remains caller-owned and is not closed.
