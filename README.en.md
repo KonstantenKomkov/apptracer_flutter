@@ -63,6 +63,12 @@ tool/
 
 | Document | What it answers |
 |---|---|
+| [docs/README.md](docs/README.md) | current guide map and the boundary with historical evidence |
+| [android-guide.en.md](docs/android-guide.en.md) | Android setup, tokens, native crashes and consent |
+| [apptracer_flutter_ios/README.en.md](packages/apptracer_flutter_ios/README.en.md) | iOS setup, SPM/CocoaPods and dSYM |
+| [web-protocol.md](docs/web-protocol.md) | web transport, offline queueing and retry limits |
+| [filtering.en.md](docs/filtering.en.md) | manual reporting, breadcrumbs, beforeSend and context |
+| [release-history.md](docs/release-history.md) | release-specific Runtime APIs and migration notes |
 | [live-verification-plan.md](docs/live-verification-plan.md) | step-by-step checklist for proving the integration against a real Tracer project — start here before publishing |
 | [platform-matrix.md](docs/platform-matrix.md) | which SDK, which version, which minimum, what is covered where — every fact traced to how it was checked |
 | [symbolication.md](docs/symbolication.md) | what `--split-debug-info` does to a Dart stack trace, and what to do about it |

@@ -24,7 +24,7 @@ English version: [README.en.md](README.en.md).
 
 SDK Tracer подключён здесь как `compileOnly`, поэтому его добавляет само
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
-`appToken`. См. [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.md#android).
+`appToken`. См. [Android setup guide](../../docs/android-guide.md).
 
 Адаптер **0.4.1** компилируется с SDK **1.6.2**, который исправляет отправку
 данных на Android API 23 и ниже. Добавьте [Maven-репозиторий Tracer](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/)

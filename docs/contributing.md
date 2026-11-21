@@ -31,6 +31,10 @@ tool/bootstrap.sh   # pub get everywhere
 tool/check.sh       # format + analyze + test + publish dry-run, same order as CI
 ```
 
+For documentation-only changes, run `python3 tool/check_markdown_links.py` instead
+of the full code checks. It validates local files and GitHub-style anchors, and
+`.github/workflows/docs.yml` runs the same lightweight check on docs-only PRs.
+
 Per package:
 
 ```sh

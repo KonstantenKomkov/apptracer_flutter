@@ -65,6 +65,12 @@ tool/
 
 | Документ | На что отвечает |
 |---|---|
+| [docs/README.md](docs/README.md) | карта актуальных руководств и граница с историческими протоколами |
+| [android-guide.md](docs/android-guide.md) | настройка Android, токены, native crashes и согласие |
+| [apptracer_flutter_ios/README.md](packages/apptracer_flutter_ios/README.md) | настройка iOS, SPM/CocoaPods и dSYM |
+| [web-protocol.md](docs/web-protocol.md) | web transport, offline-очередь, retry и их ограничения |
+| [filtering.md](docs/filtering.md) | ручная отправка, breadcrumbs, beforeSend и custom context |
+| [release-history.md](docs/release-history.md) | release-specific Runtime API и старые migration notes |
 | [architecture.md](docs/architecture.md) | как разделены пакеты, как Dart взаимодействует с нативным кодом и почему desktop подключается отдельно |
 | [live-verification-plan.md](docs/live-verification-plan.md) | пошаговый чек-лист проверки интеграции на живом проекте Tracer — начинать отсюда перед публикацией |
 | [platform-matrix.md](docs/platform-matrix.md) | какой SDK, какой версии, с каким минимумом и что где покрыто — каждый факт со ссылкой на то, как он проверен |

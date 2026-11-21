@@ -25,7 +25,7 @@ issue.
 
 The Tracer SDK is a `compileOnly` dependency here, so the host application adds
 it — along with the `ru.ok.tracer` Gradle plugin, which is where `appToken`
-comes from. See the [README](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter/README.en.md#android).
+comes from. See the [Android setup guide](../../docs/android-guide.en.md).
 
 Adapter **0.4.1** compiles against SDK **1.6.2**, which fixes uploads on Android
 API 23 and below. Add the [Tracer Maven repository](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/)

@@ -1,0 +1,61 @@
+# Фильтрация и контекст событий
+
+## Ручная отправка и ключи
+
+```dart
+try {
+  await repository.load();
+} catch (error, stackTrace) {
+  await Tracer.recordError(
+    error,
+    stackTrace,
+    severity: TracerSeverity.warning,
+    issueKey: 'ORDERS-LOAD',
+    customKeys: {'endpoint': '/orders'},
+  );
+}
+
+Tracer.log('пользователь нажал «оформить»', category: 'ui');
+await Tracer.setCustomKey(key: 'checkout_step', value: '3');
+await Tracer.removeCustomKey('checkout_step');
+```
+
+Breadcrumbs и custom keys отправляются только вместе с событием. Ключи события
+переопределяют постоянные только для него; следующие события снова используют
+постоянные значения. Android восстанавливает native scope после каждого отчёта,
+поэтому значения предыдущего события не протекают в следующее.
+
+`issueKey` переопределяет группировку. Если он не задан, пакет синтезирует ключ
+из типа ошибки и внутреннего именованного кадра, без имени файла и строки.
+
+## beforeSend и beforeBreadcrumb
+
+```dart
+TracerOptions(
+  beforeSend: (event) => event.message.contains('@')
+      ? event.copyWith(message: '<скрыто>')
+      : event,
+  beforeBreadcrumb: (crumb) => crumb.category == 'auth' ? null : crumb,
+)
+```
+
+Верните `null`, чтобы отбросить событие или breadcrumb. Исключение хука
+логируется и игнорируется, а исходное событие отправляется. `beforeSend`
+выполняется до передачи данных платформе; удалённые постоянные и одноразовые
+поля не должны возвращаться native scope.
+
+## Большие стектрейсы
+
+Дословный стек ограничен 8 КБ по умолчанию, разобранные кадры — 128. Начало
+трейса сохраняется, потому что там `build_id` и ближайшие к месту броска кадры.
+Настройте лимиты при необходимости:
+
+```dart
+TracerOptions(
+  maxRawStackTraceLogBytes: 32768, // 0 — без лимита
+  maxStackFrames: 256,             // 0 — без лимита
+)
+```
+
+Подробности данных и очистки — в [privacy.md](privacy.md), символизации — в
+[symbolication.md](symbolication.md).
