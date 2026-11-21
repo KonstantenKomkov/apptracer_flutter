@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 @JS('window.location.assign')
 external void _assign(String url);
 
+@JS('window.fetch')
+external JSPromise<JSAny?> _fetch(String url);
+
 void _reload() {
   _assign(Uri.base.replace(queryParameters: <String, String>{
     ...Uri.base.queryParameters,
@@ -36,20 +39,32 @@ Future<void> main() async {
     initialCustomKeys: const <String, String>{'verification': 'web-delivery'},
   );
   try {
+    final receiver =
+        Uri(scheme: 'http', host: Uri.base.host, port: int.parse(port));
+    Future<void> signal(String stage) async {
+      await _fetch(
+              receiver.replace(path: '/verification/$stage', queryParameters: {
+        'scenario': scenario,
+        'reloaded': '$reloaded',
+      }).toString())
+          .toDart;
+    }
+
+    if (reloaded) await signal('reloaded');
     await Tracer.initialize(options: options, appRunner: () {});
     if (scenario == 'stop' && !reloaded) {
       await Tracer.recordError(
           StateError('web-delivery-revoked'), StackTrace.current);
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      await Tracer.stopAndClearCollection();
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final result = await Tracer.stopAndClearCollection();
+      if (result.state != TracerCollectionState.disabled) {
+        throw StateError('cleanup failed');
+      }
       _reload();
       return;
     }
     if (scenario == 'reload' && !reloaded) {
       await Tracer.recordError(
           StateError('web-delivery-reload'), StackTrace.current);
-      await Future<void>.delayed(const Duration(milliseconds: 200));
       _reload();
       return;
     }
@@ -58,6 +73,7 @@ Future<void> main() async {
           StateError('web-delivery-recovery'), StackTrace.current);
     }
     await Future<void>.delayed(const Duration(seconds: 3));
+    await signal('complete');
     status.value = 'complete';
   } on Object catch (error) {
     status.value = 'error:${error.runtimeType}';

@@ -344,7 +344,8 @@ Nothing to add: the pure-Dart implementation is already inside the package. The
 token is the JS project's `appToken`, passed one step below.
 
 During a temporary network outage, events are stored in IndexedDB and retried
-after connectivity returns or the page reloads. The queue is limited to 100
+while the retry budget lasts. One page per origin owns the persistent queue.
+Other open pages use in-memory queues. The queue is limited to 100
 events, 1 MiB and a 24-hour TTL; stop/clear deletes it. An HTTP `sent` state does
 not guarantee that the event appears in the console, and a lost response after
 server acceptance can produce a duplicate. See the

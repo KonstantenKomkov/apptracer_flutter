@@ -215,7 +215,10 @@ VK Cloud, а у обычного JS-проекта его нет. Поэтому
 ## Надёжность доставки
 
 С 21.11.2026 `TracerHttpTracer` сохраняет событие до первой сетевой попытки.
-Web использует атомарную JSON-запись в IndexedDB; ручная VM-регистрация по
+Одна вкладка владеет очередью IndexedDB через Web Locks. Другие открытые
+вкладки того же origin используют отдельные очереди в памяти. При перезагрузке
+сохраняется очередь вкладки, владевшей блокировкой. Web использует атомарную
+JSON-запись в IndexedDB; ручная VM-регистрация по
 умолчанию — память текущего процесса. Старт с валидным токеном восстанавливает
 только записи того же аккаунта; до явного старта очередь не запускается.
 
@@ -243,7 +246,10 @@ id очереди на сервер не отправляется, wire contract
 The browser uses the same policy: an IndexedDB-backed, account-isolated queue with
 100 events / 1 MiB / 24-hour TTL limits, five attempts, exponential jittered backoff,
 and explicit cleanup on revocation. Storage denial is reported and falls back to
-memory for the current page only. No persistent queue is created before consent.
+memory for the current page only. One page holds the origin's Web Lock. Other
+active pages use separate in-memory queues and lose pending events on reload.
+Stop/clear returns `error/storage_clear_failed` when deletion cannot be confirmed.
+The next authorized restore retries a pending deletion before reading events.
 
 ### Проверки 21.11.2026
 
@@ -254,6 +260,14 @@ memory for the current page only. No persistent queue is created before consent.
   stop/clear → reload. Во всех повторах payload совпал; после отзыва новых запросов
   не было. Команда `tool/check_web_delivery.py` сама поднимает приёмник и может
   открыть собранную страницу через `--open-url`.
+- Повторная проверка PR #6: 32 HTTP-теста на VM и в Chrome, 8 тестов Web в Chrome.
+  В release-сборке приёмник проверяет порядок первого ответа 503, загрузки новой
+  страницы, повторного POST и сигнала завершения. После stop/clear зарегистрирован
+  только первый POST. При восстановлении байты обоих POST совпали.
+- В опубликованном browser uploader `@apptracer/sdk` 3.0.3 проверены путь,
+  параметры запроса, вариант `NONE` и поля элемента `JS_STACKTRACE`. Контрактный
+  тест проверяет их и при повторе. В этом запросе ключ идемпотентности отсутствует.
+  [Исходник uploader из npm](https://unpkg.com/@apptracer/sdk@3.0.3/lib/browser/main/modules/platform/common/module/error-uploader/uploader/CommonStackTraceUploader.mjs).
 - Live Tracer smoke этим прогоном не выполнялся: учётный токен не был доступен
   автоматизированной команде. Поэтому здесь не заявляется подтверждение появления
   новой серии в консоли. Loopback и HTTP 200 не подменяют такую проверку.
