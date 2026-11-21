@@ -37,7 +37,7 @@ is intentional: a dirty-tree publish warning is not ignored.
 
 ## Flutter compatibility
 
-The declared minimum is Flutter 3.22.0. CI tests that minimum separately from the
+The common packages declare Flutter 3.22.0 as their minimum. CI tests that minimum separately from the
 reproducible baseline in `.github/flutter-version`; ordinary PRs never silently
 move that pin. The iOS workflow reads the same file. Desktop release acceptance
 keeps its separately audited toolchain pin.
@@ -45,13 +45,17 @@ keeps its separately audited toolchain pin.
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop
 unit tests. `flutter-baseline-update.yml` opens an unmerged monthly candidate PR
-from official stable metadata, and Dependabot proposes GitHub Actions updates.
+from official stable metadata. Enable “Allow GitHub Actions to create and approve
+pull requests” in the repository Actions settings. On the generated PR, select
+“Approve workflows to run” to start compatibility checks. Dependabot proposes
+GitHub Actions updates.
 No update workflow merges a PR or publishes packages.
 
 To reproduce a particular version with FVM:
 
 ```sh
 fvm install 3.22.0
+cd packages/apptracer_flutter
 "$HOME/fvm/versions/3.22.0/bin/flutter" test
 ```
 

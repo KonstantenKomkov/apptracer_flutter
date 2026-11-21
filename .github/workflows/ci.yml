@@ -54,6 +54,7 @@ on:
 # every claim the README makes about a platform is built here.
 jobs:
   analyze:
+    if: github.event_name != 'schedule'
     name: Analyze and test
     runs-on: ubuntu-latest
     strategy:
@@ -132,6 +133,7 @@ jobs:
           path: packages/${{ matrix.package }}/coverage/lcov.info
 
   minimum-flutter:
+    if: github.event_name != 'schedule'
     name: Minimum Flutter 3.22.0
     runs-on: ubuntu-latest
     strategy:
@@ -204,19 +206,22 @@ jobs:
       - name: Record canary toolchain
         run: flutter --version
       - name: Resolve dependencies
+        id: resolve
         working-directory: packages/${{ matrix.package }}
         run: flutter pub get
       - name: Check formatting
         working-directory: packages/${{ matrix.package }}
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyze
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
         working-directory: packages/${{ matrix.package }}
         run: flutter analyze --fatal-infos
       - name: Set up Chrome
         id: setup-chrome-canary
-        if: matrix.package == 'apptracer_flutter_web'
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.package == 'apptracer_flutter_web' }}
         uses: browser-actions/setup-chrome@v2
       - name: Test
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
         working-directory: packages/${{ matrix.package }}
         run: |
           if [ ! -d test ]; then
@@ -227,9 +232,11 @@ jobs:
             flutter test --reporter=expanded
           fi
       - name: Verify checks did not modify sources
+        if: ${{ !cancelled() }}
         run: bash tool/check_git_clean.sh
 
   example:
+    if: github.event_name != 'schedule'
     name: Example (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -326,12 +333,13 @@ jobs:
         run: bash tool/check_git_clean.sh
 
   publish-dry-run:
+    if: github.event_name != 'schedule'
     name: pub publish --dry-run
     runs-on: ubuntu-latest
     # Required archive and metadata check, using local sibling overrides.
     # Hosted dependency resolution is checked separately at release.
     #
-    # One job rather than a six-way matrix: the command is identical bar the
+    # One job rather than a package matrix: the command is identical bar the
     # directory, and each matrix leg was paying for a runner and a Flutter
     # install to run something that takes half a minute.
     steps:
@@ -352,6 +360,7 @@ jobs:
           for package in \
             apptracer_flutter_platform_interface \
             apptracer_flutter_http \
+            apptracer_flutter_sentry \
             apptracer_flutter_android \
             apptracer_flutter_ios \
             apptracer_flutter_web \
@@ -370,6 +379,7 @@ jobs:
         run: bash tool/check_git_clean.sh
 
   android-configuration-cache:
+    if: github.event_name != 'schedule'
     name: Android SDK 1.6.2 configuration cache
     runs-on: ubuntu-latest
     steps:

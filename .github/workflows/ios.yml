@@ -16,6 +16,11 @@ on:
     branches: [main]
     paths:
       - "packages/apptracer_flutter_ios/**"
+      - "packages/apptracer_flutter_platform_interface/**"
+      - "packages/apptracer_flutter/lib/**"
+      - "packages/apptracer_flutter/pubspec*.yaml"
+      - "packages/apptracer_flutter/example/lib/**"
+      - "packages/apptracer_flutter/example/pubspec*.yaml"
       - "packages/apptracer_flutter/example/ios/**"
       - ".github/workflows/ios.yml"
       - ".github/flutter-version"
@@ -32,6 +37,11 @@ on:
   pull_request:
     paths:
       - "packages/apptracer_flutter_ios/**"
+      - "packages/apptracer_flutter_platform_interface/**"
+      - "packages/apptracer_flutter/lib/**"
+      - "packages/apptracer_flutter/pubspec*.yaml"
+      - "packages/apptracer_flutter/example/lib/**"
+      - "packages/apptracer_flutter/example/pubspec*.yaml"
       - "packages/apptracer_flutter/example/ios/**"
       - ".github/workflows/ios.yml"
       - ".github/flutter-version"

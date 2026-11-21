@@ -30,7 +30,7 @@ Tracer project.
 ## Flutter toolchain
 
 The pubspec compatibility floor and the tested release pins are different claims.
-Flutter 3.22.0 / Dart 3.4.0 is the declared minimum and has a dedicated analyze/unit-test CI
+Flutter 3.22.0 / Dart 3.4.0 is the common packages’ declared minimum and has a dedicated analyze/unit-test CI
 job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.35.7 at
 this update). Latest stable is a diagnostic, non-blocking canary for all common
 packages and desktop unit tests; it does not replace either pin. Desktop release
