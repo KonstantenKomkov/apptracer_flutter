@@ -208,14 +208,16 @@ jobs:
       - name: Resolve dependencies
         id: resolve
         working-directory: packages/${{ matrix.package }}
-        run: flutter pub get
+        # Resolve Dart dependencies (including examples) without regenerating
+        # native example projects with the canary SDK.
+        run: dart pub get
       - name: Check formatting
         working-directory: packages/${{ matrix.package }}
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyze
         if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
         working-directory: packages/${{ matrix.package }}
-        run: flutter analyze --fatal-infos
+        run: flutter analyze --no-pub --fatal-infos
       - name: Set up Chrome
         id: setup-chrome-canary
         if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.package == 'apptracer_flutter_web' }}
@@ -227,9 +229,9 @@ jobs:
           if [ ! -d test ]; then
             echo "no tests in this package"
           elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
-            CHROME_EXECUTABLE='${{ steps.setup-chrome-canary.outputs.chrome-path }}' flutter test --platform chrome --reporter=expanded
+            CHROME_EXECUTABLE='${{ steps.setup-chrome-canary.outputs.chrome-path }}' flutter test --no-pub --platform chrome --reporter=expanded
           else
-            flutter test --reporter=expanded
+            flutter test --no-pub --reporter=expanded
           fi
       - name: Verify checks did not modify sources
         if: ${{ !cancelled() }}
