@@ -95,6 +95,7 @@ Future<void> main() async {
   var hold = scenario == 'inflight';
   final held = <HttpRequest>[];
   final requests = <String>[];
+  var completedCrashUploads = 0;
   HttpServer? sink;
   Future<void> respond(HttpRequest request) async {
     request.response.statusCode = online ? 200 : 503;
@@ -122,6 +123,7 @@ Future<void> main() async {
         held.add(request);
       } else {
         await respond(request);
+        if (request.uri.path == '/api/crash/upload') completedCrashUploads++;
       }
     });
   }
@@ -136,6 +138,16 @@ Future<void> main() async {
           scenario.contains('recovery') || scenario == 'account-b',
       captureZoneErrors: false,
       debug: true,
+      beforeSend: scenario == 'event-context'
+          ? (event) {
+              if (!event.message.contains('event-context-a')) return event;
+              final keys = Map<String, String>.of(event.customKeys)
+                ..remove('tenant')
+                ..remove('transientRemove')
+                ..['collision'] = 'filtered-value';
+              return event.copyWith(customKeys: keys);
+            }
+          : null,
       initialCustomKeys: runId.isEmpty
           ? const {}
           : {'verificationRun': runId, 'verificationScenario': scenario},
@@ -463,6 +475,34 @@ Future<void> main() async {
         'state': stopped.state.name,
         'secondaryEngines': 3,
         'requestsAfterStop': requests.length - beforeStop
+      });
+      return;
+    }
+    if (scenario == 'event-context') {
+      await Tracer.setCustomKey(key: 'tenant', value: 'global-tenant');
+      await Tracer.setCustomKey(key: 'collision', value: 'global-value');
+      final aot = StackTrace.fromString(
+          "build_id: 'abcdef0123456789'\n#00 abs 0000000000001234 virt 0000000000001234");
+      await Tracer.recordError(StateError('event-context-a'), aot,
+          issueKey: 'event-context-a',
+          customKeys: const <String, String>{
+            'endpoint': '/orders',
+            'collision': 'event-value',
+            'transientRemove': 'must-not-upload',
+          });
+      await Tracer.recordError(
+          StateError('event-context-b'), StackTrace.current,
+          issueKey: 'event-context-b');
+      for (var i = 0; i < 40 && completedCrashUploads < 2; i++) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+      if (completedCrashUploads != 2) {
+        throw StateError('Expected two event-context uploads: $requests');
+      }
+      final stopped = await Tracer.stopAndClearCollection();
+      await save('complete', {
+        'state': stopped.state.name,
+        'requests': requests,
       });
       return;
     }
