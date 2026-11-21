@@ -31,31 +31,42 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
 
+import 'src/indexed_db_queue_store.dart';
 import 'src/window_browser_facts.dart';
 
 export 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
+export 'src/indexed_db_queue_store.dart';
 export 'src/window_browser_facts.dart';
 
 /// The web [TracerPlatform] implementation.
 class AppTracerWeb extends TracerHttpTracer {
-  /// Creates the web implementation.
-  AppTracerWeb()
+  /// Creates the web implementation with persistent browser delivery storage.
+  AppTracerWeb({TracerQueueStore? queueStore, super.deliveryListener})
       : super(
           facts: WindowBrowserFacts(),
           sdkVersion: packageVersion,
           backendName: 'web-tracer-http',
+          queueStore: queueStore ?? IndexedDbQueueStore(),
         );
 
   /// Version reported to Tracer as `tracerSdkVersion`.
   ///
   /// Ours, not the vendor's: what reaches their ingest comes from this package,
   /// and saying otherwise would make a support conversation confusing.
-  static const String packageVersion = '0.2.0';
+  static const String packageVersion = '0.2.1';
 
   /// Dart runtime throw frames are shared by unrelated browser errors.
   /// Use the common Dart grouping key to distinguish their application frames.
   @override
   bool get needsSyntheticIssueKey => true;
+
+  int _initialization = 0;
+
+  @override
+  Future<TracerCollectionResult> stopAndClearCollection() {
+    ++_initialization;
+    return super.stopAndClearCollection();
+  }
 
   /// Fills in the application's version before starting.
   ///
@@ -70,11 +81,15 @@ class AppTracerWeb extends TracerHttpTracer {
   /// would be worse than one reporting an unknown version.
   @override
   Future<void> initialize(TracerOptions options) async {
-    if (options.release != null && options.dist != null) {
+    final initialization = ++_initialization;
+    if (!options.isCollectionEnabled ||
+        (options.resolvedAppToken ?? '').isEmpty ||
+        (options.release != null && options.dist != null)) {
       return super.initialize(options);
     }
 
     final Map<String, Object?>? version = await _readVersionJson();
+    if (initialization != _initialization) return;
     if (version == null) {
       return super.initialize(options);
     }
