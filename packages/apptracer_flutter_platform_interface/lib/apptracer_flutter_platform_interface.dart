@@ -17,3 +17,4 @@ export 'src/models/tracer_severity.dart';
 export 'src/synthetic_issue_key.dart';
 export 'src/tracer_platform.dart';
 export 'src/models/tracer_collection_result.dart';
+export 'src/pigeon/tracer_api.dart';

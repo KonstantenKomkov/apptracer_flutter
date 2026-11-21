@@ -7,7 +7,7 @@ import OKTracer
 /// Forwards Dart errors, breadcrumbs and custom keys to the OKTracer SDK.
 /// Native crashes, hangs and MetricKit reports are handled by that SDK
 /// directly and are none of this plugin's business.
-public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
+public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
 
     private static let channelName = "ru.apptracer.flutter/tracer"
 
@@ -36,6 +36,73 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
         let instance = AppTracerFlutterPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        TracerNativeApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
+    }
+
+    func initialize(options: NativeOptions) throws -> Bool {
+        initialize(options.legacyArguments)
+    }
+
+    func startCollection(options: NativeOptions) throws -> NativeCollectionResult {
+        if !options.isCollectionEnabled {
+            stopCollectionLegacy()
+        } else {
+            _ = initialize(options.legacyArguments, explicitStart: true)
+        }
+        return collectionState().collectionResult
+    }
+
+    func pauseCollection() throws -> NativeCollectionResult {
+        NativeCollectionResult(state: "unsupported", reason: "native_operation_missing")
+    }
+
+    func resumeCollection() throws -> NativeCollectionResult {
+        NativeCollectionResult(state: "unsupported", reason: "native_operation_missing")
+    }
+
+    func stopAndClearCollection() async throws -> NativeCollectionResult {
+        stopCollectionLegacy()
+        return collectionState().collectionResult
+    }
+
+    func getCollectionState() throws -> NativeCollectionResult {
+        collectionState().collectionResult
+    }
+
+    func stopCollection() throws {
+        stopCollectionLegacy()
+    }
+
+    func recordError(event: NativeEvent) throws {
+        recordError(event.legacyArguments)
+    }
+
+    func recordLog(message: String) throws {
+        if Self.enabled { Self.logProvider?.append(message) }
+    }
+
+    func setCustomKey(key: String, value: String) throws {
+        updateCustomKey(key: key, value: value)
+    }
+
+    func removeCustomKey(key: String) throws {
+        updateCustomKey(key: key, value: "")
+    }
+
+    func setUserId(userId: String?) throws {
+        if Self.enabled { Self.service?.setUserId(userId ?? "") }
+    }
+
+    func runHeapDump(tag: String) async throws -> NativeDiagnosticResult {
+        NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
+    }
+
+    func runDiskUsage() async throws -> NativeDiagnosticResult {
+        NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
+    }
+
+    func setHeapDumpEnabled(enabled: Bool) async throws -> NativeDiagnosticResult {
+        NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -46,19 +113,19 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             result(initialize(arguments))
         case "startCollection":
             if arguments["isCollectionEnabled"] as? Bool == false {
-                stopCollection()
+                stopCollectionLegacy()
                 result(collectionState())
             } else {
                 _ = initialize(arguments, explicitStart: true)
                 result(collectionState())
             }
         case "stopAndClearCollection":
-            stopCollection()
+            stopCollectionLegacy()
             result(collectionState())
         case "getCollectionState":
             result(collectionState())
         case "stopCollection":
-            stopCollection()
+            stopCollectionLegacy()
             result(nil)
         case "recordError":
             recordError(arguments)
@@ -70,7 +137,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             result(nil)
         case "setCustomKey":
             if let key = arguments["key"] as? String, let value = arguments["value"] as? String {
-                setCustomKey(key: key, value: value)
+                updateCustomKey(key: key, value: value)
             }
             result(nil)
         case "removeCustomKey":
@@ -78,7 +145,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
             // closest available equivalent and keeps the key visible as
             // deliberately cleared rather than stale.
             if let key = arguments["key"] as? String {
-                setCustomKey(key: key, value: "")
+                updateCustomKey(key: key, value: "")
             }
             result(nil)
         case "setUserId":
@@ -208,7 +275,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         return ["state": Self.enabled ? "enabled" : "disabled"]
     }
 
-    private func stopCollection() {
+    private func stopCollectionLegacy() {
         Self.enabled = false
         Self.stopped = Self.didStart
         do { try Self.storage.markRevoked() }
@@ -236,7 +303,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin {
         UserDefaults.standard.removeObject(forKey: "TracerSystemInfoProvider.lastValueKey")
     }
 
-    private func setCustomKey(key: String, value: String) {
+    private func updateCustomKey(key: String, value: String) {
         guard Self.enabled, !Self.reservedPropertyKeys.contains(key) else { return }
         Self.service?.update(properties: [key: value])
     }

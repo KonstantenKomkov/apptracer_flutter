@@ -39,6 +39,23 @@ flutter analyze --fatal-infos
 flutter test
 ```
 
+## Changing the native contract
+
+`packages/apptracer_flutter_platform_interface/pigeon/tracer_api.dart` is the
+single source of truth for Android/iOS methods and models. Do not edit generated
+Dart, Kotlin or Swift files directly. Add or change the schema, then run:
+
+```sh
+tool/generate_pigeon.sh         # regenerate all three targets
+tool/generate_pigeon.sh --check # CI check that outputs are current
+```
+
+Pigeon is a dev dependency only. The schema is excluded from publication;
+generated runtime files remain in the packages. Preserve the legacy
+`ru.apptracer.flutter/tracer` compatibility layer for independently versioned
+packages, and add serialization tests for every new nullable, Unicode or
+diagnostic field.
+
 ## Where the risky code lives
 
 Four places account for most of what can go subtly wrong. Change them with

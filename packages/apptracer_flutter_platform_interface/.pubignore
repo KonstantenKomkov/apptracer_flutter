@@ -1,5 +1,6 @@
 # Keep standalone release exports free of development wiring and test output.
 **/pubspec_overrides.yaml
+/pigeon/
 **/.dart_tool/
 **/build/
 **/coverage/

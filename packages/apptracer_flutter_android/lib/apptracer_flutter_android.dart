@@ -10,7 +10,7 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 /// The Android [TracerPlatform] implementation.
 class AppTracerAndroid extends MethodChannelTracer {
   /// Creates the Android implementation.
-  AppTracerAndroid() : super(backendName: 'android-native');
+  AppTracerAndroid({super.nativeApi}) : super(backendName: 'android-native');
 
   /// Registers this class as the implementation for Android.
   ///

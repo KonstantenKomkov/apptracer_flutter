@@ -60,26 +60,31 @@ flowchart TD
 
 Android и iOS используют общий
 [`MethodChannelTracer`](../packages/apptracer_flutter_platform_interface/lib/src/method_channel_tracer.dart)
-с каналом `ru.apptracer.flutter/tracer`. Например, отправка ошибки проходит
-через вызов:
+и типизированный контракт Pigeon. Источник схемы —
+[`pigeon/tracer_api.dart`](../packages/apptracer_flutter_platform_interface/pigeon/tracer_api.dart).
+Она описывает options, событие, кадры, breadcrumbs, lifecycle и diagnostics.
+Dart преобразует публичную модель и вызывает сгенерированный API:
 
 ```dart
-await _channel.invokeMethod<void>('recordError', event.toMap());
+await _native.recordError(nativeEvent(event));
 ```
 
-1. Dart сериализует `TracerEvent` в карту.
-2. Kotlin выбирает обработчик через `when (call.method)`, Swift — через
-   `switch call.method`.
-3. Нативная сторона читает поля и вызывает SDK.
+1. Pigeon сериализует типизированную модель через `BasicMessageChannel`.
+2. Сгенерированные Kotlin/Swift handlers декодируют её и вызывают SDK.
+3. Диагностика и stop/clear остаются асинхронными; ошибки возвращаются в
+   структурированном результате.
 
 На Android создаётся `DartError`, его стек заменяется кадрами из Dart, затем
 вызывается `TracerCrashReport.report(...)`. В отчёт попадает исходная
 Dart-ошибка, а не стек самого плагина.
 
-Контракт между языками поддерживается вручную: имена методов, ключи карт,
-типы полей и обработчики должны совпадать. При добавлении поля или метода
-нужно согласованно менять Dart-модель и канал, Kotlin, Swift и соответствующие
-тесты. Тесты канала проверяют сериализацию и поведение при ошибках.
+Каналы `dev.flutter.pigeon.*` составляют новую версию транспорта. Прежний
+`ru.apptracer.flutter/tracer` и небольшой map-compatibility layer сохранены для
+независимо версионируемых пакетов: старый Dart продолжает работать с новым
+native, а новый Dart безопасно деградирует со старым native. Enum-подобные
+состояния передаются строками, чтобы неизвестное значение не приводило к крашу.
+`tool/generate_pigeon.sh --check` в CI падает, если generated files устарели.
+Ручное редактирование generated files запрещено.
 
 Сбой интеграции не должен ломать приложение. Мост обрабатывает отсутствие
 плагина и ошибки платформенных вызовов, а операции управления сбором
