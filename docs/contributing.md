@@ -27,13 +27,25 @@ dependencies, while new sibling versions are not yet available on pub.dev.
 ## Commands
 
 ```sh
-tool/bootstrap.sh   # pub get everywhere
-tool/check.sh       # format + analyze + test + publish dry-run, same order as CI
+tool/bootstrap.sh   # pub get everywhere from tool/packages.tsv
+tool/check.sh       # format + analyze + test + coverage + publish dry-run
+make analyze        # analyze every catalog package, including desktop
+make test           # VM/Chrome tests and combined coverage
 ```
 
 Run the full check from a clean commit. It also fails if analyze, tests, builds or
 publish dry-run modify tracked files or leave untracked, non-ignored files. This
 is intentional: a dirty-tree publish warning is not ignored.
+
+`tool/packages.tsv` is the single catalog for local commands, CI matrices and
+publish dry-run. A failed package does not hide the remaining checks; the final
+summary lists passed/failed/skipped work. Desktop unit tests are included, while
+native device/live acceptance remains in explicit platform workflows.
+
+Combined unit-test coverage is written to `build/coverage/{index.html,summary.json,lcov.info}`.
+Examples and generated files are excluded. Parser, `TracerClient`, lifecycle and
+HTTP transport also have a baseline comparison in `tool/coverage_baseline.json`;
+there is no arbitrary global threshold and coverage is not live-delivery proof.
 
 ## Flutter compatibility
 

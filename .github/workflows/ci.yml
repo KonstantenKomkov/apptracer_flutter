@@ -53,21 +53,25 @@ on:
 # A crash reporter that only works on the maintainer's machine is worthless, so
 # every claim the README makes about a platform is built here.
 jobs:
+  catalog:
+    name: Package catalog
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.catalog.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: catalog
+        run: echo "packages=$(python3 tool/package_catalog.py matrix)" >> "$GITHUB_OUTPUT"
+
   analyze:
     if: github.event_name != 'schedule'
     name: Analyze and test
+    needs: catalog
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - apptracer_flutter_platform_interface
-          - apptracer_flutter_http
-          - apptracer_flutter_sentry
-          - apptracer_flutter_android
-          - apptracer_flutter_ios
-          - apptracer_flutter_web
-          - apptracer_flutter
+        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
       - name: Read the reproducible Flutter baseline
@@ -135,18 +139,12 @@ jobs:
   minimum-flutter:
     if: github.event_name != 'schedule'
     name: Minimum Flutter 3.22.0
+    needs: catalog
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - apptracer_flutter_platform_interface
-          - apptracer_flutter_http
-          - apptracer_flutter_sentry
-          - apptracer_flutter_android
-          - apptracer_flutter_ios
-          - apptracer_flutter_web
-          - apptracer_flutter
+        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -184,19 +182,12 @@ jobs:
     name: Latest stable canary (${{ matrix.package }})
     if: github.event_name != 'push'
     continue-on-error: true
+    needs: catalog
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - apptracer_flutter_platform_interface
-          - apptracer_flutter_http
-          - apptracer_flutter_sentry
-          - apptracer_flutter_android
-          - apptracer_flutter_ios
-          - apptracer_flutter_web
-          - apptracer_flutter
-          - apptracer_flutter_desktop
+        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -334,6 +325,33 @@ jobs:
       - name: Verify checks did not modify sources
         run: bash tool/check_git_clean.sh
 
+  coverage:
+    name: Combined Dart coverage
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download package coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: coverage-input
+      - name: Merge coverage and compare critical files
+        run: |
+          for directory in coverage-input/coverage-*; do
+            package="${directory##*coverage-}"
+            mkdir -p "packages/$package/coverage"
+            cp "$directory/lcov.info" "packages/$package/coverage/lcov.info"
+          done
+          python3 tool/coverage_report.py
+          cat build/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload one coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-coverage
+          path: build/coverage
+          retention-days: 30
+
   publish-dry-run:
     if: github.event_name != 'schedule'
     name: pub publish --dry-run
@@ -359,14 +377,9 @@ jobs:
       - name: Dry run
         run: |
           failed=0
-          for package in \
-            apptracer_flutter_platform_interface \
-            apptracer_flutter_http \
-            apptracer_flutter_sentry \
-            apptracer_flutter_android \
-            apptracer_flutter_ios \
-            apptracer_flutter_web \
-            apptracer_flutter
+          packages=()
+          while IFS= read -r package_path; do packages+=("$package_path"); done < <(python3 tool/package_catalog.py publish)
+          for package in "${packages[@]}"
           do
             echo "::group::$package"
             (cd "packages/$package" && dart pub publish --dry-run) || {

@@ -1,0 +1,11 @@
+path	publishable	tests	chrome	native
+packages/apptracer_flutter_platform_interface	true	vm	false	none
+packages/apptracer_flutter_http	true	both	false	none
+packages/apptracer_flutter_sentry	false	vm	false	none
+packages/apptracer_flutter_android	true	vm	false	android
+packages/apptracer_flutter_ios	true	vm	false	ios
+packages/apptracer_flutter_web	true	chrome	true	none
+packages/apptracer_flutter	true	vm	false	example
+packages/apptracer_flutter/example	false	vm	false	example
+packages/apptracer_flutter_desktop	true	vm	false	desktop
+packages/apptracer_flutter_desktop/example	false	vm	false	desktop

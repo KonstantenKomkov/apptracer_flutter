@@ -4,18 +4,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# Order matters only for readability: pubspec_overrides.yaml wires the packages
-# to each other by path, so pub never reaches pub.dev for them.
-packages=(
-  packages/apptracer_flutter_platform_interface
-  packages/apptracer_flutter_http
-  packages/apptracer_flutter_sentry
-  packages/apptracer_flutter_android
-  packages/apptracer_flutter_ios
-  packages/apptracer_flutter_web
-  packages/apptracer_flutter
-  packages/apptracer_flutter/example
-)
+packages=()
+while IFS= read -r package_path; do packages+=("$package_path"); done < <(python3 tool/package_catalog.py paths)
 
 for package in "${packages[@]}"; do
   echo "==> pub get $package"
