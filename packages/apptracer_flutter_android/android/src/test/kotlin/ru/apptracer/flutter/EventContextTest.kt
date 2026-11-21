@@ -51,6 +51,7 @@ class EventContextTest {
 
     @After
     fun restoreSdkStorage() {
+        AndroidEventScope.clearPersistentProperties()
         saved.asReversed().forEach { (field, receiver, value) -> field.set(receiver, value) }
         temporaryDirectory.deleteRecursively()
     }
@@ -105,6 +106,51 @@ class EventContextTest {
     }
 
     @Test
+    fun `removing a Flutter key returns its SDK slot to the native host`() {
+        // The SDK treats both names as the same 32-character key.
+        val prefix = "x".repeat(32)
+        val plugin = AppTracerFlutterPlugin()
+        invoke(plugin, "setCustomKey", mapOf("key" to "${prefix}Flutter", "value" to "old"))
+        invoke(plugin, "removeCustomKey", mapOf("key" to "${prefix}Flutter"))
+        Tracer.setCustomProperty("${prefix}Native", "host")
+
+        AndroidEventScope.withEventProperties(emptyMap()) {
+            assertEquals(mapOf(prefix to "host"), properties())
+        }
+        AndroidEventScope.withEventProperties(mapOf("${prefix}Event" to "once")) {
+            assertEquals(mapOf(prefix to "once"), properties())
+        }
+        assertEquals(mapOf(prefix to "host"), properties())
+    }
+
+    @Test
+    fun `restoration preserves native writes made during the report`() {
+        AndroidEventScope.setPersistentProperty("shared", "original")
+        val longValue = "x".repeat(80)
+        Tracer.setCustomProperty("unchanged", longValue)
+        AndroidEventScope.withEventProperties(linkedMapOf(
+            "once" to "event", "shared" to "override", "unchanged" to longValue,
+        )) {
+            assertEquals(mapOf("once" to "event", "shared" to "override",
+                "unchanged" to longValue.take(64)), properties())
+            Tracer.setCustomProperty("shared", "host")
+            Tracer.setCustomProperty("unchanged", "new")
+        }
+        assertEquals(mapOf("shared" to "host", "unchanged" to "new"), properties())
+    }
+
+    @Test
+    fun `ignored SDK writes cannot send unfiltered properties`() {
+        AndroidEventScope.setPersistentProperty("tenant", "private")
+        // Exercise the SDK setter's silent no-op path.
+        replace(Tracer::class.java, "disabledOnBuild", true)
+        AndroidEventScope.withEventProperties(emptyMap()) {
+            throw AssertionError("report ran with an unfiltered tenant")
+        }
+        assertEquals(mapOf("tenant" to "private"), properties())
+    }
+
+    @Test
     fun `report failure restores native scope`() {
         AndroidEventScope.setPersistentProperty("tenant", "global-tenant")
 
@@ -148,9 +194,8 @@ class EventContextTest {
 
         assertEquals(workers, observations.size)
         observations.forEach { event ->
-            assertTrue(event.remove("collision")!!.startsWith("event-"))
-            assertEquals(1, event.size)
-            assertTrue(event.keys.single().startsWith("once-"))
+            val index = event.remove("collision")!!.removePrefix("event-").toInt()
+            assertEquals(mapOf("once-$index" to "$index"), event)
         }
         assertEquals(mapOf("collision" to "global-value"), properties())
     }

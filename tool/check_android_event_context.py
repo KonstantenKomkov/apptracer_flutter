@@ -24,33 +24,46 @@ def uploads(directory: Path, scenario: str, requests: list[str]) -> list[dict]:
             if body.startswith(b"\x1f\x8b"):
                 body = gzip.decompress(body)
             parts[part.get_param("name", header="content-disposition")] = body
-        assert parts["type"] == b"NON_FATAL"
+        if parts.get("type") != b"NON_FATAL":
+            raise ValueError(f"Unexpected report type in capture {index}")
         result.append(parts)
     return result
 
 
 def validate(directory: Path, scenario: str = "event-context") -> dict:
     receipt = json.loads((directory / f"{scenario}.json").read_text())
-    assert receipt["stage"] == "complete", receipt.get("stage")
+    if (receipt.get("stage"), receipt.get("state")) != ("complete", "disabled"):
+        raise ValueError("The scenario did not complete with collection disabled")
     reports = uploads(directory, scenario, receipt["requests"])
-    assert len(reports) == 2, len(reports)
-    first, second = (json.loads(report["uploadBean"])["properties"] for report in reports)
+    if len(reports) != 2:
+        raise ValueError(f"Expected two reports, received {len(reports)}")
 
-    assert first["endpoint"] == "/orders"
-    assert first["collision"] == "filtered-value"
-    assert first["dart.needs_symbolication"] == "true"
-    assert first["dart.build_id"] == "abcdef0123456789"
-    assert "tenant" not in first
-    assert "transientRemove" not in first
-    assert "event-value" not in first.values()
-    assert "must-not-upload" not in first.values()
+    # The uploader can deliver the reports in either order.
+    properties = {}
+    for report in reports:
+        title = report["stackTrace"].splitlines()[0]
+        if title in properties:
+            raise ValueError("Received two reports for the same event")
+        properties[title] = json.loads(report["uploadBean"])["properties"]
+    first = properties[b"DartError: StateError: Bad state: event-context-a"]
+    second = properties[b"DartError: StateError: Bad state: event-context-b"]
 
-    assert second["tenant"] == "global-tenant"
-    assert second["collision"] == "global-value"
-    assert "endpoint" not in second
-    assert "transientRemove" not in second
-    assert "dart.needs_symbolication" not in second
-    assert "dart.build_id" not in second
+    def check_fields(actual, expected, absent):
+        for key, value in expected.items():
+            if actual.get(key) != value:
+                raise ValueError(f"Unexpected or missing value for {key}")
+        for key in absent:
+            if key in actual:
+                raise ValueError(f"Unexpected property {key}")
+
+    check_fields(first, {
+        "endpoint": "/orders", "collision": "filtered-value",
+        "dart.needs_symbolication": "true", "dart.build_id": "abcdef0123456789",
+    }, ("tenant", "transientRemove"))
+    if {"event-value", "must-not-upload"}.intersection(first.values()):
+        raise ValueError("Filtered value reached the first report")
+    check_fields(second, {"tenant": "global-tenant", "collision": "global-value"},
+                 ("endpoint", "transientRemove", "dart.needs_symbolication", "dart.build_id"))
     return {"scenario": scenario, "acceptedUploads": 2,
             "beforeSendFiltering": True, "persistentScopeRestored": True,
             "diagnosticsIsolated": True}

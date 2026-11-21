@@ -2,6 +2,14 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-24"></a>
+
+### П. 24. Изоляция контекста Android-событий
+
+Проверены фильтрация свойств через `beforeSend`, восстановление постоянных
+ключей и изоляция последовательных Dart-отчётов в Android SDK 1.6.2.
+[Задача](task-24-android-event-context.md) и [протокол JVM и release/R8](../android-event-context.md).
+
 ## Стабильный выпуск 1.0.0, 24 октября 2026
 
 PR #3 слит в main. Facade и optional desktop опубликованы на pub.dev как

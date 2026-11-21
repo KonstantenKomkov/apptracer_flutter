@@ -95,6 +95,7 @@ Future<void> main() async {
   var hold = scenario == 'inflight';
   final held = <HttpRequest>[];
   final requests = <String>[];
+  var completedCrashUploads = 0;
   HttpServer? sink;
   Future<void> respond(HttpRequest request) async {
     request.response.statusCode = online ? 200 : 503;
@@ -122,6 +123,7 @@ Future<void> main() async {
         held.add(request);
       } else {
         await respond(request);
+        if (request.uri.path == '/api/crash/upload') completedCrashUploads++;
       }
     });
   }
@@ -491,15 +493,10 @@ Future<void> main() async {
       await Tracer.recordError(
           StateError('event-context-b'), StackTrace.current,
           issueKey: 'event-context-b');
-      for (var i = 0;
-          i < 40 &&
-              requests.where((path) => path.contains('/crash/upload')).length <
-                  2;
-          i++) {
+      for (var i = 0; i < 40 && completedCrashUploads < 2; i++) {
         await Future<void>.delayed(const Duration(seconds: 1));
       }
-      if (requests.where((path) => path.contains('/crash/upload')).length !=
-          2) {
+      if (completedCrashUploads != 2) {
         throw StateError('Expected two event-context uploads: $requests');
       }
       final stopped = await Tracer.stopAndClearCollection();

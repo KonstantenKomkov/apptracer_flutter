@@ -316,7 +316,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return
         }
         // setCustomProperty rather than setKey: Tracer caps a key's value at
-        // 31 characters but a custom property's at 128, and 31 is too short for
+        // 31 characters but a custom property's at 64, and 31 is too short for
         // most of what callers actually want to attach.
         AndroidEventScope.setPersistentProperty(key, value)
     }
