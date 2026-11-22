@@ -91,7 +91,9 @@ tool/
 ```sh
 make            # список всех целей
 make bootstrap  # pub get во всех пакетах
-make check      # analyze + test + publish dry-run
+make analyze    # analyze всех пакетов, включая desktop
+make test       # VM/Chrome-тесты и сводный coverage в build/coverage
+make check      # format + analyze + test + coverage + publish dry-run
 ```
 
 В `Makefile` лежат и команды запуска примера на каждой платформе

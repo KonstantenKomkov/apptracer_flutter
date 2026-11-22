@@ -274,7 +274,8 @@ Future<void> main() async {
     await Tracer.setUserId('ios-acceptance-$scenario');
     if (scenario == 'dart-errors') {
       await Tracer.recordError(
-          FormatException('ios-release-delivery-probe'), StackTrace.current);
+          const FormatException('ios-release-delivery-probe'),
+          StackTrace.current);
     }
     await Future<void>.delayed(const Duration(seconds: 20));
     if (scenario == 'new-consent') {

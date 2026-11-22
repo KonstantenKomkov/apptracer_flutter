@@ -87,7 +87,9 @@ through `pubspec_overrides.yaml`, which `dart pub publish` ignores.
 ```sh
 make            # list every target
 make bootstrap  # pub get in every package
-make check      # analyze + test + publish dry-run
+make analyze    # analyze all catalog packages, including desktop
+make test       # VM/Chrome suites and combined coverage in build/coverage
+make check      # format + analyze + test + coverage + publish dry-run
 ```
 
 The `Makefile` also carries the run commands for the example on each platform

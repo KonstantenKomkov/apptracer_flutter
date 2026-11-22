@@ -7,6 +7,7 @@ on:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
+      - 'packages/apptracer_flutter/pubspec*.yaml'
       - 'tool/check_*desktop.py'
       - 'tool/*windows*'
       - 'tool/*linux*'
@@ -29,6 +30,7 @@ on:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
       - 'packages/apptracer_flutter/lib/**'
+      - 'packages/apptracer_flutter/pubspec*.yaml'
       - 'tool/check_*desktop.py'
       - 'tool/*windows*'
       - 'tool/*linux*'
@@ -47,12 +49,24 @@ on:
       - '!**/.gitignore'
       - '!**/.gitattributes'
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      versions:
+        description: Resolved Sentry SDKs and toolchain from the release build
+        value: ${{ jobs.windows.outputs.versions }}
+    inputs:
+      sentry_candidate:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 jobs:
   windows:
+    outputs:
+      versions: ${{ steps.evidence.outputs.versions }}
     runs-on: windows-2022
     timeout-minutes: 35
     env:
@@ -70,6 +84,12 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
+      - name: Resolve Sentry candidate in this disposable checkout
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py apply
       - name: Record toolchain
         run: |
           $tokens = $null
@@ -107,6 +127,13 @@ jobs:
           Invoke-Flutter analyze --fatal-infos
           Invoke-Flutter test
           Invoke-Flutter build windows --release --obfuscate --split-debug-info=build/symbols/dart
+      - name: Identify compiled Sentry SDKs
+        id: evidence
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py evidence
       - name: Bundle exact-build Dart and native source maps
         run: |
           $ProgressPreference = 'SilentlyContinue'

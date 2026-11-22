@@ -1,0 +1,130 @@
+name: Desktop Sentry candidate
+
+on:
+  schedule:
+    - cron: '41 5 1 * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact sentry_flutter version (empty selects latest stable)'
+        type: string
+  pull_request:
+    paths:
+      - '.github/workflows/sentry-candidate.yml'
+      - 'tool/sentry_candidate*.py'
+      - 'tool/tests/test_sentry_candidate*.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.select.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select exact candidate (accepted control on pull requests)
+        id: select
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.version }}
+        run: python tool/sentry_candidate.py select
+
+  precheck:
+    name: Precheck (${{ matrix.os }})
+    needs: select
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Resolve exact candidate
+        env:
+          SENTRY_CANDIDATE: ${{ needs.select.outputs.version }}
+        run: |
+          python tool/sentry_candidate.py apply
+          cd packages/apptracer_flutter_desktop
+          flutter pub get
+      - name: Analyze candidate
+        working-directory: packages/apptracer_flutter_desktop
+        run: flutter analyze --fatal-infos
+      - name: Unit test candidate
+        working-directory: packages/apptracer_flutter_desktop
+        run: flutter test
+
+  linux:
+    name: Linux release and runtime
+    needs: [select, precheck]
+    uses: ./.github/workflows/linux.yml
+    with:
+      sentry_candidate: ${{ needs.select.outputs.version }}
+
+  macos:
+    name: macOS release and lifecycle
+    needs: [select, precheck]
+    uses: ./.github/workflows/macos.yml
+    with:
+      sentry_candidate: ${{ needs.select.outputs.version }}
+
+  windows:
+    name: Windows release preparation
+    needs: [select, precheck]
+    uses: ./.github/workflows/windows.yml
+    with:
+      sentry_candidate: ${{ needs.select.outputs.version }}
+
+  windows-runtime:
+    name: Windows native runtime
+    needs: windows
+    uses: ./.github/workflows/windows-runtime.yml
+    with:
+      current_run_build: true
+
+  symbols:
+    name: macOS exact-build symbols
+    needs: [select, precheck]
+    uses: ./.github/workflows/macos-symbols.yml
+    with:
+      sentry_candidate: ${{ needs.select.outputs.version }}
+
+  summary:
+    name: Candidate compatibility report
+    needs: [select, precheck, linux, macos, windows, windows-runtime, symbols]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect individual job and step results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?filter=latest&per_page=100" \
+            --jq '.jobs[] | {name, conclusion, html_url, steps: [.steps[] | {name, conclusion}]}' > jobs.jsonl
+      - name: Write compatibility report
+        if: always()
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          python3 tool/sentry_candidate_report.py
+          cat build/sentry-candidate/report.json >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sentry-candidate-report
+          path: build/sentry-candidate/report.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Check result
+        if: always()
+        run: python3 -c "import json,sys; sys.exit(json.load(open('build/sentry-candidate/report.json'))['overall'] != 'passed')"

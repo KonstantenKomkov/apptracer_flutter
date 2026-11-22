@@ -2,6 +2,42 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-29"></a>
+
+### П. 29. Управляемые обновления desktop Sentry SDK
+
+CI выбирает точную версию и проверяет её в изолированных сборках для Linux,
+macOS и Windows. Отчёт сохраняет результаты этапов и версии собранных SDK.
+Для смены production pin предусмотрена отдельная приёмка.
+[Задача](task-29-desktop-sentry-upgrades.md) и [порядок проверки](../desktop-sentry-dependencies.md).
+
+<a id="task-28"></a>
+
+### П. 28. Единые локальные проверки и сводный coverage
+
+Каталог пакетов задаёт состав локальных проверок, матриц CI и publish dry-run.
+Сводный отчёт показывает покрытие VM-тестами и изменение по четырём критичным файлам.
+[Задача](task-28-unified-checks-coverage.md) и [команды](../contributing.md#commands).
+
+<a id="task-27"></a>
+
+### П. 27. Типизированный канал Android/iOS
+
+Dart, Kotlin и Swift используют общую схему Pigeon. Для ранее выпущенных
+адаптеров сохранён MethodChannel. Android release с SDK 1.6.2 на API 35
+передал два отчёта в loopback-сценарии и завершил очистку. Проверены
+сборки iOS для симулятора и устройства.
+[Задача](task-27-typed-method-channel.md) и [генерация](../contributing.md#changing-the-native-contract).
+
+<a id="task-26"></a>
+
+### П. 26. Матрица версий Flutter и немутирующие проверки CI
+
+Семь общих пакетов проходят анализ и unit-тесты на минимальном Flutter 3.22.0
+и закреплённом 3.35.7. Canary запускает unit-тесты и при замечаниях анализатора.
+Проверка дерева учитывает изменения исходников и новые файлы после команд.
+[Задача](task-26-flutter-version-ci.md) и [порядок проверок](../contributing.md#flutter-compatibility).
+
 <a id="task-24"></a>
 
 ### П. 24. Изоляция контекста Android-событий

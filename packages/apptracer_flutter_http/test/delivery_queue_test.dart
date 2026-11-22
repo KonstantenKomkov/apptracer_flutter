@@ -111,10 +111,10 @@ class _BlockedStore extends TracerMemoryQueueStore {
 }
 
 const _options = TracerOptions(appToken: 'test-token');
-final _policy = TracerDeliveryPolicy(
-  requestTimeout: const Duration(milliseconds: 5),
-  initialBackoff: const Duration(seconds: 1),
-  maxBackoff: const Duration(seconds: 30),
+const _policy = TracerDeliveryPolicy(
+  requestTimeout: Duration(milliseconds: 5),
+  initialBackoff: Duration(seconds: 1),
+  maxBackoff: Duration(seconds: 30),
 );
 
 TracerEvent _event(String message) => TracerEvent(
@@ -254,7 +254,7 @@ void main() {
     final clock = _Clock();
     final diagnostics = <TracerDeliveryDiagnostic>[];
     final first = _tracer(firstClient, store, clock, diagnostics,
-        policy: TracerDeliveryPolicy(timeToLive: const Duration(seconds: 1)));
+        policy: const TracerDeliveryPolicy(timeToLive: Duration(seconds: 1)));
     await first.startCollection(_options);
     await settle();
     expect(
@@ -264,7 +264,7 @@ void main() {
     clock.now = clock.now.add(const Duration(seconds: 2));
     final secondClient = _Client([]);
     final second = _tracer(secondClient, store, clock, diagnostics,
-        policy: TracerDeliveryPolicy(timeToLive: const Duration(seconds: 1)));
+        policy: const TracerDeliveryPolicy(timeToLive: Duration(seconds: 1)));
     await second.startCollection(_options);
     await settle();
 
@@ -281,7 +281,7 @@ void main() {
     final clock = _Clock();
     final diagnostics = <TracerDeliveryDiagnostic>[];
     final tracer = _tracer(client, store, clock, diagnostics,
-        policy: TracerDeliveryPolicy(maxEntries: 2));
+        policy: const TracerDeliveryPolicy(maxEntries: 2));
     await tracer.startCollection(_options);
 
     final pending = <Future<void>>[
