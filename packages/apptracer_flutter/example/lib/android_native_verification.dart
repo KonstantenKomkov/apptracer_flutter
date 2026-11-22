@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
 const _native = MethodChannel('ru.apptracer.flutter.example/native');
@@ -41,13 +41,17 @@ Future<void> main() async {
   final output = Directory(context['outputPath']!);
   await output.create(recursive: true);
   final status = ValueNotifier<String>('Preparing $scenario');
-  runApp(MaterialApp(
-      home: Scaffold(
-          body: Center(
-              child: ValueListenableBuilder<String>(
-    valueListenable: status,
-    builder: (_, value, __) => Text(value, textAlign: TextAlign.center),
-  )))));
+  runApp(
+    WidgetsApp(
+      color: const Color(0xff202020),
+      builder: (_, __) => Center(
+        child: ValueListenableBuilder<String>(
+          valueListenable: status,
+          builder: (_, value, __) => Text(value, textAlign: TextAlign.center),
+        ),
+      ),
+    ),
+  );
   Future<Map<String, Object>> files() async {
     final found = <String, Object>{};
     for (final root in ['cachePath', 'filesPath']) {

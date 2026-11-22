@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+// material_ui requires a newer Flutter SDK than this example supports.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

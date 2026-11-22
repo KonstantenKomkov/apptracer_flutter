@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
 import 'package:flutter/foundation.dart';
+// material_ui requires a newer Flutter SDK than this example supports.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;

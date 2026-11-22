@@ -129,7 +129,8 @@ class LinuxLifecycle implements Integration<SentryFlutterOptions>, Transport {
     _started = true;
     final native = sdk.SentryNative(options);
     for (final entry in contexts!.values.entries) {
-      native.setContexts(entry.key, entry.value);
+      await native.setContexts(entry.key, entry.value);
+      if (_revoked || !_isAuthorized()) throw StateError('linux_start_revoked');
     }
     give();
     options.sdk.addIntegration('apptracerLinuxLifecycle');
