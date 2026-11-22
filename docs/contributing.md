@@ -132,7 +132,7 @@ tests.
 3. Declare `implements: apptracer_flutter` and a `dartPluginClass` with a
    `registerWith`.
 4. Add it to `default_package` in `packages/apptracer_flutter/pubspec.yaml`, to
-   the CI matrix, and to `docs/platform-matrix.md` with the coordinates, the
+   the package catalog in `tool/packages.tsv`, and to `docs/platform-matrix.md` with the coordinates, the
    minimum version, and how you verified them.
 
 ## Verifying vendor facts
