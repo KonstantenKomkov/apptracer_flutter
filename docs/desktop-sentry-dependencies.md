@@ -66,3 +66,17 @@ toolchain. A skipped suite or missing build identity prevents a passing result.
 A pin-changing PR also requires hosted consumer evidence without monorepo
 overrides and a final live Tracer smoke. For rollback, restore the previous
 accepted Dart and Cocoa pins together with their matching adapter revision.
+
+## Candidate 10.6.0 on 2026-11-22
+
+Dependency resolution succeeded on macOS 15, Ubuntu 22.04 and Windows 2022.
+Analysis failed on all three runners. The adapter imports integrations removed
+in 10.6.0 and uses the former options and SDK logger API. Release builds and
+native runtime suites were skipped by the workflow. The accepted production
+pin remains 9.30.1. [Candidate run](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45007640137).
+
+A migration would also need to address the candidate's Flutter 3.44 minimum
+(the desktop adapter supports 3.24) and Swift Package Manager on macOS,
+where the adapter pins Sentry/HybridSDK through CocoaPods.
+[10.6.0 manifest](https://pub.dev/api/packages/sentry_flutter/versions/10.6.0)
+and [upstream Apple packaging change](https://github.com/getsentry/sentry-dart/pull/3879).

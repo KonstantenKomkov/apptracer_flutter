@@ -35,7 +35,7 @@ macOS и Windows. Отчёт сохраняет результаты этапо�
 Dart, Kotlin и Swift используют общую схему Pigeon. Для ранее выпущенных
 адаптеров сохранён MethodChannel. Android release с SDK 1.6.2 на API 35
 передал два отчёта в loopback-сценарии и завершил очистку. Проверены
-сборки iOS для симулятора и устройства.
+два отчёта с нативным контекстом и остановка сбора на симуляторе iOS и физическом iPhone 16 Pro.
 [Задача](task-27-typed-method-channel.md) и [генерация](../contributing.md#changing-the-native-contract).
 
 <a id="task-26"></a>
@@ -46,6 +46,15 @@ Dart, Kotlin и Swift используют общую схему Pigeon. Для 
 и закреплённом 3.35.7. Canary запускает unit-тесты и при замечаниях анализатора.
 Проверка дерева учитывает изменения исходников и новые файлы после команд.
 [Задача](task-26-flutter-version-ci.md) и [порядок проверок](../contributing.md#flutter-compatibility).
+
+<a id="task-25"></a>
+
+### П. 25. Надёжность Web/HTTP-доставки
+
+VM, Chrome и release loopback покрывают retry, лимиты очереди и очистку при
+отзыве. 22.11.2026 в кабинете Tracer проверены три события с контекстом,
+включая доставку после восстановления сети и полного перезапуска Chrome.
+[Задача](task-25-web-delivery-reliability.md) и [live-протокол](../web-protocol.md#live-tracer-2026-11-22).
 
 <a id="task-24"></a>
 

@@ -100,7 +100,6 @@ desktop Sentry updates и навигация документации. Кажд�
 
 | № | Задача | Приоритет | Сложность | Зависимости / заметки |
 | --- | --- | --- | --- | --- |
-| 25 | [Надёжность Web/HTTP-доставки](task-25-web-delivery-reliability.md) | P0 | XL | Timeout, retry, bounded persistent queue, stop/clear и browser acceptance |
 | 1 | [Проверить SDK, конфигурацию проектов и границы поддержки](#task-1) | P0 | M | Ubuntu/Windows закрыты; целевая среда/доступы/API Авроры и общая сверка |
 | 5 | [Символизация Windows, macOS и Ubuntu/Linux](#task-5) | P1 | L | Ubuntu/Windows реализованы в принятом объёме; остаётся macOS live Dart AOT и общая сверка |
 | 6 | [Нативный плагин Tracer для Авроры](#task-6) | P1 | XL | №1; Aurora SDK, Flutter embedder, устройство или совместимый эмулятор |
@@ -546,6 +545,8 @@ staged dry-run и документация установки/миграции/p
 - [№27. Типизированный канал Android/iOS](development_completed_v1.md#task-27).
 
 - [№26. Матрица версий Flutter и немутирующие проверки CI](development_completed_v1.md#task-26).
+
+- [№25. Надёжность Web/HTTP-доставки](development_completed_v1.md#task-25).
 
 - [№24. Изоляция контекста Android-событий](development_completed_v1.md#task-24).
 
