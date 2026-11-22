@@ -1,9 +1,8 @@
 # apptracer_flutter_sentry
 
-Для экспериментальной интеграции через официальный Sentry SDK см.
-[apptracer_flutter_desktop](../apptracer_flutter_desktop/README.md). Этот пакет
-остаётся legacy HTTP-транспортом; переход требует явной замены зависимости
-и `SentryProtocolTracer` на `SentryDesktopTracer`. Не запускайте оба одновременно.
+Этот ручной транспорт архивирован. Исходники остаются по прежнему пути для
+Git-зависимостей. Для Windows, Linux и macOS используйте
+`apptracer_flutter_desktop`. [Переход на desktop-адаптер](../../docs/desktop-migration.md#moving-from-the-manual-transport).
 
 Транспорт по протоколу Sentry на чистом Dart для
 [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) —

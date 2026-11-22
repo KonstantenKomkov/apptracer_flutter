@@ -4,6 +4,13 @@ Current versions and limitations belong to [platform-matrix.md](platform-matrix.
 This file preserves release-specific notes instead of mixing them into the quick
 start. Dated acceptance documents are historical evidence, not promises for newer code.
 
+## apptracer_flutter 1.3.0
+
+Android adapter 0.4.2 restores per-event context on the native SDK. Android
+and iOS use the typed Pigeon bridge with a fallback for older adapters. Web
+retries eligible queued reports across reconnects and browser restarts.
+[Published versions](publishing.md#flutter-130-release-2026-11-22).
+
 ## apptracer_flutter 1.2.0 runtime APIs
 
 `Tracer.pauseCollection()` / `resumeCollection()` pauses and resumes an existing

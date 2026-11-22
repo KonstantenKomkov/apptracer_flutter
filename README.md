@@ -35,9 +35,7 @@ packages/
   apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
                                         проверенные среды указаны в матрице платформ
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
-  apptracer_flutter_sentry/             протокол Sentry; только для платформ,
-                                        которые этот релиз не поддерживает,
-                                        и потому не публикуется на pub.dev
+  apptracer_flutter_sentry/             архив ручного Sentry-транспорта, снят с сопровождения
 docs/
 tool/
   bootstrap.sh              pub get во всех пакетах

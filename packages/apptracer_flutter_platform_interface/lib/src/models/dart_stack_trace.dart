@@ -36,6 +36,10 @@ class DartStackTrace {
     this.vmInstructions,
   });
 
+  /// Copies a trace and freezes its frames for use in an event.
+  factory DartStackTrace.snapshot(DartStackTrace trace) =>
+      trace._withFrames(trace.frames);
+
   /// An empty trace, used when an error arrives without one.
   static const DartStackTrace empty =
       DartStackTrace(raw: '', frames: <DartStackFrame>[]);
@@ -303,9 +307,13 @@ class DartStackTrace {
     if (maxFrames <= 0 || frames.length <= maxFrames) {
       return this;
     }
+    return _withFrames(frames.take(maxFrames));
+  }
+
+  DartStackTrace _withFrames(Iterable<DartStackFrame> selected) {
     return DartStackTrace(
       raw: raw,
-      frames: List<DartStackFrame>.unmodifiable(frames.take(maxFrames)),
+      frames: List<DartStackFrame>.unmodifiable(selected),
       buildId: buildId,
       os: os,
       architecture: architecture,

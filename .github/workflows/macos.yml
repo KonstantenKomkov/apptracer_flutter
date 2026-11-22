@@ -97,9 +97,16 @@ jobs:
         run: |
           flutter pub get
           flutter analyze --fatal-infos
-          flutter test
+          flutter test --coverage
           swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
           "$RUNNER_TEMP/desktop-native-tests"
+      - name: Report macos adapter coverage
+        run: python3 tool/coverage_report.py --desktop-only
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: desktop-coverage-macos
+          path: build/coverage/desktop-macos
+          if-no-files-found: error
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
         run: |

@@ -54,15 +54,19 @@ on:
 # Documentation and repository housekeeping alone do not need a runner.
 # A crash reporter that only works on the maintainer's machine is worthless, so
 # every claim the README makes about a platform is built here.
+permissions:
+  contents: read
+
 jobs:
   catalog:
     name: Package catalog
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.catalog.outputs.packages }}
       minimum: ${{ steps.catalog.outputs.minimum }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - id: catalog
         run: |
           packages="$(python3 tool/package_catalog.py matrix)"
@@ -74,16 +78,17 @@ jobs:
     if: github.event_name != 'schedule'
     name: Analyze and test (${{ matrix.package }})
     needs: catalog
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Read the reproducible Flutter baseline
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -104,7 +109,7 @@ jobs:
       - name: Set up Chrome
         id: setup-chrome
         if: matrix.chrome
-        uses: browser-actions/setup-chrome@v2
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
 
       - name: Test
         env:
@@ -117,7 +122,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.vm
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           if-no-files-found: error
           name: coverage-${{ matrix.package }}
@@ -127,14 +132,15 @@ jobs:
     if: github.event_name != 'schedule'
     name: Minimum Flutter 3.22.0 (${{ matrix.package }})
     needs: catalog
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.catalog.outputs.minimum) }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.22.0'
           channel: stable
@@ -155,7 +161,7 @@ jobs:
       - name: Set up Chrome
         id: setup-chrome-minimum
         if: matrix.chrome
-        uses: browser-actions/setup-chrome@v2
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
       - name: Test
         env:
           PACKAGE: packages/${{ matrix.package }}
@@ -170,14 +176,15 @@ jobs:
     if: github.event_name != 'push'
     continue-on-error: true
     needs: catalog
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           cache: true
@@ -199,7 +206,7 @@ jobs:
       - name: Set up Chrome
         id: setup-chrome-canary
         if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.chrome }}
-        uses: browser-actions/setup-chrome@v2
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
       - name: Test
         if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
         env:
@@ -211,9 +218,44 @@ jobs:
         if: ${{ !cancelled() }}
         run: bash tool/check_git_clean.sh
 
+  scheduled-canary-issue:
+    name: Report scheduled canary failures
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    needs: [catalog, latest-stable-canary]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - name: Open or update the compatibility issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CATALOG_RESULT: ${{ needs.catalog.result }}
+        run: |
+          # A matrix job with continue-on-error can succeed with failed steps.
+          failures="$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
+            --jq '.jobs[] | select(.name | startswith("Latest stable canary (")) |
+              select(.conclusion != "success" or any(.steps[]; .conclusion == "failure")) | .name')"
+          if [[ "$CATALOG_RESULT" != success ]]; then failures="Package catalog ($CATALOG_RESULT)"; fi
+          if [[ -z "$failures" ]]; then exit 0; fi
+          title="Weekly Flutter latest-stable canary failed"
+          body="$RUNNER_TEMP/canary.md"
+          printf 'Failed in [run %s, attempt %s](%s/%s/actions/runs/%s/attempts/%s).\n\n%s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$failures" > "$body"
+          issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" \
+            --json number,title --jq 'map(select(.title == "Weekly Flutter latest-stable canary failed")) | .[0].number // empty')"
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body"
+          fi
+
   example:
     if: github.event_name != 'schedule'
     name: Example (${{ matrix.target }})
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -228,9 +270,9 @@ jobs:
           # while the iOS half of the package changes a few times a year. It
           # lives in ios.yml, which runs when iOS files actually change.
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         if: matrix.target == 'android'
         with:
           distribution: temurin
@@ -238,7 +280,7 @@ jobs:
 
       - name: Read the reproducible Flutter baseline
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -286,7 +328,7 @@ jobs:
 
       - name: Upload Dart symbols
         if: matrix.target == 'android'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dart-symbols-android
           path: packages/apptracer_flutter/example/build/symbols
@@ -299,7 +341,7 @@ jobs:
 
       - name: Upload web source maps
         if: matrix.target == 'web'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: web-source-maps
           path: packages/apptracer_flutter/example/build/web/*.map
@@ -311,11 +353,14 @@ jobs:
   coverage:
     name: Combined Dart coverage
     needs: analyze
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Test coverage gate and platform totals
+        run: python3 -m unittest discover -s tool/tests -p test_coverage_report.py
       - name: Download package coverage
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: coverage-*
           path: coverage-input
@@ -327,11 +372,15 @@ jobs:
             cp "$directory/lcov.info" "packages/$package/coverage/lcov.info"
           done
           python3 tool/coverage_report.py
+      - name: Summarize critical coverage
+        if: ${{ !cancelled() && hashFiles('build/coverage/summary.json') != '' }}
+        run: |
           jq -r '.critical | to_entries[] |
             "- \(.key): \(.value.covered)/\(.value.total) lines, change \((.value.deltaPercentagePoints * 100 | round) / 100) pp"' \
             build/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload one coverage report
-        uses: actions/upload-artifact@v7
+      - name: Upload coverage reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dart-coverage
           path: build/coverage
@@ -340,6 +389,7 @@ jobs:
   publish-dry-run:
     if: github.event_name != 'schedule'
     name: pub publish --dry-run
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     # Required archive and metadata check, using local sibling overrides.
     # Hosted dependency resolution is checked separately at release.
@@ -348,10 +398,10 @@ jobs:
     # directory, and each matrix leg was paying for a runner and a Flutter
     # install to run something that takes half a minute.
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Read the reproducible Flutter baseline
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -379,15 +429,16 @@ jobs:
   android-configuration-cache:
     if: github.event_name != 'schedule'
     name: Android SDK 1.6.2 configuration cache
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           # Audited toolchain for this gate; other jobs retain their baseline.
           flutter-version: "3.47.4"
@@ -403,7 +454,7 @@ jobs:
             --output "$RUNNER_TEMP/tracer-configuration-cache"
       - name: Upload cache evidence and explicit Flutter limitation
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-configuration-cache
           path: |

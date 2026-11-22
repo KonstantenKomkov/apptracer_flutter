@@ -8,11 +8,11 @@
     "total": 338
   },
   "packages/apptracer_flutter_platform_interface/lib/src/method_channel_tracer.dart": {
-    "covered": 80,
-    "total": 86
+    "covered": 102,
+    "total": 108
   },
   "packages/apptracer_flutter_platform_interface/lib/src/models/dart_stack_trace.dart": {
-    "covered": 124,
-    "total": 144
+    "covered": 137,
+    "total": 148
   }
 }

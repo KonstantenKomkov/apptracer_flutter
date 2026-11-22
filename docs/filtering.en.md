@@ -20,9 +20,8 @@ await Tracer.setCustomKey(key: 'checkout_step', value: '3');
 await Tracer.removeCustomKey('checkout_step');
 ```
 
-Event keys can override persistent keys. The Android adapter in this repository
-restores native scope after each Dart report. The published Android 0.4.1
-adapter predates this fix. See the [verified scope and concurrency limits](android-event-context.md).
+Event keys can override persistent keys. Starting with version 0.4.2, the Android adapter
+restores native scope after each Dart report. See the [verified scope and concurrency limits](android-event-context.md).
 
 `issueKey` overrides grouping. Without it, the package derives a key from the
 error type and innermost named frame, excluding file and line number.

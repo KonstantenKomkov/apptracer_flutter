@@ -1,6 +1,6 @@
 # Desktop installation and migration
 
-The optional `apptracer_flutter_desktop` package is stable at 1.0.0.
+The optional `apptracer_flutter_desktop` package is published at 1.0.1.
 The accepted macOS scope is recorded in
 [macos-lifecycle-acceptance.md](macos-lifecycle-acceptance.md); Ubuntu 22.04.5
 x86_64 VM evidence is in [linux-preparation.md](linux-preparation.md).
@@ -23,8 +23,8 @@ Install the facade and optional desktop adapter from pub.dev:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop: ^1.0.0
+  apptracer_flutter: ^1.3.0
+  apptracer_flutter_desktop: ^1.0.1
 flutter:
   config:
     enable-swift-package-manager: false
@@ -173,6 +173,9 @@ also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
 ## Moving from the manual transport
 
+The unpublished `apptracer_flutter_sentry` is archived in place for existing
+Git/path dependencies. Routine package checks cover the desktop adapter.
+
 1. Remove `apptracer_flutter_sentry`, its `SentryProtocolTracer()` registration
    and any separately initialized Sentry SDK. Add the optional desktop adapter.
 2. Keep the facade calls for errors, keys, breadcrumbs and user ID. Configure a
@@ -198,7 +201,7 @@ dependencies out of an existing mobile graph.
 
 ## Windows consumer
 
-Use `apptracer_flutter_desktop ^1.0.0` alongside `apptracer_flutter ^1.0.0`. Before
+Use `apptracer_flutter_desktop ^1.0.1` alongside `apptracer_flutter ^1.3.0`. Before
 `flutter build windows --release`, set `$env:SENTRY_NATIVE_BACKEND = 'native'`.
 The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
 `sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release

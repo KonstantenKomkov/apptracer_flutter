@@ -21,9 +21,10 @@ class TracerBreadcrumb {
     required this.message,
     this.category,
     this.level = TracerSeverity.info,
-    this.data = const <String, String>{},
+    Map<String, String> data = const <String, String>{},
     DateTime? timestamp,
-  }) : timestamp = (timestamp ?? DateTime.now()).toUtc();
+  })  : data = Map.unmodifiable(data),
+        timestamp = (timestamp ?? DateTime.now()).toUtc();
 
   /// Human-readable description of what happened.
   final String message;

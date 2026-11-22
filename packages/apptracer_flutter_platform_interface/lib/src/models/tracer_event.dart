@@ -14,17 +14,20 @@ class TracerEvent {
   TracerEvent({
     required this.exceptionType,
     required this.message,
-    required this.stackTrace,
+    required DartStackTrace stackTrace,
     this.severity = TracerSeverity.error,
     this.fatal = false,
     this.issueKey,
-    this.customKeys = const <String, String>{},
-    this.breadcrumbs = const <TracerBreadcrumb>[],
+    Map<String, String> customKeys = const <String, String>{},
+    List<TracerBreadcrumb> breadcrumbs = const <TracerBreadcrumb>[],
     this.library,
     this.context,
     this.error,
     DateTime? timestamp,
-  }) : timestamp = (timestamp ?? DateTime.now()).toUtc();
+  })  : stackTrace = DartStackTrace.snapshot(stackTrace),
+        customKeys = Map.unmodifiable(customKeys),
+        breadcrumbs = List.unmodifiable(breadcrumbs),
+        timestamp = (timestamp ?? DateTime.now()).toUtc();
 
   /// Runtime type name of the Dart error, for example `FormatException`.
   ///
@@ -98,6 +101,8 @@ class TracerEvent {
     DateTime? timestamp,
     bool removeIssueKey = false,
     bool removeBreadcrumbs = false,
+    bool removeLibrary = false,
+    bool removeContext = false,
   }) {
     return TracerEvent(
       exceptionType: exceptionType ?? this.exceptionType,
@@ -110,8 +115,8 @@ class TracerEvent {
       breadcrumbs: removeBreadcrumbs
           ? const <TracerBreadcrumb>[]
           : (breadcrumbs ?? this.breadcrumbs),
-      library: library ?? this.library,
-      context: context ?? this.context,
+      library: removeLibrary ? null : (library ?? this.library),
+      context: removeContext ? null : (context ?? this.context),
       error: error ?? this.error,
       timestamp: timestamp ?? this.timestamp,
     );
