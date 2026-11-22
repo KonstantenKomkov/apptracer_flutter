@@ -17,7 +17,7 @@ jobs:
       - name: Resolve the latest stable and update only the candidate pin
         run: python3 tool/update_flutter_baseline.py
       - name: Open an unmerged compatibility PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: automation/flutter-baseline
           delete-branch: true
