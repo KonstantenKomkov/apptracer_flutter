@@ -7,6 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [0.2.2] - 2026-11-22
+
+- Add the generated Pigeon API and use the typed native channel when supported. Preserve the MethodChannel fallback for previously released native adapters.
+
 ## [0.2.1] - 2026-11-13
 
 ### Added

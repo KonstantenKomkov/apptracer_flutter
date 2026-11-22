@@ -256,7 +256,8 @@ def main():
                     assert forbidden not in packed
                 report['adapter_publish_dry_run'] = True
                 facade_dep = '  apptracer_flutter: 1.0.0\n'
-                candidate_siblings = ('apptracer_flutter_android',
+                candidate_siblings = ('apptracer_flutter_android', 'apptracer_flutter_ios',
+                                      'apptracer_flutter_web', 'apptracer_flutter_http',
                                       'apptracer_flutter_platform_interface')
                 allowed_overrides = set()
                 if args.candidate_facade:

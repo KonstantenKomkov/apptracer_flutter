@@ -2,7 +2,7 @@
 
 [Русский](README.md)
 
-Stable 1.0.0 `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
+Stable 1.0.1 `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
 SDK for macOS/Windows/Ubuntu Linux. macOS arm64 and Ubuntu x64 are
 accepted within their documented scope. Windows 11 x64 local acceptance is recorded below.
 
@@ -47,7 +47,7 @@ Install both stable packages from pub.dev:
 ```yaml
 dependencies:
   apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop: ^1.0.0
+  apptracer_flutter_desktop: ^1.0.1
 ```
 
 Pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,

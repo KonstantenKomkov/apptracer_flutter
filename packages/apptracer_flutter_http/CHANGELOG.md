@@ -7,9 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
-
-## [0.2.1]
+## [0.2.1] - 2026-11-22
 
 - Bound HTTP uploads by timeout, attempt count, queue size and age. Retry transient failures with jitter and support both forms of `Retry-After`.
 - Support injectable queue storage and delivery diagnostics. Stop/clear serializes cleanup with pending writes and reports cleanup failures.

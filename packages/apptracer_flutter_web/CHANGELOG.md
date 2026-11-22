@@ -7,9 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
-
-## [0.2.1]
+## [0.2.1] - 2026-11-22
 
 - Recover pending HTTP events from IndexedDB on an authorized page reload. Web Locks protect the queue from simultaneous writers. A page without exclusive storage uses memory for that session.
 - Report failed cleanup and retry pending deletion before replay.

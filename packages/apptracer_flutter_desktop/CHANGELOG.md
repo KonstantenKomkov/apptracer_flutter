@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.1] - 2026-11-22
+
+- Wait for Linux native context updates before granting collection consent. Recheck authorization after each asynchronous update.
+
 ## [1.0.0] - 2026-10-24
 
 ### Added

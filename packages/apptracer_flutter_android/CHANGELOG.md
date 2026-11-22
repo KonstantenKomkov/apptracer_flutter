@@ -7,6 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [0.4.2] - 2026-11-22
+
+- Support the typed Pigeon host channel alongside the existing channel. Apply filtered event context to each Dart report and restore the persistent native scope afterward.
+
 ## 0.4.1
 
 - Support Tracer Android SDK 1.6.2 from VK Nexus, including the vendor

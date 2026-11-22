@@ -365,8 +365,8 @@ shows the key as deliberately cleared rather than leaving a stale value.
 
 ## Web
 
-The published Web and HTTP 0.2.0 packages attempt each report once. Deferred
-start and stop/clear are supported. The 0.2.1 implementations in this repository
+The Web and HTTP 0.2.0 packages attempt each report once. Deferred
+start and stop/clear are supported. The 0.2.1 packages
 add bounded retries and an IndexedDB queue for the owning tab. Stop cancels
 future retries and clears the queue. A request already sent may complete.
 VM, Chrome and release loopback checks covered this policy. On 2026-11-22 the
