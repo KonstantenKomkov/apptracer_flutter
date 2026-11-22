@@ -1,5 +1,23 @@
 # Publishing
 
+## Flutter 1.4.0 release (2026-11-22)
+
+Release `v1.4.0` ships immutable event collections, Flutter metadata redaction
+in `beforeSend` and deprecation notices for the facade's implementation exports.
+The interface was published first. Both packages passed publication dry runs
+with hosted dependencies. The downloaded archives matched the pub.dev hashes
+and the packaged files matched release commit `8690f910418e`.
+
+| Published package | Files verified | Archive SHA-256 |
+| --- | ---: | --- |
+| [apptracer_flutter_platform_interface 0.2.3](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.2.3) | 30 | `b9e6a65c698c563fe55271f929d048b6cffe777f7e2a0b19d2564252435d0596` |
+| [apptracer_flutter 1.4.0](https://pub.dev/packages/apptracer_flutter/versions/1.4.0) | 120 | `4b48f0b9ef75e8c03fdafd2e975af4728389093cf51b49d17146ca200bfe3de2` |
+
+An external Flutter consumer resolved both versions from pub.dev, passed
+analysis and verified that snapshots survive caller edits and that
+`beforeSend` can clear `library` and `context`.
+[Release checks](https://github.com/KonstantenKomkov/apptracer_flutter/pull/25/checks).
+
 ## Flutter 1.3.0 release (2026-11-22)
 
 The coordinated release is tagged `v1.3.0`. The facade uses the typed Android
