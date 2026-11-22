@@ -369,8 +369,9 @@ The published Web and HTTP 0.2.0 packages attempt each report once. Deferred
 start and stop/clear are supported. The 0.2.1 implementations in this repository
 add bounded retries and an IndexedDB queue for the owning tab. Stop cancels
 future retries and clears the queue. A request already sent may complete.
-VM, Chrome and release loopback checks covered this policy. A live Tracer
-smoke test for the retry path is still open. [Policy and evidence](web-protocol.md#delivery-reliability).
+VM, Chrome and release loopback checks covered this policy. On 2026-11-22 the
+Tracer dashboard showed all three release Web probes with their context, including
+retry after reconnect and recovery after a browser restart. [Live results](web-protocol.md#live-tracer-2026-11-22).
 
 Tracer ships a JavaScript SDK as the npm package `@apptracer/sdk`
 (latest `2.6.9`, ISC licensed — verified against the npm registry). A Flutter

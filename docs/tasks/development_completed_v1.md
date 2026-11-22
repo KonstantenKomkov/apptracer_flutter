@@ -47,6 +47,15 @@ Dart, Kotlin и Swift используют общую схему Pigeon. Для 
 Проверка дерева учитывает изменения исходников и новые файлы после команд.
 [Задача](task-26-flutter-version-ci.md) и [порядок проверок](../contributing.md#flutter-compatibility).
 
+<a id="task-25"></a>
+
+### П. 25. Надёжность Web/HTTP-доставки
+
+VM, Chrome и release loopback покрывают retry, лимиты очереди и очистку при
+отзыве. 22.11.2026 в кабинете Tracer проверены три события с контекстом,
+включая доставку после восстановления сети и полного перезапуска Chrome.
+[Задача](task-25-web-delivery-reliability.md) и [live-протокол](../web-protocol.md#live-tracer-2026-11-22).
+
 <a id="task-24"></a>
 
 ### П. 24. Изоляция контекста Android-событий
