@@ -157,19 +157,17 @@ web-sourcemaps: web-release $(TRACER_ENV) ## Собрать web и залить 
 bootstrap: ## pub get во всех пакетах монорепозитория
 	./tool/bootstrap.sh
 
-check: ## Всё, что гоняет CI, в том же порядке
+check: ## Все доступные Dart-проверки; native/runtime этапы явно отдельно
 	./tool/check.sh
 
 format: ## dart format по всем пакетам
 	dart format packages
 
-analyze: ## flutter analyze в пакете-фасаде и примере
-	cd packages/apptracer_flutter && flutter analyze --fatal-infos
-	cd $(EXAMPLE) && flutter analyze --fatal-infos
+analyze: ## flutter analyze во всех пакетах каталога
+	./tool/check.sh --analyze-only
 
-test: ## Тесты пакета-фасада и примера
-	cd packages/apptracer_flutter && flutter test --reporter=compact
-	cd $(EXAMPLE) && flutter test --reporter=compact
+test: ## Тесты всех пакетов каталога, включая desktop и Chrome
+	./tool/check.sh --test-only
 
 clean: ## flutter clean в примере
 	cd $(EXAMPLE) && flutter clean

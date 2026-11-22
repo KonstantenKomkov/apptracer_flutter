@@ -1,6 +1,8 @@
 # П. 28. Единые локальные проверки и сводный coverage
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** M.
+**Статус:** выполнена. **Приоритет:** P1. **Сложность:** M.
+
+[Каталог и команды](../contributing.md#commands): `tool/packages.tsv` управляет локальными проверками, CI и publish dry-run. Сводный coverage и baseline описаны там же.
 
 Связанный общий план: [development_v1.md](development_v1.md).
 Зависит от немутирующего analyze в [№26](task-26-flutter-version-ci.md).

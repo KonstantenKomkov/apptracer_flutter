@@ -27,20 +27,40 @@ dependencies, while new sibling versions are not yet available on pub.dev.
 ## Commands
 
 ```sh
-tool/bootstrap.sh   # pub get everywhere
-tool/check.sh       # format + analyze + test + publish dry-run, same order as CI
+tool/bootstrap.sh   # pub get everywhere from tool/packages.tsv
+tool/check.sh       # format + analyze + test + coverage + publish dry-run
+make analyze        # analyze every catalog package, including desktop
+make test           # VM/Chrome tests and combined coverage
 ```
 
 Run the full check from a clean commit. It also fails if analyze, tests, builds or
 publish dry-run modify tracked files or leave untracked, non-ignored files. This
 is intentional: a dirty-tree publish warning is not ignored.
 
+`tool/packages.tsv` is the single catalog for local commands, CI matrices and
+publish dry-run. A failed package does not hide the remaining checks; the final
+summary lists passed/failed/skipped work. Desktop unit tests are included, while
+native device/live acceptance remains in explicit platform workflows.
+
+Combined unit-test coverage is written to `build/coverage/{index.html,summary.json,lcov.info}`.
+The denominator counts production lines reported by the VM. The JSON lists
+unmeasured library files and skipped packages (examples and Chrome-only tests).
+Generated files are excluded. HTTP runs its VM suite plus its browser lifecycle
+and payload tests. Web runs in Chrome. Install Chrome or set `CHROME_EXECUTABLE`
+to the browser executable before running `make test` or `make check`. Parser, `TracerClient`, lifecycle and
+HTTP transport also have a baseline comparison in `tool/coverage_baseline.json`;
+there is no arbitrary global threshold and coverage is not live-delivery proof.
+The desktop dry-run explicitly allows only pub's exact-pin warning for
+`sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
+
 ## Flutter compatibility
 
 The common packages declare Flutter 3.22.0 as their minimum. CI tests that minimum separately from the
 reproducible baseline in `.github/flutter-version`; ordinary PRs never silently
 move that pin. The iOS workflow reads the same file. Desktop release acceptance
-keeps its separately audited toolchain pin.
+keeps its separately audited toolchain pin. The desktop package requires Flutter
+3.24.0 and its example requires 3.35.0. Both run locally, and the desktop
+package participates in the baseline and latest-stable CI jobs.
 
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop
@@ -112,7 +132,7 @@ tests.
 3. Declare `implements: apptracer_flutter` and a `dartPluginClass` with a
    `registerWith`.
 4. Add it to `default_package` in `packages/apptracer_flutter/pubspec.yaml`, to
-   the CI matrix, and to `docs/platform-matrix.md` with the coordinates, the
+   the package catalog in `tool/packages.tsv`, and to `docs/platform-matrix.md` with the coordinates, the
    minimum version, and how you verified them.
 
 ## Verifying vendor facts
