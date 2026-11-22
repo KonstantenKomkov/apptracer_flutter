@@ -21,11 +21,17 @@ macOS 15 arm64 CI and isolated consumer checks:
 | macOS (optional 1.0.0) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | stable; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
 | Windows 11 x64 (optional 1.0.0) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
 | Ubuntu 22.04.5 x86_64 (optional 1.0.0) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
-| Aurora OS | the same, registered by hand | yes | no (needs the vendor's C/C++ SDK and system minidumps) | no | no | **not supported in this release** — never run |
+| Aurora OS | planned native Tracer C/C++ integration | unverified | unverified | unverified | unverified | **not supported in this release** — never run |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
 [status.md](status.md) for what has and has not been exercised against a real
 Tracer project.
+
+As of 2026-11-22, the hosted facade is 1.2.1 and the hosted Android adapter
+is 0.4.1. The Android per-event context restoration described in the
+[task 24 verification](android-event-context.md) landed after that release.
+See the [published artifacts](publishing.md#android-sdk-162-release-2026-11-18)
+for the exact sources shipped on pub.dev.
 
 ## Flutter toolchain
 
@@ -44,8 +50,8 @@ remain a separate canary finding, not a baseline failure. See
 `libtracernative.so`, a C++ header and Python upload scripts; integration is
 `tracer_init(app_key, storage_dir)`, and crashes arrive as minidumps collected
 by the system `crash-dumper`. Read from the vendor's Aurora documentation on
-2026-08-26. A Flutter application cannot produce those minidumps from Dart, but
-Dart errors can still travel over the same HTTP ingest the web path uses.
+2026-08-26. A Flutter application cannot produce those minidumps from Dart.
+The manual HTTP transport has no Aurora device verification.
 
 **ANR needs Android 11.** `AnrReporter.collect` in `tracer-crash-report` 1.4.0
 opens with `if (Build.VERSION.SDK_INT < 30) return emptyList()` and then reads
@@ -359,12 +365,12 @@ shows the key as deliberately cleared rather than leaving a stale value.
 
 ## Web
 
-Collection lifecycle: explicit deferred start and stop with cleanup are supported.
-Stop clears in-memory logs, keys and user ID and returns `disabled`; a new start
-works in the same browser process with a fresh owned HTTP client. There is no
-persisted report queue or retry worker. New diagnostics while off are discarded;
-an already started request may complete. VM and Chrome regression tests cover
-account separation, client recreation and a response completing after revocation.
+The published Web and HTTP 0.2.0 packages attempt each report once. Deferred
+start and stop/clear are supported. The 0.2.1 implementations in this repository
+add bounded retries and an IndexedDB queue for the owning tab. Stop cancels
+future retries and clears the queue. A request already sent may complete.
+VM, Chrome and release loopback checks covered this policy. A live Tracer
+smoke test for the retry path is still open. [Policy and evidence](web-protocol.md#delivery-reliability).
 
 Tracer ships a JavaScript SDK as the npm package `@apptracer/sdk`
 (latest `2.6.9`, ISC licensed — verified against the npm registry). A Flutter
@@ -381,8 +387,8 @@ Consequences worth knowing:
 * Frames are `dart2js` frames. Tracer matches source maps **by file path, not by
   Debug ID** as Sentry does, so the paths inside an uploaded source-map archive
   must match the paths in the frames. See [symbolication.md](symbolication.md).
-* `TracerOptions.appToken` is required. `dsn` is not used by any path: Tracer
-  issues no DSN to any project.
+* `TracerOptions.appToken` or `webAppToken` is required. The Web adapter ignores `dsn`: Tracer
+  uses an app token for JS projects.
 * Breadcrumbs, custom keys and `userId` do travel — since 2026-08-27, and not
   before it: those four methods used to be empty on this transport. Custom keys
   are sent twice, once where the console reads them and once where the vendor's
@@ -395,8 +401,8 @@ Consequences worth knowing:
 
 ## Desktop and Aurora OS
 
-**Not supported in the published release.** The exclusion dated 2026-08-27
-remains historical release scope; development reopened on 2026-10-23.
+The published optional desktop adapter supports the macOS, Windows and Ubuntu
+environments listed in the summary. Aurora remains unsupported.
 The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.

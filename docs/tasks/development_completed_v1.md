@@ -2,6 +2,42 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-30"></a>
+
+### П. 30. Навигация и актуальность документации
+
+[Быстрый старт](../../packages/apptracer_flutter/README.md) ведёт от установки
+пакета до тестового события. [Карта документации](../README.md) связывает
+руководства с матрицей платформ и датированными протоколами. Markdown-ссылки
+и якоря проверяет отдельный workflow. [Задача](task-30-documentation-navigation.md).
+
+<a id="task-29"></a>
+
+### П. 29. Управляемые обновления desktop Sentry SDK
+
+CI выбирает точную версию и проверяет её в изолированных сборках для Linux,
+macOS и Windows. Отчёт сохраняет результаты этапов и версии собранных SDK.
+Для смены production pin предусмотрена отдельная приёмка.
+[Задача](task-29-desktop-sentry-upgrades.md) и [порядок проверки](../desktop-sentry-dependencies.md).
+
+<a id="task-28"></a>
+
+### П. 28. Единые локальные проверки и сводный coverage
+
+Каталог пакетов задаёт состав локальных проверок, матриц CI и publish dry-run.
+Сводный отчёт показывает покрытие VM-тестами и изменение по четырём критичным файлам.
+[Задача](task-28-unified-checks-coverage.md) и [команды](../contributing.md#commands).
+
+<a id="task-27"></a>
+
+### П. 27. Типизированный канал Android/iOS
+
+Dart, Kotlin и Swift используют общую схему Pigeon. Для ранее выпущенных
+адаптеров сохранён MethodChannel. Android release с SDK 1.6.2 на API 35
+передал два отчёта в loopback-сценарии и завершил очистку. Проверены
+сборки iOS для симулятора и устройства.
+[Задача](task-27-typed-method-channel.md) и [генерация](../contributing.md#changing-the-native-contract).
+
 <a id="task-26"></a>
 
 ### П. 26. Матрица версий Flutter и немутирующие проверки CI

@@ -1,0 +1,68 @@
+# Desktop Sentry dependency inventory
+
+Current production pin: `sentry_flutter 9.30.1`; verified native family:
+sentry-native 0.16.6 and Cocoa 8.58.4. This inventory is for candidate reviews,
+not a claim that newer versions work.
+
+## Internal Dart APIs
+
+| Source | Used for | Public alternative / migration | Detection |
+|---|---|---|---|
+| `src/integrations/native_load_debug_images_integration.dart` | exact native debug images for AOT symbols | Keep private until an equivalent public integration exists; compare class and callbacks at every candidate | `linux_dart_symbols_test`, `windows_dart_symbols_test`, macOS symbol workflow |
+| `src/integrations/native_sdk_integration.dart` | native ownership and lifecycle | Evaluate the public integration registry before replacing; do not assume lifecycle is equivalent | deferred start, close failure and prestart stop tests |
+| `src/integrations/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
+| `src/native/c/binding.dart` | `sentry_options_s` layout | No public equivalent; candidate must revalidate struct layout rather than blindly update | resolver/analyze, Linux/Windows release and native crash |
+| `src/native/c/sentry_native.dart` | options construction, native init/close and scope contexts | Replace only with a public lifecycle/scope API that preserves stop/clear semantics | all desktop unit tests and platform runtime suites |
+| `SentryFlutter.init(options: ObservedSdkOptions())` | inject the diagnostic logger to detect swallowed startup errors | Re-evaluate if the SDK exposes equivalent failure reporting with debug disabled | `sdk_delivery_test` and initialization failure test |
+| `SentryStackTrace.baseAddr` and `buildId` constructor arguments | associate AOT frames with the exact debug image | Re-evaluate public debug-image mapping on each update | Dart symbol suites and event mapping |
+
+Public Sentry APIs used deliberately: `Sentry.init`, `Sentry.close`,
+`Sentry.captureEvent`, `SentryException`, `SentryStackTrace`, `SentryEvent`,
+`SentryStackFrame`, `Breadcrumb`, `Contexts`, `Mechanism`, `SentryId` and
+`Integration<SentryFlutterOptions>`. These are not guaranteed stable either;
+event mapping and exact envelope tests run for each candidate.
+
+## Native symbols and platform helpers
+
+| Symbol / helper | Purpose | Detection |
+|---|---|---|
+| `sentry_options_set_require_user_consent` | gate native work before consent | deferred/disabled scenarios |
+| `sentry_user_consent_give` / `sentry_user_consent_revoke` | native consent lifecycle | stop/clear/revoke and no-replay scenarios |
+| `sentry_options_set_cache_keep` | retain authorized offline queue | offline/retry scenarios |
+| `sentry_options_set_http_retry` | native retry policy | offline/retry and discard scenarios |
+| `sentry_options_set_shutdown_timeout` | bounded in-flight cancellation | `native-inflight`, close failure |
+| `sentry_envelope_deserialize` / `sentry_capture_envelope` | enroll native cached envelopes before startup | `linux_storage_test`, `windows_storage_test`, offline runtime |
+| `sentry_is_enabled` | reject second native owner | concurrent-owner scenario |
+| `sentry_options_set_handler_path` / `sentry_options_set_crash_reporting_mode` | package and configure native crash handler | packaging, missing handler, native crash |
+| `sentry_init` / `sentry_close` through generated binding | native process lifecycle | all release/runtime scenarios |
+| `getuid`, `syscall`, `close`, `poll` from libc | owned Linux queue lock, PID-reuse and cancellation checks | Linux storage and native runtime suites |
+| `apptracer_windows.dll` helpers | Windows queue reparse-point and ownership safety | Windows storage, junction and concurrent-owner suites |
+
+The Linux daemon wraps `sentry_value_set_by_key` at link time. The Windows
+daemon compiles a wrapper around `sentry_crash_daemon.c` and packages the
+`sentry-crash` and `sentry-wer` targets. Both integrations depend on upstream
+build internals. The relocated native crash and source-line probes exercise
+these hooks. On macOS the adapter also pins `Sentry/HybridSDK` in its podspec
+and sets `urlSession`, `cacheDirectoryPath` and `shutdownTimeInterval` for
+consent and cancellation. CocoaPods resolution and the lifecycle suite check
+those dependencies. A new Cocoa pin requires a separate adapter change.
+
+## Candidate evidence model
+
+The monthly run selects the latest stable `sentry_flutter` release on pub.dev.
+Manual dispatch accepts an exact version. Pull requests changing the candidate
+pipeline use the accepted pin as a control. Every checkout applies the same
+exact version to its disposable desktop manifest, including the path dependency
+used by the release example.
+
+All three prechecks must resolve, analyze and pass unit tests before release
+jobs start. Windows runtime downloads the release artifact from that run.
+The `sentry-candidate-report` artifact records the actual job and step results
+on each OS and links to the probes. Grouped runtime steps retain their individual
+JSON files in the platform artifacts. Successful builds record the example's
+resolved Flutter SDK package, Sentry Cocoa or sentry-native, and Flutter/Dart
+toolchain. A skipped suite or missing build identity prevents a passing result.
+
+A pin-changing PR also requires hosted consumer evidence without monorepo
+overrides and a final live Tracer smoke. For rollback, restore the previous
+accepted Dart and Cocoa pins together with their matching adapter revision.

@@ -19,6 +19,11 @@ on:
         description: 'Successful Windows preparation run from this branch (optional)'
         required: false
         type: string
+  workflow_call:
+    inputs:
+      current_run_build:
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -33,6 +38,7 @@ jobs:
           fetch-depth: 0
       - name: Select a compiled release from the same branch
         id: build
+        if: inputs.current_run_build != true
         uses: actions/github-script@v7
         with:
           script: |
@@ -61,6 +67,7 @@ jobs:
             core.setOutput('run', String(run.id));
             core.setOutput('sha', run.head_sha);
       - name: Verify artifact source matches current package code
+        if: inputs.current_run_build != true
         shell: pwsh
         env:
           BUILD_SHA: ${{ steps.build.outputs.sha }}
@@ -68,6 +75,12 @@ jobs:
           git diff --exit-code $env:BUILD_SHA HEAD -- packages ':!**/*.md'
           if ($LASTEXITCODE -ne 0) { throw 'Package code changed; wait for its Windows build before reusing artifacts' }
       - uses: actions/download-artifact@v4
+        if: inputs.current_run_build == true
+        with:
+          name: windows-x64-preparation
+          path: build/compiled
+      - uses: actions/download-artifact@v4
+        if: inputs.current_run_build != true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ steps.build.outputs.run }}
