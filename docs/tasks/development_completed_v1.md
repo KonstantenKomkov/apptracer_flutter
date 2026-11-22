@@ -35,7 +35,7 @@ macOS и Windows. Отчёт сохраняет результаты этапо�
 Dart, Kotlin и Swift используют общую схему Pigeon. Для ранее выпущенных
 адаптеров сохранён MethodChannel. Android release с SDK 1.6.2 на API 35
 передал два отчёта в loopback-сценарии и завершил очистку. Проверены
-сборки iOS для симулятора и устройства.
+два отчёта с нативным контекстом и остановка сбора на симуляторе iOS и физическом iPhone 16 Pro.
 [Задача](task-27-typed-method-channel.md) и [генерация](../contributing.md#changing-the-native-contract).
 
 <a id="task-26"></a>
