@@ -1,9 +1,11 @@
 # Dart / Flutter
 .dart_tool/
 .packages
+.flutter-plugins
 .pub-cache/
 .pub/
 build/
+/packages/*/coverage/lcov.info
 pubspec.lock
 **/doc/api/
 

@@ -1,0 +1,31 @@
+name: Flutter baseline update candidate
+
+on:
+  schedule:
+    - cron: '17 4 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the latest stable and update only the candidate pin
+        run: python3 tool/update_flutter_baseline.py
+      - name: Open an unmerged compatibility PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/flutter-baseline
+          delete-branch: true
+          commit-message: 'Update Flutter CI baseline'
+          title: 'Update Flutter CI baseline'
+          body: |
+            Updates `.github/flutter-version` from the official stable release metadata.
+            This is a candidate only: minimum, pinned baseline and latest-stable canary
+            checks must be reviewed before merging. No package is published and this
+            workflow never merges the PR.
+          labels: dependencies, flutter
