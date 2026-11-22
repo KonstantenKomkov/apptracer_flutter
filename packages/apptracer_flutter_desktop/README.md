@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-Стабильный адаптер 1.0.0 `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
+Стабильный адаптер 1.0.1 `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
 Dart-код предназначен для Windows/macOS/Ubuntu Linux. Для Windows 11 x64
 проверены native backend, stop/clear, offline/retry, исходные Dart/native кадры,
 доставка в Tracer и два внешних потребителя. Все 24 сценария текущего Windows CI
@@ -49,7 +49,7 @@ Stop отзывает replay и отменяет собственные
 ```yaml
 dependencies:
   apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop: ^1.0.0
+  apptracer_flutter_desktop: ^1.0.1
 ```
 
 На Windows/macOS/Linux адаптер регистрируется автоматически. При явном выборе

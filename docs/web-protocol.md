@@ -14,8 +14,8 @@ flutter build web --release --source-maps --dart-define=WEB_APP_TOKEN=YOUR_JS_AP
 dart run apptracer_flutter:upload_symbols web
 ```
 
-Published Web/HTTP 0.2.0 sends each report once. The [retry policy](#delivery-reliability)
-applies to the 0.2.1 code in this repository. See the [platform matrix](platform-matrix.md#web).
+Web/HTTP 0.2.0 sends each report once. The [retry policy](#delivery-reliability)
+applies from version 0.2.1. See the [platform matrix](platform-matrix.md#web).
 
 ## Исследование протокола, август 2026
 

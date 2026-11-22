@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'apptracer_flutter_desktop'
-  s.version = '0.1.0'
+  s.version = '1.0.1'
   s.summary = 'Managed macOS lifecycle for the official Sentry SDK.'
   s.description = s.summary
   s.homepage = 'https://github.com/KonstantenKomkov/apptracer_flutter'

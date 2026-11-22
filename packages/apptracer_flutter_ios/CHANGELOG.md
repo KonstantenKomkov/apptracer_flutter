@@ -7,7 +7,9 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [0.2.1] - 2026-11-22
+
+- Register the typed Pigeon host channel alongside the existing channel and preserve native context and collection lifecycle behavior on OKTracer 1.5.2.
 
 ## [0.2.0] - 2026-10-03
 

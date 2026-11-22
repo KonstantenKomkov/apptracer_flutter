@@ -45,7 +45,7 @@ for source maps and delivery limits.
 
 ### Desktop (optional)
 
-For Windows, macOS and Ubuntu Linux, add `apptracer_flutter_desktop ^1.0.0` and
+For Windows, macOS and Ubuntu Linux, add `apptracer_flutter_desktop ^1.0.1` and
 configure the Tracer project's Sentry DSN using the
 [desktop guide](../../docs/desktop-migration.md). The facade alone does not add
 a desktop backend.

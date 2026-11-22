@@ -1,5 +1,5 @@
 group = 'ru.apptracer.flutter'
-version = '0.3.0'
+version = '0.4.2'
 
 buildscript {
     ext.kotlin_version = '1.9.24'

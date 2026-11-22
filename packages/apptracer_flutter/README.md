@@ -44,7 +44,7 @@ Gradle-плагин Tracer, репозитории, `resValues = true`, токе
 
 ### Desktop (optional)
 
-Для Windows, macOS и Ubuntu Linux добавьте `apptracer_flutter_desktop ^1.0.0`
+Для Windows, macOS и Ubuntu Linux добавьте `apptracer_flutter_desktop ^1.0.1`
 и настройте Sentry DSN по [desktop-руководству](../../docs/desktop-migration.md).
 Основной пакет сам desktop backend не подключает.
 
