@@ -1,9 +1,37 @@
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_native_api.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('a missing host returns unsupported over the real Pigeon channel',
+      () async {
+    final tracer = MethodChannelTracer(backendName: 'test');
+    final stopped = await tracer.stopAndClearCollection();
+    expect(stopped.state, TracerCollectionState.unsupported);
+    expect(stopped.reason, 'native_operation_missing');
+    expect((await tracer.setHeapDumpEnabled(false)).state,
+        TracerDiagnosticState.unsupported);
+  });
+
+  test('an explicit channel is used even when a typed host is present',
+      () async {
+    const channel = MethodChannel('test/custom-tracer');
+    final binaryMessenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    binaryMessenger.setMockMethodCallHandler(channel, (call) async => true);
+    addTearDown(() => binaryMessenger.setMockMethodCallHandler(channel, null));
+    final native = FakeNativeApi();
+    final tracer = MethodChannelTracer(
+        channel: channel, backendName: 'test', nativeApi: native);
+    await tracer.initialize(const TracerOptions());
+    expect(tracer.isEnabled, isTrue);
+    expect(native.calls, isEmpty);
+  });
+
   late FakeNativeApi native;
   late MethodChannelTracer tracer;
 

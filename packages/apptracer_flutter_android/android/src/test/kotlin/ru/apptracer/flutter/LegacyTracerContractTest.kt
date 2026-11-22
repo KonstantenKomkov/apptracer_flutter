@@ -58,7 +58,8 @@ class LegacyTracerContractTest {
             "customKeys" to event.customKeys,
             "stackTrace" to mapOf(
                 "raw" to stack.raw,
-                "frames" to stack.frames.map { it.toLegacyMap() },
+                "frames" to listOf(mapOf("raw" to "#00 abs 00001234 virt 00005678", "index" to 0,
+                    "absAddress" to "00001234", "virtAddress" to "00005678", "symbol" to "snapshot+0x1234")),
                 "needsSymbolication" to stack.needsSymbolication,
                 "buildId" to stack.buildId,
                 "os" to stack.os,
@@ -84,23 +85,13 @@ class LegacyTracerContractTest {
 
     @Test
     fun `typed options keep nullable and initial fields in legacy compatibility`() {
-        val options = NativeOptions(
-            appToken = null,
-            environment = "prod",
-            isCollectionEnabled = true,
-            nativeInitialization = "deferred",
-            preservePreviousReports = false,
-            maxBreadcrumbs = 100,
-            attachRawStackTraceAsLog = true,
-            maxRawStackTraceLogBytes = 0,
-            maxStackFrames = 0,
-            debug = false,
-            initialCustomKeys = mapOf("tenant" to "global"),
-        )
-        val call = options.toMethodCall("startCollection")
+        val options = MethodCall("startCollection", mapOf(
+            "nativeInitialization" to "deferred",
+            "initialCustomKeys" to mapOf("tenant" to "global"),
+        )).toNativeOptions()
 
-        assertEquals("deferred", call.argument<String>("nativeInitialization"))
-        assertEquals(null, call.argument<String>("appToken"))
-        assertEquals(mapOf("tenant" to "global"), call.argument<Map<String, String>>("initialCustomKeys"))
+        assertEquals("deferred", options.nativeInitialization)
+        assertEquals(null, options.appToken)
+        assertEquals(mapOf("tenant" to "global"), options.initialCustomKeys)
     }
 }

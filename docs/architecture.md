@@ -61,7 +61,7 @@ flowchart TD
 Android и iOS используют общий
 [`MethodChannelTracer`](../packages/apptracer_flutter_platform_interface/lib/src/method_channel_tracer.dart)
 и типизированный контракт Pigeon. Источник схемы —
-[`pigeon/tracer_api.dart`](../packages/apptracer_flutter_platform_interface/pigeon/tracer_api.dart).
+[`tool/pigeon/tracer_api.dart`](../tool/pigeon/tracer_api.dart).
 Она описывает options, событие, кадры, breadcrumbs, lifecycle и diagnostics.
 Dart преобразует публичную модель и вызывает сгенерированный API:
 
@@ -81,7 +81,7 @@ Dart-ошибка, а не стек самого плагина.
 Каналы `dev.flutter.pigeon.*` составляют новую версию транспорта. Прежний
 `ru.apptracer.flutter/tracer` и небольшой map-compatibility layer сохранены для
 независимо версионируемых пакетов: старый Dart продолжает работать с новым
-native, а новый Dart безопасно деградирует со старым native. Enum-подобные
+native, а новый Dart вызывает прежний метод, если у native отсутствует обработчик Pigeon. Enum-подобные
 состояния передаются строками, чтобы неизвестное значение не приводило к крашу.
 `tool/generate_pigeon.sh --check` в CI падает, если generated files устарели.
 Ручное редактирование generated files запрещено.

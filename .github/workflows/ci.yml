@@ -82,10 +82,6 @@ jobs:
         working-directory: packages/${{ matrix.package }}
         run: flutter pub get
 
-      - name: Verify generated Pigeon contract
-        if: matrix.package == 'apptracer_flutter_platform_interface'
-        run: bash tool/generate_pigeon.sh --check
-
       - name: Check formatting
         working-directory: packages/${{ matrix.package }}
         run: dart format --output=none --set-exit-if-changed .
@@ -161,6 +157,10 @@ jobs:
       - name: Resolve dependencies
         working-directory: packages/${{ matrix.package }}
         run: flutter pub get
+      - name: Verify generated Pigeon contract
+        if: matrix.package == 'apptracer_flutter_platform_interface'
+        run: bash tool/generate_pigeon.sh --check
+
       - name: Check formatting
         working-directory: packages/${{ matrix.package }}
         run: dart format --output=none --set-exit-if-changed .

@@ -8,7 +8,6 @@ import io.flutter.plugin.common.MethodChannel
 import ru.ok.tracer.Severity
 import ru.ok.tracer.Tracer
 import ru.ok.tracer.crash.report.TracerCrashReport
-import kotlin.coroutines.resume
 
 /**
  * Android half of `apptracer_flutter`.
@@ -44,14 +43,14 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
     }
 
     override fun initialize(options: NativeOptions): Boolean = try {
-        initialize(options.toMethodCall("initialize"))
+        initializeRuntime(options)
     } catch (error: Throwable) {
         nativeFailure()
         false
     }
 
     override fun startCollection(options: NativeOptions): NativeCollectionResult = try {
-        startCollection(options.toMethodCall("startCollection")).toCollectionResult()
+        startCollectionState(options).toCollectionResult()
     } catch (error: Throwable) {
         nativeFailure()
         collectionState().toCollectionResult()
@@ -71,29 +70,14 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         collectionState().toCollectionResult()
     }
 
-    override suspend fun stopAndClearCollection(): NativeCollectionResult =
-        kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-            stopAndClearCollection(object : MethodChannel.Result {
-                override fun success(result: Any?) {
-                    @Suppress("UNCHECKED_CAST")
-                    val state = result as? Map<String, String>
-                    continuation.resume(
-                        state?.toCollectionResult()
-                            ?: NativeCollectionResult("error", "invalid_native_result")
-                    )
-                }
-
-                override fun error(code: String, message: String?, details: Any?) {
-                    continuation.resume(NativeCollectionResult("error", code))
-                }
-
-                override fun notImplemented() {
-                    continuation.resume(
-                        NativeCollectionResult("unsupported", "native_operation_missing")
-                    )
-                }
-            })
+    override fun stopAndClearCollection(callback: (Result<NativeCollectionResult>) -> Unit) {
+        try {
+            clearCollection { callback(Result.success(it.toCollectionResult())) }
+        } catch (error: Throwable) {
+            nativeFailure()
+            callback(Result.success(NativeCollectionResult("error", "native_call_failed")))
         }
+    }
 
     override fun getCollectionState(): NativeCollectionResult = try {
         collectionState().toCollectionResult()
@@ -102,15 +86,12 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         NativeCollectionResult("error", "native_call_failed")
     }
 
-    override fun stopCollection() {
+    override fun stopCollection(callback: (Result<Unit>) -> Unit) {
         try {
-            stopCollection(object : MethodChannel.Result {
-                override fun success(result: Any?) = Unit
-                override fun error(code: String, message: String?, details: Any?) = Unit
-                override fun notImplemented() = Unit
-            })
+            stopCollectionRuntime { callback(Result.success(Unit)) }
         } catch (error: Throwable) {
             nativeFailure()
+            callback(Result.failure(error))
         }
     }
 
@@ -154,13 +135,13 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         }
     }
 
-    override suspend fun runHeapDump(tag: String): NativeDiagnosticResult =
-        diagnosticResult { result -> TracerDiagnostics.run(true, tag, result) }
+    override fun runHeapDump(tag: String, callback: (Result<NativeDiagnosticResult>) -> Unit) =
+        runDiagnostic(true, tag, callback)
 
-    override suspend fun runDiskUsage(): NativeDiagnosticResult =
-        diagnosticResult { result -> TracerDiagnostics.run(false, null, result) }
+    override fun runDiskUsage(callback: (Result<NativeDiagnosticResult>) -> Unit) =
+        runDiagnostic(false, null, callback)
 
-    override suspend fun setHeapDumpEnabled(enabled: Boolean): NativeDiagnosticResult = try {
+    override fun setHeapDumpEnabled(enabled: Boolean): NativeDiagnosticResult = try {
         if (!isSdkOnClasspath()) {
             NativeDiagnosticResult("unsupported", "sdk_missing")
         } else if (!AppTracerFlutterPlugin.enabled && enabled) {
@@ -172,20 +153,19 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         NativeDiagnosticResult("error", "native_diagnostic_failed")
     }
 
-    private suspend fun diagnosticResult(
-        run: (TracerDiagnostics.Completion) -> Unit,
-    ): NativeDiagnosticResult = kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-        val completion = TracerDiagnostics.Completion { state ->
-            continuation.resume(state.toDiagnosticResult())
-        }
+    private fun runDiagnostic(
+        heap: Boolean,
+        tag: String?,
+        callback: (Result<NativeDiagnosticResult>) -> Unit,
+    ) {
         if (!enabled) {
-            completion.complete(mapOf("state" to "disabled", "reason" to "collection_disabled"))
-        } else {
-            try {
-                run(completion)
-            } catch (error: Throwable) {
-                completion.complete(mapOf("state" to "error", "reason" to "native_diagnostic_failed"))
-            }
+            callback(Result.success(NativeDiagnosticResult("disabled", "collection_disabled")))
+            return
+        }
+        try {
+            TracerDiagnostics.run(heap, tag) { callback(Result.success(it.toDiagnosticResult())) }
+        } catch (error: Throwable) {
+            callback(Result.success(NativeDiagnosticResult("error", "native_diagnostic_failed")))
         }
     }
 
@@ -197,8 +177,8 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
-                "initialize" -> result.success(initialize(call))
-                "startCollection" -> result.success(startCollection(call))
+                "initialize" -> result.success(initializeRuntime(call.toNativeOptions()))
+                "startCollection" -> result.success(startCollectionState(call.toNativeOptions()))
                 "pauseCollection" -> result.success(pauseCollectionState())
                 "resumeCollection" -> result.success(resumeCollectionState())
                 "runHeapDump", "runDiskUsage" -> {
@@ -211,9 +191,9 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
                     else if (!enabled && requested) result.success(mapOf("state" to "disabled", "reason" to "collection_disabled"))
                     else result.success(TracerDiagnostics.setHeapEnabled(requested))
                 }
-                "stopAndClearCollection" -> stopAndClearCollection(result)
+                "stopAndClearCollection" -> clearCollection { result.success(it) }
                 "getCollectionState" -> result.success(collectionState())
-                "stopCollection" -> stopCollection(result)
+                "stopCollection" -> stopCollectionRuntime { result.success(null) }
                 "recordError" -> {
                     recordError(call)
                     result.success(null)
@@ -253,11 +233,11 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         }
     }
 
-    private fun startCollection(call: MethodCall): Map<String, String> {
-        if (call.argument<Boolean>("isCollectionEnabled") == false) {
+    private fun startCollectionState(options: NativeOptions): Map<String, String> {
+        if (!options.isCollectionEnabled) {
             return mapOf("state" to "disabled")
         }
-        if (call.argument<String>("nativeInitialization") == "deferred") {
+        if (options.nativeInitialization == "deferred") {
             // The mode is checked before any SDK reference. Dart alone cannot
             // undo a provider that has already run.
             if (!hasDeferredManifest()) {
@@ -266,13 +246,13 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
             if (!isSdkOnClasspath()) return mapOf("state" to "unsupported", "reason" to "sdk_missing")
             if (!hasGradlePluginResources()) return mapOf("state" to "error", "reason" to "app_token_missing")
             val context = applicationContext ?: return mapOf("state" to "error", "reason" to "context_missing")
-            val state = Sdk140ConsentRuntime.start(context, call.argument<Boolean>("preservePreviousReports") == true)
+            val state = Sdk140ConsentRuntime.start(context, options.preservePreviousReports)
             enabled = state["state"] == "enabled"
             if (enabled) runtimePaused = false
             return state
         }
         if (stopped) return collectionState()
-        initialize(call, resumeRuntime = true)
+        initializeRuntime(options, resumeRuntime = true)
         return collectionState()
     }
 
@@ -319,30 +299,30 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         return info.providers.orEmpty().none { it.name in forbidden }
     }
 
-    private fun stopAndClearCollection(result: MethodChannel.Result) {
+    private fun clearCollection(complete: (Map<String, String>) -> Unit) {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
         AndroidEventScope.clearPersistentProperties()
         if (!isSdkOnClasspath()) {
-            result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
+            complete(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
             return
         }
         val context = applicationContext
         if (context == null) {
-            result.success(mapOf("state" to "error", "reason" to "context_missing"))
+            complete(mapOf("state" to "error", "reason" to "context_missing"))
             return
         }
-        Sdk140ConsentRuntime.stopAndClear(context) { state -> result.success(state) }
+        Sdk140ConsentRuntime.stopAndClear(context) { state -> complete(state) }
     }
 
-    private fun initialize(call: MethodCall, resumeRuntime: Boolean = false): Boolean {
-        debug = call.argument<Boolean>("debug") ?: false
+    private fun initializeRuntime(options: NativeOptions, resumeRuntime: Boolean = false): Boolean {
+        debug = options.debug
         if (stopped || lifecycleError != null) return false
-        if (call.argument<Boolean>("isCollectionEnabled") == false ||
-            call.argument<String>("nativeInitialization") == "deferred") return false
+        if (!options.isCollectionEnabled ||
+            options.nativeInitialization == "deferred") return false
 
-        if (call.argument<String>("appToken") != null) {
+        if (options.appToken != null) {
             Log.w(
                 TAG,
                 "TracerOptions.appToken is ignored on Android. The token comes " +
@@ -351,7 +331,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
             )
         }
 
-        if (call.argument<String>("environment") != null) {
+        if (options.environment.isNotEmpty()) {
             Log.w(
                 TAG,
                 "TracerOptions.environment is ignored on Android. The SDK takes " +
@@ -403,7 +383,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
     }
 
     /** Full managed cleanup is awaited; only pause/resume retains a session. */
-    private fun stopCollection(result: MethodChannel.Result) {
+    private fun stopCollectionRuntime(complete: () -> Unit) {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
@@ -411,13 +391,13 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
             val context = applicationContext
             if (context != null) {
-                Sdk140ConsentRuntime.stopAndClear(context) { result.success(null) }
+                Sdk140ConsentRuntime.stopAndClear(context) { complete() }
                 return
             }
         }
         stopped = true
         if (isSdkOnClasspath()) Tracer.disable()
-        result.success(null)
+        complete()
     }
 
     private fun recordError(call: MethodCall) {
@@ -435,7 +415,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, T
         val stack = event.stackTrace
         val title = if (message.isEmpty()) exceptionType else "$exceptionType: $message"
         val throwable = DartError(title)
-        throwable.stackTrace = DartError.toStackTrace(stack.frames.map { it.toLegacyMap() })
+        throwable.stackTrace = DartError.toStackTrace(stack.frames)
 
         val eventProperties = mutableMapOf<String, String?>()
         eventProperties.putAll(event.customKeys)

@@ -1,8 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final codec = TracerNativeApi.pigeonChannelCodec;
+  const codec = TracerNativeApi.pigeonChannelCodec;
 
   test('Pigeon codec round-trips all event fields including Unicode and AOT',
       () {
@@ -48,10 +51,18 @@ void main() {
       ],
     );
 
+    final bytes = codec.encodeMessage(<Object?>[event])!.buffer.asUint8List();
+    final fixture = File('test/fixtures/pigeon_event_v1.base64');
+    expect(bytes, base64Decode(fixture.readAsStringSync().trim()));
     final reply = codec.decodeMessage(codec.encodeMessage(<Object?>[event]))!
         as List<Object?>;
     final decoded = reply.single! as NativeEvent;
-    expect(decoded, event);
+    expect(decoded.message, event.message);
+    expect(decoded.customKeys, event.customKeys);
+    expect(decoded.stackTrace.frames.single.encode(),
+        event.stackTrace.frames.single.encode());
+    expect(
+        decoded.breadcrumbs.single.encode(), event.breadcrumbs.single.encode());
     expect(decoded.stackTrace.frames.single.absoluteAddress, '00001234');
     expect(decoded.breadcrumbs.single.data['answer'], 42);
   });
@@ -72,7 +83,7 @@ void main() {
       initialCustomKeys: const {'tenant': 'global'},
     );
     final decodedOptions = NativeOptions.decode(options.encode());
-    expect(decodedOptions, options);
+    expect(decodedOptions.encode(), options.encode());
 
     final empty =
         NativeStackTrace(raw: '', frames: const [], needsSymbolication: false);
@@ -93,12 +104,14 @@ void main() {
     ]) {
       final result =
           NativeCollectionResult(state: state, reason: 'reason-$state');
-      expect(NativeCollectionResult.decode(result.encode()), result);
+      expect(NativeCollectionResult.decode(result.encode()).encode(),
+          result.encode());
     }
     for (final state in ['invoked', 'disabled', 'unsupported', 'error']) {
       final result =
           NativeDiagnosticResult(state: state, reason: 'reason-$state');
-      expect(NativeDiagnosticResult.decode(result.encode()), result);
+      expect(NativeDiagnosticResult.decode(result.encode()).encode(),
+          result.encode());
     }
   });
 }

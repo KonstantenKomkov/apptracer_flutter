@@ -2,6 +2,16 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-27"></a>
+
+### П. 27. Типизированный канал Android/iOS
+
+Dart, Kotlin и Swift используют общую схему Pigeon. Для ранее выпущенных
+адаптеров сохранён MethodChannel. Android release с SDK 1.6.2 на API 35
+передал два отчёта в loopback-сценарии и завершил очистку. Проверены
+сборки iOS для симулятора и устройства.
+[Задача](task-27-typed-method-channel.md) и [генерация](../contributing.md#changing-the-native-contract).
+
 <a id="task-26"></a>
 
 ### П. 26. Матрица версий Flutter и немутирующие проверки CI

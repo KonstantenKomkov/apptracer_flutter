@@ -106,8 +106,6 @@ dependencies {
     compileOnly "ru.ok.tracer:tracer-crash-report:$tracerSdkVersion"
     compileOnly "ru.ok.tracer:tracer-commons:$tracerSdkVersion"
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
-
     testImplementation "ru.ok.tracer:tracer-crash-report:$tracerSdkVersion"
     testImplementation "ru.ok.tracer:tracer-commons:$tracerSdkVersion"
     testImplementation "ru.ok.tracer:tracer-heap-dumps:$tracerSdkVersion"

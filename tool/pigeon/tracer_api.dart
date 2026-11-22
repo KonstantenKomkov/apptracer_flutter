@@ -153,6 +153,7 @@ abstract class TracerNativeApi {
   @async
   NativeCollectionResult stopAndClearCollection();
   NativeCollectionResult getCollectionState();
+  @async
   void stopCollection();
   void recordError(NativeEvent event);
   void recordLog(String message);
@@ -163,6 +164,5 @@ abstract class TracerNativeApi {
   NativeDiagnosticResult runHeapDump(String tag);
   @async
   NativeDiagnosticResult runDiskUsage();
-  @async
   NativeDiagnosticResult setHeapDumpEnabled(bool enabled);
 }

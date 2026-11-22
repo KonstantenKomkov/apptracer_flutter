@@ -10,7 +10,7 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 /// The iOS [TracerPlatform] implementation.
 class AppTracerIos extends MethodChannelTracer {
   /// Creates the iOS implementation.
-  AppTracerIos({super.nativeApi}) : super(backendName: 'ios-native');
+  AppTracerIos() : super(backendName: 'ios-native');
 
   /// Registers this class as the implementation for iOS.
   ///

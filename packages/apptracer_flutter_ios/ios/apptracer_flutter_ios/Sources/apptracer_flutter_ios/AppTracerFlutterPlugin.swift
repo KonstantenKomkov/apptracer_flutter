@@ -40,14 +40,14 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
     }
 
     func initialize(options: NativeOptions) throws -> Bool {
-        initialize(options.legacyArguments)
+        initialize(options, explicitStart: false)
     }
 
     func startCollection(options: NativeOptions) throws -> NativeCollectionResult {
         if !options.isCollectionEnabled {
             stopCollectionLegacy()
         } else {
-            _ = initialize(options.legacyArguments, explicitStart: true)
+            _ = initialize(options, explicitStart: true)
         }
         return collectionState().collectionResult
     }
@@ -60,21 +60,25 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         NativeCollectionResult(state: "unsupported", reason: "native_operation_missing")
     }
 
-    func stopAndClearCollection() async throws -> NativeCollectionResult {
+    func stopAndClearCollection(completion: @escaping (Result<NativeCollectionResult, Error>) -> Void) {
         stopCollectionLegacy()
-        return collectionState().collectionResult
+        completion(.success(collectionState().collectionResult))
     }
 
     func getCollectionState() throws -> NativeCollectionResult {
         collectionState().collectionResult
     }
 
-    func stopCollection() throws {
+    func stopCollection(completion: @escaping (Result<Void, Error>) -> Void) {
         stopCollectionLegacy()
+        completion(.success(()))
     }
 
     func recordError(event: NativeEvent) throws {
-        recordError(event.legacyArguments)
+        let stack = event.stackTrace
+        report(exceptionType: event.exceptionType, message: event.message, issueKey: event.issueKey,
+               severity: event.severity, customKeys: event.customKeys, needsSymbolication: stack.needsSymbolication,
+               buildId: stack.buildId, frames: stack.frames.map { ($0.raw, $0.member, $0.virtualAddress) })
     }
 
     func recordLog(message: String) throws {
@@ -93,15 +97,15 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         if Self.enabled { Self.service?.setUserId(userId ?? "") }
     }
 
-    func runHeapDump(tag: String) async throws -> NativeDiagnosticResult {
-        NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
+    func runHeapDump(tag: String, completion: @escaping (Result<NativeDiagnosticResult, Error>) -> Void) {
+        completion(.success(NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")))
     }
 
-    func runDiskUsage() async throws -> NativeDiagnosticResult {
-        NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
+    func runDiskUsage(completion: @escaping (Result<NativeDiagnosticResult, Error>) -> Void) {
+        completion(.success(NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")))
     }
 
-    func setHeapDumpEnabled(enabled: Bool) async throws -> NativeDiagnosticResult {
+    func setHeapDumpEnabled(enabled: Bool) throws -> NativeDiagnosticResult {
         NativeDiagnosticResult(state: "unsupported", reason: "native_operation_missing")
     }
 
@@ -158,17 +162,35 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         }
     }
 
+    private func initialize(_ options: NativeOptions, explicitStart: Bool) -> Bool {
+        startNative(appToken: options.appToken, environment: options.environment,
+                    apiUrl: options.apiUrl, maxBreadcrumbs: Int(options.maxBreadcrumbs),
+                    initialKeys: options.initialCustomKeys, debug: options.debug,
+                    enabled: options.isCollectionEnabled, deferred: options.nativeInitialization == "deferred",
+                    preserveReports: options.preservePreviousReports, explicitStart: explicitStart)
+    }
+
     private func initialize(_ arguments: [String: Any], explicitStart: Bool = false) -> Bool {
-        debug = arguments["debug"] as? Bool ?? false
+        startNative(appToken: arguments["appToken"] as? String, environment: arguments["environment"] as? String,
+                    apiUrl: arguments["apiUrl"] as? String, maxBreadcrumbs: arguments["maxBreadcrumbs"] as? Int ?? 100,
+                    initialKeys: arguments["initialCustomKeys"] as? [String: String] ?? [:],
+                    debug: arguments["debug"] as? Bool ?? false, enabled: arguments["isCollectionEnabled"] as? Bool != false,
+                    deferred: arguments["nativeInitialization"] as? String == "deferred",
+                    preserveReports: arguments["preservePreviousReports"] as? Bool == true, explicitStart: explicitStart)
+    }
+
+    private func startNative(appToken: String?, environment: String?, apiUrl: String?, maxBreadcrumbs: Int,
+                             initialKeys: [String: String], debug: Bool, enabled: Bool, deferred: Bool,
+                             preserveReports: Bool, explicitStart: Bool) -> Bool {
+        self.debug = debug
         guard !Self.stopped, Self.lifecycleError == nil else { return false }
-        let deferred = arguments["nativeInitialization"] as? String == "deferred"
-        guard arguments["isCollectionEnabled"] as? Bool != false,
+        guard enabled,
               !deferred || explicitStart else { return false }
         if Self.enabled { return true }
         // Legacy automatic bootstrap cannot undo a durable revocation.
         guard !Self.storage.isRevoked || (deferred && explicitStart) else { return false }
 
-        guard let appToken = arguments["appToken"] as? String, !appToken.isEmpty else {
+        guard let appToken, !appToken.isEmpty else {
             NSLog("[apptracer_flutter] TracerOptions.appToken is required on iOS; collection is off.")
             Self.enabled = false
             Self.lifecycleError = "app_token_missing"
@@ -177,7 +199,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
 
         do {
             let purge = Self.storage.isRevoked ||
-                (deferred && arguments["preservePreviousReports"] as? Bool != true)
+                (deferred && !preserveReports)
             if purge { Self.clearSDKPreferences() }
             try Self.storage.prepare(purge: purge)
         } catch {
@@ -185,11 +207,10 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
             return false
         }
 
-        let maxBreadcrumbs = arguments["maxBreadcrumbs"] as? Int ?? 100
         let provider = DartLogProvider(maxLines: maxBreadcrumbs)
         Self.logProvider = provider
 
-        let endpoint = EndpointConfiguration(token: appToken, url: arguments["apiUrl"] as? String)
+        let endpoint = EndpointConfiguration(token: appToken, url: apiUrl)
         // Под `debug` SDK получает вывод в консоль, а его результаты —
         // делегата. Без них об отправленном нефатальном событии не известно
         // ничего: send(nonFatal:) ничего не возвращает, и «событие не дошло»
@@ -223,15 +244,11 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         Self.didStart = true
         created.start()
 
-        if let environment = arguments["environment"] as? String {
+        if let environment {
             created.setEnvironment(environment)
         }
-        if let initial = arguments["initialCustomKeys"] as? [String: String] {
-            let sanitized = initial.filter { !Self.reservedPropertyKeys.contains($0.key) }
-            if !sanitized.isEmpty {
-                created.update(properties: sanitized)
-            }
-        }
+        let sanitized = initialKeys.filter { !Self.reservedPropertyKeys.contains($0.key) }
+        if !sanitized.isEmpty { created.update(properties: sanitized) }
 
         Self.enabled = Self.lifecycleError == nil
         logDebug("started")
@@ -308,29 +325,28 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         Self.service?.update(properties: [key: value])
     }
 
+    private typealias Frame = (raw: String?, member: String?, virtualAddress: String?)
+
     private func recordError(_ arguments: [String: Any]) {
-        guard Self.enabled, let service = Self.service else { return }
-
-        let exceptionType = arguments["exceptionType"] as? String ?? "DartError"
-        let message = arguments["message"] as? String ?? ""
-        let title = message.isEmpty ? exceptionType : "\(exceptionType): \(message)"
-
         let stack = arguments["stackTrace"] as? [String: Any]
         let frames = stack?["frames"] as? [[String: Any]] ?? []
-        let symbols = Self.callStackSymbols(from: frames)
+        report(exceptionType: arguments["exceptionType"] as? String ?? "DartError",
+               message: arguments["message"] as? String ?? "", issueKey: arguments["issueKey"] as? String,
+               severity: arguments["severity"] as? String, customKeys: arguments["customKeys"] as? [String: String] ?? [:],
+               needsSymbolication: stack?["needsSymbolication"] as? Bool == true, buildId: stack?["buildId"] as? String,
+               frames: frames.map { ($0["raw"] as? String, $0["member"] as? String, $0["virtAddress"] as? String) })
+    }
 
-        var properties: [String: String] = [:]
-        if let custom = arguments["customKeys"] as? [String: String] {
-            for (key, value) in custom where !Self.reservedPropertyKeys.contains(key) {
-                properties[key] = value
-            }
-        }
+    private func report(exceptionType: String, message: String, issueKey suppliedKey: String?, severity: String?,
+                        customKeys: [String: String], needsSymbolication: Bool, buildId: String?, frames: [Frame]) {
+        guard Self.enabled, let service = Self.service else { return }
+        let title = message.isEmpty ? exceptionType : "\(exceptionType): \(message)"
+        let symbols = frames.compactMap { $0.raw?.trimmingCharacters(in: .whitespaces) }
+        var properties = customKeys.filter { !Self.reservedPropertyKeys.contains($0.key) }
         properties["dart.exception_type"] = exceptionType
-        if stack?["needsSymbolication"] as? Bool == true {
+        if needsSymbolication {
             properties["dart.needs_symbolication"] = "true"
-            if let buildId = stack?["buildId"] as? String {
-                properties["dart.build_id"] = buildId
-            }
+            if let buildId { properties["dart.build_id"] = buildId }
         }
 
         // Grouping needs an explicit key on iOS.
@@ -340,7 +356,7 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
         // release build has nothing left to group on and would collapse every
         // Dart error in the app into one issue. A key derived from the Dart
         // error type and its top frame restores per-error grouping.
-        let issueKey = (arguments["issueKey"] as? String)
+        let issueKey = suppliedKey
             ?? Self.syntheticIssueKey(exceptionType: exceptionType, frames: frames)
 
         let model = TracerNonFatalModel(
@@ -362,19 +378,10 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
             tags: [:],
             properties: properties,
             issueKey: issueKey,
-            severity: Self.severity(from: arguments["severity"] as? String)
+            severity: Self.severity(from: severity)
         )
         service.send(nonFatal: model)
         logDebug("sent non-fatal \(exceptionType), issueKey \(issueKey)")
-    }
-
-    private static func callStackSymbols(from frames: [[String: Any]]) -> [String] {
-        return frames.compactMap { frame in
-            if let raw = frame["raw"] as? String {
-                return raw.trimmingCharacters(in: .whitespaces)
-            }
-            return nil
-        }
     }
 
     /// Stands in for the native call stack a Dart error does not have.
@@ -412,15 +419,15 @@ public class AppTracerFlutterPlugin: NSObject, FlutterPlugin, TracerNativeApi {
     /// scatter one issue across several groups. An `issueKey`, by contrast, is
     /// used verbatim: putting a line number in it would reintroduce exactly the
     /// instability Tracer went out of its way to avoid.
-    private static func syntheticIssueKey(exceptionType: String, frames: [[String: Any]]) -> String {
+    private static func syntheticIssueKey(exceptionType: String, frames: [Frame]) -> String {
         for frame in frames {
-            if let member = frame["member"] as? String {
+            if let member = frame.member {
                 return issueKey(identity: "dart/\(exceptionType)/\(member)", readable: member)
             }
             // An obfuscated AOT build has no names at all, only addresses, and
             // those move with every build. Grouping is per-build here, because
             // nothing stable is left to key on. See docs/symbolication.md.
-            if let virt = frame["virtAddress"] as? String {
+            if let virt = frame.virtualAddress {
                 return issueKey(identity: "dart/\(exceptionType)/virt+\(virt)", readable: "virt+\(virt)")
             }
         }
@@ -518,5 +525,11 @@ private final class DebugServiceDelegate: TracerServiceDelegate {
                     + "\(ns.localizedDescription) userInfo=\(ns.userInfo)"
             )
         }
+    }
+}
+
+private extension Dictionary where Key == String, Value == String {
+    var collectionResult: NativeCollectionResult {
+        NativeCollectionResult(state: self["state"] ?? "error", reason: self["reason"])
     }
 }
