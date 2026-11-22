@@ -100,8 +100,11 @@ Android и iOS используют общий `MethodChannelTracer`, но ко�
   Xcode 27, завершался в UIKit до запуска Dart. В проверочной сборке добавили
   `UIApplicationSceneManifest` с `FlutterSceneDelegate`, а регистрацию плагинов
   и канала примера перенесли в `didInitializeImplicitFlutterEngine`.
-  Пакеты адаптера использовались из `11402e8`. Для штатного примера остаётся
-  отдельная задача совместимости с Xcode 27 и поддерживаемыми версиями Flutter.
+  Пакеты адаптера использовались из `11402e8`.
+- Штатный пример с `lib/main.dart` также переведён на `UIWindowScene`.
+  На симуляторе iOS 27 проверены первый кадр Flutter, регистрация нативного
+  плагина и канала примера на Flutter 3.22.0 и 3.47.4. В iOS CI тот же
+  XCTest запускается на версии Flutter из `.github/flutter-version`.
   [Руководство Flutter по UIScene](https://docs.flutter.dev/release/breaking-changes/uiscenedelegate).
 
 ## Не входит

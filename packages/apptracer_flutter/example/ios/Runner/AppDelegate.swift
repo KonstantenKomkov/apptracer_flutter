@@ -13,7 +13,7 @@ import UIKit
 /// There is no ANR counterpart here: on iOS the equivalent is the SDK's hang
 /// counter, which is not something an application triggers on demand.
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, ExamplePluginRegistrant {
 
   private static let channelName = "ru.apptracer.flutter.example/native"
   private var verificationEngine: FlutterEngine?
@@ -50,41 +50,57 @@ import UIKit
 
   override func application(
     _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-  ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
+    configurationForConnecting session: UISceneSession,
+    options: UIScene.ConnectionOptions
+  ) -> UISceneConfiguration {
+    let configuration = UISceneConfiguration(name: "flutter", sessionRole: session.role)
+    configuration.delegateClass = exampleSceneDelegateClass(self, LegacySceneDelegate.self)
+    return configuration
+  }
 
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(
-        name: Self.channelName,
-        binaryMessenger: controller.binaryMessenger
-      )
-      channel.setMethodCallHandler { call, result in
-        switch call.method {
-        case "checkSecondaryEngine":
-          self.checkSecondaryEngine(result: result)
-        case "verificationContext":
-          // Used only by the standalone acceptance entrypoint. No credentials
-          // or other process environment values are exposed.
-          result([
-            "scenario": ProcessInfo.processInfo.environment["APPTRACER_VERIFY_SCENARIO"] ?? "inspect",
-            "libraryPath": FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].path
-          ])
-        case "crashForConsentVerification":
-          result(nil)
-          fatalError("apptracer consent verification native crash")
-        case "crashNatively":
-          // Answer first: after this the process is gone, and an unanswered
-          // call would leave the Dart side waiting on a reply that can never
-          // arrive.
-          result(nil)
-          TracerFactory.raise(crash: .fatal)
-        default:
-          result(FlutterMethodNotImplemented)
-        }
+  func register(with registry: FlutterPluginRegistry) {
+    GeneratedPluginRegistrant.register(with: registry)
+    guard let registrar = registry.registrar(forPlugin: Self.channelName) else { return }
+    let channel = FlutterMethodChannel(name: Self.channelName, binaryMessenger: registrar.messenger())
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "checkSecondaryEngine":
+        self.checkSecondaryEngine(result: result)
+      case "verificationContext":
+        // Used only by the standalone acceptance entrypoint. No credentials
+        // or other process environment values are exposed.
+        result([
+          "scenario": ProcessInfo.processInfo.environment["APPTRACER_VERIFY_SCENARIO"] ?? "inspect",
+          "libraryPath": FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].path
+        ])
+      case "crashForConsentVerification":
+        result(nil)
+        fatalError("apptracer consent verification native crash")
+      case "crashNatively":
+        // Answer first: after this the process is gone, and an unanswered
+        // call would leave the Dart side waiting on a reply that can never
+        // arrive.
+        result(nil)
+        TracerFactory.raise(crash: .fatal)
+      default:
+        result(FlutterMethodNotImplemented)
       }
     }
+  }
+}
 
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+/// Older Flutter engines expose their registry on the storyboard's view controller.
+private class LegacySceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    if let controller = window?.rootViewController as? FlutterViewController,
+       let delegate = UIApplication.shared.delegate as? AppDelegate {
+      delegate.register(with: controller)
+    }
   }
 }
