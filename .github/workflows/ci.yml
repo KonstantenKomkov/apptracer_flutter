@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.vm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
           name: coverage-${{ matrix.package }}
@@ -286,7 +286,7 @@ jobs:
 
       - name: Upload Dart symbols
         if: matrix.target == 'android'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dart-symbols-android
           path: packages/apptracer_flutter/example/build/symbols
@@ -299,7 +299,7 @@ jobs:
 
       - name: Upload web source maps
         if: matrix.target == 'web'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-source-maps
           path: packages/apptracer_flutter/example/build/web/*.map
@@ -331,7 +331,7 @@ jobs:
             "- \(.key): \(.value.covered)/\(.value.total) lines, change \((.value.deltaPercentagePoints * 100 | round) / 100) pp"' \
             build/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
       - name: Upload one coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dart-coverage
           path: build/coverage
@@ -403,7 +403,7 @@ jobs:
             --output "$RUNNER_TEMP/tracer-configuration-cache"
       - name: Upload cache evidence and explicit Flutter limitation
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-configuration-cache
           path: |
