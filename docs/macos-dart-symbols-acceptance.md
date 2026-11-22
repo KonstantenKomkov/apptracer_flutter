@@ -1,4 +1,4 @@
-# macOS: локальная символизация Dart AOT
+# macOS: символизация Dart AOT
 
 23 октября 2026 проверена самостоятельная часть №5: точная обфусцированная
 release-сборка, три Dart-события через официальный SDK и локальное восстановление
@@ -85,4 +85,30 @@ Workflow [macos-symbols.yml](../.github/workflows/macos-symbols.yml) повто�
 Для Windows способ нельзя предполагать тем же: документация текущего Flutter
 описывает PDB на Windows x64 и отсутствие поддержки PDB у `flutter symbolize`.
 Фактический формат выбранного Windows toolchain и его расшифровку нужно
-проверить отдельно в №5. Live AOT-приёмка в Tracer остаётся в №11.
+проверить отдельно в №5.
+
+## Live Tracer 2026-11-22
+
+Проверен штатный сценарий `smoke` на macOS 27.2.1 arm64. Release собран
+из `cd27d61` на Flutter 3.47.4 с `--obfuscate --split-debug-info`.
+В проекте Test открыты три карточки с меткой
+`probe_run=macos-aot-20261122T105622Z-37fb`. Проверены обе формы вкладки
+Stacktrace и исходный стек из поля `Данные → Context → apptracer → dart_stack_trace`.
+
+| Событие | Кадры в Stacktrace | Первый virtual PC из карточки | Расшифровка через `atos` |
+| --- | --- | --- | --- |
+| Handled | 2 × `<unknown> in <unknown>` | `0x2e1667` | `_handled`, `main.dart:47` |
+| FlutterError | 2 × `<unknown> in <unknown>` | `0x1617bf` | `_flutterError`, `main.dart:57` |
+| Async | 17 × `<unknown> in <unknown>` | `0x16138f` | замыкание в `_asyncError`, `main.dart:66` |
+
+Файл и строка отсутствовали во всех трёх карточках. Для каждого сохранённого
+стека `tool/symbolize_macos_dart.py` сверил arm64 UUID с образом приложения
+и файлом символов. Восстановленные первые кадры совпали с исходником и с
+контрольным loopback-прогоном той же сборки. Отдельной загрузки символов в
+Tracer в этой серии не выполняли.
+
+- UUID Dart AOT arm64: `2a99b065-730c-a19b-3db8-6cdad039816a`.
+- SHA-256 `App.framework/App`: `e90d4bd1f8a6f6e4a39b4d879b0f5515b8437ba89f9cdf1fb4e1af74b5518181`.
+- SHA-256 `app.darwin-arm64.symbols`: `cb68a0abb1ad25c1cca8d0f612af46e4c88b39e339ca3c0f4da016c7115ea895`.
+- Локальные материалы: `build/macos-dart-symbols/macos-aot-20261122T105622Z-37fb/`
+  (приложение, символы, три стека из Tracer, ссылки на карточки и результаты).

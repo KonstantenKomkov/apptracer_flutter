@@ -407,9 +407,10 @@ environments listed in the summary. Aurora remains unsupported.
 The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.
-Obfuscated macOS Dart AOT stacks have a separate
-[local source-line acceptance](macos-dart-symbols-acceptance.md) using exact
-Mach-O symbols and `atos`; the pinned Flutter CLI failed on those raw stacks.
+On 2026-11-22 Tracer displayed unknown frames in all three obfuscated macOS
+Dart AOT events. The raw stack from each event's Context decoded to the original
+function, file and line with the matching Mach-O symbols and `atos`.
+[Live results and build identity](macos-dart-symbols-acceptance.md#live-tracer-2026-11-22).
 Use its [README](../packages/apptracer_flutter_desktop/README.en.md) and
 [acceptance record](macos-lifecycle-acceptance.md). Windows x64 now has
 [release/Dart](windows-preparation.md), [native crash/retry](windows-native-acceptance.md)
