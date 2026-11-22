@@ -13,695 +13,175 @@ English version: [README.en.md](README.en.md).
 
 ## Быстрый старт
 
-Этот раздел описывает Android/iOS/Web. Для Windows, macOS и Ubuntu Linux
-добавьте стабильный пакет `apptracer_flutter_desktop ^1.0.0` вместе с
-`apptracer_flutter ^1.0.0` и укажите Sentry DSN проекта Tracer.
-[Установка desktop](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md)
-описывает настройку каждой платформы, native handler и карты символов.
-Основной пакет сам desktop backend не подключает. Версия 1.0.0 сохраняет имя
-`FlutterError` при обфускации. Проверенные среды и ограничения приведены в
-[матрице платформ](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
+**1. Установите пакет** из каталога вашего Flutter-приложения.
 
-Пять минут до первого события в консоли Tracer. Развёрнутые версии всех шагов —
-ниже по документу.
+```sh
+flutter pub add apptracer_flutter
+```
 
-**1. Заведите проект в [консоли Tracer](https://apptracer.ru).** Отдельный на
-каждую платформу. Каждый проект выдаёт **свою пару** — `appToken` и
-`pluginToken`: приложение на Android, iOS и web означает три проекта и три
-пары. Оба значения лежат в разделе **Настройки → Проект → API**.
-
-Нужны они в разное время. `appToken` — приложению, чтобы отправлять события;
-без него ничего не работает. `pluginToken` — сборке, чтобы залить символы, и до
-первого релиза он не нужен вовсе.
-
-**2. Подключите SDK Tracer к сборке.** Пакет — обёртка: сами SDK вендора он не
-распространяет и за собой не тянет, их добавляет приложение.
+**2. Настройте платформу.** Создайте отдельный проект для каждой платформы в
+[консоли Tracer](https://apptracer.ru). Для Android, iOS и Web возьмите
+`appToken` для событий и `pluginToken` для загрузки символов в настройках API
+проекта. Для desktop нужен Sentry DSN.
 
 ### Android
 
-Обновите BOM и Gradle-плагин до **1.6.2** из VK Nexus. Эта версия SDK
-исправляет отправку данных на устройствах с Android API 23 и ниже.
-В существующем `pluginManagement` файла `android/settings.gradle.kts` сохраните
-Flutter `includeBuild` и настройте репозитории; плагин добавьте в блок `plugins`:
-
-```kotlin
-pluginManagement {
-    repositories {
-        maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
-            content { includeGroup("ru.ok.tracer") }
-        }
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-plugins {
-    id("ru.ok.tracer") version "1.6.2" apply false
-}
-```
-
-Для зависимостей также добавьте VK Nexus рядом с `google()` и `mavenCentral()` (`allprojects.repositories`
-в `android/build.gradle.kts` либо `dependencyResolutionManagement.repositories`,
-если репозитории управляются через settings):
-
-```kotlin
-maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
-    content { includeGroup("ru.ok.tracer") }
-}
-google()
-mavenCentral()
-```
-
-В `android/app/build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-    id("ru.ok.tracer")
-}
-
-android {
-    // SDK читает appToken из ресурса, который генерируется при сборке.
-    // С AGP 9 фича выключена по умолчанию, и без неё SDK падает в рантайме.
-    buildFeatures {
-        resValues = true
-    }
-}
-
-tracer {
-    create("defaultConfig") {
-        appToken = "ANDROID_APP_TOKEN"
-        pluginToken = providers.gradleProperty("androidPluginToken").orNull
-        uploadMapping = true
-        uploadNativeSymbols = true
-    }
-}
-
-dependencies {
-    implementation(platform("ru.ok.tracer:tracer-platform:1.6.2"))
-    implementation("ru.ok.tracer:tracer-crash-report")
-    // По желанию, для нативных крашей:
-    implementation("ru.ok.tracer:tracer-crash-report-native")
-}
-```
-
-Токен на Android приходит только отсюда: альтернативы в рантайме нет, поэтому
-Gradle-плагин обязателен.
-
-Два ключа подставляются по-разному не для красоты. `appToken` плагин всё равно
-вшивает в APK, прятать нечего — пусть лежит строкой. `pluginToken` подписывает
-загрузку маппингов и символов, в приложение не попадает и в репозитории ему не
-место.
-
-Положите его в `~/.gradle/gradle.properties`:
-
-```properties
-androidPluginToken=...
-```
-
-Этот файл лежит вне репозитория, и Gradle читает его сам — способ запуска не
-меняется ничем: и `flutter build`, и кнопка Run в IDE увидят значение.
-
-В CI файла нет, и заводить его не надо: то же свойство приходит переменной
-`ORG_GRADLE_PROJECT_androidPluginToken` — Gradle подставляет такие переменные в
-свойства проекта, — или флагом `-PandroidPluginToken=…`. В GitHub Actions:
-
-```yaml
-- run: flutter build apk --release
-  env:
-    ORG_GRADLE_PROJECT_androidPluginToken: ${{ secrets.ANDROID_PLUGIN_TOKEN }}
-```
-
-Ещё четыре момента, о которые легко споткнуться:
-
-* **`TracerOptions.appToken` на Android игнорируется.** Токен приходит из
-  Gradle-плагина. Если передать его всё равно, плагин напишет предупреждение, а
-  не сделает вид, что значение применилось.
-* По умолчанию SDK не отправляет данные из debug-сборок. Включить это можно
-  только из своего `Application`, реализующего `HasTracerConfiguration`
-  (`setDebugUpload`), — и такой `Application` заменяет настройки пакета
-  целиком. Чтобы не потерять рейт-лимит, наследуйте его от
-  `ru.apptracer.flutter.TracerApplication` и добавляйте своё к
-  `super.tracerConfiguration`.
-* `Tracer.stopCollection()` полностью останавливает сбор; для временной паузы
-  используйте `pauseCollection()` / `resumeCollection()`. Повторный старт после
-  очистки поддерживается `apptracer_flutter_android` 0.4.1 в deferred-режиме SDK 1.6.1/1.6.2. См.
-  [privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
-* `TracerOptions.environment` на Android тоже игнорируется — SDK берёт его из
-  Gradle-плагина, по умолчанию это имя build variant. Задавайте в блоке
-  `tracer { }`.
-
-#### Android tombstones (SDK 1.5.2)
-
-Экспериментальные системные отчёты о нативных крэшах **выключены по умолчанию**.
-Чтобы включить их без собственного `Application`, добавьте внутрь `<application>`
-в `android/app/src/main/AndroidManifest.xml`:
-
-```xml
-<meta-data
-    android:name="ru.apptracer.flutter.experimentalTombstoneEnabled"
-    android:value="true" />
-```
-
-Нужны Tracer Android **1.5.2, 1.6.1 или 1.6.2** и **Android 12 / API 31+**. Функция входит
-в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
-и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
-позволяют символизировать системные библиотеки, но не гарантируют символизацию
-Dart AOT. Отчёты восстанавливаются при последующем запуске SDK.
-
-Собственный `Application`, реализующий `HasTracerConfiguration`, заменяет
-настройки пакета. В его существующем `CrashReportConfiguration.Builder` вызовите
-`setExperimentalTombstoneEnabled(true)` и при необходимости сохраните лимит
-нефатальных событий. Наследник `TracerApplication` учитывает флаг манифеста.
-
-Флаг работает при автоматическом и отложенном запуске. Он задаётся на Android
-до инициализации SDK, а не через Dart `TracerOptions`. Для отложенного сбора
-по-прежнему нужны удаление провайдеров из манифеста и явный `startCollection`;
-сам флаг сбор не запускает. После обновления выполните чистую сборку.
-
-### Обновление до Android SDK 1.6.2
-
-Используйте `apptracer_flutter ^1.2.1` (Android-адаптер `^0.4.1`). Обновите
-репозитории, BOM и Gradle-плагин по инструкции выше и пересоберите приложение.
-На SDK 1.4.0, 1.5.2 и 1.6.1 сохраняется прежнее поведение сбора.
-
-- `startCollection` может возобновить уже инициализированный SDK 1.6.1 или 1.6.2 после
-  нативного `Tracer.disable()`. В `apptracer_flutter_android` 0.4.1 он также
-  создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1/1.6.2.
-  Для SDK 1.4.0/1.5.2 и автоматической инициализации сохраняется требование
-  нового процесса. Build-time disable меняется только сборкой.
-  Наблюдение состояния само сбор не включает.
-- Флаги Gradle DSL называются `uploadMapping` и `uploadNativeSymbols`.
-  При обоих `false` нужен только `appToken`; если включён хотя бы один upload,
-  нужен `pluginToken`. При `uploadMapping=false` SDK 1.6.1 генерирует нулевой
-  `buildUuid`; восстановление JVM-стека в сервисе тогда не обещается.
-- **Известный дефект Tracer:** в проверенном Kotlin-крэше класс и метод
-  восстановлены, но консоль показывает `.java:14` вместо `.kt:6`. Доставка и
-  Java-символизация проверены. Сохраняйте полный `mapping.txt` точной сборки
-  и исходный обфусцированный стек для локального R8 Retrace. Дефект принят как
-  ограничение выпуска и остаётся открытым.
-- Полный Flutter `assembleRelease` не сохраняет configuration cache на
-  проверенной комбинации Flutter 3.47.4 / AGP 8.9.1 / Gradle 8.12 / JDK 21,
-  в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
-  или `org.gradle.configuration-cache=false` в `gradle.properties`.
-- `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
-  опциональным нативным модулям. В `apptracer_flutter` 1.2.0 они доступны
-  через Dart API; модули подключаются явно приложением. Heap dump может приостановить VM/UI даже при фоновом вызове;
-  offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
-  в поддерживаемую deferred-очистку.
-- Одновременное включение native module и experimental tombstones может дать
-  MINIDUMP и TOMBSTONE для одного падения. В примере tombstone включается отдельно.
-
-SDK 1.6.1 проверен в release/R8-сборке на эмуляторе Android 15 / API 35 (arm64). Эта приёмка не
-сертифицирует физические устройства или native/Dart-символизацию.
-[Протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
-[ограничения diagnostic-модулей](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).
+Следуйте [полному Android-руководству](../../docs/android-guide.md): BOM и
+Gradle-плагин Tracer, репозитории, `resValues = true`, токены и native crashes.
+`TracerOptions.appToken` и `TracerOptions.environment` на Android игнорируются.
 
 ### iOS
 
-Работают оба менеджера зависимостей. На **Swift Package Manager** настраивать
-нечего: `Package.swift` пакета сам объявляет `OKTracer` зависимостью от
-репозитория вендора. Разница одна — фазу выгрузки `dSYM` там некому добавить
-при `pod install`, поэтому её ставят один раз командой:
-
-```sh
-dart run apptracer_flutter:install_ios_dsym_phase
-```
-
-Дальше про токен читайте так же, как ниже; всё остальное в этом разделе — про
-**CocoaPods**.
-
-В `ios/Podfile` — `OKTracer` лежит в spec-репозитории вендора, а поставляется
-статическим `xcframework`, поэтому нужны и свой источник, и смена типа
-линковки:
-
-```ruby
-source 'https://github.com/odnoklassniki/tracer-ios.git'
-source 'https://cdn.cocoapods.org/'
-
-platform :ios, '13.0'
-
-target 'Runner' do
-  use_frameworks! :linkage => :static   # было: use_frameworks!
-  # ...
-end
-```
-
-Затем `pod install`. `appToken` передаётся из Dart, шагом ниже.
-
-Для читаемых стектрейсов нативных крашей нужна загрузка `dSYM`. При
-`pod install` пакет добавляет в `Runner.xcodeproj` фазу их автоматической
-загрузки при каждой **release**-сборке. Укажите `pluginToken` iOS-проекта
-одним из двух способов:
-
-Первое — файл `ios/tracer_plugin_token`, рядом с `Podfile`. Создайте его и
-положите внутрь одну строку: `pluginToken` iOS-проекта из консоли Tracer.
-Выглядит файл так:
-
-```
-e4f1b0c2-8a7d-4c19-9f3e-2b6d5a0c7e18
-```
-
-Файл содержит секрет, поэтому добавьте его в `.gitignore`.
-
-Второе — переменная окружения, и в CI обычно берут её: фаза читает
-`TRACER_IOS_PLUGIN_TOKEN`, а если её нет — `TRACER_PLUGIN_TOKEN`. Тогда файл не
-нужен.
-
-Без токена фаза пишет предупреждение и пропускает загрузку, а при неудачной
-отправке — предупреждение и продолжает: ронять архив из-за сетевой ошибки хуже,
-чем собрать его без символов.
-
-Отключается двумя способами: удалить фазу в Xcode (она подписана
-`[apptracer_flutter]`) или выставить `TRACER_SKIP_IOS_PHASE=1` — тогда
-`pod install` не тронет файл проекта.
-
-Если релиз собирается в CI и хочется, чтобы пайплайн **падал**, когда символы не
-уехали, вызовите ту же загрузку явно — эта команда возвращает ненулевой код:
-
-```sh
-flutter build ipa
-export TRACER_PLUGIN_TOKEN=IOS_PLUGIN_TOKEN
-dart run apptracer_flutter:upload_symbols ios --app-name=Runner
-```
-
-Xcode 27: [проверенная настройка DWARF 4](../apptracer_flutter_ios/README.md#символы-при-сборке-xcode-27).
-
-Наконец, тот же запрос вручную — если ничего ставить не хочется:
-
-```sh
-archive="$(pwd)/build/ios/archive/Runner.xcarchive"
-plist="$archive/Products/Applications/Runner.app/Info.plist"
-
-(cd "$archive/dSYMs" && zip -qry /tmp/dsym.zip ./*.dSYM)
-
-curl --location --http1.1 \
-  --form versionName="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" \
-  --form versionCode="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" \
-  --form file=@/tmp/dsym.zip \
-  "https://plugin-api.apptracer.ru/api/symbol/upload?symbolToken=IOS_PLUGIN_TOKEN"
-```
-
-Ответ `{"success":true}` — принято.
-
-**Вручную это делается на каждый релиз и до первых крашей.** У каждой сборки
-свои `dSYM` с собственными UUID, поэтому символы прошлой версии новой не
-подходят, а версия читается из собранного `Info.plist`, а не пишется руками:
-разойдётся с той, что шлёт приложение, — символы молча лягут к другой версии.
-Пересимволизации у Tracer нет: символы применяются только к событиям,
-полученным после загрузки.
+Выберите Swift Package Manager или CocoaPods по
+[iOS-руководству](../apptracer_flutter_ios/README.md#подключение). Там же
+настройка `dSYM` и `pluginToken`. `appToken` передаётся из Dart.
 
 ### Web
 
-Добавлять нечего: реализация на чистом Dart уже внутри пакета. Токен —
-`appToken` JS-проекта, передаётся шагом ниже.
+Передайте из Dart `appToken` JS-проекта. Web-адаптер входит в пакет.
+[Руководство по Web](../../docs/web-protocol.md#web-setup) описывает
+загрузку сорсмап и ограничения доставки.
 
-При временном отсутствии сети транспорт делает до пяти попыток отправки.
-Одна вкладка на origin сохраняет события в IndexedDB и может продолжить отправку
-после перезагрузки. Другие вкладки держат очередь в памяти. Лимит очереди —
-100 событий, 1 МиБ и 24 часа. Успешный stop/clear удаляет очередь.
-HTTP `sent` подтверждает ответ сервера. Если ответ потерян после приёма события,
-повтор может создать дубль. [Протокол web-доставки](../../docs/web-protocol.md#надёжность-доставки).
+### Desktop (optional)
 
-`pluginToken` JS-проекта, как и на iOS, нужен не для событий, а для загрузки
-сорсмап — без них стектрейс из release-сборки остаётся минифицированным. Тут у
-вендора инструмента нет, поэтому команда пакета — основной путь:
-
-```sh
-flutter build web --release --source-maps
-dart run apptracer_flutter:upload_symbols web --token=WEB_PLUGIN_TOKEN
-```
-
-Она берёт из `build/web` только `.js` и `.map`, пакует их так, чтобы пути
-совпали с путями в кадрах, и подставляет версию из `pubspec.yaml` — она должна
-совпасть с `release` в `TracerOptions`.
-
-Тот же запрос вручную:
-
-```sh
-flutter build web --release --source-maps
-cd build/web && zip -qr /tmp/sourcemaps.zip . -i '*.js' '*.map'
-
-curl --location \
-  -F sourcemapToken=WEB_PLUGIN_TOKEN \
-  -F versionName=1.0.0 \
-  -F file=@/tmp/sourcemaps.zip \
-  https://plugin-api.apptracer.ru/api/sourcemap/upload
-```
-
-Как и на iOS — на каждый релиз и до выкладки: сорсмапы применяются только к
-тому, что пришло после их загрузки.
+Для Windows, macOS и Ubuntu Linux добавьте `apptracer_flutter_desktop ^1.0.0`
+и настройте Sentry DSN по [desktop-руководству](../../docs/desktop-migration.md).
+Основной пакет сам desktop backend не подключает.
 
 **3. Оберните запуск приложения.**
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      iosAppToken: 'IOS_APP_TOKEN',
-      webAppToken: 'WEB_APP_TOKEN',
+      iosAppToken: String.fromEnvironment('IOS_APP_TOKEN'),
+      webAppToken: String.fromEnvironment('WEB_APP_TOKEN'),
+      dsn: String.fromEnvironment('TRACER_DSN'),
     ),
     appRunner: () => runApp(const MyApp()),
   );
 }
 ```
 
-Поля Android здесь нет: его SDK читает токен из ресурса, который создаёт
-Gradle-плагин, и переопределить это из Dart нечем. Если платформа одна, хватит
-общего `appToken` — он используется там, где своего не задано.
+`appRunner` вызывается ровно один раз, включая ошибку инициализации и отключённый
+сбор. Для одной платформы можно использовать общий `appToken`. На Android токен
+берётся только из Gradle.
 
-`appRunner` — это запуск вашего приложения, отданный пакету функцией: обычно
-`() => runApp(const MyApp())`. Пакет вызывает её сам, уже внутри охраняемой
-зоны. Только так в зону попадают асинхронные ошибки, которых никто не
-`await`-ил, и только так `WidgetsFlutterBinding.ensureInitialized()` оказывается
-в той же зоне, что и `runApp`, — иначе Flutter пожалуется на несовпадение зон.
+Например, запустите Web-приложение с токеном JS-проекта. Для iOS передайте
+`IOS_APP_TOKEN`, для desktop — `TRACER_DSN`.
 
-Всё, что бросается дальше, — необработанные исключения, ошибки внутри `build()`
-и асинхронные ошибки без `await` — уходит в Tracer само. Ничего больше вызывать
-не нужно.
+```sh
+flutter run -d chrome --release --dart-define=WEB_APP_TOKEN=YOUR_JS_APP_TOKEN
+```
 
-**4. Убедитесь, что связка живая.** Повесьте на кнопку строку и нажмите:
+**4. Отправьте тестовое событие.**
 
 ```dart
 onPressed: () => throw StateError('проверка apptracer_flutter'),
 ```
 
-В консоли Tracer должно появиться событие. Заголовок у платформ разный, и это
-нормально: на Android он читается как
-`DartError: StateError: проверка apptracer_flutter`, на iOS консоль всегда
-подставляет в начало свой разбор верхнего нативного кадра, поэтому там будет
-`+ 0 - StateError: проверка apptracer_flutter`. Читаемый стектрейс Dart в обоих
-случаях лежит во вкладке «Логи».
+Проверьте событие в консоли Tracer. На Android и iOS читаемый Dart-стек находится во вкладке «Логи». Для ручной обработанной ошибки используйте `Tracer.recordError` из
+[руководства по контексту](../../docs/filtering.md).
 
 ### Если событий нет
 
-Почти всегда дело в одном из пяти:
+Сначала проверьте лог запуска и `Tracer.isEnabled`. Затем:
 
-* **Платформенная настройка пропущена.** При старте пакет печатает строку о
-  том, что он выключен и почему; `Tracer.isEnabled` в этот момент `false`.
-  Загляните в лог первым делом.
-* **Сборка debug.** Нативный SDK по умолчанию не отправляет ничего из
-  debug-сборок — ни с Android, ни с iOS. Проверяйте на release, либо включайте
-  `setDebugUpload` (Android, см. выше).
-* **Android: не выставлен `resValues = true`.** Начиная с AGP 9 фича выключена
-  по умолчанию, а SDK читает `appToken` именно из сгенерированного ресурса и
-  падает в рантайме без него.
-* **Android: токен передан в `TracerOptions`.** Там он игнорируется — на Android
-  токен берётся только из блока `tracer { }` в Gradle.
-* **iOS или web: `appToken` приехал пустым.** Чаще всего это выбранный вариант
-  с `--dart-define`, где флаг забыли при сборке: `String.fromEnvironment` без
-  него возвращает пустую строку. Пакет честно сообщает, что `appToken` не
-  задан, и остаётся выключенным.
+- Android: включены Gradle-плагин и `resValues = true`, токен передан в `tracer { }`.
+- iOS/web: `appToken` задан, например через `--dart-define`.
+- На Android и iOS проверяйте release-сборку. По умолчанию нативные SDK отключают отправку из debug-сборок.
+- Настройка согласия завершена явным `startCollection`, если выбран deferred-режим.
 
-### Что дальше
+Подробности — в [platform-matrix](../../docs/platform-matrix.md) и
+[руководстве по согласию](../../docs/native-collection-consent.md).
 
-* [Использование](#использование) — ручная отправка, breadcrumbs, кастомные ключи.
-* [Согласие пользователя](#согласие-пользователя) — как не собирать ничего, пока
-  пользователь не разрешил.
-* [Какие данные уходят](#какие-данные-уходят) — полный список, включая то, что
-  добавляет от себя нативный SDK.
-* [Release-сборки со `--split-debug-info`](#release-сборки-со---split-debug-info) —
-  что станет со стектрейсом и как его прочитать.
-
-## Зачем это нужно
-
-Нативные SDK Tracer не видят ошибок Dart.
-
-Android SDK ставит `Thread.UncaughtExceptionHandler`, нативный обработчик
-сигналов и ANR-watchdog. Необработанное Dart-исключение не задевает ни один из
-них: процесс не падает, и в JVM исключение не попадает. Flutter перехватывает
-его внутри Dart — через `FlutterError.onError`,
-`PlatformDispatcher.instance.onError` или обработчик ошибок guarded zone. На iOS
-то же самое.
-
-Для Flutter-приложения это подавляющее большинство ошибок. Подключите Tracer SDK
-сам по себе — и получите нативные краши и ANR при подозрительно пустом
-дашборде: исключения, с которыми реально сталкиваются пользователи, туда просто
-не доходят.
-
-Пакет цепляется к этим трём точкам входа Dart и передаёт найденное в нативный
-SDK, который продолжает сам заниматься нативными крашами, ANR и метрикой
-crash-free.
-
-## Сравнение с Firebase Crashlytics
-
-Вопрос законный: Firebase Crashlytics бесплатен, официален и делает то же самое.
-
-| | apptracer_flutter | firebase_crashlytics |
-|---|---|---|
-| Чьи SDK и куда уходят отчёты | нативные SDK VK / OK.TECH, приём в их инфраструктуре | SDK Google, приём в инфраструктуре Google |
-| Платформы | Android, iOS, web | Android, iOS, macOS |
-| Перехват ошибок Dart | `FlutterError.onError`, `PlatformDispatcher.onError`, guarded zone | `FlutterError.onError`, `PlatformDispatcher.onError` |
-| Обфусцированный Dart | вручную: `flutter symbolize` по сохранённому файлу символов | Android — `firebase crashlytics:symbols:upload`; iOS — автоматически |
-| Нативные символы каждой сборки | Android — сам Gradle-плагин; iOS — сборочная фаза, которую пакет прописывает сам; web — команда пакета | Android — командой Firebase CLI; iOS — сборочной фазой Xcode |
-
-**Про данные.** Это и есть основная причина выбирать Tracer: у Firebase
-Crashlytics SDK и приём принадлежат Google, у Tracer — VK / OK.TECH, с приёмом
-в российских сетях, так что трансграничной передачи не происходит — но
-обезличенным крашлог от этого не становится, персональные данные в него кладёте
-вы, и что именно уходит с устройства, перечислено в
-[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
-
-## Что вы получите, кроме ошибок Dart
-
-Ошибки Dart — работа этого пакета, и они одинаково доезжают со всех платформ.
-Неровно распределено остальное, потому что этим занимается нативный SDK
-вендора:
-
-* **Android** — нативные краши и ANR. ANR только с Android 11: `AnrReporter` в
-  `tracer-crash-report` 1.4.0 строит отчёт из `ApplicationExitInfo`, а тот
-  появился в API 30, и ниже `setSendAnr(true)` не даёт ничего.
-* **iOS** — нативные краши и счётчик зависаний.
-* **Web** — только ошибки Dart, нативных крашей там нет по определению.
-
-На платформе без реализации пакет инертен: `isEnabled` равен `false`,
-печатается одна диагностическая строка, ничего не бросается, приложение
-стартует. Подробности — в
-[platform-matrix.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
+<a id="что-дальше"></a>
 
 ## Использование
 
-`appRunner` — та самая функция запуска из шага 3 — вызывается **ровно один раз
-в любом сценарии**: при обычном старте, при запрете сбора политикой, при падении
-инициализации нативного SDK и на платформе без реализации. Сборщик ошибок,
-способный не дать приложению запуститься, хуже, чем отсутствие сборщика ошибок.
-
-Ручная отправка обработанной ошибки:
-
-```dart
-try {
-  await repository.load();
-} catch (error, stackTrace) {
-  await Tracer.recordError(
-    error,
-    stackTrace,
-    severity: TracerSeverity.warning,
-    issueKey: 'ORDERS-LOAD',                       // переопределяет группировку
-    customKeys: {'endpoint': '/orders'},
-  );
-}
-```
-
-Логи и ключи:
-
-```dart
-Tracer.log('пользователь нажал «оформить»', category: 'ui');
-await Tracer.setCustomKey(key: 'checkout_step', value: '3');
-await Tracer.removeCustomKey('checkout_step');
-```
-
-Это не аналитика: ни то, ни другое само по себе никуда не уходит. Breadcrumbs —
-хронология того, что было перед падением, ключи — срез состояния на его момент;
-и то и другое едет прицепом к отчёту об ошибке, а без ошибки просто вытесняется
-из буфера. Ключ живёт до конца сеанса, поэтому его и снимают: иначе
-`checkout_step=3` приедет с падения в настройках и собьёт с толку, а лишние
-ключи вытеснят нужные — Tracer держит не больше 30.
-
-Breadcrumbs копятся в Dart **и** сразу дублируются в нативный лог-буфер,
-поэтому нативный краш — которого Dart-сторона не видит — всё равно приходит с
-цепочкой событий.
+- [Фильтрация, breadcrumbs и custom context](../../docs/filtering.md).
+- [Согласие, pause/resume и stop/clear](../../docs/native-collection-consent.md).
+- [Переданные данные и приватность](../../docs/privacy.md).
+- [Символизация и большие стектрейсы](../../docs/symbolication.md).
+- [Текущие версии и ограничения платформ](../../docs/platform-matrix.md).
 
 ### Согласие пользователя
 
-Для Android сначала удалите оба startup provider из manifest приложения,
-сохранив metadata инициализаторов и Gradle-ресурсы. Точная настройка и ограничения
-описаны в [контракте нативного сбора](../../docs/native-collection-consent.md).
-Одного `isCollectionEnabled: false` недостаточно для предотвращения запуска SDK
-до Flutter.
-
-```dart
-// Bootstrap: приложение запускается, сбор пока выключен.
-await Tracer.initialize(
-  options: const TracerOptions(
-    nativeInitialization: TracerNativeInitialization.deferred,
-  ),
-  appRunner: () => runApp(const MyApp()),
-);
-
-// После проверки согласия и его применимости к текущему аккаунту:
-final started = await Tracer.startCollection();
-if (started.state == TracerCollectionState.restartRequired) {
-  // Для возобновления нужен новый процесс; повторять initialize не следует.
-}
-
-// При отзыве, logout или смене пользователя:
-final stopped = await Tracer.stopAndClearCollection();
-// error/unsupported означает, что необходимая нативная очистка не подтверждена.
-```
-
-`startCollection` не вызывает `appRunner` повторно. Остановка сразу запрещает
-новые Dart-события, очищает breadcrumbs и custom keys и снимает установленные
-обработчики, если они всё ещё принадлежат пакету. Результат нативной операции
-приходит асинхронно; уже отправленные серверу данные она не удаляет.
-
-Android-адаптер 1.4.0 прошёл проверки устройства, сети и release/R8 на API 35.
-На iOS отложенный режим поддерживается с OKTracer строго 1.5.2: явный старт
-после согласия, очистка и блокировка файлов отчётов после отзыва. После активного
-сбора остановка возвращает `restartRequired`; автоматический запуск в новом
-процессе не отменяет отзыв. Новое согласие требует явного deferred-старта.
-Проверка жизненного цикла завершена для указанных SDK; публикация пакетов и
-миграция нативного канала согласия приложения «Сад» остаются отдельными шагами.
+До согласия используйте deferred initialization. После него —
+`Tracer.startCollection()`, после logout — `Tracer.stopAndClearCollection()`.
+Точный контракт и ограничения очистки описаны в
+[native-collection-consent.md](../../docs/native-collection-consent.md).
 
 ### Фильтрация данных
 
-```dart
-TracerOptions(
-  beforeSend: (event) => event.message.contains('@')
-      ? event.copyWith(message: '<скрыто>')
-      : event,
-  beforeBreadcrumb: (crumb) => crumb.category == 'auth' ? null : crumb,
-)
-```
-
-Верните `null`, чтобы отбросить событие. Если хук бросит исключение, оно будет
-залогировано и проигнорировано, а исходное событие всё равно отправится.
+`beforeSend` и `beforeBreadcrumb` позволяют изменить или отбросить данные до
+платформенной передачи. Примеры и большие стеки — в [filtering.md](../../docs/filtering.md).
 
 ### Очень большие стектрейсы
 
-Дословный стектрейс — исходный текст трейса, как его напечатал Dart, тот самый,
-который умеет расшифровать `flutter symbolize`, — пишется в платформенный лог и
-по умолчанию ограничен 8 КБ; разобранные кадры — 128 штуками.
-
-Причина в том, что лог-буфер Android — **кольцевой**, на 64 КБ: всё
-записанное вытесняет что-то более старое. Патологический стектрейс
-(`StackOverflowError`, глубокая цепочка async) занимает сотни килобайт и
-вымоет из буфера всю цепочку breadcrumbs — событие приедет со стектрейсом и без
-контекста.
-
-Обрезается хвост: начало сохраняется, потому что там заголовок `build_id` и
-кадры ближе всего к месту броска. Сколько строк выкинуто — написано прямо в
-логе. Поднять или снять лимит:
-
-```dart
-TracerOptions(
-  maxRawStackTraceLogBytes: 32768,  // 0 — без лимита
-  maxStackFrames: 256,              // 0 — без лимита
-)
-```
+По умолчанию дословный стек ограничен 8 КБ, кадры — 128. Лимиты и причины
+описаны в [filtering.md](../../docs/filtering.md#большие-стектрейсы).
 
 ### Уровень автоматически перехваченных ошибок
 
-Ошибки из `FlutterError.onError`, `PlatformDispatcher.onError` и guarded zone
-отправляются с уровнем `error`, а не `fatal`. Ни одна из них не завершает
-процесс — именно поэтому нативные SDK их и не видят, — а fatal-событие влияет на
-метрику crash-free на Android и iOS. Помечать их фатальными значило бы
-отчитываться о крашах, которых не было.
+Автоматические ошибки отправляются как `error`, а не `fatal`: процесс при этом
+не завершается. `reportUnhandledErrorsAsFatal: true` меняет это осознанно.
 
-Если команда осознанно решила иначе:
+## Зачем это нужно
 
-```dart
-TracerOptions(reportUnhandledErrorsAsFatal: true)
-```
+Нативные SDK Tracer не видят ошибок Dart. Пакет перехватывает их через
+`FlutterError.onError`, `PlatformDispatcher.instance.onError` и guarded zone и
+передаёт нативному SDK, который продолжает обрабатывать native crashes, ANR и
+crash-free метрики.
+
+## Сравнение с Firebase Crashlytics
+
+Оба пакета перехватывают ошибки Dart. Tracer использует SDK VK / OK.TECH и их
+ingest, Firebase — SDK и ingest Google. Данные и ограничения приватности —
+в [privacy.md](../../docs/privacy.md).
+
+## Что вы получите, кроме ошибок Dart
+
+Нативные краши и ANR/hangs обрабатывает SDK платформы. Полный актуальный список
+возможностей и ограничений находится только в
+[platform-matrix.md](../../docs/platform-matrix.md).
 
 ## Какие данные уходят
 
-На Android и iOS сам пакет **не добавляет никаких персональных данных**: ни
-идентификатора установки, ни идентификатора устройства, ни идентификатора
-пользователя, ни автоматического контекста. Отправляется либо свойство самой
-ошибки, либо то, что вы передали явно.
-
-На web иначе. Формат приёма скопирован с JS-SDK вендора, а тот всегда шлёт
-`deviceId`, поэтому реализация заводит его сама — UUID в `localStorage`, один и
-тот же до очистки данных сайта, — и вместе с ним шлёт `host`, размеры экрана,
-угол поворота и `visibilityState`. Отключить это нечем.
-
-Нативные SDK — отдельная история: Android SDK сам собирает модель устройства,
-производителя, ABI, версию ОС, оператора связи и пакет установщика, независимо
-от того, стоит ли этот пакет. Полная таблица и способы ограничения — в
-[privacy.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md).
+На Android и iOS пакет не добавляет персональных данных сам. Web добавляет
+`deviceId` и браузерный контекст, native SDK собирает собственные метаданные.
+Полный список — в [privacy.md](../../docs/privacy.md).
 
 ### Группировка
 
-Если вызывающий код не задал `issueKey`, пакет синтезирует его сам — из типа
-ошибки и внутреннего именованного кадра, не длиннее 32 символов.
-
-Это не украшение. На Android Tracer группирует по классу и методу верхнего
-кадра и только по ним.
-
-Ни файл, ни номер строки в ключ не входят: сам Tracer их игнорирует, чтобы
-правка кода не разносила одну проблему по нескольким группам, и синтетический
-ключ это свойство сохраняет. Свой `issueKey`, переданный в `recordError`, всегда
-имеет приоритет.
+Свой `issueKey` имеет приоритет. Без него ключ синтезируется из типа ошибки и
+внутреннего именованного кадра, без файла и строки.
 
 ## Release-сборки со `--split-debug-info`
 
-При сборке со `--split-debug-info` — с `--obfuscate` или без него —
-Dart-стектрейсы превращаются в адреса:
+Пакет сохраняет дословный стек и `build_id`. Символы нужны от той же сборки;
+ручная расшифровка через `flutter symbolize` описана в
+[symbolication.md](../../docs/symbolication.md).
 
-```
-build_id: 'b71885097a7ebc4d1ab80642f606c4be'
-#00 abs 0000007938a1c2f0 virt 00000000002cc2f0
-```
+### Android tombstones (SDK 1.5.2)
 
-Пакет по умолчанию отправляет **дословный** стектрейс вместе с заголовком,
-поэтому он остаётся расшифровываемым.
+Экспериментальные tombstones выключены по умолчанию. Настройка и ограничения —
+в [Android-руководстве](../../docs/android-guide.md#debug-and-native-crashes).
 
-Текст лежит в логе события, во вкладке с логом, под строкой
-`--- apptracer_flutter: verbatim Dart stack trace ---`. Скопируйте оттуда сам
-трейс — от строки с `build_id:` до последнего кадра `#NN abs …` — и сохраните
-в файл; служебные строки, которые пакет дописал сверху, включать не нужно.
-Дальше:
+### Обновление до Android SDK 1.6.2
 
-```
-flutter symbolize -d build/symbols/app.android-arm64.symbols -i trace.txt
-```
+Инструкции по обновлению и известные ограничения — в [хронологии](../../docs/release-history.md#android-sdk-162-migration).
 
-Файл символов нужен **от той же сборки**: `build_id` в трейсе должен совпасть с
-`app.<платформа>-<архитектура>.symbols`, который `--split-debug-info` положил
-рядом с артефактом. Символы соседнего релиза не подойдут, поэтому архивируйте
-их на каждую сборку. Если в конце трейса стоит
-`... [apptracer_flutter] truncated, N more line(s)`, лог обрезал хвост:
-расшифруются только уцелевшие кадры, а поднять предел можно через
-`TracerOptions.maxRawStackTraceLogBytes`.
+## Runtime API в apptracer_flutter 1.2.0
 
-**У Tracer нет канала для загрузки Dart-файлов `--split-debug-info`** — это
-подтвердил вендор, — поэтому расшифровка остаётся ручным шагом. Подробности — в
-[symbolication.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/symbolication.md).
+Release-specific pause/resume и diagnostic APIs вынесены в
+[хронологию релиза](../../docs/release-history.md#apptracer_flutter-120-runtime-apis).
+Текущие lifecycle-контракты — в [native-collection-consent.md](../../docs/native-collection-consent.md).
 
 ## Лицензия
 
 MIT. SDK вендора лицензируются отдельно, см.
 [legal.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/legal.md).
-
-## Runtime API в apptracer_flutter 1.2.0
-
-В `apptracer_flutter` 1.2.0 доступны `Tracer.pauseCollection()` / `resumeCollection()`
-для текущей разрешённой Android-сессии SDK 1.6.1. Пауза сохраняет данные и не
-отменяет выполняющиеся отправки. Для logout нужен `stopAndClearCollection`;
-новый разрешённый `startCollection` восстанавливает сбор на Android 1.6.1
-в deferred-режиме. iOS 1.5.2 пока возвращает `restartRequired`.
-
-Добавлены `runHeapDump(tag: ...)`, `runDiskUsage()` и `setHeapDumpEnabled(bool)`.
-Модули подключает приложение явно; heap provider также устанавливается хостом
-до старта SDK. Deferred-очистка этих модулей не поддержана. `invoked` означает
-возврат из нативного метода, а не доставку. Для этих API нужны
-`apptracer_flutter_android ^0.4.0` и
-`apptracer_flutter_platform_interface ^0.2.1`; `apptracer_flutter` задаёт эти
-зависимости автоматически.
-[Статус выпуска и порядок публикации](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md).
-[Таблица API, настройка, проверки и принятые ограничения №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).

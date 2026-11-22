@@ -45,12 +45,24 @@ on:
       - '!**/.gitignore'
       - '!**/.gitattributes'
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      versions:
+        description: Resolved Sentry SDKs and toolchain from the release build
+        value: ${{ jobs.symbols.outputs.versions }}
+    inputs:
+      sentry_candidate:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 jobs:
   symbols:
+    outputs:
+      versions: ${{ steps.evidence.outputs.versions }}
     runs-on: macos-15
     timeout-minutes: 25
     env:
@@ -62,11 +74,24 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
+      - name: Resolve Sentry candidate in this disposable checkout
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py apply
       - name: Check rejection of missing and foreign symbols
         run: python3 -m unittest discover -s tool/tests -v
       - name: Build obfuscated release with separate symbols
         working-directory: packages/apptracer_flutter_desktop/example
         run: flutter build macos --release --obfuscate --split-debug-info=build/dart-symbols
+      - name: Identify compiled Sentry SDKs
+        id: evidence
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py evidence
       - name: Decode three real SDK events from the exact release
         run: |
           python3 tool/check_macos_dart_symbols.py \

@@ -15,19 +15,8 @@
 
 English version: [README.en.md](README.en.md).
 
-Ubuntu 22.04.5 x64 проверена на отдельной VM через optional
-[`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.md):
-Dart/native доставка в Tracer, исходные строки, группировка, stop/clear и retry.
-Стабильный `apptracer_flutter_desktop ^1.0.0` устанавливается с pub.dev вместе
-с `apptracer_flutter ^1.0.0`; основной пакет сам desktop не подключает. [Установка и сборка](docs/desktop-migration.md#ubuntu-linux-consumer),
-[протокол и ограничения](docs/linux-preparation.md).
-
-Windows 11 x64 использует тот же optional desktop-пакет: native backend,
-stop/clear, offline/retry и исходные Dart/native кадры проверены локально и
-с реальным Tracer. Сборка и проверки Windows проходят в GitHub Actions;
-чистая Windows VM без средств разработки прошла 11 runtime/consumer-проверок.
-[Установка](docs/desktop-migration.md#windows-consumer),
-[актуальный протокол](docs/windows-local-acceptance.md).
+На macOS, Windows и Ubuntu подключите дополнительный desktop-пакет.
+[Установка](docs/desktop-migration.md) и [проверенные среды](docs/platform-matrix.md#summary).
 
 Нативные SDK Tracer не видят ошибок Dart: необработанное Dart-исключение не
 роняет процесс и не попадает в JVM, поэтому мимо него проходят и
@@ -44,7 +33,7 @@ packages/
   apptracer_flutter_ios/                мост на Swift к OKTracer
   apptracer_flutter_web/                реализация для web
   apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
-                                        macOS/Ubuntu/Windows стабильный 1.0.0, проверенные среды указаны в документации
+                                        проверенные среды указаны в матрице платформ
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
   apptracer_flutter_sentry/             протокол Sentry; только для платформ,
                                         которые этот релиз не поддерживает,
@@ -65,10 +54,15 @@ tool/
 
 | Документ | На что отвечает |
 |---|---|
+| [docs/README.md](docs/README.md) | карта актуальных руководств и граница с историческими протоколами |
+| [android-guide.md](docs/android-guide.md) | настройка Android, токены, native crashes и согласие |
+| [apptracer_flutter_ios/README.md](packages/apptracer_flutter_ios/README.md) | настройка iOS, SPM/CocoaPods и dSYM |
+| [web-protocol.md](docs/web-protocol.md) | web transport, offline-очередь, retry и их ограничения |
+| [filtering.md](docs/filtering.md) | ручная отправка, breadcrumbs, beforeSend и custom context |
+| [release-history.md](docs/release-history.md) | release-specific Runtime API и старые migration notes |
 | [architecture.md](docs/architecture.md) | как разделены пакеты, как Dart взаимодействует с нативным кодом и почему desktop подключается отдельно |
 | [live-verification-plan.md](docs/live-verification-plan.md) | пошаговый чек-лист проверки интеграции на живом проекте Tracer — начинать отсюда перед публикацией |
 | [platform-matrix.md](docs/platform-matrix.md) | какой SDK, какой версии, с каким минимумом и что где покрыто — каждый факт со ссылкой на то, как он проверен |
-| [web-protocol.md](docs/web-protocol.md) | как Tracer на самом деле принимает события из браузера — и почему нынешняя web-реализация под вопросом |
 | [symbolication.md](docs/symbolication.md) | что `--split-debug-info` делает со стектрейсом Dart и что с этим делать |
 | [privacy.md](docs/privacy.md) | что именно уходит с устройства — из этого пакета и из SDK вендора |
 | [legal.md](docs/legal.md) | лицензии, наименование и единственный вопрос, который надо закрыть до публикации |
@@ -85,7 +79,9 @@ tool/
 ```sh
 make            # список всех целей
 make bootstrap  # pub get во всех пакетах
-make check      # analyze + test + publish dry-run
+make analyze    # analyze всех пакетов, включая desktop
+make test       # VM/Chrome-тесты и сводный coverage в build/coverage
+make check      # format + analyze + test + coverage + publish dry-run
 ```
 
 В `Makefile` лежат и команды запуска примера на каждой платформе

@@ -19,19 +19,8 @@ application that is most of the errors. This repository closes that gap.
 
 Русская версия: [README.md](README.md).
 
-Ubuntu 22.04.5 x64 is verified on a separate VM through the optional
-[`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.en.md):
-live Dart/native delivery, source frames, grouping, stop/clear and retry.
-Install stable `apptracer_flutter_desktop ^1.0.0` from pub.dev alongside
-`apptracer_flutter ^1.0.0`; the facade does not add desktop support by itself. [Installation/build](docs/desktop-migration.md#ubuntu-linux-consumer),
-[evidence and limits](docs/linux-preparation.md).
-
-Windows 11 x64 uses the same optional desktop package: the native backend,
-stop/clear, offline/retry and Dart/native source frames have local and live
-Tracer evidence. Windows builds and checks also run in GitHub Actions;
-a fresh Windows VM without build tools passed 11 runtime/consumer checks.
-[Installation](docs/desktop-migration.md#windows-consumer),
-[current evidence](docs/windows-local-acceptance.md).
+For macOS, Windows and Ubuntu, install the optional desktop package. See the
+[desktop setup](docs/desktop-migration.md) and [tested environments](docs/platform-matrix.md#summary).
 
 ## Repository layout
 
@@ -43,7 +32,7 @@ packages/
   apptracer_flutter_ios/                Swift bridge to OKTracer
   apptracer_flutter_web/                web implementation
   apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
-                                        macOS/Ubuntu/Windows stable 1.0.0, tested environments documented
+                                        tested environments listed in the platform matrix
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
   apptracer_flutter_sentry/             the Sentry protocol; only for platforms
                                         this release does not support, and so
@@ -63,6 +52,12 @@ tool/
 
 | Document | What it answers |
 |---|---|
+| [docs/README.md](docs/README.md) | current guide map and the boundary with historical evidence |
+| [android-guide.en.md](docs/android-guide.en.md) | Android setup, tokens, native crashes and consent |
+| [apptracer_flutter_ios/README.en.md](packages/apptracer_flutter_ios/README.en.md) | iOS setup, SPM/CocoaPods and dSYM |
+| [web-protocol.md](docs/web-protocol.md) | web transport, offline queueing and retry limits |
+| [filtering.en.md](docs/filtering.en.md) | manual reporting, breadcrumbs, beforeSend and context |
+| [release-history.md](docs/release-history.md) | release-specific Runtime APIs and migration notes |
 | [live-verification-plan.md](docs/live-verification-plan.md) | step-by-step checklist for proving the integration against a real Tracer project — start here before publishing |
 | [platform-matrix.md](docs/platform-matrix.md) | which SDK, which version, which minimum, what is covered where — every fact traced to how it was checked |
 | [symbolication.md](docs/symbolication.md) | what `--split-debug-info` does to a Dart stack trace, and what to do about it |
@@ -81,7 +76,9 @@ through `pubspec_overrides.yaml`, which `dart pub publish` ignores.
 ```sh
 make            # list every target
 make bootstrap  # pub get in every package
-make check      # analyze + test + publish dry-run
+make analyze    # analyze all catalog packages, including desktop
+make test       # VM/Chrome suites and combined coverage in build/coverage
+make check      # format + analyze + test + coverage + publish dry-run
 ```
 
 The `Makefile` also carries the run commands for the example on each platform
@@ -95,7 +92,3 @@ mirrors the same set for anyone launching from the editor.
 
 MIT, see [LICENSE](LICENSE). The vendor SDKs are licensed separately; see
 [docs/legal.md](docs/legal.md).
-
-Android SDK / Gradle plugin 1.5.2 and opt-in Android 12+ tombstones are supported.
-See [setup](packages/apptracer_flutter/README.en.md#android-tombstones-sdk-152)
-and the [upgrade audit](docs/android-sdk-1.5.2.md) for verification scope.

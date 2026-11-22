@@ -5,8 +5,9 @@
 .pub-cache/
 .pub/
 build/
-/packages/*/coverage/lcov.info
+coverage/
 pubspec.lock
+!/tool/pigeon/pubspec.lock
 **/doc/api/
 
 # Local development wiring is committed on purpose (see docs/contributing.md),

@@ -1,6 +1,9 @@
 # П. 29. Управляемые обновления desktop Sentry SDK
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** L.
+**Статус:** выполнена без изменения production pin. **Приоритет:** P1. **Сложность:** L.
+
+[Инвентарь внутренних API и candidate-процесс](../desktop-sentry-dependencies.md),
+[установка и обновления](../desktop-migration.md#sentry-upgrades).
 
 Связанный общий план: [development_v1.md](development_v1.md).
 Общая матрица Flutter поддерживается в [№26](task-26-flutter-version-ci.md);
