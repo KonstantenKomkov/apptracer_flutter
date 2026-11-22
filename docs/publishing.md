@@ -1,5 +1,22 @@
 # Publishing
 
+## Flutter 1.3.0 release (2026-11-22)
+
+The coordinated release is tagged `v1.3.0`. The facade uses the typed Android
+and iOS bridge, Android restores native context after each Dart event, and Web
+retries eligible reports after reconnects and browser restarts.
+The archive hashes below come from the pub.dev version metadata.
+
+| Published package | Archive SHA-256 |
+| --- | --- |
+| [apptracer_flutter 1.3.0](https://pub.dev/packages/apptracer_flutter/versions/1.3.0) | `10b8eebc4630c3591b2f3a60184c700ab47f32b83ae387747f097d2ea1be0049` |
+| [apptracer_flutter_android 0.4.2](https://pub.dev/packages/apptracer_flutter_android/versions/0.4.2) | `f5dde4e22dbbe311bb1eb5c2f940157b7097f138dd8e464edca8c854b78cba20` |
+| [apptracer_flutter_platform_interface 0.2.2](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.2.2) | `9d664bdb6edaa7378161c2f6adae8d56bfd27d811a2f3b495049f3abf24da9a2` |
+| [apptracer_flutter_ios 0.2.1](https://pub.dev/packages/apptracer_flutter_ios/versions/0.2.1) | `80dbb70c0ace2e4f2a033c9c12806ef358ced21d3a38fcd87e08d9afad2f9fe8` |
+| [apptracer_flutter_http 0.2.1](https://pub.dev/packages/apptracer_flutter_http/versions/0.2.1) | `3fc7ef5780f37c876de63cb89c81227285a10ab50b7668a547e316752e34623c` |
+| [apptracer_flutter_web 0.2.1](https://pub.dev/packages/apptracer_flutter_web/versions/0.2.1) | `01db75bddd18c60d97cfc359f6b970623eef0340e84fc9e7b50a75dc54f1fc93` |
+| [apptracer_flutter_desktop 1.0.1](https://pub.dev/packages/apptracer_flutter_desktop/versions/1.0.1) | `44872d700e8e4471fd27bc876653f1ead6c33724a974d24b5c1cc96b014d896f` |
+
 ## Android SDK 1.6.2 release (2026-11-18)
 
 The Android adapter and facade were published from `11854f2` (tag `v1.2.1`). Both hosted
@@ -153,26 +170,20 @@ has to be on pub.dev before the next resolves.
 4. `apptracer_flutter_ios`
 5. `apptracer_flutter_web`
 6. `apptracer_flutter`
+7. `apptracer_flutter_desktop` (optional adapter for Windows, macOS and Ubuntu Linux)
 
-`apptracer_flutter_sentry` is the legacy manual transport and remains
-`publish_to: none`. Do not publish it as the new desktop backend.
-The optional `apptracer_flutter_desktop` is a stable **1.0.0** package using
-the official Sentry SDK for Windows, macOS and Ubuntu Linux. For the historical
-1.0.0 release, facade **1.0.0** was published first, then desktop **1.0.0**. The facade includes the
-obfuscated `FlutterError` type-name fix. Platform-interface, Android, iOS, Web
-and HTTP packages retain their compatible published versions.
+The archived `apptracer_flutter_sentry` manual transport keeps `publish_to: none`.
+The first stable desktop release and its acceptance results are recorded
+[below](#stable-100--2026-10-24).
 
 Keep the exact `sentry_flutter: 9.30.1` dependency until the version-specific
 integration has been re-audited. Pub reports one intentional tight-constraint
 warning for desktop; no other warnings are accepted.
 
-Earlier Ubuntu/Windows acceptance used hosted facade 0.2.1 and an isolated
-0.2.2 candidate. Those historical records describe the tested builds; the final
-release is 1.0.0 for both facade and desktop. See
-[desktop-migration.md](desktop-migration.md) for platform installation and
-consumer checks. After publication, run the Windows consumer with
-`--hosted-desktop 1.0.0 --facade-version 1.0.0` to verify hosted resolution,
-release compilation and runtime behavior without source dependencies.
+After publication, run the Windows consumer with `--hosted-desktop` and
+`--facade-version` set to the exact newly published versions. It verifies
+hosted resolution, release compilation and runtime behavior.
+[Platform installation and consumer checks](desktop-migration.md).
 
 0.1.0 went out on 2026-08-28, in that order. The required `publish-dry-run` CI
 job checks archive contents and package metadata using local overrides. It does
@@ -199,6 +210,9 @@ between `v0.1.1` and `v0.1.2`.
 
 - [ ] `CHANGELOG.md` has an entry for the version, dated, in Keep a Changelog form
 - [ ] the version in `pubspec.yaml` matches it
+- [ ] after publication, compare the current versions and feature availability in
+      both filtering guides, package READMEs and the platform matrix with pub.dev.
+      Add the published versions and archive hashes to this release record.
 - [ ] `flutter analyze --fatal-infos` is clean
 - [ ] `flutter test` passes
 - [ ] `dart format --set-exit-if-changed .` is clean

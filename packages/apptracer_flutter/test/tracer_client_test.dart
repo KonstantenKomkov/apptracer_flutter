@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:apptracer_flutter/apptracer_flutter.dart'
+    hide EventDeduplicator, TracerClient;
+import 'package:apptracer_flutter/src/deduplicator.dart';
+import 'package:apptracer_flutter/src/tracer_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -104,8 +104,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           flutter analyze --fatal-infos
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter test
+          flutter test --coverage
           exit $LASTEXITCODE
+      - name: Report windows adapter coverage
+        run: python tool/coverage_report.py --desktop-only
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: desktop-coverage-windows
+          path: build/coverage/desktop-windows
+          if-no-files-found: error
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
         env:

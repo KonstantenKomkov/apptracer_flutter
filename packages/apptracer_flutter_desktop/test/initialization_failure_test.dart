@@ -22,7 +22,9 @@ void main() {
       };
     probe.install();
     final adapter = SentryDesktopTracer();
-    Tracer.client = TracerClient(platform: adapter);
+    final previousPlatform = TracerPlatform.instance;
+    addTearDown(() => TracerPlatform.instance = previousPlatform);
+    TracerPlatform.instance = adapter;
     var runs = 0;
     final original = FlutterError.onError;
     await Tracer.initialize(

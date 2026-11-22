@@ -7,6 +7,13 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Applications should call `Tracer`. The facade still exports `TracerClient`,
+  `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
+  `EventDeduplicator` and `BreadcrumbBuffer` for compatibility. These exports
+  are deprecated and scheduled for removal in 2.0.0.
+
 ## [1.3.0] - 2026-11-22
 
 - Use the typed Android and iOS bridge, isolate Android event-specific context, and retry eligible Web reports across reconnects and browser restarts. The iOS example adopts the window scene lifecycle. The common packages support Flutter 3.22 / Dart 3.4.

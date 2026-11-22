@@ -7,6 +7,13 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Events snapshot custom keys, breadcrumbs and stack frames. Breadcrumbs
+  snapshot their data. Edit these collections through `copyWith`.
+- Use `copyWith(removeLibrary: true, removeContext: true)` to redact Flutter
+  metadata before sending an event.
+
 ## [0.2.2] - 2026-11-22
 
 - Add the generated Pigeon API and use the typed native channel when supported. Preserve the MethodChannel fallback for previously released native adapters.

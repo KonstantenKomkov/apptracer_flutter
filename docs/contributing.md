@@ -12,7 +12,7 @@ Windows preparation run, so documentation-only pushes start neither workflow.
 
 ## Layout
 
-Seven publishable packages under `packages/`, an unpublished Sentry transport,
+Seven publishable packages under `packages/`, an archived Sentry transport,
 and an example application at `packages/apptracer_flutter/example`.
 
 The packages depend on each other by **version**, exactly as a consumer would,
@@ -52,14 +52,19 @@ publish dry-run. A failed package does not hide the remaining checks; the final
 summary lists passed/failed/skipped work. Desktop unit tests are included, while
 native device/live acceptance remains in explicit platform workflows.
 
-Combined unit-test coverage is written to `build/coverage/{index.html,summary.json,lcov.info}`.
+Common package coverage is written to `build/coverage/{index.html,summary.json,lcov.info}`.
 The denominator counts production lines reported by the VM. The JSON lists
 unmeasured library files and skipped packages (examples and Chrome-only tests).
 Generated files are excluded. HTTP runs its VM suite plus its browser lifecycle
 and payload tests. Web runs in Chrome. Install Chrome or set `CHROME_EXECUTABLE`
-to the browser executable before running `make test` or `make check`. Parser, `TracerClient`, lifecycle and
-HTTP transport also have a baseline comparison in `tool/coverage_baseline.json`;
-there is no arbitrary global threshold and coverage is not live-delivery proof.
+to the browser executable before running `make test` or `make check`. Any decrease below the checked-in line coverage for the parser, `TracerClient`,
+lifecycle or HTTP transport fails the check after it writes the report. For
+an intentional change, review the affected lines and explicitly update the
+covered/total counts in `tool/coverage_baseline.json` in the same change.
+
+Desktop coverage is written separately to `build/coverage/desktop-<os>/`.
+Each native workflow uploads its host report, including shared adapter code
+and files for that OS. The JSON lists the other platforms’ excluded files.
 The desktop dry-run explicitly allows only pub's exact-pin warning for
 `sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
 
@@ -74,7 +79,8 @@ package participates in the baseline and latest-stable CI jobs.
 
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop
-unit tests.
+unit tests. A failed weekly run opens a GitHub issue or adds the run link to
+the existing open issue.
 
 The [monthly baseline workflow](../.github/workflows/flutter-baseline-update.yml)
 compares the default branch's pin with the official stable release. When an update

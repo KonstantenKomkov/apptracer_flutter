@@ -53,10 +53,15 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerSeverity,
         UnsupportedTracerPlatform;
 
+@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/breadcrumb_buffer.dart';
+@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/deduplicator.dart';
+@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/error_handler_chain.dart';
+@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/error_normalizer.dart';
+@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/tracer_client.dart';
 
 /// The entry point of the integration.

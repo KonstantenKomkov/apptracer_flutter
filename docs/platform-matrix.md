@@ -27,11 +27,10 @@ macOS 15 arm64 CI and isolated consumer checks:
 [status.md](status.md) for what has and has not been exercised against a real
 Tracer project.
 
-As of 2026-11-22, the hosted facade is 1.2.1 and the hosted Android adapter
-is 0.4.1. The Android per-event context restoration described in the
-[task 24 verification](android-event-context.md) landed after that release.
-See the [published artifacts](publishing.md#android-sdk-162-release-2026-11-18)
-for the exact sources shipped on pub.dev.
+Facade 1.3.0 requires Android adapter 0.4.2 or a compatible version. Starting
+with 0.4.2, the adapter restores the native context after each Dart report.
+[Verified scope and concurrency limits](android-event-context.md) ·
+[Published packages](publishing.md#flutter-130-release-2026-11-22).
 
 ## Flutter toolchain
 

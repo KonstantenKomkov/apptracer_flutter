@@ -17,6 +17,83 @@ void main() {
         TracerDiagnosticState.unsupported);
   });
 
+  test('an older host handles missing typed operations on the default channel',
+      () async {
+    const channel = MethodChannel(MethodChannelTracer.defaultChannelName);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      switch (call.method) {
+        case 'startCollection':
+          return {'state': 'enabled'};
+        case 'runHeapDump':
+          return {'state': 'invoked', 'reason': 'legacy'};
+        default:
+          return null;
+      }
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    final tracer = MethodChannelTracer(backendName: 'legacy');
+    const options = TracerOptions(appToken: 'token');
+    expect((await tracer.startCollection(options)).isEnabled, isTrue);
+    final diagnostic = await tracer.runHeapDump(tag: 'manual');
+    expect(diagnostic.state, TracerDiagnosticState.invoked);
+    expect(diagnostic.reason, 'legacy');
+    await tracer.recordLog('log');
+    await tracer.setCustomKey(key: 'k', value: 'v');
+    await tracer.removeCustomKey('k');
+    await tracer.setUserId(null);
+    expect((await tracer.stopAndClearCollection()).reason,
+        'invalid_native_result');
+    expect(tracer.isEnabled, isFalse);
+    expect(calls.map((call) => [call.method, call.arguments]), [
+      ['startCollection', options.toMap()],
+      [
+        'runHeapDump',
+        {'tag': 'manual'}
+      ],
+      [
+        'recordLog',
+        {'message': 'log'}
+      ],
+      [
+        'setCustomKey',
+        {'key': 'k', 'value': 'v'}
+      ],
+      [
+        'removeCustomKey',
+        {'key': 'k'}
+      ],
+      [
+        'setUserId',
+        {'userId': null}
+      ],
+      ['stopAndClearCollection', null],
+    ]);
+  });
+
+  test('a typed host error does not replay an operation on the legacy host',
+      () async {
+    const channel = MethodChannel(MethodChannelTracer.defaultChannelName);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final replayed = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      replayed.add(call);
+      return {'state': 'invoked'};
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final tracer = MethodChannelTracer(
+        backendName: 'typed',
+        nativeApi: FakeNativeApi()..diagnosticError = platformError);
+    await tracer.initialize(const TracerOptions());
+    expect((await tracer.runDiskUsage()).reason, 'native_diagnostic_failed');
+    expect(replayed, isEmpty);
+  });
+
   test('an explicit channel is used even when a typed host is present',
       () async {
     const channel = MethodChannel('test/custom-tracer');
