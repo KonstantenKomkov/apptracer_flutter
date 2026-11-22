@@ -1,0 +1,6 @@
+name: tracer_contract_generator
+publish_to: none
+environment:
+  sdk: ^3.4.0
+dependencies:
+  pigeon: 24.2.2

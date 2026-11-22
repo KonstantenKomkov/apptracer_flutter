@@ -10,7 +10,9 @@ analyzer:
     missing_return: error
   exclude:
     - build/**
+    - linux/**
     - macos/**
+    - windows/**
 
 linter:
   rules:

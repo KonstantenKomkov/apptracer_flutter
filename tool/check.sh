@@ -1,69 +1,78 @@
 #!/usr/bin/env bash
-# Everything CI runs, in the same order, so a green run here means a green CI.
+# Dart checks from the shared catalog; device/live acceptance runs separately.
 set -euo pipefail
-
 cd "$(dirname "$0")/.."
+mode=full
+case "${1:-}" in
+  '' ) ;;
+  --analyze-only ) mode=analyze ;;
+  --test-only ) mode=test ;;
+  * ) echo "Usage: $0 [--analyze-only|--test-only]" >&2; exit 2 ;;
+esac
 
-packages=(
-  packages/apptracer_flutter_platform_interface
-  packages/apptracer_flutter_http
-  packages/apptracer_flutter_sentry
-  packages/apptracer_flutter_android
-  packages/apptracer_flutter_ios
-  packages/apptracer_flutter_web
-  packages/apptracer_flutter
-)
+paths="$(python3 tool/package_catalog.py paths)"
+passed=()
+failed=()
+skipped=("device/live acceptance and platform release workflows")
 
-failed=0
+record() {
+  local label="$1"
+  shift
+  echo "==> $label"
+  if "$@"; then
+    passed+=("$label")
+  else
+    failed+=("$label")
+  fi
+}
 
-bash tool/check_native_executor.sh || failed=1
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  bash tool/check_ios_storage.sh || failed=1
+check_package() {
+  local package="$1"
+  (cd "$package" && dart pub get >/dev/null) || return 1
+  if [[ "$mode" == full ]]; then
+    (cd "$package" && dart format --output=none --set-exit-if-changed .) || return 1
+  fi
+  if [[ "$mode" != test ]]; then
+    (cd "$package" && flutter analyze --no-pub --fatal-infos) || return 1
+  fi
+  if [[ "$mode" != analyze ]]; then
+    python3 tool/test_package.py "$package" --coverage || return 1
+  fi
+}
+
+if [[ "$mode" == full ]]; then
+  record native-executor bash tool/check_native_executor.sh
+  if [[ "$(uname -s)" == Darwin ]]; then
+    record ios-storage bash tool/check_ios_storage.sh
+  else
+    skipped+=("ios-storage (requires macOS)")
+  fi
 fi
 
-for package in "${packages[@]}"; do
-  echo
-  echo "==> $package"
-  (
-    cd "$package"
-    # The surrounding || disables bash's implicit errexit inside this group.
-    # Preserve each failure explicitly instead of letting a later test hide it.
-    flutter pub get >/dev/null || exit 1
-    dart format --output=none --set-exit-if-changed . || exit 1
-    flutter analyze --fatal-infos || exit 1
-    if [ ! -d test ]; then
-      :
-    elif [ "$package" = "packages/apptracer_flutter_web" ]; then
-      # The web package's tests exercise browser-only code paths.
-      flutter test --platform chrome --reporter=compact || exit 1
-    else
-      flutter test --reporter=compact || exit 1
-      if [ "$package" = "packages/apptracer_flutter_http" ]; then
-        flutter test --platform chrome --reporter=compact \
-          test/collection_lifecycle_test.dart test/tracer_batch_item_test.dart || exit 1
-      fi
-    fi
-  ) || failed=1
-done
+package_failed=false
+while IFS= read -r package; do
+  before=${#failed[@]}
+  record "$package" check_package "$package"
+  if (( ${#failed[@]} > before )); then package_failed=true; fi
+done <<< "$paths"
 
-echo
-echo "==> example"
-(
-  cd packages/apptracer_flutter/example
-  flutter pub get >/dev/null || exit 1
-  dart format --output=none --set-exit-if-changed lib test integration_test test_driver || exit 1
-  flutter analyze --fatal-infos || exit 1
-  flutter test --reporter=compact || exit 1
-) || failed=1
+if [[ "$mode" != analyze ]]; then
+  if [[ "$package_failed" == true ]]; then
+    skipped+=("combined coverage (package checks failed)")
+  else
+    record coverage python3 tool/coverage_report.py
+  fi
+fi
+if [[ "$mode" == full ]]; then
+  publishable="$(python3 tool/package_catalog.py publish)"
+  while IFS= read -r package; do
+    record "publish:$package" bash tool/publish_dry_run.sh "$package"
+  done <<< "$publishable"
+  record source-tree bash tool/check_git_clean.sh
+fi
 
-echo
-echo "==> publish dry-run"
-# Checks the package contents in the current checkout. Local overrides remain
-# active; this does not prove resolution against already published dependencies.
-# Dirty tracked files also cause pub's publication warning. See docs/publishing.md.
-for package in "${packages[@]}"; do
-  echo "--> $package"
-  (cd "$package" && dart pub publish --dry-run) || failed=1
-done
-
-exit "$failed"
+echo "==> summary"
+echo "passed: ${passed[*]:-none}"
+echo "failed: ${failed[*]:-none}"
+echo "skipped: ${skipped[*]}"
+(( ${#failed[@]} == 0 ))

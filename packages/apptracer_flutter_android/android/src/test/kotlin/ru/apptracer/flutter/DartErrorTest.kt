@@ -21,7 +21,7 @@ class DartErrorTest {
             )
         )
 
-        val element = DartError.toStackTrace(frames).single()
+        val element = DartError.toStackTrace(frames.map { it.toNativeFrame() }).single()
 
         assertEquals("MyHomePage.build", element.className)
         assertEquals("<anonymous closure>", element.methodName)
@@ -41,7 +41,7 @@ class DartErrorTest {
 
         assertEquals(
             "Repository.load(package:example/repo.dart:12)",
-            DartError.toStackTrace(frames).single().toString()
+            DartError.toStackTrace(frames.map { it.toNativeFrame() }).single().toString()
         )
     }
 
@@ -55,7 +55,7 @@ class DartErrorTest {
             )
         )
 
-        val element = DartError.toStackTrace(frames).single()
+        val element = DartError.toStackTrace(frames.map { it.toNativeFrame() }).single()
 
         assertEquals("dart", element.className)
         assertEquals("_rootRunUnary", element.methodName)
@@ -71,7 +71,7 @@ class DartErrorTest {
             )
         )
 
-        val element = DartError.toStackTrace(frames).single()
+        val element = DartError.toStackTrace(frames.map { it.toNativeFrame() }).single()
 
         assertEquals("dart.unsymbolized", element.className)
         assertEquals("_kDartIsolateSnapshotInstructions+0x24b2f0", element.methodName)
@@ -84,7 +84,7 @@ class DartErrorTest {
 
         assertEquals(
             "<asynchronous suspension>",
-            DartError.toStackTrace(frames).single().methodName
+            DartError.toStackTrace(frames.map { it.toNativeFrame() }).single().methodName
         )
     }
 
@@ -92,7 +92,7 @@ class DartErrorTest {
     fun `falls back to the raw line for an unrecognised frame`() {
         val frames = listOf(mapOf<String, Any?>("raw" to "total gibberish"))
 
-        val element = DartError.toStackTrace(frames).single()
+        val element = DartError.toStackTrace(frames.map { it.toNativeFrame() }).single()
 
         assertEquals("total gibberish", element.fileName)
         assertEquals("<unknown>", element.methodName)
@@ -124,7 +124,7 @@ class DartErrorTest {
             mapOf<String, Any?>("member" to "a.b", "uri" to "package:x/y.dart")
         )
 
-        assertEquals(0, DartError.toStackTrace(frames).single().lineNumber)
-        assertNull(DartError.toStackTrace(listOf(mapOf<String, Any?>("member" to "a.b"))).single().fileName)
+        assertEquals(0, DartError.toStackTrace(frames.map { it.toNativeFrame() }).single().lineNumber)
+        assertNull(DartError.toStackTrace(listOf(mapOf<String, Any?>("member" to "a.b").toNativeFrame())).single().fileName)
     }
 }

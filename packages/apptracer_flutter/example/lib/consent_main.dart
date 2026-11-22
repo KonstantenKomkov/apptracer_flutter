@@ -29,9 +29,9 @@ class ConsentVerificationApp extends StatelessWidget {
   const ConsentVerificationApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => const MaterialApp(
         title: 'Native collection verification',
-        home: const _ConsentPage(),
+        home: _ConsentPage(),
       );
 }
 
@@ -106,7 +106,7 @@ class _ConsentPageState extends State<_ConsentPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          Text('User: $_user; case: $_case'),
+          const Text('User: $_user; case: $_case'),
           Text('Dart collection: ${Tracer.isEnabled ? 'on' : 'off'}'),
           Text('Native result: ${_result?.state.name ?? 'not queried'}'),
           Text('Pending operations: $_pending'),
