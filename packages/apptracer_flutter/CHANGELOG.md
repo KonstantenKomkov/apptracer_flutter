@@ -7,8 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [1.4.0] - 2026-11-22
 
+- Events and breadcrumbs snapshot their input collections. In `beforeSend`,
+  use `copyWith(removeLibrary: true, removeContext: true)` to redact Flutter metadata.
 - Applications should call `Tracer`. The facade still exports `TracerClient`,
   `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
   `EventDeduplicator` and `BreadcrumbBuffer` for compatibility. These exports
