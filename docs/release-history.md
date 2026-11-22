@@ -4,6 +4,14 @@ Current versions and limitations belong to [platform-matrix.md](platform-matrix.
 This file preserves release-specific notes instead of mixing them into the quick
 start. Dated acceptance documents are historical evidence, not promises for newer code.
 
+## apptracer_flutter 1.4.0
+
+Use `copyWith(removeLibrary: true, removeContext: true)` in `beforeSend` to
+clear Flutter metadata. Events and breadcrumbs snapshot their collections.
+Applications that use the implementation types exported by the facade should
+migrate to `Tracer` before 2.0.0.
+[Published packages](publishing.md#flutter-140-release-2026-11-22).
+
 ## apptracer_flutter 1.3.0
 
 Android adapter 0.4.2 restores per-event context on the native SDK. Android

@@ -27,10 +27,10 @@ macOS 15 arm64 CI and isolated consumer checks:
 [status.md](status.md) for what has and has not been exercised against a real
 Tracer project.
 
-Facade 1.3.0 requires Android adapter 0.4.2 or a compatible version. Starting
+Facade 1.4.0 requires platform interface `^0.2.3` and Android adapter `^0.4.2`. Starting
 with 0.4.2, the adapter restores the native context after each Dart report.
 [Verified scope and concurrency limits](android-event-context.md) ·
-[Published packages](publishing.md#flutter-130-release-2026-11-22).
+[Published packages](publishing.md#flutter-140-release-2026-11-22).
 
 ## Flutter toolchain
 

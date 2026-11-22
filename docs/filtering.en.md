@@ -40,6 +40,11 @@ TracerOptions(
 Return `null` to drop an event or breadcrumb. If a hook throws, the client
 logs the exception and keeps the original event or breadcrumb.
 
+Starting with facade 1.4.0, events snapshot their custom keys, breadcrumbs and
+stack frames. To clear Flutter metadata in `beforeSend`, return
+`event.copyWith(removeLibrary: true, removeContext: true)`. Each flag can be
+used independently.
+
 ## Large stack traces
 
 The verbatim trace is capped at 8 KiB by default and parsed frames at 128. The
