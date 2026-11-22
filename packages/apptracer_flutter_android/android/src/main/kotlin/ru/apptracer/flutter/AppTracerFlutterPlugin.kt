@@ -21,7 +21,7 @@ import ru.ok.tracer.crash.report.TracerCrashReport
  * supplies `appToken`. Every entry point therefore has to survive the SDK being
  * absent, and does so by reporting "disabled" rather than throwing.
  */
-class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, TracerNativeApi {
 
     private var channel: MethodChannel? = null
     private var applicationContext: Context? = null
@@ -32,21 +32,155 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         channel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME).also {
             it.setMethodCallHandler(this)
         }
+        TracerNativeApi.setUp(binding.binaryMessenger, this)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel?.setMethodCallHandler(null)
         channel = null
+        TracerNativeApi.setUp(binding.binaryMessenger, null)
         applicationContext = null
+    }
+
+    override fun initialize(options: NativeOptions): Boolean = try {
+        initializeRuntime(options)
+    } catch (error: Throwable) {
+        nativeFailure()
+        false
+    }
+
+    override fun startCollection(options: NativeOptions): NativeCollectionResult = try {
+        startCollectionState(options).toCollectionResult()
+    } catch (error: Throwable) {
+        nativeFailure()
+        collectionState().toCollectionResult()
+    }
+
+    override fun pauseCollection(): NativeCollectionResult = try {
+        pauseCollectionState().toCollectionResult()
+    } catch (error: Throwable) {
+        nativeFailure()
+        collectionState().toCollectionResult()
+    }
+
+    override fun resumeCollection(): NativeCollectionResult = try {
+        resumeCollectionState().toCollectionResult()
+    } catch (error: Throwable) {
+        nativeFailure()
+        collectionState().toCollectionResult()
+    }
+
+    override fun stopAndClearCollection(callback: (Result<NativeCollectionResult>) -> Unit) {
+        try {
+            clearCollection { callback(Result.success(it.toCollectionResult())) }
+        } catch (error: Throwable) {
+            nativeFailure()
+            callback(Result.success(NativeCollectionResult("error", "native_call_failed")))
+        }
+    }
+
+    override fun getCollectionState(): NativeCollectionResult = try {
+        collectionState().toCollectionResult()
+    } catch (error: Throwable) {
+        nativeFailure()
+        NativeCollectionResult("error", "native_call_failed")
+    }
+
+    override fun stopCollection(callback: (Result<Unit>) -> Unit) {
+        try {
+            stopCollectionRuntime { callback(Result.success(Unit)) }
+        } catch (error: Throwable) {
+            nativeFailure()
+            callback(Result.failure(error))
+        }
+    }
+
+    override fun recordError(event: NativeEvent) {
+        try {
+            recordNativeEvent(event)
+        } catch (error: Throwable) {
+            nativeFailure()
+        }
+    }
+
+    override fun recordLog(message: String) {
+        try {
+            recordLogMessage(message)
+        } catch (error: Throwable) {
+            nativeFailure()
+        }
+    }
+
+    override fun setCustomKey(key: String, value: String) {
+        try {
+            setPersistentCustomKey(key, value)
+        } catch (error: Throwable) {
+            nativeFailure()
+        }
+    }
+
+    override fun removeCustomKey(key: String) {
+        try {
+            setPersistentCustomKey(key, null)
+        } catch (error: Throwable) {
+            nativeFailure()
+        }
+    }
+
+    override fun setUserId(userId: String?) {
+        try {
+            setNativeUserId(userId)
+        } catch (error: Throwable) {
+            nativeFailure()
+        }
+    }
+
+    override fun runHeapDump(tag: String, callback: (Result<NativeDiagnosticResult>) -> Unit) =
+        runDiagnostic(true, tag, callback)
+
+    override fun runDiskUsage(callback: (Result<NativeDiagnosticResult>) -> Unit) =
+        runDiagnostic(false, null, callback)
+
+    override fun setHeapDumpEnabled(enabled: Boolean): NativeDiagnosticResult = try {
+        if (!isSdkOnClasspath()) {
+            NativeDiagnosticResult("unsupported", "sdk_missing")
+        } else if (!AppTracerFlutterPlugin.enabled && enabled) {
+            NativeDiagnosticResult("disabled", "collection_disabled")
+        } else {
+            TracerDiagnostics.setHeapEnabled(enabled).toDiagnosticResult()
+        }
+    } catch (error: Throwable) {
+        NativeDiagnosticResult("error", "native_diagnostic_failed")
+    }
+
+    private fun runDiagnostic(
+        heap: Boolean,
+        tag: String?,
+        callback: (Result<NativeDiagnosticResult>) -> Unit,
+    ) {
+        if (!enabled) {
+            callback(Result.success(NativeDiagnosticResult("disabled", "collection_disabled")))
+            return
+        }
+        try {
+            TracerDiagnostics.run(heap, tag) { callback(Result.success(it.toDiagnosticResult())) }
+        } catch (error: Throwable) {
+            callback(Result.success(NativeDiagnosticResult("error", "native_diagnostic_failed")))
+        }
+    }
+
+    private fun nativeFailure() {
+        enabled = false
+        lifecycleError = "native_call_failed"
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
-                "initialize" -> result.success(initialize(call))
-                "startCollection" -> result.success(startCollection(call))
-                "pauseCollection" -> result.success(pauseCollection())
-                "resumeCollection" -> result.success(resumeCollection())
+                "initialize" -> result.success(initializeRuntime(call.toNativeOptions()))
+                "startCollection" -> result.success(startCollectionState(call.toNativeOptions()))
+                "pauseCollection" -> result.success(pauseCollectionState())
+                "resumeCollection" -> result.success(resumeCollectionState())
                 "runHeapDump", "runDiskUsage" -> {
                     if (!enabled) result.success(mapOf("state" to "disabled", "reason" to "collection_disabled"))
                     else TracerDiagnostics.run(call.method == "runHeapDump", call.argument<String>("tag")) { result.success(it) }
@@ -57,27 +191,27 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     else if (!enabled && requested) result.success(mapOf("state" to "disabled", "reason" to "collection_disabled"))
                     else result.success(TracerDiagnostics.setHeapEnabled(requested))
                 }
-                "stopAndClearCollection" -> stopAndClearCollection(result)
+                "stopAndClearCollection" -> clearCollection { result.success(it) }
                 "getCollectionState" -> result.success(collectionState())
-                "stopCollection" -> stopCollection(result)
+                "stopCollection" -> stopCollectionRuntime { result.success(null) }
                 "recordError" -> {
                     recordError(call)
                     result.success(null)
                 }
                 "recordLog" -> {
-                    recordLog(call.argument<String>("message"))
+                    recordLogMessage(call.argument<String>("message"))
                     result.success(null)
                 }
                 "setCustomKey" -> {
-                    setCustomKey(call.argument<String>("key"), call.argument<String>("value"))
+                    setPersistentCustomKey(call.argument<String>("key"), call.argument<String>("value"))
                     result.success(null)
                 }
                 "removeCustomKey" -> {
-                    setCustomKey(call.argument<String>("key"), null)
+                    setPersistentCustomKey(call.argument<String>("key"), null)
                     result.success(null)
                 }
                 "setUserId" -> {
-                    setUserId(call.argument<String>("userId"))
+                    setNativeUserId(call.argument<String>("userId"))
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -99,11 +233,11 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
-    private fun startCollection(call: MethodCall): Map<String, String> {
-        if (call.argument<Boolean>("isCollectionEnabled") == false) {
+    private fun startCollectionState(options: NativeOptions): Map<String, String> {
+        if (!options.isCollectionEnabled) {
             return mapOf("state" to "disabled")
         }
-        if (call.argument<String>("nativeInitialization") == "deferred") {
+        if (options.nativeInitialization == "deferred") {
             // The mode is checked before any SDK reference. Dart alone cannot
             // undo a provider that has already run.
             if (!hasDeferredManifest()) {
@@ -112,17 +246,17 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             if (!isSdkOnClasspath()) return mapOf("state" to "unsupported", "reason" to "sdk_missing")
             if (!hasGradlePluginResources()) return mapOf("state" to "error", "reason" to "app_token_missing")
             val context = applicationContext ?: return mapOf("state" to "error", "reason" to "context_missing")
-            val state = Sdk140ConsentRuntime.start(context, call.argument<Boolean>("preservePreviousReports") == true)
+            val state = Sdk140ConsentRuntime.start(context, options.preservePreviousReports)
             enabled = state["state"] == "enabled"
             if (enabled) runtimePaused = false
             return state
         }
         if (stopped) return collectionState()
-        initialize(call, resumeRuntime = true)
+        initializeRuntime(options, resumeRuntime = true)
         return collectionState()
     }
 
-    private fun pauseCollection(): Map<String, String> {
+    private fun pauseCollectionState(): Map<String, String> {
         if (!isSdkOnClasspath() || stopped || lifecycleError != null) return collectionState()
         val current = Sdk140ConsentRuntime.pauseRuntime()
         runtimePaused = current["reason"] == "sdk_runtime_disabled" && (enabled || runtimePaused)
@@ -130,7 +264,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return current
     }
 
-    private fun resumeCollection(): Map<String, String> {
+    private fun resumeCollectionState(): Map<String, String> {
         if (!runtimePaused || stopped || lifecycleError != null) {
             return mapOf("state" to "disabled", "reason" to "no_live_pause")
         }
@@ -165,30 +299,30 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return info.providers.orEmpty().none { it.name in forbidden }
     }
 
-    private fun stopAndClearCollection(result: MethodChannel.Result) {
+    private fun clearCollection(complete: (Map<String, String>) -> Unit) {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
         AndroidEventScope.clearPersistentProperties()
         if (!isSdkOnClasspath()) {
-            result.success(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
+            complete(mapOf("state" to "unsupported", "reason" to "sdk_missing"))
             return
         }
         val context = applicationContext
         if (context == null) {
-            result.success(mapOf("state" to "error", "reason" to "context_missing"))
+            complete(mapOf("state" to "error", "reason" to "context_missing"))
             return
         }
-        Sdk140ConsentRuntime.stopAndClear(context) { state -> result.success(state) }
+        Sdk140ConsentRuntime.stopAndClear(context) { state -> complete(state) }
     }
 
-    private fun initialize(call: MethodCall, resumeRuntime: Boolean = false): Boolean {
-        debug = call.argument<Boolean>("debug") ?: false
+    private fun initializeRuntime(options: NativeOptions, resumeRuntime: Boolean = false): Boolean {
+        debug = options.debug
         if (stopped || lifecycleError != null) return false
-        if (call.argument<Boolean>("isCollectionEnabled") == false ||
-            call.argument<String>("nativeInitialization") == "deferred") return false
+        if (!options.isCollectionEnabled ||
+            options.nativeInitialization == "deferred") return false
 
-        if (call.argument<String>("appToken") != null) {
+        if (options.appToken != null) {
             Log.w(
                 TAG,
                 "TracerOptions.appToken is ignored on Android. The token comes " +
@@ -197,7 +331,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             )
         }
 
-        if (call.argument<String>("environment") != null) {
+        if (options.environment.isNotEmpty()) {
             Log.w(
                 TAG,
                 "TracerOptions.environment is ignored on Android. The SDK takes " +
@@ -249,7 +383,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     /** Full managed cleanup is awaited; only pause/resume retains a session. */
-    private fun stopCollection(result: MethodChannel.Result) {
+    private fun stopCollectionRuntime(complete: () -> Unit) {
         if (isSdkOnClasspath()) TracerDiagnostics.revoke()
         runtimePaused = false
         enabled = false
@@ -257,61 +391,56 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         if (isSdkOnClasspath() && Sdk140ConsentRuntime.ownsRuntime()) {
             val context = applicationContext
             if (context != null) {
-                Sdk140ConsentRuntime.stopAndClear(context) { result.success(null) }
+                Sdk140ConsentRuntime.stopAndClear(context) { complete() }
                 return
             }
         }
         stopped = true
         if (isSdkOnClasspath()) Tracer.disable()
-        result.success(null)
+        complete()
     }
 
     private fun recordError(call: MethodCall) {
+        recordNativeEvent(call.toNativeEvent())
+    }
+
+    private fun recordNativeEvent(event: NativeEvent) {
         if (!enabled || Tracer.isDisabled) {
             return
         }
 
-        val exceptionType = call.argument<String>("exceptionType") ?: "DartError"
-        val message = call.argument<String>("message").orEmpty()
-        val issueKey = call.argument<String>("issueKey")
-        val severity = severityOf(call.argument<String>("severity"))
-
-        @Suppress("UNCHECKED_CAST")
-        val stack = call.argument<Map<String, Any?>>("stackTrace")
-
-        @Suppress("UNCHECKED_CAST")
-        val frames = (stack?.get("frames") as? List<Map<String, Any?>>).orEmpty()
-
+        val exceptionType = event.exceptionType
+        val message = event.message
+        val severity = severityOf(event.severity)
+        val stack = event.stackTrace
         val title = if (message.isEmpty()) exceptionType else "$exceptionType: $message"
         val throwable = DartError(title)
-        throwable.stackTrace = DartError.toStackTrace(frames)
+        throwable.stackTrace = DartError.toStackTrace(stack.frames)
 
-        @Suppress("UNCHECKED_CAST")
-        val customKeys = call.argument<Map<String, String>>("customKeys")
         val eventProperties = mutableMapOf<String, String?>()
-        customKeys?.let { eventProperties.putAll(it) }
+        eventProperties.putAll(event.customKeys)
         eventProperties[KEY_DART_EXCEPTION_TYPE] = exceptionType
-        if (stack?.get("needsSymbolication") == true) {
+        if (stack.needsSymbolication) {
             eventProperties[KEY_DART_NEEDS_SYMBOLICATION] = "true"
-            eventProperties[KEY_DART_BUILD_ID] = stack["buildId"] as? String
+            eventProperties[KEY_DART_BUILD_ID] = stack.buildId
         } else {
             eventProperties[KEY_DART_NEEDS_SYMBOLICATION] = null
             eventProperties[KEY_DART_BUILD_ID] = null
         }
 
         AndroidEventScope.withEventProperties(eventProperties) {
-            TracerCrashReport.report(severity, throwable, issueKey)
+            TracerCrashReport.report(severity, throwable, event.issueKey)
         }
     }
 
-    private fun recordLog(message: String?) {
+    private fun recordLogMessage(message: String?) {
         if (!enabled || Tracer.isDisabled || message.isNullOrEmpty()) {
             return
         }
         TracerCrashReport.log(message)
     }
 
-    private fun setCustomKey(key: String?, value: String?) {
+    private fun setPersistentCustomKey(key: String?, value: String?) {
         if (!enabled || Tracer.isDisabled || key.isNullOrEmpty()) {
             return
         }
@@ -321,7 +450,7 @@ class AppTracerFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         AndroidEventScope.setPersistentProperty(key, value)
     }
 
-    private fun setUserId(userId: String?) {
+    private fun setNativeUserId(userId: String?) {
         if (!enabled || Tracer.isDisabled) {
             return
         }

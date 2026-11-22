@@ -101,7 +101,6 @@ desktop Sentry updates и навигация документации. Кажд�
 | № | Задача | Приоритет | Сложность | Зависимости / заметки |
 | --- | --- | --- | --- | --- |
 | 25 | [Надёжность Web/HTTP-доставки](task-25-web-delivery-reliability.md) | P0 | XL | Timeout, retry, bounded persistent queue, stop/clear и browser acceptance |
-| 27 | [Типизированный MethodChannel через Pigeon](task-27-typed-method-channel.md) | P1 | L | Желательно после №24; Android/iOS, без смены публичного API |
 | 28 | [Единые локальные проверки и сводный coverage](task-28-unified-checks-coverage.md) | P1 | M | Зависит от №26; каталог пакетов, desktop unit tests и coverage summary |
 | 29 | [Управляемые обновления desktop Sentry SDK](task-29-desktop-sentry-upgrades.md) | P1 | L | Candidate CI и полная приёмка перед сменой pin |
 | 30 | [Навигация и актуальность документации](task-30-documentation-navigation.md) | P2 | M | Quick start, единая матрица, RU/EN и проверка ссылок |
@@ -540,6 +539,8 @@ staged dry-run и документация установки/миграции/p
 выполненной без фактического выпуска.
 
 ## Завершённые задачи
+
+- [№27. Типизированный канал Android/iOS](development_completed_v1.md#task-27).
 
 - [№26. Матрица версий Flutter и немутирующие проверки CI](development_completed_v1.md#task-26).
 

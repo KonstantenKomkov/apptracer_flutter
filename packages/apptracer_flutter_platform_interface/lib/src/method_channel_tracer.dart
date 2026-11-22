@@ -5,25 +5,27 @@ import 'models/tracer_event.dart';
 import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
+import 'native_contract.dart';
+import 'pigeon/tracer_api.dart';
 import 'tracer_platform.dart';
 
-/// A [TracerPlatform] backed by a [MethodChannel].
-///
-/// Shared by the Android and iOS implementations, which differ only in the
-/// native half. Every call is wrapped so that a platform-side failure degrades
-/// to "collection is off" rather than propagating into the host application:
-/// a crash reporter that crashes the app is worse than no crash reporter.
+/// A [TracerPlatform] backed by the generated native contract.
 class MethodChannelTracer extends TracerPlatform {
-  /// Creates an implementation talking over [channel].
+  /// Creates an implementation. [nativeApi] is intended for contract tests.
   MethodChannelTracer({
     MethodChannel? channel,
+    TracerNativeApi? nativeApi,
     required this.backendName,
-  }) : _channel = channel ?? const MethodChannel(defaultChannelName);
+  })  : _channel = channel ?? const MethodChannel(defaultChannelName),
+        _explicitLegacyChannel = channel != null,
+        _native = nativeApi ?? TracerNativeApi();
 
-  /// The channel name shared with the native implementations.
+  /// Legacy channel retained for independent package-version compatibility.
   static const String defaultChannelName = 'ru.apptracer.flutter/tracer';
 
   final MethodChannel _channel;
+  final TracerNativeApi _native;
+  final bool _explicitLegacyChannel;
 
   @override
   final String backendName;
@@ -35,24 +37,23 @@ class MethodChannelTracer extends TracerPlatform {
   @override
   bool get isEnabled => _enabled;
 
-  /// Both native SDKs behind this channel group Dart errors too coarsely to
-  /// tell two of them apart on their own. See [TracerPlatform.needsSyntheticIssueKey].
   @override
   bool get needsSyntheticIssueKey => true;
 
-  /// The channel used by this implementation, exposed for tests.
+  /// Legacy channel used with older native implementations.
   @visibleForTesting
   MethodChannel get channel => _channel;
 
   @override
   Future<void> initialize(TracerOptions options) async {
     _debug = options.debug;
+    final generation = ++_generation;
     if (!options.isCollectionEnabled) {
       _enabled = false;
       return;
     }
-    final generation = ++_generation;
-    final started = await _invoke<bool>('initialize', options.toMap());
+    final started = await _invoke<bool>('initialize',
+        () => _native.initialize(nativeOptions(options)), options.toMap);
     if (generation == _generation) _enabled = started ?? false;
   }
 
@@ -60,20 +61,21 @@ class MethodChannelTracer extends TracerPlatform {
   Future<void> stopCollection() async {
     ++_generation;
     _enabled = false;
-    await _invoke<void>('stopCollection', null);
+    await _invoke<void>('stopCollection', _native.stopCollection);
   }
 
   @override
   Future<TracerCollectionResult> pauseCollection() {
     ++_generation;
     _enabled = false;
-    return _lifecycle('pauseCollection', null);
+    return _lifecycle('pauseCollection', _native.pauseCollection);
   }
 
   @override
   Future<TracerCollectionResult> resumeCollection() async {
     final generation = ++_generation;
-    final result = await _lifecycle('resumeCollection', null);
+    final result =
+        await _lifecycle('resumeCollection', _native.resumeCollection);
     if (generation != _generation) {
       return const TracerCollectionResult(TracerCollectionState.disabled,
           reason: 'superseded');
@@ -84,32 +86,42 @@ class MethodChannelTracer extends TracerPlatform {
 
   @override
   Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
-      _diagnostic('runHeapDump', {'tag': tag});
+      _diagnostic('runHeapDump', () => _native.runHeapDump(tag),
+          arguments: {'tag': tag});
 
   @override
   Future<TracerDiagnosticResult> runDiskUsage() =>
-      _diagnostic('runDiskUsage', null);
+      _diagnostic('runDiskUsage', _native.runDiskUsage);
 
   @override
   Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
-      _diagnostic('setHeapDumpEnabled', {'enabled': enabled},
-          allowDisabled: !enabled);
+      _diagnostic(
+          'setHeapDumpEnabled', () => _native.setHeapDumpEnabled(enabled),
+          arguments: {'enabled': enabled}, allowDisabled: !enabled);
 
-  Future<TracerDiagnosticResult> _diagnostic(String method, Object? arguments,
-      {bool allowDisabled = false}) async {
+  Future<TracerDiagnosticResult> _diagnostic(
+    String method,
+    Future<NativeDiagnosticResult> Function() call, {
+    Object? arguments,
+    bool allowDisabled = false,
+  }) async {
     if (!_enabled && !allowDisabled) {
       return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
           reason: 'collection_disabled');
     }
     final generation = _generation;
     try {
-      final map =
-          await _channel.invokeMapMethod<Object?, Object?>(method, arguments);
+      final result = await _withLegacy(
+        () async => publicDiagnosticResult(await call()),
+        () async => TracerDiagnosticResult.fromMap(await _channel
+                .invokeMapMethod<Object?, Object?>(method, arguments) ??
+            const {}),
+      );
       if (generation != _generation) {
         return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
             reason: 'superseded');
       }
-      return TracerDiagnosticResult.fromMap(map ?? const {});
+      return result;
     } on MissingPluginException {
       return const TracerDiagnosticResult(TracerDiagnosticState.unsupported,
           reason: 'native_operation_missing');
@@ -127,7 +139,8 @@ class MethodChannelTracer extends TracerPlatform {
       _enabled = false;
       return const TracerCollectionResult(TracerCollectionState.disabled);
     }
-    final result = await _lifecycle('startCollection', options.toMap());
+    final result = await _lifecycle('startCollection',
+        () => _native.startCollection(nativeOptions(options)), options.toMap);
     if (generation != _generation) {
       return const TracerCollectionResult(TracerCollectionState.disabled,
           reason: 'superseded');
@@ -140,28 +153,32 @@ class MethodChannelTracer extends TracerPlatform {
   Future<TracerCollectionResult> stopAndClearCollection() {
     ++_generation;
     _enabled = false;
-    return _lifecycle('stopAndClearCollection', null);
+    return _lifecycle('stopAndClearCollection', _native.stopAndClearCollection);
   }
 
   @override
   Future<TracerCollectionResult> getCollectionState() async {
-    // Observation does not grant Dart permission or revive a stopped client.
     final generation = _generation;
-    final result = await _lifecycle('getCollectionState', null);
+    final result =
+        await _lifecycle('getCollectionState', _native.getCollectionState);
     if (!result.isEnabled && generation == _generation) _enabled = false;
     return result;
   }
 
   Future<TracerCollectionResult> _lifecycle(
-      String method, Object? arguments) async {
+      String method, Future<NativeCollectionResult> Function() call,
+      [Object? Function()? arguments]) async {
     try {
-      final map =
-          await _channel.invokeMapMethod<Object?, Object?>(method, arguments);
-      if (map == null) {
-        return const TracerCollectionResult(TracerCollectionState.error,
-            reason: 'invalid_native_result');
-      }
-      return TracerCollectionResult.fromMap(map);
+      return await _withLegacy(() async => publicCollectionResult(await call()),
+          () async {
+        final result = await _channel.invokeMapMethod<Object?, Object?>(
+            method, arguments?.call());
+        if (result == null) {
+          return const TracerCollectionResult(TracerCollectionState.error,
+              reason: 'invalid_native_result');
+        }
+        return TracerCollectionResult.fromMap(result);
+      });
     } on MissingPluginException {
       return const TracerCollectionResult(TracerCollectionState.unsupported,
           reason: 'native_operation_missing');
@@ -173,56 +190,59 @@ class MethodChannelTracer extends TracerPlatform {
 
   @override
   Future<void> recordError(TracerEvent event) async {
-    if (!_enabled) {
-      return;
-    }
-    await _invoke<void>('recordError', event.toMap());
+    if (!_enabled) return;
+    await _invoke<void>('recordError',
+        () => _native.recordError(nativeEvent(event)), event.toMap);
   }
 
   @override
   Future<void> recordLog(String message) async {
-    if (!_enabled) {
-      return;
-    }
-    await _invoke<void>('recordLog', <String, Object?>{'message': message});
+    if (!_enabled) return;
+    await _invoke<void>('recordLog', () => _native.recordLog(message),
+        () => {'message': message});
   }
 
   @override
-  Future<void> setCustomKey({
-    required String key,
-    required String value,
-  }) async {
-    if (!_enabled) {
-      return;
-    }
-    await _invoke<void>(
-      'setCustomKey',
-      <String, Object?>{'key': key, 'value': value},
-    );
+  Future<void> setCustomKey(
+      {required String key, required String value}) async {
+    if (!_enabled) return;
+    await _invoke<void>('setCustomKey', () => _native.setCustomKey(key, value),
+        () => {'key': key, 'value': value});
   }
 
   @override
   Future<void> removeCustomKey(String key) async {
-    if (!_enabled) {
-      return;
-    }
-    await _invoke<void>('removeCustomKey', <String, Object?>{'key': key});
+    if (!_enabled) return;
+    await _invoke<void>('removeCustomKey', () => _native.removeCustomKey(key),
+        () => {'key': key});
   }
 
   @override
   Future<void> setUserId(String? userId) async {
-    if (!_enabled) {
-      return;
-    }
-    await _invoke<void>('setUserId', <String, Object?>{'userId': userId});
+    if (!_enabled) return;
+    await _invoke<void>(
+        'setUserId', () => _native.setUserId(userId), () => {'userId': userId});
   }
 
-  Future<T?> _invoke<T>(String method, Object? arguments) async {
+  Future<T> _withLegacy<T>(
+      Future<T> Function() typed, Future<T> Function() legacy) async {
+    if (!_explicitLegacyChannel) {
+      try {
+        return await typed();
+      } on PlatformException catch (error) {
+        // A null Pigeon reply means the host has no handler for this operation.
+        if (error.code != 'channel-error') rethrow;
+      }
+    }
+    return legacy();
+  }
+
+  Future<T?> _invoke<T>(String method, Future<T> Function() call,
+      [Object? Function()? arguments]) async {
     try {
-      return await _channel.invokeMethod<T>(method, arguments);
+      return await _withLegacy<T?>(
+          call, () => _channel.invokeMethod<T>(method, arguments?.call()));
     } on MissingPluginException {
-      // The Dart half of a federated plugin can be present while the native
-      // half is not, for example in a unit test or on an unsupported host.
       _enabled = false;
       if (_debug) {
         debugPrint(
