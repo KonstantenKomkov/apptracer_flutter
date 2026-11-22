@@ -13,7 +13,7 @@ jobs:
   propose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Resolve the latest stable and update only the candidate pin
         run: python3 tool/update_flutter_baseline.py
       - name: Open an unmerged compatibility PR
