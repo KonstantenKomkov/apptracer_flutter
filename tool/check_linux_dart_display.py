@@ -11,15 +11,21 @@ import tempfile
 
 
 def validate(report, resolved):
-    expected = {'desktop handled probe': ('_handled', 45),
-                'desktop FlutterError probe': ('_flutterError', 55),
-                'desktop async probe': ('_asyncError', 64)}
+    expected = {
+        'desktop handled probe': ('_handled', "throw StateError('desktop handled probe');"),
+        'desktop FlutterError probe': ('_flutterError', 'stack: StackTrace.current,'),
+        'desktop async probe': ('_asyncError', "throw StateError('desktop async probe');"),
+    }
+    source = Path(__file__).resolve().parents[1] / 'packages/apptracer_flutter_desktop/example/lib/main.dart'
+    lines = [line.strip() for line in source.read_text(encoding='utf-8').splitlines()]
     assert not report['failures'] and len(report['events']) == 3
-    for marker, (function, line) in expected.items():
+    for marker, (function, statement) in expected.items():
         event = next(e for e in report['events'] if marker in str(e['exception']))
         frames = [f for e in event['exception']['values'] for f in e['stacktrace']['frames']]
         assert event['contexts']['apptracer']['dart_stack_trace']
         if resolved:
+            assert lines.count(statement) == 1, f'Expected a unique source line for {marker}'
+            line = lines.index(statement) + 1
             assert any(function in (f.get('function') or '') and
                        f.get('filename', '').endswith('/example/lib/main.dart') and
                        f.get('lineno') == line for f in frames), (marker, frames)
