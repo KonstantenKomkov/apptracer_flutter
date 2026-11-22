@@ -53,19 +53,19 @@ internal class DartError(message: String) : RuntimeException(message) {
          * Address-only frames from an obfuscated AOT build keep their virtual
          * address, which is the value `flutter symbolize` resolves.
          */
-        fun toStackTrace(frames: List<Map<String, Any?>>): Array<StackTraceElement> {
+        fun toStackTrace(frames: List<NativeStackFrame>): Array<StackTraceElement> {
             val elements = ArrayList<StackTraceElement>(frames.size)
             for (frame in frames) {
-                if (frame["asyncSuspension"] == true) {
+                if (frame.isAsynchronousSuspension) {
                     elements.add(
                         StackTraceElement(UNKNOWN_CLASS, "<asynchronous suspension>", null, 0)
                     )
                     continue
                 }
 
-                val member = frame["member"] as? String
-                val uri = frame["uri"] as? String
-                val line = (frame["line"] as? Number)?.toInt() ?: 0
+                val member = frame.member
+                val uri = frame.uri
+                val line = frame.line?.toInt() ?: 0
 
                 if (member != null) {
                     val lastDot = member.lastIndexOf('.')
@@ -77,9 +77,9 @@ internal class DartError(message: String) : RuntimeException(message) {
                     continue
                 }
 
-                val virt = frame["virtAddress"] as? String
+                val virt = frame.virtualAddress
                 if (virt != null) {
-                    val symbol = frame["symbol"] as? String
+                    val symbol = frame.symbol
                     elements.add(
                         StackTraceElement(
                             "dart.unsymbolized",
@@ -91,7 +91,7 @@ internal class DartError(message: String) : RuntimeException(message) {
                     continue
                 }
 
-                val raw = frame["raw"] as? String
+                val raw = frame.raw
                 elements.add(StackTraceElement(UNKNOWN_CLASS, UNKNOWN_MEMBER, raw, 0))
             }
             return elements.toTypedArray()
