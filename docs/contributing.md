@@ -43,7 +43,11 @@ summary lists passed/failed/skipped work. Desktop unit tests are included, while
 native device/live acceptance remains in explicit platform workflows.
 
 Combined unit-test coverage is written to `build/coverage/{index.html,summary.json,lcov.info}`.
-Examples and generated files are excluded. Parser, `TracerClient`, lifecycle and
+The denominator counts production lines reported by the VM. The JSON lists
+unmeasured library files and skipped packages (examples and Chrome-only tests).
+Generated files are excluded. HTTP runs its VM suite plus its browser lifecycle
+and payload tests. Web runs in Chrome. Install Chrome or set `CHROME_EXECUTABLE`
+to the browser executable before running `make test` or `make check`. Parser, `TracerClient`, lifecycle and
 HTTP transport also have a baseline comparison in `tool/coverage_baseline.json`;
 there is no arbitrary global threshold and coverage is not live-delivery proof.
 The desktop dry-run explicitly allows only pub's exact-pin warning for
@@ -54,7 +58,9 @@ The desktop dry-run explicitly allows only pub's exact-pin warning for
 The common packages declare Flutter 3.22.0 as their minimum. CI tests that minimum separately from the
 reproducible baseline in `.github/flutter-version`; ordinary PRs never silently
 move that pin. The iOS workflow reads the same file. Desktop release acceptance
-keeps its separately audited toolchain pin.
+keeps its separately audited toolchain pin. The desktop package requires Flutter
+3.24.0 and its example requires 3.35.0. Both run locally, and the desktop
+package participates in the baseline and latest-stable CI jobs.
 
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop

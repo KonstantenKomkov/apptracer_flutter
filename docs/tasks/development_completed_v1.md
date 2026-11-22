@@ -2,6 +2,14 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-28"></a>
+
+### П. 28. Единые локальные проверки и сводный coverage
+
+Каталог пакетов задаёт состав локальных проверок, матриц CI и publish dry-run.
+Сводный отчёт показывает покрытие VM-тестами и изменение по четырём критичным файлам.
+[Задача](task-28-unified-checks-coverage.md) и [команды](../contributing.md#commands).
+
 <a id="task-27"></a>
 
 ### П. 27. Типизированный канал Android/iOS

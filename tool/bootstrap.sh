@@ -4,10 +4,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-packages=()
-while IFS= read -r package_path; do packages+=("$package_path"); done < <(python3 tool/package_catalog.py paths)
-
-for package in "${packages[@]}"; do
+paths="$(python3 tool/package_catalog.py paths)"
+while IFS= read -r package; do
   echo "==> pub get $package"
   (cd "$package" && flutter pub get)
-done
+done <<< "$paths"

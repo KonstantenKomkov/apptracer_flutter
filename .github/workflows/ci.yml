@@ -8,6 +8,7 @@ on:
     paths:
       - 'packages/**'
       - 'tool/**'
+      - 'Makefile'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'analysis_options.yaml'
@@ -29,6 +30,7 @@ on:
     paths:
       - 'packages/**'
       - 'tool/**'
+      - 'Makefile'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'analysis_options.yaml'
@@ -58,10 +60,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.catalog.outputs.packages }}
+      minimum: ${{ steps.catalog.outputs.minimum }}
     steps:
       - uses: actions/checkout@v4
       - id: catalog
-        run: echo "packages=$(python3 tool/package_catalog.py matrix)" >> "$GITHUB_OUTPUT"
+        run: |
+          packages="$(python3 tool/package_catalog.py matrix)"
+          minimum="$(python3 tool/package_catalog.py minimum)"
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+          echo "minimum=$minimum" >> "$GITHUB_OUTPUT"
 
   analyze:
     if: github.event_name != 'schedule'
@@ -71,7 +78,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
+        include: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
       - name: Read the reproducible Flutter baseline
@@ -96,43 +103,23 @@ jobs:
 
       - name: Set up Chrome
         id: setup-chrome
-        if: matrix.package == 'apptracer_flutter_web'
+        if: matrix.chrome
         uses: browser-actions/setup-chrome@v2
 
       - name: Test
-        working-directory: packages/${{ matrix.package }}
-        run: |
-          if [ ! -d test ]; then
-            echo "no tests in this package"
-          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
-            # The web package's tests exercise browser-only code paths, so they
-            # need a real browser. CHROME_EXECUTABLE is set here rather than in
-            # `env:` because an *empty* value is worse than an absent one:
-            # flutter then tries to launch "" and reports `Failed to find ""
-            # in the search path`, which reads like a missing browser rather
-            # than a missing path. The runner image ships Chrome too, so a
-            # setup step that produced no path is not fatal.
-            chrome='${{ steps.setup-chrome.outputs.chrome-path }}'
-            if [ -z "$chrome" ]; then
-              chrome="$(command -v google-chrome || command -v chromium || true)"
-            fi
-            if [ -z "$chrome" ]; then
-              echo "::error::no Chrome available for the web tests"
-              exit 1
-            fi
-            echo "browser: $chrome"
-            CHROME_EXECUTABLE="$chrome" flutter test --platform chrome --reporter=expanded
-          else
-            flutter test --reporter=expanded --coverage
-          fi
+        env:
+          PACKAGE: packages/${{ matrix.package }}
+          CHROME_EXECUTABLE: ${{ steps.setup-chrome.outputs.chrome-path || '/usr/bin/google-chrome' }}
+        run: python3 tool/test_package.py "$PACKAGE" --coverage
 
       - name: Verify checks did not modify sources
         run: bash tool/check_git_clean.sh
 
       - name: Upload coverage
-        if: hashFiles(format('packages/{0}/coverage/lcov.info', matrix.package)) != ''
+        if: matrix.vm
         uses: actions/upload-artifact@v4
         with:
+          if-no-files-found: error
           name: coverage-${{ matrix.package }}
           path: packages/${{ matrix.package }}/coverage/lcov.info
 
@@ -144,7 +131,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
+        include: ${{ fromJSON(needs.catalog.outputs.minimum) }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -167,18 +154,14 @@ jobs:
         run: flutter analyze --fatal-infos
       - name: Set up Chrome
         id: setup-chrome-minimum
-        if: matrix.package == 'apptracer_flutter_web'
+        if: matrix.chrome
         uses: browser-actions/setup-chrome@v2
       - name: Test
-        working-directory: packages/${{ matrix.package }}
-        run: |
-          if [ ! -d test ]; then
-            echo "no tests in this package"
-          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
-            CHROME_EXECUTABLE='${{ steps.setup-chrome-minimum.outputs.chrome-path }}' flutter test --platform chrome --reporter=expanded
-          else
-            flutter test --reporter=expanded
-          fi
+        env:
+          PACKAGE: packages/${{ matrix.package }}
+          CHROME_EXECUTABLE: ${{ steps.setup-chrome-minimum.outputs.chrome-path || '/usr/bin/google-chrome' }}
+        run: python3 tool/test_package.py "$PACKAGE"
+
       - name: Verify checks did not modify sources
         run: bash tool/check_git_clean.sh
 
@@ -191,7 +174,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.catalog.outputs.packages) }}
+        include: ${{ fromJSON(needs.catalog.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -215,19 +198,15 @@ jobs:
         run: flutter analyze --no-pub --fatal-infos
       - name: Set up Chrome
         id: setup-chrome-canary
-        if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.package == 'apptracer_flutter_web' }}
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.chrome }}
         uses: browser-actions/setup-chrome@v2
       - name: Test
         if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
-        working-directory: packages/${{ matrix.package }}
-        run: |
-          if [ ! -d test ]; then
-            echo "no tests in this package"
-          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
-            CHROME_EXECUTABLE='${{ steps.setup-chrome-canary.outputs.chrome-path }}' flutter test --no-pub --platform chrome --reporter=expanded
-          else
-            flutter test --no-pub --reporter=expanded
-          fi
+        env:
+          PACKAGE: packages/${{ matrix.package }}
+          CHROME_EXECUTABLE: ${{ steps.setup-chrome-canary.outputs.chrome-path || '/usr/bin/google-chrome' }}
+        run: python3 tool/test_package.py "$PACKAGE"
+
       - name: Verify checks did not modify sources
         if: ${{ !cancelled() }}
         run: bash tool/check_git_clean.sh
@@ -348,7 +327,9 @@ jobs:
             cp "$directory/lcov.info" "packages/$package/coverage/lcov.info"
           done
           python3 tool/coverage_report.py
-          cat build/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.critical | to_entries[] |
+            "- \(.key): \(.value.covered)/\(.value.total) lines, change \((.value.deltaPercentagePoints * 100 | round) / 100) pp"' \
+            build/coverage/summary.json >> "$GITHUB_STEP_SUMMARY"
       - name: Upload one coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -381,17 +362,15 @@ jobs:
       - name: Dry run
         run: |
           failed=0
-          packages=()
-          while IFS= read -r package_path; do packages+=("$package_path"); done < <(python3 tool/package_catalog.py publish)
-          for package in "${packages[@]}"
-          do
+          packages="$(python3 tool/package_catalog.py publish)"
+          while IFS= read -r package; do
             echo "::group::$package"
-            bash tool/publish_dry_run.sh "packages/$package" || {
+            bash tool/publish_dry_run.sh "$package" || {
               failed=1
               echo "::error::dry run failed for $package"
             }
             echo "::endgroup::"
-          done
+          done <<< "$packages"
           exit "$failed"
 
       - name: Verify dry run did not modify sources
