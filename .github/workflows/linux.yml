@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build and headless GUI dependencies
         run: |
           sudo apt-get update
@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install consumer build dependencies
         run: |
           sudo apt-get update

@@ -62,7 +62,7 @@ jobs:
     name: Example (ios)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Read the reproducible Flutter baseline
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
