@@ -74,12 +74,16 @@ package participates in the baseline and latest-stable CI jobs.
 
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop
-unit tests. `flutter-baseline-update.yml` opens an unmerged monthly candidate PR
-from official stable metadata. Enable “Allow GitHub Actions to create and approve
-pull requests” in the repository Actions settings. On the generated PR, select
-“Approve workflows to run” to start compatibility checks. Dependabot proposes
-GitHub Actions updates.
-No update workflow merges a PR or publishes packages.
+unit tests.
+
+The [monthly baseline workflow](../.github/workflows/flutter-baseline-update.yml)
+compares the default branch's pin with the official stable release. When an update
+is available, it prepares `automation/flutter-baseline-<version>` and puts an
+**Открыть PR** link in the run summary. Follow the link and select **Create pull
+request** to start the usual compatibility checks. Repeated runs reuse the
+candidate for that version. When the pin is current, the summary reports that
+and the workflow creates no branch. Dependabot separately proposes GitHub
+Actions updates.
 
 To reproduce a particular version with FVM:
 

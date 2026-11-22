@@ -7,25 +7,42 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+
+concurrency: flutter-baseline-update
 
 jobs:
   propose:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
       - name: Resolve the latest stable and update only the candidate pin
         run: python3 tool/update_flutter_baseline.py
-      - name: Open an unmerged compatibility PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          branch: automation/flutter-baseline
-          delete-branch: true
-          commit-message: 'Update Flutter CI baseline'
-          title: 'Update Flutter CI baseline'
-          body: |
-            Updates `.github/flutter-version` from the official stable release metadata.
-            This is a candidate only: minimum, pinned baseline and latest-stable canary
-            checks must be reviewed before merging. No package is published and this
-            workflow never merges the PR.
-          labels: dependencies, flutter
+      - name: Prepare candidate branch and link
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          pin=.github/flutter-version
+          version=$(cat "$pin")
+          if git diff --quiet HEAD -- "$pin"; then
+            echo "Flutter $version is already pinned." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          branch="automation/flutter-baseline-$version"
+          candidate="refs/remotes/origin/$branch"
+          if git show-ref --verify --quiet "$candidate" && ! git merge-base --is-ancestor "$candidate" HEAD; then
+            # Reuse a pending candidate only if its PR would change just this pin.
+            git diff --exit-code "$candidate" -- "$pin"
+            git diff --exit-code "HEAD...$candidate" -- . ":(exclude)$pin"
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --only -m "Update Flutter CI baseline to $version" -- "$pin"
+            git push origin "HEAD:refs/heads/$branch"
+          fi
+
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE_BRANCH...$branch?expand=1"
+          echo "Flutter $version: [Открыть PR]($url)" >> "$GITHUB_STEP_SUMMARY"
