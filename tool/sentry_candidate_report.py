@@ -1,65 +1,55 @@
 #!/usr/bin/env python3
-"""Create a machine-readable Sentry candidate summary without exposing credentials."""
-import argparse
+"""Summarize the jobs, step conclusions and compiled SDKs from this Actions run."""
 import json
+import os
 from pathlib import Path
 
-SCENARIOS = [
-    'resolver_analyze_unit', 'release_build', 'deferred_bootstrap', 'offline_retry',
-    'inflight_cancellation', 'stop_clear_revoke', 'account_isolation', 'native_crash',
-    'no_replay_after_revoke', 'dart_native_source_maps', 'native_handler_packaging',
-    'missing_mismatched_symbols',
-]
+# Reusable workflows add the called job's name after the caller's name.
+PLATFORMS = {
+    'linux': ('ubuntu-22.04', {'linux': 'Linux release and runtime / ubuntu'}),
+    'macos': ('macos-15', {'macos': 'macOS release and lifecycle / macos',
+                           'symbols': 'macOS exact-build symbols / symbols'}),
+    'windows': ('windows-2022', {'windows': 'Windows release preparation / windows',
+                                 'windows-runtime': 'Windows native runtime / native'}),
+}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--lock', type=Path, required=True)
-    parser.add_argument('--precheck', required=True)
-    parser.add_argument('--linux', required=True)
-    parser.add_argument('--macos', required=True)
-    parser.add_argument('--windows', required=True)
-    parser.add_argument('--symbols', required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    args = parser.parse_args()
-    version = None
-    in_sentry = False
-    lines = args.lock.read_text().splitlines() if args.lock.exists() else []
-    for line in lines:
-        if line == '  sentry_flutter:':
-            in_sentry = True
-        elif in_sentry and line.strip().startswith('version:'):
-            version = line.strip().split('"')[1]
-            break
-    if version is None:
-        version = 'unresolved'
-
-    statuses = {'precheck': args.precheck, 'linux': args.linux,
-                'macos': args.macos, 'windows': args.windows, 'symbols': args.symbols}
-    report = {'candidate': version, 'overall': 'passed', 'operatingSystems': {}}
-    for os_name in ['linux', 'macos', 'windows']:
-        blocked = statuses['precheck'] != 'success' or statuses[os_name] != 'success'
-        state = ('blocked' if statuses['precheck'] != 'success'
-                 else 'failed' if blocked else 'passed')
-        report['operatingSystems'][os_name] = {
-            'status': state,
-            'stages': {name: ('blocked' if state == 'blocked' else state) for name in SCENARIOS},
-        }
-        if state != 'passed':
+def make_report(needs, jobs):
+    version = needs['select']['outputs'].get('version')
+    report = {'candidate': version, 'overall': 'passed', 'operatingSystems': {},
+              'selection': needs['select']['result']}
+    by_name = {job['name']: job for job in jobs}
+    for platform, (runner, suites) in PLATFORMS.items():
+        platform_jobs = {'precheck': f'Precheck ({runner})', **suites}
+        stages = {}
+        for key, name in platform_jobs.items():
+            result = needs[key]['result']
+            evidence = by_name.get(name, {})
+            status = evidence.get('conclusion') or ('skipped' if result == 'skipped' else 'unknown')
+            stage = {'status': status, 'steps': evidence.get('steps', []),
+                     'url': evidence.get('html_url')}
+            if key in ('linux', 'macos', 'symbols', 'windows'):
+                raw = needs[key]['outputs'].get('versions')
+                stage['versions'] = json.loads(raw) if raw else {}
+                if status == 'success' and stage['versions'].get('sentryFlutter') != version:
+                    stage['status'] = 'missing-build-evidence'
+            stages[key] = stage
+        statuses = {stage['status'] for stage in stages.values()}
+        passed = statuses == {'success'} and version and all(
+            needs[key]['result'] == 'success' for key in suites)
+        if not passed:
             report['overall'] = 'failed'
-    report['symbolChecks'] = {
-        'status': 'passed' if statuses['symbols'] == 'success' else 'failed',
-        'workflowStatus': statuses['symbols'],
-    }
-    if statuses['symbols'] != 'success':
-        report['overall'] = 'failed'
-    report['notes'] = [
-        'No production pin was changed and no package was published.',
-        'A pin-changing PR still requires hosted consumer and live Tracer evidence.',
-    ]
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
-    print(json.dumps({'candidate': version, 'overall': report['overall']}))
+        report['operatingSystems'][platform] = {'passed': bool(passed), 'stages': stages}
+    return report
+
+
+def main():
+    path = Path('jobs.jsonl')
+    jobs = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+    report = make_report(json.loads(os.environ['NEEDS']), jobs)
+    output = Path('build/sentry-candidate/report.json')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2) + '\n')
 
 
 if __name__ == '__main__':

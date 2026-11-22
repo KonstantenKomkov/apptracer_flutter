@@ -64,6 +64,10 @@ on:
       - '!**/.gitattributes'
   workflow_dispatch:
   workflow_call:
+    outputs:
+      versions:
+        description: Resolved Sentry SDKs and toolchain from the release build
+        value: ${{ jobs.ubuntu.outputs.versions }}
     inputs:
       sentry_candidate:
         type: string
@@ -75,6 +79,8 @@ permissions:
 
 jobs:
   ubuntu:
+    outputs:
+      versions: ${{ steps.evidence.outputs.versions }}
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     steps:
@@ -90,8 +96,10 @@ jobs:
           cache: true
       - name: Resolve Sentry candidate in this disposable checkout
         if: inputs.sentry_candidate != ''
-        working-directory: packages/apptracer_flutter_desktop
-        run: dart pub upgrade sentry_flutter --major-versions
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py apply
       - name: Record baseline
         run: |
           mkdir -p build/linux-acceptance
@@ -113,6 +121,13 @@ jobs:
           flutter test
       - name: Build release and preserve symbols
         run: bash tool/build_linux_desktop.sh
+      - name: Identify compiled Sentry SDKs
+        id: evidence
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py evidence
       - name: Test relocated bundle
         env:
           GDK_BACKEND: x11
@@ -159,6 +174,7 @@ jobs:
           retention-days: 14
 
   consumer:
+    if: inputs.sentry_candidate == ''
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     steps:

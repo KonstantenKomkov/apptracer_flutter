@@ -13,7 +13,8 @@ not a claim that newer versions work.
 | `src/integrations/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
 | `src/native/c/binding.dart` | `sentry_options_s` layout | No public equivalent; candidate must revalidate struct layout rather than blindly update | resolver/analyze, Linux/Windows release and native crash |
 | `src/native/c/sentry_native.dart` | options construction, native init/close and scope contexts | Replace only with a public lifecycle/scope API that preserves stop/clear semantics | all desktop unit tests and platform runtime suites |
-| `Sentry.currentHub.options` | startup error visibility and safe option inspection | No equally detailed public hook; preserve guarded use | `sdk_delivery_test` and initialization failure test |
+| `SentryFlutter.init(options: ObservedSdkOptions())` | inject the diagnostic logger to detect swallowed startup errors | Re-evaluate if the SDK exposes equivalent failure reporting with debug disabled | `sdk_delivery_test` and initialization failure test |
+| `SentryStackTrace.baseAddr` and `buildId` constructor arguments | associate AOT frames with the exact debug image | Re-evaluate public debug-image mapping on each update | Dart symbol suites and event mapping |
 
 Public Sentry APIs used deliberately: `Sentry.init`, `Sentry.close`,
 `Sentry.captureEvent`, `SentryException`, `SentryStackTrace`, `SentryEvent`,
@@ -37,15 +38,31 @@ event mapping and exact envelope tests run for each candidate.
 | `getuid`, `syscall`, `close`, `poll` from libc | owned Linux queue lock, PID-reuse and cancellation checks | Linux storage and native runtime suites |
 | `apptracer_windows.dll` helpers | Windows queue reparse-point and ownership safety | Windows storage, junction and concurrent-owner suites |
 
+The Linux daemon wraps `sentry_value_set_by_key` at link time. The Windows
+daemon compiles a wrapper around `sentry_crash_daemon.c` and packages the
+`sentry-crash` and `sentry-wer` targets. Both integrations depend on upstream
+build internals. The relocated native crash and source-line probes exercise
+these hooks. On macOS the adapter also pins `Sentry/HybridSDK` in its podspec
+and sets `urlSession`, `cacheDirectoryPath` and `shutdownTimeInterval` for
+consent and cancellation. CocoaPods resolution and the lifecycle suite check
+those dependencies. A new Cocoa pin requires a separate adapter change.
+
 ## Candidate evidence model
 
-`/.github/workflows/sentry-candidate.yml` first runs resolver, analyze and unit
-tests in a disposable checkout. It then invokes existing preparation, lifecycle,
-native crash, offline/retry and symbol workflows with a candidate marker. A
-machine-readable summary lists every OS and explicit failed/blocked stages. No
-workflow merges or publishes a package.
+The monthly run selects the latest stable `sentry_flutter` release on pub.dev.
+Manual dispatch accepts an exact version. Pull requests changing the candidate
+pipeline use the accepted pin as a control. Every checkout applies the same
+exact version to its disposable desktop manifest, including the path dependency
+used by the release example.
 
-Passing a candidate does **not** change `pubspec.yaml`. A pin-changing PR must
-also include hosted consumer evidence without monorepo overrides and a final
-live Tracer smoke. Rollback is simply retaining the last accepted pin above;
-there is no hidden range expansion.
+All three prechecks must resolve, analyze and pass unit tests before release
+jobs start. Windows runtime downloads the release artifact from that run.
+The `sentry-candidate-report` artifact records the actual job and step results
+on each OS and links to the probes. Grouped runtime steps retain their individual
+JSON files in the platform artifacts. Successful builds record the example's
+resolved Flutter SDK package, Sentry Cocoa or sentry-native, and Flutter/Dart
+toolchain. A skipped suite or missing build identity prevents a passing result.
+
+A pin-changing PR also requires hosted consumer evidence without monorepo
+overrides and a final live Tracer smoke. For rollback, restore the previous
+accepted Dart and Cocoa pins together with their matching adapter revision.

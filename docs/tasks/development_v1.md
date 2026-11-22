@@ -101,7 +101,6 @@ desktop Sentry updates и навигация документации. Кажд�
 | № | Задача | Приоритет | Сложность | Зависимости / заметки |
 | --- | --- | --- | --- | --- |
 | 25 | [Надёжность Web/HTTP-доставки](task-25-web-delivery-reliability.md) | P0 | XL | Timeout, retry, bounded persistent queue, stop/clear и browser acceptance |
-| 29 | [Управляемые обновления desktop Sentry SDK](task-29-desktop-sentry-upgrades.md) | P1 | L | Candidate CI и полная приёмка перед сменой pin |
 | 30 | [Навигация и актуальность документации](task-30-documentation-navigation.md) | P2 | M | Quick start, единая матрица, RU/EN и проверка ссылок |
 | 1 | [Проверить SDK, конфигурацию проектов и границы поддержки](#task-1) | P0 | M | Ubuntu/Windows закрыты; целевая среда/доступы/API Авроры и общая сверка |
 | 5 | [Символизация Windows, macOS и Ubuntu/Linux](#task-5) | P1 | L | Ubuntu/Windows реализованы в принятом объёме; остаётся macOS live Dart AOT и общая сверка |
@@ -538,6 +537,8 @@ staged dry-run и документация установки/миграции/p
 выполненной без фактического выпуска.
 
 ## Завершённые задачи
+
+- [№29. Управляемые обновления desktop Sentry SDK](development_completed_v1.md#task-29).
 
 - [№28. Единые локальные проверки и сводный coverage](development_completed_v1.md#task-28).
 

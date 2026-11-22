@@ -40,6 +40,10 @@ on:
       - '!**/.gitattributes'
   workflow_dispatch:
   workflow_call:
+    outputs:
+      versions:
+        description: Resolved Sentry SDKs and toolchain from the release build
+        value: ${{ jobs.macos.outputs.versions }}
     inputs:
       sentry_candidate:
         type: string
@@ -50,11 +54,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: macos-desktop-${{ github.ref }}
+  group: macos-desktop-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   macos:
+    outputs:
+      versions: ${{ steps.evidence.outputs.versions }}
     runs-on: macos-15
     timeout-minutes: 35
     env:
@@ -71,8 +77,10 @@ jobs:
           cache: true
       - name: Resolve Sentry candidate in this disposable checkout
         if: inputs.sentry_candidate != ''
-        working-directory: packages/apptracer_flutter_desktop
-        run: dart pub upgrade sentry_flutter --major-versions
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py apply
       - name: Record toolchain and revision
         run: |
           mkdir -p build/macos-acceptance
@@ -99,6 +107,13 @@ jobs:
           flutter analyze --fatal-infos
           flutter test
           flutter build macos --release 2>&1 | tee macos-build.log
+      - name: Identify compiled Sentry SDKs
+        id: evidence
+        if: inputs.sentry_candidate != ''
+        env:
+          SENTRY_CANDIDATE: ${{ inputs.sentry_candidate }}
+        shell: bash
+        run: python tool/sentry_candidate.py evidence
       - name: Test relocated release against loopback
         run: |
           app=packages/apptracer_flutter_desktop/example/build/macos/Build/Products/Release/apptracer_desktop_example.app
@@ -107,6 +122,7 @@ jobs:
           done
           python3 tool/check_macos_lifecycle.py --app "$app" --output build/macos-acceptance/lifecycle.json
       - name: Build external consumer without monorepo overrides
+        if: inputs.sentry_candidate == ''
         run: python3 tool/check_macos_consumer.py --output build/macos-consumer
       - name: Record binary and symbol identity
         if: success()
