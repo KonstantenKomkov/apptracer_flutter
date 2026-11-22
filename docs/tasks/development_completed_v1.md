@@ -2,6 +2,15 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-29"></a>
+
+### П. 29. Управляемые обновления desktop Sentry SDK
+
+CI выбирает точную версию и проверяет её в изолированных сборках для Linux,
+macOS и Windows. Отчёт сохраняет результаты этапов и версии собранных SDK.
+Для смены production pin предусмотрена отдельная приёмка.
+[Задача](task-29-desktop-sentry-upgrades.md) и [порядок проверки](../desktop-sentry-dependencies.md).
+
 <a id="task-28"></a>
 
 ### П. 28. Единые локальные проверки и сводный coverage
