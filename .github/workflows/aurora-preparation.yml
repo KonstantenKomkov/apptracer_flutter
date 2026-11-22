@@ -65,7 +65,7 @@ jobs:
       - name: Test integrity, import and installation checks
         run: |
           APPTRACER_AURORA_SDK_ROOT="$PWD/build/aurora-sdk/0.1.15" python3 -m unittest discover -s tool/aurora/tests -v
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: aurora-sdk-manifest

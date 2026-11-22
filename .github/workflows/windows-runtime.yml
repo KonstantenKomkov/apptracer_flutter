@@ -39,7 +39,7 @@ jobs:
       - name: Select a compiled release from the same branch
         id: build
         if: inputs.current_run_build != true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             let run = context.payload.workflow_run;
@@ -74,12 +74,12 @@ jobs:
         run: |
           git diff --exit-code $env:BUILD_SHA HEAD -- packages ':!**/*.md'
           if ($LASTEXITCODE -ne 0) { throw 'Package code changed; wait for its Windows build before reusing artifacts' }
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: inputs.current_run_build == true
         with:
           name: windows-x64-preparation
           path: build/compiled
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: inputs.current_run_build != true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -136,7 +136,7 @@ jobs:
             $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
             Write-Output "::notice title=Recovered runner source frame::$detail"
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: windows-native-evidence

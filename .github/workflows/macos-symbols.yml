@@ -101,7 +101,7 @@ jobs:
           cp packages/apptracer_flutter_desktop/example/pubspec.lock build/macos-dart-symbols/
           cp packages/apptracer_flutter_desktop/example/macos/Podfile.lock build/macos-dart-symbols/
           git rev-parse HEAD > build/macos-dart-symbols/revision.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: macos-dart-symbols
