@@ -101,7 +101,6 @@ desktop Sentry updates и навигация документации. Кажд�
 | № | Задача | Приоритет | Сложность | Зависимости / заметки |
 | --- | --- | --- | --- | --- |
 | 25 | [Надёжность Web/HTTP-доставки](task-25-web-delivery-reliability.md) | P0 | XL | Timeout, retry, bounded persistent queue, stop/clear и browser acceptance |
-| 26 | [Матрица версий Flutter и немутирующие проверки CI](task-26-flutter-version-ci.md) | P1 | M | Minimum/current/latest-stable; блокирует единый check №28 |
 | 27 | [Типизированный MethodChannel через Pigeon](task-27-typed-method-channel.md) | P1 | L | Желательно после №24; Android/iOS, без смены публичного API |
 | 28 | [Единые локальные проверки и сводный coverage](task-28-unified-checks-coverage.md) | P1 | M | Зависит от №26; каталог пакетов, desktop unit tests и coverage summary |
 | 29 | [Управляемые обновления desktop Sentry SDK](task-29-desktop-sentry-upgrades.md) | P1 | L | Candidate CI и полная приёмка перед сменой pin |
@@ -541,6 +540,8 @@ staged dry-run и документация установки/миграции/p
 выполненной без фактического выпуска.
 
 ## Завершённые задачи
+
+- [№26. Матрица версий Flutter и немутирующие проверки CI](development_completed_v1.md#task-26).
 
 - [№24. Изоляция контекста Android-событий](development_completed_v1.md#task-24).
 

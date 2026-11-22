@@ -20,4 +20,5 @@ library;
 export 'src/platform_client_facts.dart';
 export 'src/tracer_batch_item.dart';
 export 'src/tracer_client_facts.dart';
+export 'src/tracer_delivery.dart';
 export 'src/tracer_http_tracer.dart';

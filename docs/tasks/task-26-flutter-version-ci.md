@@ -1,6 +1,8 @@
 # П. 26. Матрица версий Flutter и немутирующие проверки CI
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** M.
+**Статус:** выполнена; minimum 3.22.0 / Dart 3.4.0 и полный check проходят, desktop unit на 3.50.0 проходит. Новые analyze infos в latest canary оставлены отдельным non-blocking сигналом. **Приоритет:** P1. **Сложность:** M.
+
+[Матрица toolchain](../platform-matrix.md#flutter-toolchain) и [порядок проверок](../contributing.md#flutter-compatibility).
 
 Связанный общий план: [development_v1.md](development_v1.md).
 После этой задачи стандартные проверки должны оставаться воспроизводимыми для

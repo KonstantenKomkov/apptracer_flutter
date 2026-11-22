@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  schedule:
+    - cron: '23 3 * * 1'
   push:
     branches: [main]
     paths:
@@ -10,7 +12,9 @@ on:
       - 'pubspec.lock'
       - 'analysis_options.yaml'
       - '.github/actions/**'
+      - '.github/flutter-version'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/flutter-baseline-update.yml'
       - '!**/*.md'
       - '!**/*.rst'
       - '!**/*.adoc'
@@ -29,7 +33,9 @@ on:
       - 'pubspec.lock'
       - 'analysis_options.yaml'
       - '.github/actions/**'
+      - '.github/flutter-version'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/flutter-baseline-update.yml'
       - '!**/*.md'
       - '!**/*.rst'
       - '!**/*.adoc'
@@ -46,11 +52,9 @@ on:
 # Documentation and repository housekeeping alone do not need a runner.
 # A crash reporter that only works on the maintainer's machine is worthless, so
 # every claim the README makes about a platform is built here.
-env:
-  FLUTTER_VERSION: "3.35.7"
-
 jobs:
   analyze:
+    if: github.event_name != 'schedule'
     name: Analyze and test
     runs-on: ubuntu-latest
     strategy:
@@ -66,6 +70,8 @@ jobs:
           - apptracer_flutter
     steps:
       - uses: actions/checkout@v4
+      - name: Read the reproducible Flutter baseline
+        run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -120,6 +126,9 @@ jobs:
             flutter test --reporter=expanded --coverage
           fi
 
+      - name: Verify checks did not modify sources
+        run: bash tool/check_git_clean.sh
+
       - name: Upload coverage
         if: hashFiles(format('packages/{0}/coverage/lcov.info', matrix.package)) != ''
         uses: actions/upload-artifact@v4
@@ -127,7 +136,113 @@ jobs:
           name: coverage-${{ matrix.package }}
           path: packages/${{ matrix.package }}/coverage/lcov.info
 
+  minimum-flutter:
+    if: github.event_name != 'schedule'
+    name: Minimum Flutter 3.22.0
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - apptracer_flutter_platform_interface
+          - apptracer_flutter_http
+          - apptracer_flutter_sentry
+          - apptracer_flutter_android
+          - apptracer_flutter_ios
+          - apptracer_flutter_web
+          - apptracer_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        working-directory: packages/${{ matrix.package }}
+        run: flutter pub get
+      - name: Check formatting
+        working-directory: packages/${{ matrix.package }}
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        working-directory: packages/${{ matrix.package }}
+        run: flutter analyze --fatal-infos
+      - name: Set up Chrome
+        id: setup-chrome-minimum
+        if: matrix.package == 'apptracer_flutter_web'
+        uses: browser-actions/setup-chrome@v2
+      - name: Test
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          if [ ! -d test ]; then
+            echo "no tests in this package"
+          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
+            CHROME_EXECUTABLE='${{ steps.setup-chrome-minimum.outputs.chrome-path }}' flutter test --platform chrome --reporter=expanded
+          else
+            flutter test --reporter=expanded
+          fi
+      - name: Verify checks did not modify sources
+        run: bash tool/check_git_clean.sh
+
+  latest-stable-canary:
+    name: Latest stable canary (${{ matrix.package }})
+    if: github.event_name != 'push'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - apptracer_flutter_platform_interface
+          - apptracer_flutter_http
+          - apptracer_flutter_sentry
+          - apptracer_flutter_android
+          - apptracer_flutter_ios
+          - apptracer_flutter_web
+          - apptracer_flutter
+          - apptracer_flutter_desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Record canary toolchain
+        run: flutter --version
+      - name: Resolve dependencies
+        id: resolve
+        working-directory: packages/${{ matrix.package }}
+        # Resolve Dart dependencies (including examples) without regenerating
+        # native example projects with the canary SDK.
+        run: dart pub get
+      - name: Check formatting
+        working-directory: packages/${{ matrix.package }}
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
+        working-directory: packages/${{ matrix.package }}
+        run: flutter analyze --no-pub --fatal-infos
+      - name: Set up Chrome
+        id: setup-chrome-canary
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' && matrix.package == 'apptracer_flutter_web' }}
+        uses: browser-actions/setup-chrome@v2
+      - name: Test
+        if: ${{ !cancelled() && steps.resolve.outcome == 'success' }}
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          if [ ! -d test ]; then
+            echo "no tests in this package"
+          elif [ "${{ matrix.package }}" = "apptracer_flutter_web" ]; then
+            CHROME_EXECUTABLE='${{ steps.setup-chrome-canary.outputs.chrome-path }}' flutter test --no-pub --platform chrome --reporter=expanded
+          else
+            flutter test --no-pub --reporter=expanded
+          fi
+      - name: Verify checks did not modify sources
+        if: ${{ !cancelled() }}
+        run: bash tool/check_git_clean.sh
+
   example:
+    if: github.event_name != 'schedule'
     name: Example (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -151,6 +266,8 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Read the reproducible Flutter baseline
+        run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -218,17 +335,23 @@ jobs:
           path: packages/apptracer_flutter/example/build/web/*.map
           retention-days: 90
 
+      - name: Verify checks did not modify sources
+        run: bash tool/check_git_clean.sh
+
   publish-dry-run:
+    if: github.event_name != 'schedule'
     name: pub publish --dry-run
     runs-on: ubuntu-latest
     # Required archive and metadata check, using local sibling overrides.
     # Hosted dependency resolution is checked separately at release.
     #
-    # One job rather than a six-way matrix: the command is identical bar the
+    # One job rather than a package matrix: the command is identical bar the
     # directory, and each matrix leg was paying for a runner and a Flutter
     # install to run something that takes half a minute.
     steps:
       - uses: actions/checkout@v4
+      - name: Read the reproducible Flutter baseline
+        run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -243,6 +366,7 @@ jobs:
           for package in \
             apptracer_flutter_platform_interface \
             apptracer_flutter_http \
+            apptracer_flutter_sentry \
             apptracer_flutter_android \
             apptracer_flutter_ios \
             apptracer_flutter_web \
@@ -257,7 +381,11 @@ jobs:
           done
           exit "$failed"
 
+      - name: Verify dry run did not modify sources
+        run: bash tool/check_git_clean.sh
+
   android-configuration-cache:
+    if: github.event_name != 'schedule'
     name: Android SDK 1.6.2 configuration cache
     runs-on: ubuntu-latest
     steps:
