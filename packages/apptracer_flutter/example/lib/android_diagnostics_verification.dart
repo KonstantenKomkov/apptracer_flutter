@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
 Future<void> main() async {
@@ -13,10 +13,11 @@ Future<void> main() async {
   const channel = MethodChannel('ru.apptracer.flutter.example/native');
   final context =
       (await channel.invokeMapMethod<String, String>('verificationContext'))!;
-  runApp(const MaterialApp(
-      home: Scaffold(
-          body:
-              Center(child: Text('Optional Dart diagnostics verification')))));
+  runApp(WidgetsApp(
+    color: const Color(0xff202020),
+    builder: (_, __) =>
+        const Center(child: Text('Optional Dart diagnostics verification')),
+  ));
   final output = Directory(context['outputPath']!);
   await output.create(recursive: true);
   final requests = <Map<String, Object?>>[];

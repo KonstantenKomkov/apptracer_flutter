@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
 const _native = MethodChannel('ru.apptracer.flutter.example/native');
@@ -36,13 +36,17 @@ Future<void> main() async {
   await results.create(recursive: true);
   final output = File('${results.path}/$scenario.json');
   final status = ValueNotifier<String>('Preparing $scenario');
-  runApp(MaterialApp(
-      home: Scaffold(
-          body: Center(
-              child: ValueListenableBuilder<String>(
-    valueListenable: status,
-    builder: (_, value, __) => Text(value, textAlign: TextAlign.center),
-  )))));
+  runApp(
+    WidgetsApp(
+      color: const Color(0xff202020),
+      builder: (_, __) => Center(
+        child: ValueListenableBuilder<String>(
+          valueListenable: status,
+          builder: (_, value, __) => Text(value, textAlign: TextAlign.center),
+        ),
+      ),
+    ),
+  );
   Future<void> save(Map<String, Object?> value) async {
     await output.writeAsString(
         jsonEncode(<String, Object?>{

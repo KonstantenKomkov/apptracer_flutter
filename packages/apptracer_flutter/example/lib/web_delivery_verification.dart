@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:js_interop';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 @JS('window.location.assign')
 external void _assign(String url);
@@ -23,13 +23,13 @@ Future<void> main() async {
   final reloaded = Uri.base.queryParameters['reloaded'] == 'true';
   final port = Uri.base.queryParameters['port']!;
   final status = ValueNotifier<String>('running');
-  runApp(MaterialApp(
-    home: Scaffold(
-      body: Center(
-          child: ValueListenableBuilder<String>(
+  runApp(WidgetsApp(
+    color: const Color(0xff202020),
+    builder: (_, __) => Center(
+      child: ValueListenableBuilder<String>(
         valueListenable: status,
         builder: (_, value, __) => Text('web-delivery:$value'),
-      )),
+      ),
     ),
   ));
   final options = TracerOptions(
