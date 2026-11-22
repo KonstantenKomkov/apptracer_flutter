@@ -39,7 +39,7 @@ jobs:
       - name: Select a compiled release from the same branch
         id: build
         if: inputs.current_run_build != true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             let run = context.payload.workflow_run;
