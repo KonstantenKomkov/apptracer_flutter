@@ -13,28 +13,22 @@ English version: [README.en.md](README.en.md).
 
 ## Быстрый старт
 
-**1. Заведите проект в [консоли Tracer](https://apptracer.ru).** Отдельный проект
-для каждой платформы. В разделе **Настройки → Проект → API** возьмите `appToken`
-для событий и `pluginToken` для символов.
+**1. Установите пакет** из каталога вашего Flutter-приложения.
 
-**2. Настройте выбранную платформу.**
+```sh
+flutter pub add apptracer_flutter
+```
+
+**2. Настройте платформу.** Создайте отдельный проект для каждой платформы в
+[консоли Tracer](https://apptracer.ru). Для Android, iOS и Web возьмите
+`appToken` для событий и `pluginToken` для загрузки символов в настройках API
+проекта. Для desktop нужен Sentry DSN.
 
 ### Android
 
 Следуйте [полному Android-руководству](../../docs/android-guide.md): BOM и
 Gradle-плагин Tracer, репозитории, `resValues = true`, токены и native crashes.
 `TracerOptions.appToken` и `TracerOptions.environment` на Android игнорируются.
-
-#### Android tombstones (SDK 1.5.2)
-
-Экспериментальные tombstones выключены по умолчанию. Настройка и ограничения —
-в [Android-руководстве](../../docs/android-guide.md#debug-and-native-crashes).
-
-### Обновление до Android SDK 1.6.2
-
-Используйте `apptracer_flutter ^1.2.1` (Android-адаптер `^0.4.1`) и
-[Android-руководство](../../docs/android-guide.md). Старые заметки и известные
-дефекты — в [хронологии](../../docs/release-history.md#android-sdk-162-migration).
 
 ### iOS
 
@@ -44,10 +38,9 @@ Gradle-плагин Tracer, репозитории, `resValues = true`, токе
 
 ### Web
 
-Дополнительная реализация не нужна: она уже внутри пакета. `appToken` JS-проекта
-передаётся из Dart. Offline-очередь, retry, лимиты и дубли описаны в
-[web-протоколе](../../docs/web-protocol.md#надёжность-доставки). Загрузка сорсмап —
-там же и в [symbolication.md](../../docs/symbolication.md).
+Передайте из Dart `appToken` JS-проекта. Web-адаптер входит в пакет.
+[Руководство по Web](../../docs/web-protocol.md#web-setup) описывает
+загрузку сорсмап и ограничения доставки.
 
 ### Desktop (optional)
 
@@ -59,12 +52,14 @@ Gradle-плагин Tracer, репозитории, `resValues = true`, токе
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      iosAppToken: 'IOS_APP_TOKEN',
-      webAppToken: 'WEB_APP_TOKEN',
+      iosAppToken: String.fromEnvironment('IOS_APP_TOKEN'),
+      webAppToken: String.fromEnvironment('WEB_APP_TOKEN'),
+      dsn: String.fromEnvironment('TRACER_DSN'),
     ),
     appRunner: () => runApp(const MyApp()),
   );
@@ -75,14 +70,20 @@ void main() {
 сбор. Для одной платформы можно использовать общий `appToken`. На Android токен
 берётся только из Gradle.
 
+Например, запустите Web-приложение с токеном JS-проекта. Для iOS передайте
+`IOS_APP_TOKEN`, для desktop — `TRACER_DSN`.
+
+```sh
+flutter run -d chrome --release --dart-define=WEB_APP_TOKEN=YOUR_JS_APP_TOKEN
+```
+
 **4. Отправьте тестовое событие.**
 
 ```dart
 onPressed: () => throw StateError('проверка apptracer_flutter'),
 ```
 
-Проверьте событие в консоли Tracer. Читаемый Dart-стек находится во вкладке
-«Логи». Для ручной обработанной ошибки используйте `Tracer.recordError` из
+Проверьте событие в консоли Tracer. На Android и iOS читаемый Dart-стек находится во вкладке «Логи». Для ручной обработанной ошибки используйте `Tracer.recordError` из
 [руководства по контексту](../../docs/filtering.md).
 
 ### Если событий нет
@@ -91,11 +92,13 @@ onPressed: () => throw StateError('проверка apptracer_flutter'),
 
 - Android: включены Gradle-плагин и `resValues = true`, токен передан в `tracer { }`.
 - iOS/web: `appToken` задан, например через `--dart-define`.
-- Проверка выполняется на release; debug uploads SDK по умолчанию выключены.
+- На Android и iOS проверяйте release-сборку. По умолчанию нативные SDK отключают отправку из debug-сборок.
 - Настройка согласия завершена явным `startCollection`, если выбран deferred-режим.
 
 Подробности — в [platform-matrix](../../docs/platform-matrix.md) и
 [руководстве по согласию](../../docs/native-collection-consent.md).
+
+<a id="что-дальше"></a>
 
 ## Использование
 
@@ -162,6 +165,15 @@ ingest, Firebase — SDK и ingest Google. Данные и ограничени�
 Пакет сохраняет дословный стек и `build_id`. Символы нужны от той же сборки;
 ручная расшифровка через `flutter symbolize` описана в
 [symbolication.md](../../docs/symbolication.md).
+
+### Android tombstones (SDK 1.5.2)
+
+Экспериментальные tombstones выключены по умолчанию. Настройка и ограничения —
+в [Android-руководстве](../../docs/android-guide.md#debug-and-native-crashes).
+
+### Обновление до Android SDK 1.6.2
+
+Инструкции по обновлению и известные ограничения — в [хронологии](../../docs/release-history.md#android-sdk-162-migration).
 
 ## Runtime API в apptracer_flutter 1.2.0
 

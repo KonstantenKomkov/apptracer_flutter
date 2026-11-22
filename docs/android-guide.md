@@ -1,17 +1,16 @@
-# Android setup guide
+# Настройка Android
 
-Current SDK coordinates and supported environments are summarized in
-[platform-matrix.md](platform-matrix.md). Historical acceptance results are not
-installation instructions; use this guide for setup.
+Актуальные версии SDK, минимальный API и проверенные среды приведены в
+[матрице платформ](platform-matrix.md). [English](android-guide.en.md).
 
-## Dependencies and tokens
+## Зависимости и токены
 
-Create an Android project in Tracer and copy its `appToken` and `pluginToken`.
-The application needs `appToken`; the build needs `pluginToken` only for mapping
-and native-symbol uploads.
+Создайте Android-проект в Tracer. Его `appToken` нужен приложению для отправки
+событий, а `pluginToken` — сборке для загрузки маппингов и нативных символов.
 
-Keep Flutter `includeBuild` in `android/settings.gradle.kts`, then configure
-repositories and the plugin:
+В существующем `android/settings.gradle.kts` сохраните Flutter `includeBuild`
+и плагины приложения. Добавьте репозиторий в `pluginManagement.repositories`
+и объявите версию плагина:
 
 ```kotlin
 pluginManagement {
@@ -30,8 +29,8 @@ plugins {
 }
 ```
 
-Add VK Nexus to dependency repositories in `android/build.gradle.kts` or
-`dependencyResolutionManagement.repositories`:
+Для зависимостей добавьте тот же репозиторий в `android/build.gradle.kts`
+или `dependencyResolutionManagement.repositories`:
 
 ```kotlin
 maven("https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/") {
@@ -41,13 +40,11 @@ google()
 mavenCentral()
 ```
 
-In `android/app/build.gradle.kts`:
+В `android/app/build.gradle.kts` добавьте плагин к существующим и настройте SDK:
 
 ```kotlin
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
+    // Сохраните существующие плагины Flutter и Android.
     id("ru.ok.tracer")
 }
 
@@ -69,34 +66,36 @@ tracer {
 dependencies {
     implementation(platform("ru.ok.tracer:tracer-platform:1.6.2"))
     implementation("ru.ok.tracer:tracer-crash-report")
+    // Опционально, для нативных падений:
     implementation("ru.ok.tracer:tracer-crash-report-native")
 }
 ```
 
-The Android SDK reads `appToken` from the generated resource. Do not pass it to
-`TracerOptions`; that value is ignored on Android. `environment` also comes
-from the Gradle plugin, by default the build variant name.
+Gradle-плагин записывает `appToken` в ресурс приложения и задаёт окружение,
+по умолчанию по имени build variant. На Android значения `appToken` и
+`environment` из `TracerOptions` игнорируются.
 
-Store `pluginToken` outside the repository in `~/.gradle/gradle.properties`:
+Сохраните токен загрузки символов в `~/.gradle/gradle.properties`:
 
 ```properties
 androidPluginToken=...
 ```
 
-In CI use `ORG_GRADLE_PROJECT_androidPluginToken` or `-PandroidPluginToken=…`.
-With both upload flags false, only `appToken` is required; either enabled
-upload requires `pluginToken`.
+В CI передайте свойство через `ORG_GRADLE_PROJECT_androidPluginToken`.
+Для первого события без загрузки символов выставьте `uploadMapping = false`
+и `uploadNativeSymbols = false`. Тогда достаточно `appToken`.
 
-## Debug and native crashes
+<a id="debug-and-native-crashes"></a>
 
-Debug uploads are off by default. Enable them only through an `Application`
-implementing `HasTracerConfiguration` (`setDebugUpload`). Such an application
-replaces package settings; subclass `ru.apptracer.flutter.TracerApplication`
-and add custom configuration to `super.tracerConfiguration` to retain the
-package's non-fatal rate limit.
+## Debug-сборки и нативные падения
 
-Experimental tombstones are off by default. For SDK 1.5.2, 1.6.1 or 1.6.2 on
-Android 12 / API 31+, enable them inside `<application>`:
+Для первой проверки используйте release-сборку. В debug отправку можно включить
+через `setDebugUpload` в `Application` с `HasTracerConfiguration`. Чтобы сохранить
+лимит нефатальных событий пакета, наследуйте `ru.apptracer.flutter.TracerApplication`
+и расширьте `super.tracerConfiguration`.
+
+Экспериментальные tombstones выключены по умолчанию. Для SDK 1.5.2, 1.6.1
+или 1.6.2 на Android 12 / API 31+ добавьте в `<application>`:
 
 ```xml
 <meta-data
@@ -104,19 +103,18 @@ Android 12 / API 31+, enable them inside `<application>`:
     android:value="true" />
 ```
 
-A custom `HasTracerConfiguration` must instead call
-`setExperimentalTombstoneEnabled(true)` in its existing builder. Do not enable
-both native module and tombstones for the same crash unless MINIDUMP and
-TOMBSTONE duplicates are intended.
+Если конфигурацией управляет собственный `HasTracerConfiguration`, вызовите
+`setExperimentalTombstoneEnabled(true)` в его builder. При одновременном
+включении нативного модуля и tombstones одно падение может дать два отчёта.
 
-## Consent and lifecycle
+## Согласие и символизация
 
-For deferred consent, remove both startup providers from the manifest and start
-collection explicitly after authorization. `pauseCollection`/`resumeCollection`
-pauses an authorized session without clearing context; logout requires
-`stopAndClearCollection`. See [native-collection-consent.md](native-collection-consent.md)
-and [privacy.md](privacy.md).
+Для отложенного старта удалите оба startup provider по
+[инструкции для манифеста](native-collection-consent.md#android-build-time-setup).
+После согласия вызовите `startCollection`. Для временной паузы используйте
+`pauseCollection` и `resumeCollection`, для выхода из аккаунта — `stopAndClearCollection`.
+[Контракт очистки](native-collection-consent.md) и [приватность](privacy.md).
 
-For symbolication, upload mapping and native symbols from the exact build. The
-known Kotlin console file/line defect and configuration-cache limitation are
-recorded in [release-history.md](release-history.md), not treated as fixed.
+Для символизации нужны mapping и нативные символы от той же сборки.
+[История миграций](release-history.md#android-sdk-162-migration) описывает
+ограничения configuration cache и известную ошибку номера строки Kotlin в консоли.

@@ -19,19 +19,8 @@ application that is most of the errors. This repository closes that gap.
 
 Русская версия: [README.md](README.md).
 
-Ubuntu 22.04.5 x64 is verified on a separate VM through the optional
-[`apptracer_flutter_desktop`](packages/apptracer_flutter_desktop/README.en.md):
-live Dart/native delivery, source frames, grouping, stop/clear and retry.
-Install stable `apptracer_flutter_desktop ^1.0.0` from pub.dev alongside
-`apptracer_flutter ^1.0.0`; the facade does not add desktop support by itself. [Installation/build](docs/desktop-migration.md#ubuntu-linux-consumer),
-[evidence and limits](docs/linux-preparation.md).
-
-Windows 11 x64 uses the same optional desktop package: the native backend,
-stop/clear, offline/retry and Dart/native source frames have local and live
-Tracer evidence. Windows builds and checks also run in GitHub Actions;
-a fresh Windows VM without build tools passed 11 runtime/consumer checks.
-[Installation](docs/desktop-migration.md#windows-consumer),
-[current evidence](docs/windows-local-acceptance.md).
+For macOS, Windows and Ubuntu, install the optional desktop package. See the
+[desktop setup](docs/desktop-migration.md) and [tested environments](docs/platform-matrix.md#summary).
 
 ## Repository layout
 
@@ -43,7 +32,7 @@ packages/
   apptracer_flutter_ios/                Swift bridge to OKTracer
   apptracer_flutter_web/                web implementation
   apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
-                                        macOS/Ubuntu/Windows stable 1.0.0, tested environments documented
+                                        tested environments listed in the platform matrix
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
   apptracer_flutter_sentry/             the Sentry protocol; only for platforms
                                         this release does not support, and so
@@ -103,7 +92,3 @@ mirrors the same set for anyone launching from the editor.
 
 MIT, see [LICENSE](LICENSE). The vendor SDKs are licensed separately; see
 [docs/legal.md](docs/legal.md).
-
-Android SDK / Gradle plugin 1.5.2 and opt-in Android 12+ tombstones are supported.
-See [setup](packages/apptracer_flutter/README.en.md#android-tombstones-sdk-152)
-and the [upgrade audit](docs/android-sdk-1.5.2.md) for verification scope.

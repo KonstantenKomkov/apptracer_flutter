@@ -45,9 +45,7 @@ In `android/app/build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
+    // Keep the existing Flutter and Android plugins.
     id("ru.ok.tracer")
 }
 
@@ -69,6 +67,7 @@ tracer {
 dependencies {
     implementation(platform("ru.ok.tracer:tracer-platform:1.6.2"))
     implementation("ru.ok.tracer:tracer-crash-report")
+    // Optional native crash reports:
     implementation("ru.ok.tracer:tracer-crash-report-native")
 }
 ```

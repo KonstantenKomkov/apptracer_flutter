@@ -1,13 +1,26 @@
 # Как Tracer принимает события из браузера
 
-Восстановлено 26.08.2026 из `@apptracer/sdk` 2.6.9, распакованного с npm, и из
-публичной документации вендора. Нужно потому, что web-реализация пакета
-построена на предположении о приёме по протоколу Sentry, а оно не подтвердилось:
-DSN в настройках JS-проекта не выдаётся, и в SDK вендора никакого Sentry нет.
-Это относится именно к web: для платформ, под которые у Tracer нет своего SDK,
-Sentry-приём существует и документирован, а DSN выдаётся, если завести проект
-через VK Cloud.
-См. [design-decisions.md](design-decisions.md) и [status.md](status.md).
+## Web setup
+
+В `TracerOptions.webAppToken` передайте `appToken` JS-проекта.
+[Быстрый старт](../packages/apptracer_flutter/README.md#web) / [English quick start](../packages/apptracer_flutter/README.en.md#web).
+
+Для читаемых release-стеков соберите приложение с сорсмапами. До выкладки
+загрузите их из корня приложения, передав `pluginToken` JS-проекта через
+`TRACER_PLUGIN_TOKEN`. Версия в `pubspec.yaml` должна совпадать с `release` события.
+
+```sh
+flutter build web --release --source-maps --dart-define=WEB_APP_TOKEN=YOUR_JS_APP_TOKEN
+dart run apptracer_flutter:upload_symbols web
+```
+
+Published Web/HTTP 0.2.0 sends each report once. The [retry policy](#delivery-reliability)
+applies to the 0.2.1 code in this repository. See the [platform matrix](platform-matrix.md#web).
+
+## Исследование протокола, август 2026
+
+Формат HTTP восстановлен по `@apptracer/sdk` 2.6.9. JS-проект использует
+`appToken`. Для desktop Tracer выдаёт Sentry DSN в проекте другого типа.
 
 ## Что установлено
 
@@ -214,7 +227,7 @@ VK Cloud, а у обычного JS-проекта его нет. Поэтому
 
 ## Надёжность доставки
 
-С 21.11.2026 `TracerHttpTracer` сохраняет событие до первой сетевой попытки.
+В коде Web/HTTP 0.2.1 из репозитория `TracerHttpTracer` сохраняет событие до первой сетевой попытки.
 Одна вкладка владеет очередью IndexedDB через Web Locks. Другие открытые
 вкладки того же origin используют отдельные очереди в памяти. При перезагрузке
 сохраняется очередь вкладки, владевшей блокировкой. Web использует атомарную
@@ -243,7 +256,7 @@ id очереди на сервер не отправляется, wire contract
 
 ### Delivery reliability
 
-The browser uses the same policy: an IndexedDB-backed, account-isolated queue with
+Repository version 0.2.1 uses the following policy: an IndexedDB-backed, account-isolated queue with
 100 events / 1 MiB / 24-hour TTL limits, five attempts, exponential jittered backoff,
 and explicit cleanup on revocation. Storage denial is reported and falls back to
 memory for the current page only. One page holds the origin's Web Lock. Other

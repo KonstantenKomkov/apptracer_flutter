@@ -1,6 +1,6 @@
 # Documentation map
 
-Start with the [package quick start](../packages/apptracer_flutter/README.md).
+Start with the package quick start in [Russian](../packages/apptracer_flutter/README.md) or [English](../packages/apptracer_flutter/README.en.md).
 Do not use historical acceptance reports as installation instructions.
 
 ## Current guides
@@ -10,7 +10,7 @@ Do not use historical acceptance reports as installation instructions.
 | Platform versions and limits | [platform-matrix.md](platform-matrix.md) |
 | Android | [android-guide.md](android-guide.md), [English](android-guide.en.md) |
 | iOS | [apptracer_flutter_ios/README.md](../packages/apptracer_flutter_ios/README.md), [English](../packages/apptracer_flutter_ios/README.en.md) |
-| Web | [web-protocol.md](web-protocol.md) |
+| Web | [web-protocol.md](web-protocol.md#web-setup) |
 | Desktop | [desktop-migration.md](desktop-migration.md) |
 | Consent and cleanup | [native-collection-consent.md](native-collection-consent.md) |
 | Privacy | [privacy.md](privacy.md) |

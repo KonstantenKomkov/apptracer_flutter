@@ -13,11 +13,16 @@ error-monitoring service by OK.TECH / VK.
 
 ## Quick start
 
-**1. Create a project in the [Tracer console](https://apptracer.ru).** Use a
-separate project for each platform. Under **Settings → Project → API**, copy the
-`appToken` for events and the `pluginToken` for symbols.
+**1. Install the package** from your Flutter application directory.
 
-**2. Configure your platform.**
+```sh
+flutter pub add apptracer_flutter
+```
+
+**2. Configure your platform.** Create a separate project for each target in the
+[Tracer console](https://apptracer.ru). Android, iOS and Web use the project’s
+`appToken` for events and its `pluginToken` when uploading symbols.
+Desktop uses a Sentry DSN.
 
 ### Android
 
@@ -25,18 +30,6 @@ Follow the [full Android guide](../../docs/android-guide.en.md) for the Tracer
 BOM and Gradle plugin, repositories, `resValues = true`, tokens and native
 crashes. `TracerOptions.appToken` and `TracerOptions.environment` are ignored on
 Android.
-
-#### Android tombstones (SDK 1.5.2)
-
-Experimental tombstones are off by default. See
-[debug and native crashes](../../docs/android-guide.en.md#debug-and-native-crashes)
-for setup and limitations.
-
-### Upgrading to Android SDK 1.6.2
-
-Use `apptracer_flutter ^1.2.1` (Android adapter `^0.4.1`) and the
-[Android guide](../../docs/android-guide.en.md). Historical notes and known
-limitations are in the [release history](../../docs/release-history.md#android-sdk-162-migration).
 
 ### iOS
 
@@ -46,11 +39,9 @@ Choose Swift Package Manager or CocoaPods in the
 
 ### Web
 
-No additional implementation is needed: it is already inside the package. Pass
-the JS project's `appToken` from Dart. Offline queueing, retries, limits and
-duplicate risks are described in the
-[web protocol](../../docs/web-protocol.md#delivery-reliability). Source maps are
-covered there and in [symbolication.md](../../docs/symbolication.md).
+Pass the JS project’s `appToken` from Dart. The Web adapter is included in
+the package. See the [Web guide](../../docs/web-protocol.md#web-setup)
+for source maps and delivery limits.
 
 ### Desktop (optional)
 
@@ -63,12 +54,14 @@ a desktop backend.
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   Tracer.initialize(
     options: const TracerOptions(
-      iosAppToken: 'IOS_APP_TOKEN',
-      webAppToken: 'WEB_APP_TOKEN',
+      iosAppToken: String.fromEnvironment('IOS_APP_TOKEN'),
+      webAppToken: String.fromEnvironment('WEB_APP_TOKEN'),
+      dsn: String.fromEnvironment('TRACER_DSN'),
     ),
     appRunner: () => runApp(const MyApp()),
   );
@@ -79,14 +72,20 @@ void main() {
 collection. For a single platform, the shared `appToken` is enough. On Android,
 the token comes only from Gradle.
 
+For example, run the Web app with the JS project’s token. On iOS pass
+`IOS_APP_TOKEN`, and on desktop pass `TRACER_DSN`.
+
+```sh
+flutter run -d chrome --release --dart-define=WEB_APP_TOKEN=YOUR_JS_APP_TOKEN
+```
+
 **4. Send a test event.**
 
 ```dart
 onPressed: () => throw StateError('apptracer_flutter check'),
 ```
 
-Check the event in the Tracer console. The readable Dart stack is in the log
-tab. For handled errors, use `Tracer.recordError` as shown in the
+Check the event in the Tracer console. On Android and iOS, the readable Dart stack is in the log tab. For handled errors, use `Tracer.recordError` as shown in the
 [context guide](../../docs/filtering.en.md).
 
 ### If nothing arrives
@@ -96,11 +95,13 @@ Check the startup log and `Tracer.isEnabled` first. Then:
 - Android: the Gradle plugin and `resValues = true` are enabled and the token is
   set in `tracer { }`.
 - iOS/web: `appToken` is set, for example through `--dart-define`.
-- Test on release; debug uploads are off by default.
+- Test Android and iOS in release mode. Their native SDKs disable debug uploads by default.
 - In deferred mode, consent was followed by an explicit `startCollection`.
 
 See the [platform matrix](../../docs/platform-matrix.md) and the
 [consent guide](../../docs/native-collection-consent.md).
+
+<a id="where-to-go-next"></a>
 
 ## Usage
 
@@ -168,6 +169,16 @@ and innermost named frame, excluding file and line number.
 The package preserves the verbatim trace and `build_id`. Symbols must come from
 the exact build; manual decoding with `flutter symbolize` is described in
 [symbolication.md](../../docs/symbolication.md).
+
+### Android tombstones (SDK 1.5.2)
+
+Experimental tombstones are off by default. See
+[debug and native crashes](../../docs/android-guide.en.md#debug-and-native-crashes)
+for setup and limitations.
+
+### Upgrading to Android SDK 1.6.2
+
+See the migration notes and known limitations in the [release history](../../docs/release-history.md#android-sdk-162-migration).
 
 ## Runtime APIs in apptracer_flutter 1.2.0
 

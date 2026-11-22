@@ -25,7 +25,7 @@ See [release-1.2.0.md](release-1.2.0.md) and
 ## Android SDK 1.6.2 migration
 
 Use `apptracer_flutter ^1.2.1` (Android adapter `^0.4.1`) and follow the current
-[Android setup guide](android-guide.md). Hosts on 1.4.0, 1.5.2 and 1.6.1 retain
+[Android setup guide](android-guide.en.md). Hosts on 1.4.0, 1.5.2 and 1.6.1 retain
 previous lifecycle behavior.
 
 - `startCollection` resumes an initialized SDK 1.6.1 or 1.6.2 after native
@@ -46,9 +46,3 @@ previous lifecycle behavior.
 [Historical SDK 1.6.1 acceptance](android-sdk-1.6.1-acceptance.md) and
 [diagnostic limitations](android-sdk-1.6.1-diagnostics.md) describe only the
 listed build and environment.
-
-## English notes
-
-Runtime APIs and migration notes above apply to the same releases. Current
-installation must follow [android-guide.en.md](android-guide.en.md) and
-[desktop-migration.md](desktop-migration.md), not the dated acceptance reports.

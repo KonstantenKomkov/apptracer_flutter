@@ -4,8 +4,9 @@
 
 Automatic push/PR checks run for source, tests, dependencies and build/workflow
 configuration. Changes limited to Markdown, reStructuredText, AsciiDoc, docs
-directories, license/notice files, `.gitignore` or `.gitattributes` do not start
-CI. Mixed changes that include code still run the relevant checks. Manual
+directories, license/notice files, `.gitignore` or `.gitattributes` skip the Flutter builds and tests.
+Markdown changes trigger the documentation workflow. Mixed changes that include
+code still run the relevant checks. Manual
 workflow dispatch remains available. Windows runtime checks follow a successful
 Windows preparation run, so documentation-only pushes start neither workflow.
 
@@ -31,6 +32,15 @@ tool/bootstrap.sh   # pub get everywhere from tool/packages.tsv
 tool/check.sh       # format + analyze + test + coverage + publish dry-run
 make analyze        # analyze every catalog package, including desktop
 make test           # VM/Chrome tests and combined coverage
+```
+
+For Markdown changes, run the documentation workflow checks with Python 3.10+:
+
+```sh
+python3 -m venv build/docs-venv
+build/docs-venv/bin/pip install -r docs/tools/requirements.txt
+build/docs-venv/bin/python -m unittest discover -s docs/tools
+build/docs-venv/bin/python docs/tools/check_markdown_links.py
 ```
 
 Run the full check from a clean commit. It also fails if analyze, tests, builds or
@@ -78,10 +88,6 @@ fvm install 3.22.0
 cd packages/apptracer_flutter
 "$HOME/fvm/versions/3.22.0/bin/flutter" test
 ```
-
-For documentation-only changes, run `python3 tool/check_markdown_links.py` instead
-of the full code checks. It validates local files and GitHub-style anchors, and
-`.github/workflows/docs.yml` runs the same lightweight check on docs-only PRs.
 
 Per package:
 

@@ -20,10 +20,9 @@ await Tracer.setCustomKey(key: 'checkout_step', value: '3');
 await Tracer.removeCustomKey('checkout_step');
 ```
 
-Breadcrumbs and custom keys travel only with an event. Event keys override
-persistent keys only for that event; later events use the persistent values
-again. Android restores native scope after every report, so values from a
-previous event cannot leak into the next one.
+Event keys can override persistent keys. The Android adapter in this repository
+restores native scope after each Dart report. The published Android 0.4.1
+adapter predates this fix. See the [verified scope and concurrency limits](android-event-context.md).
 
 `issueKey` overrides grouping. Without it, the package derives a key from the
 error type and innermost named frame, excluding file and line number.
@@ -39,10 +38,8 @@ TracerOptions(
 )
 ```
 
-Return `null` to drop an event or breadcrumb. A throwing hook is logged and
-ignored, and the original event is sent. `beforeSend` runs before data reaches
-the platform; removed persistent and event-only fields must not be restored by
-native scope.
+Return `null` to drop an event or breadcrumb. If a hook throws, the client
+logs the exception and keeps the original event or breadcrumb.
 
 ## Large stack traces
 

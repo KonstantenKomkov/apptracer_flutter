@@ -24,12 +24,7 @@ English version: [README.en.md](README.en.md).
 
 SDK Tracer подключён здесь как `compileOnly`, поэтому его добавляет само
 приложение — вместе с Gradle-плагином `ru.ok.tracer`, откуда берётся
-`appToken`. См. [Android setup guide](../../docs/android-guide.md).
-
-Адаптер **0.4.1** компилируется с SDK **1.6.2**, который исправляет отправку
-данных на Android API 23 и ниже. Добавьте [Maven-репозиторий Tracer](https://nexus-external.vkteam.ru/repository/maven-tracer-public-exposed/)
-в репозитории плагинов и зависимостей приложения и укажите версию 1.6.2 для BOM
-и Gradle-плагина. Для остальных зависимостей сохраните Google Maven и Maven Central.
+`appToken`. См. [руководство по настройке Android](../../docs/android-guide.md).
 
 Настройку SDK пакет ставит себе сам, без строчки в манифесте: рейт-лимит на
 нефатальные (10 в час вместо жёстких 8 за сессию — а каждая ошибка Dart здесь
@@ -49,89 +44,16 @@ SDK Tracer подключён здесь как `compileOnly`, поэтому е
 * передан `TracerOptions.environment` — тоже игнорируется, значение берётся из
   Gradle-плагина.
 
-Требует `minSdk 21` — как и `ru.ok.tracer:tracer-commons`.
-
+[Поддерживаемые SDK и минимальная версия Android](../../docs/platform-matrix.md#android).
 
 ## Android tombstones (SDK 1.5.2)
 
-Экспериментальные системные отчёты о нативных крэшах **выключены по умолчанию**.
-Чтобы включить их без собственного `Application`, добавьте внутрь `<application>`
-в `android/app/src/main/AndroidManifest.xml`:
-
-```xml
-<meta-data
-    android:name="ru.apptracer.flutter.experimentalTombstoneEnabled"
-    android:value="true" />
-```
-
-Нужны Tracer Android **1.5.2, 1.6.1 или 1.6.2** и **Android 12 / API 31+**. Функция входит
-в `tracer-crash-report`; модуль `tracer-crash-report-native` необязателен
-и остаётся полезным для нативных крэшей на старых версиях Android. Tombstones
-позволяют символизировать системные библиотеки, но не гарантируют символизацию
-Dart AOT. Отчёты восстанавливаются при последующем запуске SDK.
-
-Собственный `Application`, реализующий `HasTracerConfiguration`, заменяет
-настройки пакета. В его существующем `CrashReportConfiguration.Builder` вызовите
-`setExperimentalTombstoneEnabled(true)` и при необходимости сохраните лимит
-нефатальных событий. Наследник `TracerApplication` учитывает флаг манифеста.
-
-Флаг работает при автоматическом и отложенном запуске. Он задаётся на Android
-до инициализации SDK, а не через Dart `TracerOptions`. Для отложенного сбора
-по-прежнему нужны удаление провайдеров из манифеста и явный `startCollection`;
-сам флаг сбор не запускает. После обновления выполните чистую сборку.
+[Флаг манифеста, свой Application и дубли отчётов](../../docs/android-guide.md#debug-and-native-crashes).
 
 ### Обновление до Android SDK 1.6.2
 
-Используйте `apptracer_flutter ^1.2.1` (Android-адаптер `^0.4.1`). Обновите
-репозитории, BOM и Gradle-плагин по инструкции выше и пересоберите приложение.
-На SDK 1.4.0, 1.5.2 и 1.6.1 сохраняется прежнее поведение сбора.
-
-- `startCollection` может возобновить уже инициализированный SDK 1.6.1 или 1.6.2 после
-  нативного `Tracer.disable()`. В `apptracer_flutter_android` 0.4.1 он также
-  создаёт новую сессию после успешной полной deferred-очистки на SDK 1.6.1/1.6.2.
-  Для SDK 1.4.0/1.5.2 и автоматической инициализации сохраняется требование
-  нового процесса. Build-time disable меняется только сборкой.
-  Наблюдение состояния само сбор не включает.
-- Флаги Gradle DSL называются `uploadMapping` и `uploadNativeSymbols`.
-  При обоих `false` нужен только `appToken`; если включён хотя бы один upload,
-  нужен `pluginToken`. При `uploadMapping=false` SDK 1.6.1 генерирует нулевой
-  `buildUuid`; восстановление JVM-стека в сервисе тогда не обещается.
-- **Известный дефект Tracer:** в проверенном Kotlin-крэше класс и метод
-  восстановлены, но консоль показывает `.java:14` вместо `.kt:6`. Доставка и
-  Java-символизация проверены. Сохраняйте полный `mapping.txt` точной сборки
-  и исходный обфусцированный стек для локального R8 Retrace. Дефект принят как
-  ограничение выпуска и остаётся открытым.
-- Полный Flutter `assembleRelease` не сохраняет configuration cache на
-  проверенной комбинации Flutter 3.47.4 / AGP 8.9.1 / Gradle 8.12 / JDK 21,
-  в том числе без SDK Tracer. Используйте `--no-configuration-cache` для Gradle
-  или `org.gradle.configuration-cache=false` в `gradle.properties`.
-- `HeapDumps.runNow`, `DiskUsage.runNow` и ленивый `provideEnabled` относятся к
-  опциональным нативным модулям. В `apptracer_flutter` 1.2.0 они доступны
-  через Dart API; модули подключаются явно приложением. Heap dump может приостановить VM/UI даже при фоновом вызове;
-  offline samples могут удаляться без retry. Их WorkManager lifecycle не входит
-  в поддерживаемую deferred-очистку.
-- Одновременное включение native module и experimental tombstones может дать
-  MINIDUMP и TOMBSTONE для одного падения. В примере tombstone включается отдельно.
-
-SDK 1.6.1 проверен в release/R8-сборке на эмуляторе Android 15 / API 35 (arm64). Эта приёмка не
-сертифицирует физические устройства или native/Dart-символизацию.
-[Протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-acceptance.md),
-[ограничения diagnostic-модулей](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/android-sdk-1.6.1-diagnostics.md).
+[Настройка Gradle](../../docs/android-guide.md) и [заметки о миграции](../../docs/release-history.md#android-sdk-162-migration).
 
 ## Runtime API в apptracer_flutter 1.2.0
 
-В `apptracer_flutter` 1.2.0 доступны `Tracer.pauseCollection()` / `resumeCollection()`
-для текущей разрешённой Android-сессии SDK 1.6.1. Пауза сохраняет данные и не
-отменяет выполняющиеся отправки. Для logout нужен `stopAndClearCollection`;
-новый разрешённый `startCollection` восстанавливает сбор на Android 1.6.1
-в deferred-режиме. iOS 1.5.2 пока возвращает `restartRequired`.
-
-Добавлены `runHeapDump(tag: ...)`, `runDiskUsage()` и `setHeapDumpEnabled(bool)`.
-Модули подключает приложение явно; heap provider также устанавливается хостом
-до старта SDK. Deferred-очистка этих модулей не поддержана. `invoked` означает
-возврат из нативного метода, а не доставку. Для этих API нужны
-`apptracer_flutter_android ^0.4.0` и
-`apptracer_flutter_platform_interface ^0.2.1`; `apptracer_flutter` задаёт эти
-зависимости автоматически.
-[Статус выпуска и порядок публикации](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-1.2.0.md).
-[Таблица API, настройка, проверки и принятые ограничения №23](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/task-23-collection-lifecycle.md).
+[Пауза, возобновление и опциональная диагностика](../../docs/release-history.md#apptracer_flutter-120-runtime-apis).
