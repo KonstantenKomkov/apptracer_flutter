@@ -1,5 +1,8 @@
 # macOS: остановка, очистка и восстановление очереди
 
+> **Историческое свидетельство:** результаты относятся только к указанным сборкам,
+> датам и среде macOS. Актуальная установка — в [desktop-migration.md](desktop-migration.md).
+
 Дата: **2026-10-23**. Локальная часть [№8](tasks/development_v1.md#task-8).
 Проверено на macOS 27.0.1 arm64, Flutter 3.47.4 / Dart 3.13.3, Xcode 27,
 CocoaPods 1.17.0; sentry_flutter/sentry **9.30.1**, Cocoa **8.58.4**.

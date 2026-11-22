@@ -162,7 +162,7 @@ jobs:
             python3 tool/symbolize_linux_native.py --dump "$dump" --runner "$bundle/apptracer_desktop_example" --symbols build/linux-acceptance/symbols/breakpad --stackwalk build/linux-symbol-tools/minidump-stackwalk --output build/linux-acceptance/native-symbols.json
             break
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ubuntu-22.04-x64-preparation
@@ -196,7 +196,7 @@ jobs:
         run: |
           xvfb-run -a python3 tool/check_linux_consumer.py --output build/ubuntu-consumer-hosted
           xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade --output build/ubuntu-consumer-candidate
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ubuntu-22.04-x64-consumer
