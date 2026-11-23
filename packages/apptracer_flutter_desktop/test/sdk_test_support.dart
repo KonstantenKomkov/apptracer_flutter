@@ -44,8 +44,8 @@ class NativeSdkProbe {
 
   List<Map<String, dynamic>> get events =>
       calls.where((call) => call.method == 'captureEnvelope').map((call) {
-        final args = call.arguments as List<dynamic>;
-        final lines = utf8.decode(args[0] as List<int>).split('\n');
+        final data = call.arguments as List<int>;
+        final lines = utf8.decode(data).split('\n');
         expect(jsonDecode(lines[1]), containsPair('type', 'event'));
         return jsonDecode(lines[2]) as Map<String, dynamic>;
       }).toList();

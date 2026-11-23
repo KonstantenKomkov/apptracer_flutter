@@ -42,11 +42,14 @@ def build_evidence(version):
 
     system = platform.system()
     if system == 'Darwin':
-        pods = (EXAMPLE / 'macos/Podfile.lock').read_text()
-        cocoa = re.search(r'^  - Sentry/HybridSDK \(([^)]+)\)', pods, re.M)
-        if not cocoa:
-            raise ValueError('Sentry Cocoa version missing from Podfile.lock')
-        native = {'sentryCocoa': cocoa[1]}
+        package = EXAMPLE / 'macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved'
+        resolved = json.loads(package.read_text())
+        cocoa = next((pin for pin in resolved['pins']
+                      if pin['identity'] == 'sentry-apple-binaries'), None)
+        if cocoa is None:
+            raise ValueError('Sentry Cocoa version missing from SPM Package.resolved')
+        native = {'sentryCocoa': cocoa['state']['version'],
+                  'sentryCocoaRevision': cocoa['state']['revision']}
     else:
         if system == 'Windows':
             deps = Path(os.environ['RUNNER_TEMP']) / 'tracer-native'

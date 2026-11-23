@@ -29,7 +29,6 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   static SentryDesktopTracer? _owner;
-  ObservedSdkOptions? _sdkOptions;
   LinuxLifecycle? _linux;
   WindowsLifecycle? _windows;
   final _dartSymbols = LinuxDartSymbols();
@@ -103,7 +102,7 @@ class SentryDesktopTracer extends TracerPlatform {
       }
       _owner = this;
       _attemptedNativeStart = true;
-      final sdk = _sdkOptions = ObservedSdkOptions();
+      final sdk = SentryFlutterOptions();
       try {
         if (defaultTargetPlatform == TargetPlatform.linux) {
           _linux ??= LinuxLifecycle();
@@ -147,8 +146,7 @@ class SentryDesktopTracer extends TracerPlatform {
           // Only recordLog supplies native breadcrumbs; automatic integrations
           // are disabled. Tracer invokes the user's breadcrumb filter first.
         },
-            // Pinned SDK injection is necessary to observe errors the SDK
-            // otherwise swallows with debug=false; this is not a fake transport.
+            // The same options instance lets us confirm our native integration.
             // ignore: invalid_use_of_internal_member
             options: sdk);
         final integration = defaultTargetPlatform == TargetPlatform.macOS
@@ -156,9 +154,7 @@ class SentryDesktopTracer extends TracerPlatform {
             : defaultTargetPlatform == TargetPlatform.linux
                 ? 'apptracerLinuxLifecycle'
                 : 'apptracerWindowsLifecycle';
-        if (!Sentry.isEnabled ||
-            sdk.failures != 0 ||
-            !sdk.sdk.integrations.contains(integration)) {
+        if (!Sentry.isEnabled || !sdk.sdk.integrations.contains(integration)) {
           throw StateError('native_start_not_confirmed');
         }
         if (generation != _generation) {
@@ -232,8 +228,6 @@ class SentryDesktopTracer extends TracerPlatform {
       }
       return;
     }
-    final sdk = _sdkOptions;
-    final failures = sdk?.failures;
     try {
       await _linux?.revoke();
       await _windows?.revoke();
@@ -242,7 +236,6 @@ class SentryDesktopTracer extends TracerPlatform {
           ? await MacOSLifecycle.invoke('closeNativeSdk')
           : null;
       await Sentry.close();
-      if (sdk?.failures != failures) throw StateError('native_close_failed');
       _state = nativeState ??
           TracerCollectionResult(TracerCollectionState.restartRequired,
               reason: _linux != null

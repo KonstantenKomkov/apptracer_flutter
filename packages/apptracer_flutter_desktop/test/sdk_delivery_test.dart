@@ -46,8 +46,6 @@ void main() {
           'MacOSLifecycleIntegration',
           'LoadNativeDebugImagesIntegration'
         ]));
-    expect(sdkOptions.enableLogs, false);
-    expect(sdkOptions.enableMetrics, false);
     expect(FlutterError.onError, same(originalHandler));
     final init =
         probe.calls.singleWhere((call) => call.method == 'initNativeSdk');

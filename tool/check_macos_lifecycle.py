@@ -2,7 +2,8 @@
 """Exercise actual release-app consent/queue lifecycle against loopback only.
 
 Each launch is a fresh process; stdin commands use the opt-in example driver.
-HTTP 503 retains envelopes in the official SDK cache. No credentials are read.
+Dropped connections retain envelopes; an HTTP 5xx response may discard them.
+No credentials are read.
 """
 import argparse
 import gzip
@@ -46,9 +47,12 @@ def main():
                 current_mode = mode
                 received.append({'time': time.monotonic(), 'mode': current_mode,
                                  'path': self.path, 'events': events})
+                if current_mode == 'offline':
+                    self.connection.close()
+                    return
                 if current_mode == 'hold':
                     release_response.wait(20)
-                self.send_response(503 if current_mode == 'offline' else 200)
+                self.send_response(200)
                 self.send_header('Content-Length', '2')
                 self.end_headers()
                 self.wfile.write(b'{}')

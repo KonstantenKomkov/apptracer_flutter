@@ -40,10 +40,7 @@ void main() {
     configureDesktopSdk(
         options, const TracerOptions(dsn: 'https://public@tracer.invalid/42'));
     expect(options.enableAutoSessionTracking, false);
-    expect(options.enableLogs, false);
-    expect(options.enableMetrics, false);
     expect(options.tracesSampleRate, 0);
-    expect(options.profilesSampleRate, 0);
     expect(options.integrations.whereType<OnErrorIntegration>(), isEmpty);
     expect(options.integrations.map((item) => item.runtimeType.toString()),
         isNot(contains('FlutterErrorIntegration')));

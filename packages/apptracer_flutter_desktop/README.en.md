@@ -90,9 +90,10 @@ container for sandboxed apps), plus `async.log`. Legacy SDK caches are neither
 imported nor automatically deleted; app owners must plan migration cleanup.
 System macOS crash logs are not deleted.
 
-The macOS bridge uses public Cocoa 8.58.4 APIs and CocoaPods; SPM is not supported
-by this bridge. Official SDK serialization, crash handling and queueing remain in
-use; a session-local URLProtocol gates network delivery. See the
+The 2.0.0 candidate uses public Cocoa 9.35.0 APIs and Swift Package Manager.
+Official SDK serialization, crash handling and queueing remain in use; a
+session-local URLProtocol gates network delivery. The published 1.0.1 adapter stays
+on Cocoa 8.58.4/CocoaPods until the candidate completes acceptance. See the
 [local lifecycle evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 Windows has its own native queue/lifecycle implementation and separate acceptance below.
 
@@ -136,7 +137,7 @@ checks with an unelevated token. Windows 10 and ARM64 are untested.
 ## External consumer and migration
 
 See [desktop-migration.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md) for installation
-without monorepo overrides, CocoaPods setup, legacy-cache ownership and the
-package dry-run procedure. The tested baseline is Flutter 3.47.4 / Dart 3.13.3,
-sentry_flutter 9.30.1 / Cocoa 8.58.4 on macOS arm64. The bridge deployment target
+without monorepo overrides, SPM setup, legacy-cache ownership and the
+package dry-run procedure. The candidate baseline is Flutter 3.47.4 / Dart 3.13.3,
+sentry_flutter 10.6.0 / Cocoa 9.35.0 on macOS arm64. The bridge deployment target
 is macOS 12.0; this is not runtime acceptance on every older OS or Intel.

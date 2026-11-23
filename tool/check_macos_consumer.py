@@ -68,7 +68,6 @@ def main():
            if not key.startswith('TRACER_')}
     env.pop('GEM_HOME', None)
     env.pop('GEM_PATH', None)
-    env['COCOAPODS_DISABLE_STATS'] = 'true'
     counter = 0
 
     def run(command, cwd, allow_sdk_pin_warning=False):
@@ -89,7 +88,7 @@ def main():
             and 'error' not in validation.lower()
         )
         if sdk_pin_warning:
-            report['publish_warning'] = 'Exact sentry_flutter 9.30.1 pin (intentional; SDK internals are version-specific)'
+            report['publish_warning'] = 'Exact sentry_flutter 10.6.0 pin (intentional; SDK internals are version-specific)'
             print(report['publish_warning'], flush=True)
         elif result.returncode:
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
@@ -129,7 +128,8 @@ def main():
 publish_to: none
 version: 1.0.0+1
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
 dependencies:
   flutter:
     sdk: flutter
@@ -139,7 +139,7 @@ dependencies:
 flutter:
   uses-material-design: true
   config:
-    enable-swift-package-manager: false
+    enable-swift-package-manager: true
 """)
             (app / 'lib/main.dart').write_text(MAIN)
             shutil.rmtree(app / 'test')
@@ -151,8 +151,6 @@ flutter:
             entitlement = app / 'macos/Runner/Release.entitlements'
             entitlement.write_text(entitlement.read_text().replace(
                 '</dict>', '<key>com.apple.security.network.client</key><true/>\n</dict>'))
-            # Flutter's CocoaPods template, with the adapter's required minimum.
-            shutil.copy2(repo / package / 'example/macos/Podfile', app / 'macos/Podfile')
             run(['flutter', 'pub', 'get'], app)
             graph = json.loads(run(['dart', 'pub', 'deps', '--json'], app))
             siblings = {p['name']: {'version': p['version'], 'source': p['source']}

@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0] - Unreleased
+
+- Upgrade to `sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa 9.35.0.
+  Require Dart 3.12 / Flutter 3.44 and migrate the macOS bridge to Swift Package
+  Manager; CocoaPods remains specific to published adapter 1.0.1.
+- Update moved integration imports and the envelope channel probe. Confirm native
+  startup through the adapter's lifecycle integration instead of the removed SDK
+  options logger. Preserve consent, owned queues, filtering and restart requirements.
+- Model offline acceptance with dropped connections; HTTP 5xx responses may discard
+  envelopes rather than being presented as a guaranteed retry case.
+
 ## [1.0.1] - 2026-11-22
 
 - Wait for Linux native context updates before granting collection consent. Recheck authorization after each asynchronous update.

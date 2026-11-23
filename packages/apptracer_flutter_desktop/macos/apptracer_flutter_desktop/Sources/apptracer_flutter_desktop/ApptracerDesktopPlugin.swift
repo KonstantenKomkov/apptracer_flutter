@@ -109,10 +109,8 @@ private final class DesktopLifecycle: NSObject {
             options.enableTimeToFullDisplayTracing = false
             options.enableWatchdogTerminationTracking = false
             options.enableAppHangTracking = false
-            options.experimental.enableLogs = false
             options.enableSpotlight = false
             options.tracesSampleRate = 0
-            options.profilesSampleRate = 0
             options.beforeSend = { [weak self] event in self?.maySend() == true ? event : nil }
         }
         guard SentrySDK.isEnabled else { permit(false); return fail("native_start_failed") }

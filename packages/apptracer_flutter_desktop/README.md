@@ -137,9 +137,10 @@ SIGABRT доставляется, но файлы/строки не восста
   Опциональные точные Dart/PDB-карты раскрывают function/file/line; их можно
   не создавать. Plugin token для карт не нужен. [Команды](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).
 
-Нативный мост использует публичные API Cocoa 8.58.4 и CocoaPods, сохраняя официальный
-SDK для сериализации, scope, crash handler и очереди. Session-local `URLProtocol`
-только ограничивает сетевую отправку. Swift Package Manager для этого моста не заявлен.
+Кандидат 2.0.0 использует публичные API Cocoa 9.35.0 и Swift Package Manager,
+сохраняя официальный SDK для сериализации, scope, crash handler и очереди.
+Session-local `URLProtocol` только ограничивает сетевую отправку. Опубликованный
+адаптер 1.0.1 остаётся на Cocoa 8.58.4/CocoaPods до завершения приёмки кандидата.
 Подробные сценарии и пределы: [macOS lifecycle](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 
 ## Зависимости и переход
@@ -157,10 +158,10 @@ Git-потребителям `apptracer_flutter_sentry` нужно явно за
 Пример с Windows/macOS/Linux runners: [example](example/README.md).
 Сборка и проверенная область Windows: [протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).
 
-Установка во внешнее приложение, CocoaPods, переход со старого транспорта и
+Установка во внешнее приложение, SPM, переход со старого транспорта и
 проверка упаковки: [migration guide](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md).
-Проверенный инструментальный baseline: Flutter 3.47.4 / Dart 3.13.3,
-sentry_flutter 9.30.1 / Cocoa 8.58.4; runtime macOS arm64. Deployment target
+Инструментальный baseline кандидата: Flutter 3.47.4 / Dart 3.13.3,
+sentry_flutter 10.6.0 / Cocoa 9.35.0; runtime macOS arm64. Deployment target
 моста — macOS 12.0, но это не означает выполненную приёмку на каждой старой ОС.
 
 ## Проверки

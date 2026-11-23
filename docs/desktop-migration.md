@@ -9,8 +9,10 @@ Aurora is not supported by this adapter.
 
 ## Sentry upgrades
 
-The production pin remains `sentry_flutter 9.30.1` until a candidate passes every
-required acceptance stage. See the [internal API and native symbol inventory](desktop-sentry-dependencies.md).
+Published adapter 1.0.1 remains on `sentry_flutter 9.30.1`. The 2.0.0 source
+candidate selects 10.6.0, sentry-native 0.17.6 and Cocoa 9.35.0; it is not a
+supported release until every acceptance stage passes. See the
+[internal API and native symbol inventory](desktop-sentry-dependencies.md).
 `/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
 checkouts, with per-OS machine-readable results. It never merges or publishes.
 A pin-changing PR additionally needs hosted consumer and live Tracer evidence.
@@ -36,11 +38,12 @@ repository development. Pub ignores overrides declared by dependencies;
 the consumer must resolve public siblings from pub.dev
 ([Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides)).
 
-Use CocoaPods, set `platform :osx, '12.0'` in the macOS Podfile and set the
-Runner deployment target to at least 12.0. Enable
+Published 1.0.1 requires CocoaPods. For the 2.0.0 source candidate, enable Swift
+Package Manager and set the Runner deployment target to at least 12.0; its
+[Package.swift](../packages/apptracer_flutter_desktop/macos/apptracer_flutter_desktop/Package.swift)
+shares Cocoa 9.35.0 with Sentry Flutter 10.6.0. Enable
 `com.apple.security.network.client` in the sandboxed release entitlements.
-The example's [Podfile](../packages/apptracer_flutter_desktop/example/macos/Podfile)
-is a reference. Swift Package Manager is not supported by this bridge.
+Do not combine the candidate with the old CocoaPods bridge.
 
 The adapter registers automatically on macOS/Windows/Ubuntu Linux. Call the normal
 `Tracer.initialize` API with the target project's DSN; do not call
@@ -252,7 +255,7 @@ no source export or dependency override. The publication record in
 
 ## Reproducible consumer and package check
 
-From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and CocoaPods:
+From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and Swift Package Manager:
 
 ```sh
 python3 tool/check_macos_consumer.py --output build/macos-consumer

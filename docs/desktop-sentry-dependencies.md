@@ -1,19 +1,21 @@
 # Desktop Sentry dependency inventory
 
-Current production pin: `sentry_flutter 9.30.1`; verified native family:
-sentry-native 0.16.6 and Cocoa 8.58.4. This inventory is for candidate reviews,
-not a claim that newer versions work.
+Published production pin: `sentry_flutter 9.30.1`; verified native family:
+sentry-native 0.16.6 and Cocoa 8.58.4. The 2.0.0 source candidate selects
+`sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa 9.35.0. It remains subject
+to platform, hosted-consumer and live acceptance; this inventory is not a claim
+that every newer version works.
 
 ## Internal Dart APIs
 
 | Source | Used for | Public alternative / migration | Detection |
 |---|---|---|---|
-| `src/integrations/native_load_debug_images_integration.dart` | exact native debug images for AOT symbols | Keep private until an equivalent public integration exists; compare class and callbacks at every candidate | `linux_dart_symbols_test`, `windows_dart_symbols_test`, macOS symbol workflow |
-| `src/integrations/native_sdk_integration.dart` | native ownership and lifecycle | Evaluate the public integration registry before replacing; do not assume lifecycle is equivalent | deferred start, close failure and prestart stop tests |
-| `src/integrations/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
+| `src/debug_images/native_load_debug_images_integration.dart` | exact native debug images for AOT symbols | Keep private until an equivalent public integration exists; moved from `src/integrations` in 10.6.0 | `linux_dart_symbols_test`, `windows_dart_symbols_test`, macOS symbol workflow |
+| `src/native/native_sdk_integration.dart` | native ownership and lifecycle | Moved from `src/integrations`; adapter still removes this auto-initializer and installs its owned lifecycle | deferred start, close failure and prestart stop tests |
+| `src/bindings/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Moved from `src/integrations`; public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
 | `src/native/c/binding.dart` | `sentry_options_s` layout | No public equivalent; candidate must revalidate struct layout rather than blindly update | resolver/analyze, Linux/Windows release and native crash |
 | `src/native/c/sentry_native.dart` | options construction, native init/close and scope contexts | Replace only with a public lifecycle/scope API that preserves stop/clear semantics | all desktop unit tests and platform runtime suites |
-| `SentryFlutter.init(options: ObservedSdkOptions())` | inject the diagnostic logger to detect swallowed startup errors | Re-evaluate if the SDK exposes equivalent failure reporting with debug disabled | `sdk_delivery_test` and initialization failure test |
+| `SentryFlutter.init(options: SentryFlutterOptions())` | inject the exact options instance | 10.6.0 removed the former SDK log callback; adapter-owned integration registration confirms native start without a release-disabled logger | `sdk_delivery_test` and initialization failure test |
 | `SentryStackTrace.baseAddr` and `buildId` constructor arguments | associate AOT frames with the exact debug image | Re-evaluate public debug-image mapping on each update | Dart symbol suites and event mapping |
 
 Public Sentry APIs used deliberately: `Sentry.init`, `Sentry.close`,

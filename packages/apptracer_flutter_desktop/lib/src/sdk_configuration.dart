@@ -1,13 +1,13 @@
-// The internal integration types are intentionally tied to sentry_flutter 9.30.1.
+// The internal integration types are intentionally tied to sentry_flutter 10.6.0.
 // A version update must re-audit the allowlist and native failure propagation.
 // ignore_for_file: implementation_imports, experimental_member_use
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:sentry_flutter/src/integrations/native_load_debug_images_integration.dart';
-import 'package:sentry_flutter/src/integrations/native_sdk_integration.dart';
-import 'package:sentry_flutter/src/integrations/widgets_flutter_binding_integration.dart';
+import 'package:sentry_flutter/src/debug_images/native_load_debug_images_integration.dart';
+import 'package:sentry_flutter/src/native/native_sdk_integration.dart';
+import 'package:sentry_flutter/src/bindings/widgets_flutter_binding_integration.dart';
 
 import 'macos_lifecycle.dart';
 
@@ -31,11 +31,8 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
     ..enableFramesTracking = false
     ..enableAppHangTracking = false
     ..enableWatchdogTerminationTracking = false
-    ..enableLogs = false
-    ..enableMetrics = false
     ..enableDeduplication = false
     ..tracesSampleRate = 0
-    ..profilesSampleRate = 0
     ..maxBreadcrumbs = tracer.maxBreadcrumbs
     ..attachScreenshot = false
     ..attachViewHierarchy = false;
@@ -60,24 +57,4 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
   if (defaultTargetPlatform == TargetPlatform.macOS) {
     sdk.addIntegration(MacOSLifecycleIntegration(tracer));
   }
-}
-
-/// Records swallowed SDK/native failures without printing DSNs or payloads.
-///
-/// The SDK's default diagnostic logger is gated by `debug`; this observer is
-/// deliberately independent of that gate. It sends no diagnostic telemetry.
-class ObservedSdkOptions extends SentryFlutterOptions {
-  /// Number of errors recorded at the SDK boundary.
-  int failures = 0;
-
-  @override
-  SdkLogCallback get log => (
-        SentryLevel level,
-        String message, {
-        String? logger,
-        Object? exception,
-        StackTrace? stackTrace,
-      }) {
-        if (level.ordinal >= SentryLevel.error.ordinal) failures++;
-      };
 }

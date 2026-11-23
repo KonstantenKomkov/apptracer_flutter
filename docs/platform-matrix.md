@@ -36,8 +36,8 @@ with 0.4.2, the adapter restores the native context after each Dart report.
 
 The pubspec compatibility floor and the tested release pins are different claims.
 Flutter 3.22.0 / Dart 3.4.0 is the common packages’ declared minimum and has a dedicated analyze/unit-test CI
-job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.35.7 at
-this update). Latest stable is a diagnostic, non-blocking canary for all common
+job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.47.4 after
+the Sentry 10.6.0 candidate raised the desktop floor to 3.44.0). Latest stable is a diagnostic, non-blocking canary for all common
 packages and desktop unit tests; it does not replace either pin. Desktop release
 acceptance retains its separately audited 3.47.4 toolchain. On 2026-11-21 the
 minimum matrix passed locally for all common packages, including Chrome; desktop

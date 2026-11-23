@@ -48,5 +48,4 @@ app.*.map.json
 .widget_preview/
 
 # Native dependency resolution and generated plugin wiring.
-macos/Podfile.lock
 macos/Flutter/GeneratedPluginRegistrant.swift

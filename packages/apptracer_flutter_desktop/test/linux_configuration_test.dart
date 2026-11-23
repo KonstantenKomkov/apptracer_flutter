@@ -32,8 +32,6 @@ void main() {
     configureDesktopSdk(
         options, const TracerOptions(dsn: 'https://public@tracer.invalid/42'));
     expect(options.enableAutoSessionTracking, false);
-    expect(options.enableLogs, false);
-    expect(options.enableMetrics, false);
     expect(options.tracesSampleRate, 0);
     expect(options.integrations.map((i) => i.runtimeType.toString()),
         isNot(contains('NativeSdkIntegration')));
