@@ -1,0 +1,20 @@
+{
+  "linux": {
+    "packages/apptracer_flutter_desktop/lib/src/sentry_desktop_tracer.dart": {
+      "covered": 100,
+      "total": 184
+    }
+  },
+  "macos": {
+    "packages/apptracer_flutter_desktop/lib/src/sentry_desktop_tracer.dart": {
+      "covered": 137,
+      "total": 184
+    }
+  },
+  "windows": {
+    "packages/apptracer_flutter_desktop/lib/src/sentry_desktop_tracer.dart": {
+      "covered": 100,
+      "total": 184
+    }
+  }
+}

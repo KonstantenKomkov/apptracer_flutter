@@ -3,6 +3,7 @@ import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'sdk_test_support.dart';
 
@@ -42,5 +43,16 @@ void main() {
     expect((await adapter.getCollectionState()).reason,
         'sentry_initialization_failed');
     expect(probe.events, isEmpty);
+
+    // The failed SDK has closed. Only the retained process owner bars a retry.
+    expect(Sentry.isEnabled, isFalse);
+    final other = SentryDesktopTracer();
+    final restarted = await other.startCollection(
+      const TracerOptions(dsn: 'https://public@tracer.invalid/42'),
+    );
+    expect(restarted.state, TracerCollectionState.error);
+    expect(restarted.reason, 'sentry_already_owned');
+    expect(probe.calls.where((call) => call.method == 'initNativeSdk'),
+        hasLength(1));
   });
 }
