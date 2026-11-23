@@ -12,6 +12,15 @@ baselines в обоих режимах reporter. CI реагирует на repo
 behavioral regression test. Глобальный порог 100% не вводился.
 [Задача и результат](task-37-risk-based-coverage.md), [PR №37](https://github.com/KonstantenKomkov/apptracer_flutter/pull/37).
 
+<a id="task-36"></a>
+
+### П. 36. Смысловая согласованность актуальной документации
+
+RU/EN quick start, Dartdoc и package docs используют актуальные desktop DSN и
+Web appToken; shared example не включает лишний manual HTTP fallback. Текущие
+инструкции отделены от опубликованной 1.0.1 и исторических acceptance-протоколов.
+[Задача и результат](task-36-current-docs-consistency.md), [PR №36](https://github.com/KonstantenKomkov/apptracer_flutter/pull/36).
+
 <a id="task-35"></a>
 
 ### П. 35. Runtime-валидация параметров TracerOptions

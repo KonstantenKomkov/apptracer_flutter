@@ -8,22 +8,17 @@ the unofficial Flutter integration.
 
 Русская версия: [README.md](README.md).
 
-It posts `POST /api/crash/uploadBatch`, authenticating with the same `appToken`
-the Android plugin uses. The wire format was recovered by capturing a live
-request from the vendor's JS SDK and is written down in
-[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
+On Web, `apptracer_flutter_web` uses this transport automatically. It sends Dart
+errors to `POST /api/crash/uploadBatch` with the JS project's `appToken`. The
+[wire format](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md)
+was recovered from a request sent by the vendor's JavaScript SDK.
 
-> This package used to be called `apptracer_flutter_sentry` and spoke the Sentry
-> protocol, on the belief that Tracer ingests that way everywhere. For web that
-> was wrong: Tracer has its own JavaScript SDK, an ordinary JS project is issued
-> no DSN, and events go to Tracer's own ingest. Sentry ingest does exist — for
-> platforms with no Tracer SDK, with a DSN issued when the project is created
-> through VK Cloud — and it stayed a package of its own,
-> [`apptracer_flutter_sentry`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_sentry).
-> Split 2026-08-26, before the first release.
+For supported desktop configurations, add the optional stable
+`apptracer_flutter_desktop` adapter. It uses the official Sentry SDK with the
+target Tracer project's DSN. Aurora OS is unsupported. See the
+[platform matrix](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md#summary).
 
-On **web** it is used automatically by `apptracer_flutter_web`. On **desktop and
-Aurora OS** register it yourself:
+For a custom integration that needs manual HTTP delivery:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
@@ -32,7 +27,7 @@ import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
 void main() {
   TracerPlatform.instance = TracerHttpTracer(
     facts: PlatformClientFacts(),
-    sdkVersion: '0.1.0',
+    sdkVersion: '0.2.1',
   );
   Tracer.initialize(
     options: const TracerOptions(appToken: 'appToken from the project settings'),
@@ -43,11 +38,10 @@ void main() {
 
 ## Scope
 
-Dart errors only. Native crashes, ANRs and hangs need a native SDK: on Android
-and iOS the native implementations remain the right choice, and on Aurora OS the
-vendor offers a C/C++ library with system minidumps that Dart cannot reach. On
-desktop and Aurora this package covers its half, and does not replace a native
-SDK.
+The HTTP transport reports Dart errors only. Native crashes, ANRs and hangs require a native SDK.
+
+On 2026-08-26, before the first release, the manual Sentry protocol implementation
+was split into the now archived [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter_sentry/README.en.md).
 
 ## Status
 

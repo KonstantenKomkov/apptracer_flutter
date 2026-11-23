@@ -69,7 +69,7 @@ void main() {
 ```
 
 `appRunner` runs exactly once, including initialization failure and disabled
-collection. For a single platform, the shared `appToken` is enough. On Android,
+collection. An iOS-only or Web-only app can pass its project token in `appToken`. On Android,
 the token comes only from Gradle.
 
 For example, run the Web app with the JS project’s token. On iOS pass

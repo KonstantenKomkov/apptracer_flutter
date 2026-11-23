@@ -2,8 +2,7 @@ import 'dart:io';
 
 import 'tracer_client_facts.dart';
 
-/// [TracerClientFacts] for a target that is not a browser: desktop and
-/// Aurora OS.
+/// [TracerClientFacts] for custom HTTP integrations that use `dart:io`.
 ///
 /// The fields Tracer expects were shaped for the web, and there is no way to
 /// know what it does with them off it. Rather than invent values, this fills
