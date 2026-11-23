@@ -9,6 +9,15 @@ import 'deduplicator.dart';
 import 'error_handler_chain.dart';
 import 'error_normalizer.dart';
 
+String? _invalidLimit(TracerOptions options) {
+  if (options.maxBreadcrumbs < 0) return 'invalid_max_breadcrumbs';
+  if (options.maxRawStackTraceLogBytes < 0) {
+    return 'invalid_max_raw_stack_trace_log_bytes';
+  }
+  if (options.maxStackFrames < 0) return 'invalid_max_stack_frames';
+  return null;
+}
+
 /// The Dart-side engine behind the [Tracer] facade.
 ///
 /// Kept as an ordinary object rather than a pile of statics so that the
@@ -38,6 +47,8 @@ class TracerClient {
   bool _started = false;
   bool _paused = false;
   int _generation = 0;
+  int? _startingGeneration;
+  String? _rejectedBootstrapReason;
   Future<void> _lifecycleTail = Future<void>.value();
 
   Future<TracerCollectionResult> _serialize(
@@ -87,10 +98,22 @@ class TracerClient {
   /// Never throws. A platform SDK that fails to start leaves the client
   /// disabled; the host application keeps running either way.
   Future<void> start(TracerOptions options) async {
+    final reason = _invalidLimit(options);
+    if (options.isCollectionEnabled && reason != null) {
+      // Remember a rejected cold bootstrap for a later argumentless retry.
+      // A live, paused or starting session still owns its validated options.
+      if (!_started && !_paused && _startingGeneration != _generation) {
+        _rejectedBootstrapReason = reason;
+      }
+      return;
+    }
     _configureDelivery(options);
     _options = options;
     if (!options.isCollectionEnabled &&
-        (_started || _paused || platform.isEnabled)) {
+        (_started ||
+            _paused ||
+            _startingGeneration != null ||
+            platform.isEnabled)) {
       await _startCollection(options);
       return;
     }
@@ -104,6 +127,7 @@ class TracerClient {
   }
 
   void _configureDelivery(TracerOptions options) {
+    _rejectedBootstrapReason = null;
     final listenerChanged =
         _options.deliveryListener != options.deliveryListener;
     if (listenerChanged ||
@@ -125,16 +149,30 @@ class TracerClient {
 
   /// Starts transport without re-running appRunner or creating a guarded zone.
   Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
-    if (options != null) _configureDelivery(options);
+    final rejected = _rejectedBootstrapReason;
+    if (options == null && rejected != null) {
+      return Future.value(TracerCollectionResult(TracerCollectionState.error,
+          reason: rejected));
+    }
+    if (options != null &&
+        (!options.isCollectionEnabled || _invalidLimit(options) == null)) {
+      _configureDelivery(options);
+    }
     return _startCollection(options ?? _options);
   }
 
   Future<TracerCollectionResult> _startCollection(TracerOptions requested) {
+    final reason = _invalidLimit(requested);
+    final invalid = reason == null
+        ? null
+        : TracerCollectionResult(TracerCollectionState.error, reason: reason);
     if (!requested.isCollectionEnabled) {
       final generation = ++_generation;
       _disableDart();
-      return _serialize(() => _stopPlatform(generation));
+      return _serialize(
+          () => _stopPlatform(generation, invalidResult: invalid));
     }
+    if (invalid != null) return Future.value(invalid);
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation) {
@@ -160,7 +198,9 @@ class TracerClient {
           if (current.isEnabled) return current;
         }
         _options = requested;
+        _rejectedBootstrapReason = null;
         _disableDart();
+        _startingGeneration = generation;
         final result = await platform.startCollection(requested);
         if (generation != _generation) {
           return const TracerCollectionResult(
@@ -209,6 +249,8 @@ class TracerClient {
           TracerCollectionState.error,
           reason: 'start_failed: $error',
         );
+      } finally {
+        _startingGeneration = null;
       }
     });
   }
@@ -393,11 +435,19 @@ class TracerClient {
     await _serialize(() => _stopPlatform(generation));
   }
 
-  Future<TracerCollectionResult> _stopPlatform(int generation) async {
+  Future<TracerCollectionResult> _stopPlatform(
+    int generation, {
+    TracerCollectionResult? invalidResult,
+  }) async {
     try {
       if (generation == _generation) platform.configureDelivery(_options);
       final result = await platform.stopCollectionAndGetState();
       _observeCollectionResult(result, 'stopCollection', generation);
+      if (invalidResult != null &&
+          (result.state == TracerCollectionState.disabled ||
+              result.state == TracerCollectionState.restartRequired)) {
+        return invalidResult;
+      }
       return result;
     } catch (error) {
       _diagnose(generation,

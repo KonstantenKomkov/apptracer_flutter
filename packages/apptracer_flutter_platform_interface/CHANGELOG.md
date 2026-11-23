@@ -11,6 +11,9 @@ as pub.dev expects.
 
 - Add shared `TracerDeliveryDiagnostic`, `TracerDeliveryState` and listener contract
   with backend/operation metadata. `TracerOptions.deliveryListener` remains Dart-only.
+- Move negative-limit errors from `TracerOptions` constructor assertions to
+  facade startup validation in debug and release. The constructor remains
+  `const` and accepts the same named parameters.
 
 - Add the source-compatible `TracerOptions.filterErrorPolicy` with
   `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.

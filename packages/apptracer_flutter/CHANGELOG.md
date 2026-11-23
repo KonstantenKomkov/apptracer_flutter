@@ -12,6 +12,10 @@ as pub.dev expects.
 - Add typed delivery/platform-lifecycle diagnostics through
   `TracerOptions.deliveryListener`, with stable metadata and no payload or exception
   text. Listener failures are isolated and reinitialization replaces the listener.
+- Validate negative breadcrumb/raw-stack/frame limits before backend startup with
+  stable `invalid_max_*` errors, including deferred starts and disabled assertions.
+  Negative `BreadcrumbBuffer` limits now disable buffering instead of evicting from
+  an empty queue. The `const TracerOptions` API is unchanged.
 
 - Add `TracerFilterErrorPolicy`. The default `sendOriginal` preserves existing
   behavior; `drop` prevents original Dart events, raw stacks and breadcrumbs from
