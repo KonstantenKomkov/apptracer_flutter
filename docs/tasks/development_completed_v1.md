@@ -2,6 +2,15 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-32"></a>
+
+### П. 32. Управляемое поведение privacy-фильтров при ошибках
+
+`TracerFilterErrorPolicy.drop` не пропускает исходные Dart-данные после сбоя
+фильтра; `sendOriginal` остаётся совместимым default. Ручные и automatic capture,
+native mirror, reentrant callbacks и debug diagnostics покрыты тестами.
+[Задача и результат](task-32-filter-error-policy.md), [PR №32](https://github.com/KonstantenKomkov/apptracer_flutter/pull/32).
+
 <a id="task-31"></a>
 
 ### П. 31. Воспроизводимые GitHub Actions по commit SHA

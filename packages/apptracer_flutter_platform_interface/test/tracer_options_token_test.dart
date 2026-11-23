@@ -62,5 +62,23 @@ void main() {
 
       expect(options.copyWith(release: '1.0.0').resolvedAppToken, 'ios');
     });
+
+    test('filter error policy is const-compatible and preserved by copyWith',
+        () {
+      const options = TracerOptions(
+        filterErrorPolicy: TracerFilterErrorPolicy.drop,
+      );
+
+      expect(const TracerOptions().filterErrorPolicy,
+          TracerFilterErrorPolicy.sendOriginal);
+      expect(options.copyWith(release: '1.0.0').filterErrorPolicy,
+          TracerFilterErrorPolicy.drop);
+      expect(
+          options
+              .copyWith(filterErrorPolicy: TracerFilterErrorPolicy.sendOriginal)
+              .filterErrorPolicy,
+          TracerFilterErrorPolicy.sendOriginal);
+      expect(options.toMap().containsKey('filterErrorPolicy'), isFalse);
+    });
   });
 }

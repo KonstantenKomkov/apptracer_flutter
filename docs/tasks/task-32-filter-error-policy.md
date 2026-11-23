@@ -1,8 +1,21 @@
 # П. 32. Управляемое поведение privacy-фильтров при ошибках
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** M.
+**Статус:** выполнена. **Приоритет:** P1. **Сложность:** M.
 
 Связанный общий план: [development_v1.md](development_v1.md).
+
+## Результат
+
+[PR №32](https://github.com/KonstantenKomkov/apptracer_flutter/pull/32) добавил
+`TracerFilterErrorPolicy.sendOriginal/drop`, сохранил const API и прежний default.
+`drop` блокирует исходные события, raw stacks и breadcrumb native mirror. Отдельно
+проверены три automatic capture path, reentrant initialization и сбой debugPrint.
+
+Codex-ревью нашло и исправило сняпшот options при reentrant callback и обработку
+ошибок debug printer. После исправлений прошли 100 facade-тестов, 57 interface-тестов,
+полный `make check`, documentation tests и ссылки; все 33 CI checks зелёные.
+Первый Android job получил внешний Maven Central HTTP 429; повторный запуск прошёл.
+Native crashes вне области policy; device/live acceptance не запускался.
 
 ## Контекст
 

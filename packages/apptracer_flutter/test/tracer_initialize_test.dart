@@ -255,6 +255,103 @@ void main() {
     });
   });
 
+  for (final breadcrumb in [false, true]) {
+    final hook = breadcrumb ? 'beforeBreadcrumb' : 'beforeSend';
+    test('$hook keeps its drop policy across reentrant initialization',
+        () async {
+      late Future<void> restarted;
+      Never reinitializeAndThrow() {
+        restarted = Tracer.initialize(
+          options: const TracerOptions(),
+          appRunner: () {},
+        );
+        throw StateError('private filter failure');
+      }
+
+      await Tracer.initialize(
+        options: TracerOptions(
+          filterErrorPolicy: TracerFilterErrorPolicy.drop,
+          beforeSend: (_) => reinitializeAndThrow(),
+          beforeBreadcrumb: (_) => reinitializeAndThrow(),
+        ),
+        appRunner: () {},
+      );
+
+      if (breadcrumb) {
+        Tracer.log('private breadcrumb');
+      } else {
+        await Tracer.recordError('private event', StackTrace.current);
+      }
+      await restarted;
+
+      expect(Tracer.breadcrumbs, isEmpty);
+      expect(platform.logs, isEmpty);
+      expect(platform.events, isEmpty);
+    });
+  }
+
+  group('filter error policy for automatic capture', () {
+    late List<TracerEvent> filtered;
+    setUp(() => filtered = []);
+
+    TracerOptions droppingOptions() => TracerOptions(
+          filterErrorPolicy: TracerFilterErrorPolicy.drop,
+          beforeSend: (event) {
+            filtered.add(event);
+            throw StateError('private automatic filter error');
+          },
+        );
+
+    void expectNoLeakedEvent(String message) {
+      expect(filtered.single.message, contains(message));
+      expect(filtered.single.stackTrace.raw, isNotEmpty);
+      expect(platform.events, isEmpty);
+      expect(platform.logs, isEmpty);
+      expect(Tracer.isEnabled, isTrue);
+    }
+
+    test('drops FlutterError events without writing their raw stacks',
+        () async {
+      await Tracer.initialize(options: droppingOptions(), appRunner: () {});
+
+      bindings.flutterOnError!(
+        FlutterErrorDetails(
+          exception: StateError('private FlutterError'),
+          stack: StackTrace.current,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expectNoLeakedEvent('private FlutterError');
+    });
+
+    test('drops PlatformDispatcher errors without writing their raw stacks',
+        () async {
+      await Tracer.initialize(options: droppingOptions(), appRunner: () {});
+
+      bindings.platformOnError!(
+        StateError('private dispatcher error'),
+        StackTrace.current,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expectNoLeakedEvent('private dispatcher error');
+    });
+
+    test('drops guarded-zone errors without writing their raw stacks',
+        () async {
+      await Tracer.initialize(
+        options: droppingOptions(),
+        appRunner: () {
+          Timer.run(() => throw StateError('private zone error'));
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expectNoLeakedEvent('private zone error');
+    });
+  });
+
   group('Tracer.stopCollection', () {
     test('stops reporting and allows a clean restart', () async {
       await Tracer.initialize(

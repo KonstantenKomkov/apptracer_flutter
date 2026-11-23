@@ -45,6 +45,7 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerEvent,
         TracerDiagnosticResult,
         TracerDiagnosticState,
+        TracerFilterErrorPolicy,
         TracerOptions,
         TracerNativeInitialization,
         TracerCollectionState,

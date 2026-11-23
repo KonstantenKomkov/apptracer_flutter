@@ -4,6 +4,15 @@ import 'tracer_breadcrumb.dart';
 import 'tracer_collection_result.dart';
 import 'tracer_event.dart';
 
+/// Controls what happens when a Dart event or breadcrumb filter throws.
+enum TracerFilterErrorPolicy {
+  /// Deliver the original value, preserving the historical behavior.
+  sendOriginal,
+
+  /// Drop the value without calling the failed filter again or forwarding it.
+  drop,
+}
+
 /// Inspects and optionally rewrites an event before it is delivered.
 ///
 /// Return `null` to drop the event. The callback runs on the Dart isolate that
@@ -37,6 +46,7 @@ class TracerOptions {
     this.preservePreviousReports = false,
     this.beforeSend,
     this.beforeBreadcrumb,
+    this.filterErrorPolicy = TracerFilterErrorPolicy.sendOriginal,
     this.maxBreadcrumbs = 100,
     this.captureFlutterErrors = true,
     this.capturePlatformDispatcherErrors = true,
@@ -151,6 +161,14 @@ class TracerOptions {
   /// Hook invoked for every breadcrumb just before it is buffered.
   final BeforeBreadcrumbCallback? beforeBreadcrumb;
 
+  /// Whether a throwing [beforeSend] or [beforeBreadcrumb] keeps or drops the
+  /// original Dart value. Defaults to [TracerFilterErrorPolicy.sendOriginal]
+  /// for compatibility; reconsider this default before API 2.0.
+  ///
+  /// This policy cannot filter native crashes or data already captured by a
+  /// native SDK. Applications remain responsible for auditing their event data.
+  final TracerFilterErrorPolicy filterErrorPolicy;
+
   /// Maximum number of breadcrumbs retained; the oldest are dropped first.
   final int maxBreadcrumbs;
 
@@ -248,6 +266,7 @@ class TracerOptions {
     bool? preservePreviousReports,
     BeforeSendCallback? beforeSend,
     BeforeBreadcrumbCallback? beforeBreadcrumb,
+    TracerFilterErrorPolicy? filterErrorPolicy,
     int? maxBreadcrumbs,
     bool? captureFlutterErrors,
     bool? capturePlatformDispatcherErrors,
@@ -274,6 +293,7 @@ class TracerOptions {
           preservePreviousReports ?? this.preservePreviousReports,
       beforeSend: beforeSend ?? this.beforeSend,
       beforeBreadcrumb: beforeBreadcrumb ?? this.beforeBreadcrumb,
+      filterErrorPolicy: filterErrorPolicy ?? this.filterErrorPolicy,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
       captureFlutterErrors: captureFlutterErrors ?? this.captureFlutterErrors,
       capturePlatformDispatcherErrors: capturePlatformDispatcherErrors ??
