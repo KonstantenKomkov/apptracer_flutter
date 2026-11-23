@@ -22,7 +22,9 @@ class CandidateTest(unittest.TestCase):
                 self.jobs.append({'name': name, 'conclusion': 'success', 'steps': []})
                 if key != 'precheck':
                     self.needs[key] = {'result': 'success', 'outputs': {
-                        'versions': json.dumps({'sentryFlutter': self.version})}}
+                        'versions': json.dumps({'sentryFlutter': self.version, 'flutter': '3.47.4',
+                            'dart': '3.13.3', 'sentryCocoa': '9.35.0', 'sentryCocoaRevision': 'a' * 40,
+                            'sentryNative': '0.17.6', 'sentryNativeSha256': 'a' * 64})}}
 
     def test_identical_candidate_passes(self):
         report = make_report(self.needs, self.jobs)
@@ -35,6 +37,17 @@ class CandidateTest(unittest.TestCase):
             report = make_report(self.needs, self.jobs)
             self.assertEqual(report['overall'], 'failed')
             self.assertFalse(report['operatingSystems']['windows']['passed'])
+
+    def test_native_identity_is_required_for_each_build(self):
+        for job, field in [('macos', 'sentryCocoaRevision'), ('symbols', 'sentryCocoa'),
+                           ('windows', 'sentryNativeSha256'), ('linux', 'sentryNative')]:
+            outputs = self.needs[job]['outputs']
+            original = outputs['versions']
+            versions = json.loads(original)
+            del versions[field]
+            outputs['versions'] = json.dumps(versions)
+            self.assertEqual(make_report(self.needs, self.jobs)['overall'], 'failed')
+            outputs['versions'] = original
 
     def test_skipped_runtime_and_failed_symbols_are_distinct(self):
         self.needs['windows-runtime']['result'] = 'skipped'

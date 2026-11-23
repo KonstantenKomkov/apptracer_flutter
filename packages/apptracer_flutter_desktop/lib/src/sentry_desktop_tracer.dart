@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'event_mapping.dart';
@@ -29,7 +31,7 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   static SentryDesktopTracer? _owner;
-  ObservedSdkOptions? _sdkOptions;
+  late final ObservedSdkOptions _sdkOptions;
   LinuxLifecycle? _linux;
   WindowsLifecycle? _windows;
   final _dartSymbols = LinuxDartSymbols();
@@ -40,8 +42,9 @@ class SentryDesktopTracer extends TracerPlatform {
   int _generation = 0;
   int _listenerGeneration = 0;
   Future<void> _tail = Future<void>.value();
-  TracerCollectionResult _state =
-      const TracerCollectionResult(TracerCollectionState.disabled);
+  TracerCollectionResult _state = const TracerCollectionResult(
+    TracerCollectionState.disabled,
+  );
 
   @override
   bool get isEnabled => _enabled;
@@ -61,8 +64,10 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   @override
-  void configureDelivery(TracerOptions options,
-      {bool activateListener = true}) {
+  void configureDelivery(
+    TracerOptions options, {
+    bool activateListener = true,
+  }) {
     final previous = deliveryListener;
     super.configureDelivery(options, activateListener: activateListener);
     // Detaching and reattaching the same callback starts a new subscription.
@@ -97,31 +102,35 @@ class SentryDesktopTracer extends TracerPlatform {
       if (_enabled || _closeFailed) return _state;
       if (_attemptedNativeStart) {
         return _state = const TracerCollectionResult(
-            TracerCollectionState.restartRequired,
-            reason: 'desktop_restart_required');
+          TracerCollectionState.restartRequired,
+          reason: 'desktop_restart_required',
+        );
       }
       if (kIsWeb ||
           (defaultTargetPlatform != TargetPlatform.macOS &&
               defaultTargetPlatform != TargetPlatform.linux &&
               defaultTargetPlatform != TargetPlatform.windows)) {
         return _state = const TracerCollectionResult(
-            TracerCollectionState.unsupported,
-            reason: 'desktop_platform_required');
+          TracerCollectionState.unsupported,
+          reason: 'desktop_platform_required',
+        );
       }
       if (!_validDsn(options.dsn)) {
         return _state = const TracerCollectionResult(
-            TracerCollectionState.disabled,
-            reason: 'invalid_sentry_dsn');
+          TracerCollectionState.disabled,
+          reason: 'invalid_sentry_dsn',
+        );
       }
       if (_owner != null || Sentry.isEnabled) {
         return _state = const TracerCollectionResult(
-            TracerCollectionState.error,
-            reason: 'sentry_already_owned');
+          TracerCollectionState.error,
+          reason: 'sentry_already_owned',
+        );
       }
       _owner = this;
       _attemptedNativeStart = true;
-      final sdk = _sdkOptions = ObservedSdkOptions();
       try {
+        _sdkOptions = ObservedSdkOptions();
         if (defaultTargetPlatform == TargetPlatform.linux) {
           _linux ??= LinuxLifecycle();
           await _linux!.prepare(options.preservePreviousReports);
@@ -138,11 +147,35 @@ class SentryDesktopTracer extends TracerPlatform {
             return _state;
           }
         }
+        // LoadReleaseIntegration logs and swallows platform failures. Resolve
+        // its cached input before the SDK can install native integrations.
+        if (options.release == null || options.dist == null) {
+          WidgetsFlutterBinding.ensureInitialized();
+          await PackageInfo.fromPlatform();
+          if (generation != _generation) {
+            await _close();
+            return _state;
+          }
+        }
         await SentryFlutter.init((sdk) {
+          // Sentry catches configuration exceptions. Supply the DSN only after
+          // ownership, transport and filtering have all been configured.
+          sdk.dsn = null;
           configureDesktopSdk(sdk, options);
+          if (defaultTargetPlatform == TargetPlatform.macOS) {
+            sdk.addIntegration(
+              MacOSLifecycleIntegration(
+                options,
+                isAuthorized: () => generation == _generation,
+              ),
+            );
+          }
           _linux?.configure(sdk, isAuthorized: () => generation == _generation);
-          _windows?.configure(sdk,
-              isAuthorized: () => generation == _generation);
+          _windows?.configure(
+            sdk,
+            isAuthorized: () => generation == _generation,
+          );
+          _sdkOptions.observeTransport();
           sdk.beforeSend = (event, hint) async {
             final source = hint.get('apptracer.event');
             if (!_enabled ||
@@ -163,19 +196,16 @@ class SentryDesktopTracer extends TracerPlatform {
           };
           // Only recordLog supplies native breadcrumbs; automatic integrations
           // are disabled. Tracer invokes the user's breadcrumb filter first.
-        },
-            // Pinned SDK injection is necessary to observe errors the SDK
-            // otherwise swallows with debug=false; this is not a fake transport.
-            // ignore: invalid_use_of_internal_member
-            options: sdk);
+          sdk.dsn = options.dsn!.trim();
+          // ignore: invalid_use_of_internal_member
+        }, options: _sdkOptions);
         final integration = defaultTargetPlatform == TargetPlatform.macOS
             ? 'apptracerMacOSLifecycle'
             : defaultTargetPlatform == TargetPlatform.linux
-                ? 'apptracerLinuxLifecycle'
-                : 'apptracerWindowsLifecycle';
+            ? 'apptracerLinuxLifecycle'
+            : 'apptracerWindowsLifecycle';
         if (!Sentry.isEnabled ||
-            sdk.failures != 0 ||
-            !sdk.sdk.integrations.contains(integration)) {
+            !_sdkOptions.sdk.integrations.contains(integration)) {
           throw StateError('native_start_not_confirmed');
         }
         if (generation != _generation) {
@@ -183,14 +213,17 @@ class SentryDesktopTracer extends TracerPlatform {
           return _state;
         }
         _enabled = true;
-        return _state =
-            const TracerCollectionResult(TracerCollectionState.enabled);
+        return _state = const TracerCollectionResult(
+          TracerCollectionState.enabled,
+        );
       } catch (_) {
         _enabled = false;
         await _close();
+        if (_closeFailed) return _state;
         return _state = const TracerCollectionResult(
-            TracerCollectionState.error,
-            reason: 'sentry_initialization_failed');
+          TracerCollectionState.error,
+          reason: 'sentry_initialization_failed',
+        );
       }
     });
   }
@@ -224,8 +257,10 @@ class SentryDesktopTracer extends TracerPlatform {
           await _linux!.revoke();
         } catch (_) {
           _closeFailed = true;
-          _state = const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'linux_revoke_failed');
+          _state = const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'linux_revoke_failed',
+          );
         }
       }
       if (defaultTargetPlatform == TargetPlatform.windows) {
@@ -234,8 +269,10 @@ class SentryDesktopTracer extends TracerPlatform {
           await _windows!.revoke();
         } catch (_) {
           _closeFailed = true;
-          _state = const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'windows_revoke_failed');
+          _state = const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'windows_revoke_failed',
+          );
         }
       }
       if (defaultTargetPlatform == TargetPlatform.macOS) {
@@ -243,32 +280,37 @@ class SentryDesktopTracer extends TracerPlatform {
           _state = await MacOSLifecycle.invoke('closeNativeSdk');
         } catch (_) {
           _closeFailed = true;
-          _state = const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'sentry_close_failed');
+          _state = const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'sentry_close_failed',
+          );
         }
       }
       return;
     }
-    final sdk = _sdkOptions;
-    final failures = sdk?.failures;
     try {
-      await _linux?.revoke();
-      await _windows?.revoke();
+      // Close the owned FFI SDK even if the Dart hub has already gone away.
+      await _linux?.close();
+      await _windows?.close();
       // Cancel the native session BEFORE Dart/Cocoa close can flush its queue.
       final nativeState = defaultTargetPlatform == TargetPlatform.macOS
           ? await MacOSLifecycle.invoke('closeNativeSdk')
           : null;
       await Sentry.close();
-      if (sdk?.failures != failures) throw StateError('native_close_failed');
-      _state = nativeState ??
-          TracerCollectionResult(TracerCollectionState.restartRequired,
-              reason: _linux != null
-                  ? 'linux_stopped_restart_required'
-                  : 'windows_stopped_restart_required');
+      _state =
+          nativeState ??
+          TracerCollectionResult(
+            TracerCollectionState.restartRequired,
+            reason: _linux != null
+                ? 'linux_stopped_restart_required'
+                : 'windows_stopped_restart_required',
+          );
     } catch (_) {
       _closeFailed = true;
-      _state = const TracerCollectionResult(TracerCollectionState.error,
-          reason: 'sentry_close_failed');
+      _state = const TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'sentry_close_failed',
+      );
     }
     // Keep ownership after any native attempt. A new adapter must not bypass
     // the restart requirement and resend the previous account's persisted data.
@@ -297,67 +339,76 @@ class SentryDesktopTracer extends TracerPlatform {
       if (defaultTargetPlatform == TargetPlatform.linux) {
         if (_owner != null && !identical(_owner, this)) {
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'sentry_already_owned');
+            TracerCollectionState.error,
+            reason: 'sentry_already_owned',
+          );
         }
         try {
           _linux ??= LinuxLifecycle();
           await _linux!.clear();
           return _state = TracerCollectionResult(
-              _attemptedNativeStart
-                  ? TracerCollectionState.restartRequired
-                  : TracerCollectionState.disabled,
-              reason: _attemptedNativeStart
-                  ? 'linux_cleared_restart_required'
-                  : null);
+            _attemptedNativeStart
+                ? TracerCollectionState.restartRequired
+                : TracerCollectionState.disabled,
+            reason: _attemptedNativeStart
+                ? 'linux_cleared_restart_required'
+                : null,
+          );
         } catch (_) {
           _closeFailed = true;
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'native_cleanup_failed');
+            TracerCollectionState.error,
+            reason: 'native_cleanup_failed',
+          );
         }
       }
       if (defaultTargetPlatform == TargetPlatform.windows) {
         if (_owner != null && !identical(_owner, this)) {
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'sentry_already_owned');
+            TracerCollectionState.error,
+            reason: 'sentry_already_owned',
+          );
         }
         try {
           _windows ??= WindowsLifecycle();
           await _windows!.clear();
           return _state = TracerCollectionResult(
-              _attemptedNativeStart
-                  ? TracerCollectionState.restartRequired
-                  : TracerCollectionState.disabled,
-              reason: _attemptedNativeStart
-                  ? 'windows_cleared_restart_required'
-                  : null);
+            _attemptedNativeStart
+                ? TracerCollectionState.restartRequired
+                : TracerCollectionState.disabled,
+            reason: _attemptedNativeStart
+                ? 'windows_cleared_restart_required'
+                : null,
+          );
         } catch (_) {
           _closeFailed = true;
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'native_cleanup_failed');
+            TracerCollectionState.error,
+            reason: 'native_cleanup_failed',
+          );
         }
       }
       if (defaultTargetPlatform == TargetPlatform.macOS) {
         if (_owner != null && !identical(_owner, this)) {
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'sentry_already_owned');
+            TracerCollectionState.error,
+            reason: 'sentry_already_owned',
+          );
         }
         try {
           return _state = await MacOSLifecycle.invoke('clearNativeSdk');
         } catch (_) {
           _closeFailed = true;
           return _state = const TracerCollectionResult(
-              TracerCollectionState.error,
-              reason: 'native_cleanup_failed');
+            TracerCollectionState.error,
+            reason: 'native_cleanup_failed',
+          );
         }
       }
       return _state = const TracerCollectionResult(
-          TracerCollectionState.unsupported,
-          reason: 'native_purge_not_implemented');
+        TracerCollectionState.unsupported,
+        reason: 'native_purge_not_implemented',
+      );
     });
   }
 
@@ -373,15 +424,18 @@ class SentryDesktopTracer extends TracerPlatform {
       if (!_enabled || generation != _generation) return;
       var reason = 'operation_error';
       try {
-        if (!await _sdkOptions!.loggedErrorDuring(action)) return;
+        if (!await _sdkOptions.loggedErrorDuring(action)) return;
       } catch (_) {
         reason = 'platform_exception';
       }
       if (generation == _generation &&
           listenerGeneration == _listenerGeneration) {
-        TracerDeliveryDiagnostic(TracerDeliveryState.failed,
-                backend: backendName, operation: operation, reason: reason)
-            .notify(deliveryListener);
+        TracerDeliveryDiagnostic(
+          TracerDeliveryState.failed,
+          backend: backendName,
+          operation: operation,
+          reason: reason,
+        ).notify(deliveryListener);
       }
     });
   }
@@ -389,33 +443,38 @@ class SentryDesktopTracer extends TracerPlatform {
   @override
   Future<void> recordError(TracerEvent event) =>
       _whileEnabled('recordError', () async {
-        await Sentry.captureEvent(toSentryEvent(event),
-            hint: Hint.withMap({'apptracer.event': event}));
+        await Sentry.captureEvent(
+          toSentryEvent(event),
+          hint: Hint.withMap({'apptracer.event': event}),
+        );
       });
 
+  Future<void> _updateScope(String operation, Future<void> Function() action) =>
+      _whileEnabled(operation, () => _sdkOptions.observeSdkCall(action));
+
   @override
-  Future<void> recordLog(String message) =>
-      _whileEnabled('recordLog', () async {
-        await Sentry.addBreadcrumb(
-            Breadcrumb(message: message, category: 'apptracer'));
-      });
+  Future<void> recordLog(String message) => _updateScope('recordLog', () async {
+    await Sentry.addBreadcrumb(
+      Breadcrumb(message: message, category: 'apptracer'),
+    );
+  });
 
   @override
   Future<void> setCustomKey({required String key, required String value}) =>
-      _whileEnabled('setCustomKey', () async {
+      _updateScope('setCustomKey', () async {
         await Sentry.configureScope((scope) => scope.setTag(key, value));
       });
 
   @override
   Future<void> removeCustomKey(String key) =>
-      _whileEnabled('removeCustomKey', () async {
+      _updateScope('removeCustomKey', () async {
         await Sentry.configureScope((scope) => scope.removeTag(key));
       });
 
   @override
-  Future<void> setUserId(String? userId) =>
-      _whileEnabled('setUserId', () async {
-        await Sentry.configureScope((scope) =>
-            scope.setUser(userId == null ? null : SentryUser(id: userId)));
-      });
+  Future<void> setUserId(String? userId) => _updateScope('setUserId', () async {
+    await Sentry.configureScope(
+      (scope) => scope.setUser(userId == null ? null : SentryUser(id: userId)),
+    );
+  });
 }

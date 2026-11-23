@@ -70,7 +70,8 @@ void _asyncError() {
 
 Future<void> _runScenario(String scenario) async {
   final state = await Tracer.getCollectionState();
-  final ready = 'APPTRACER_READY enabled=${Tracer.isEnabled} '
+  final ready =
+      'APPTRACER_READY enabled=${Tracer.isEnabled} '
       'backend=${TracerPlatform.instance.backendName} state=${state.state.name}';
   debugPrint(ready);
   // A Windows GUI process need not have a console or inherited stdout.
@@ -143,73 +144,73 @@ class _DesktopProbeAppState extends State<DesktopProbeApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Tracer desktop probe',
-        home: Builder(
-          builder: (context) => Scaffold(
-            appBar: AppBar(title: const Text('Tracer · desktop acceptance')),
-            body: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    title: 'Tracer desktop probe',
+    home: Builder(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: const Text('Tracer · desktop acceptance')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Backend: ${TracerPlatform.instance.backendName}'),
+              Text('Collection: ${Tracer.isEnabled ? "enabled" : "off"}'),
+              const SizedBox(height: 12),
+              Text(
+                Platform.isWindows
+                    ? 'Windows: stop cancels delivery; clear deletes the adapter queue. '
+                          'Starting again requires a process restart.'
+                    : Platform.isLinux
+                    ? 'Linux: restarting collection requires a process restart. '
+                          'Stop cancels delivery; clear deletes the adapter queue.'
+                    : 'macOS: stop cancels delivery; clear deletes the adapter queue. '
+                          'Starting again requires a process restart.',
+              ),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  Text('Backend: ${TracerPlatform.instance.backendName}'),
-                  Text('Collection: ${Tracer.isEnabled ? "enabled" : "off"}'),
-                  const SizedBox(height: 12),
-                  Text(
-                    Platform.isWindows
-                        ? 'Windows: stop cancels delivery; clear deletes the adapter queue. '
-                            'Starting again requires a process restart.'
-                        : Platform.isLinux
-                            ? 'Linux: restarting collection requires a process restart. '
-                                'Stop cancels delivery; clear deletes the adapter queue.'
-                            : 'macOS: stop cancels delivery; clear deletes the adapter queue. '
-                                'Starting again requires a process restart.',
+                  FilledButton(
+                    onPressed: () => _act(_handled),
+                    child: const Text('Handled Dart error'),
                   ),
-                  const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      FilledButton(
-                        onPressed: () => _act(_handled),
-                        child: const Text('Handled Dart error'),
-                      ),
-                      OutlinedButton(
-                        onPressed: _flutterError,
-                        child: const Text('FlutterError'),
-                      ),
-                      OutlinedButton(
-                        onPressed: _asyncError,
-                        child: const Text('Async error'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _confirmNativeCrash(context),
-                        child: const Text('Native crash…'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _act(() async {
-                          await Tracer.startCollection();
-                        }),
-                        child: const Text('Start'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _act(Tracer.stopCollection),
-                        child: const Text('Stop'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _act(() async {
-                          await Tracer.stopAndClearCollection();
-                        }),
-                        child: const Text('Stop and clear'),
-                      ),
-                    ],
+                  OutlinedButton(
+                    onPressed: _flutterError,
+                    child: const Text('FlutterError'),
                   ),
-                  const SizedBox(height: 24),
-                  SelectableText(_status),
+                  OutlinedButton(
+                    onPressed: _asyncError,
+                    child: const Text('Async error'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => _confirmNativeCrash(context),
+                    child: const Text('Native crash…'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => _act(() async {
+                      await Tracer.startCollection();
+                    }),
+                    child: const Text('Start'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => _act(Tracer.stopCollection),
+                    child: const Text('Stop'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => _act(() async {
+                      await Tracer.stopAndClearCollection();
+                    }),
+                    child: const Text('Stop and clear'),
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+              SelectableText(_status),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

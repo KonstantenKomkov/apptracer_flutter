@@ -31,20 +31,24 @@ void main() {
     bytes.setAll(132, [71, 78, 85, 0]);
     bytes.setAll(136, List.generate(16, (i) => i));
     await elf.writeAsBytes(bytes);
-    await File('${directory.path}/$id.json.gz').writeAsBytes(gzip.encode(
-      utf8.encode(jsonEncode({
-        'schema': 1,
-        'arch': 'x64',
-        'build_id': id,
-        'files': ['package:example/main.dart'],
-        'functions': [
-          [0x234, 4, 'crashSite']
-        ],
-        'lines': [
-          [0x234, 4, 0, 73]
-        ],
-      })),
-    ));
+    await File('${directory.path}/$id.json.gz').writeAsBytes(
+      gzip.encode(
+        utf8.encode(
+          jsonEncode({
+            'schema': 1,
+            'arch': 'x64',
+            'build_id': id,
+            'files': ['package:example/main.dart'],
+            'functions': [
+              [0x234, 4, 'crashSite'],
+            ],
+            'lines': [
+              [0x234, 4, 0, 73],
+            ],
+          }),
+        ),
+      ),
+    );
   });
   tearDown(() => directory.delete(recursive: true));
 
@@ -58,28 +62,36 @@ void main() {
     expect(await windowsElfIdentity(elf.path), isNull);
   });
 
-  test('resolves exact-build Windows addresses and rejects another image',
-      () async {
-    for (final matches in [true, false]) {
-      if (!matches) {
-        final bytes = await elf.readAsBytes();
-        bytes[136] = 255;
-        await elf.writeAsBytes(bytes);
-      }
-      final source = TracerEvent(
+  test(
+    'resolves exact-build Windows addresses and rejects another image',
+    () async {
+      for (final matches in [true, false]) {
+        if (!matches) {
+          final bytes = await elf.readAsBytes();
+          bytes[136] = 255;
+          await elf.writeAsBytes(bytes);
+        }
+        final source = TracerEvent(
           exceptionType: 'StateError',
           message: 'probe',
-          stackTrace: DartStackTrace.parse(StackTrace.fromString(
+          stackTrace: DartStackTrace.parse(
+            StackTrace.fromString(
               "os: windows arch: x64 comp: no sim: no\nbuild_id: '$id'\n"
               'isolate_dso_base: 1000\n'
-              '#00 abs 00001234 virt 00000234 _kDartSnapshotText+0x34\n')));
-      final event = toSentryEvent(source);
-      await WindowsDartSymbols(directory: directory.path, appImage: elf.path)
-          .resolve(event, source);
-      final frame = event.exceptions!.single.stackTrace!.frames.single;
-      expect(frame.lineNo, matches ? 73 : null);
-      expect(frame.fileName, matches ? 'package:example/main.dart' : null);
-      expect(frame.instructionAddr, '0x00001234');
-    }
-  });
+              '#00 abs 00001234 virt 00000234 _kDartSnapshotText+0x34\n',
+            ),
+          ),
+        );
+        final event = toSentryEvent(source);
+        await WindowsDartSymbols(
+          directory: directory.path,
+          appImage: elf.path,
+        ).resolve(event, source);
+        final frame = event.exceptions!.single.stackTrace!.frames.single;
+        expect(frame.lineNo, matches ? 73 : null);
+        expect(frame.fileName, matches ? 'package:example/main.dart' : null);
+        expect(frame.instructionAddr, '0x00001234');
+      }
+    },
+  );
 }

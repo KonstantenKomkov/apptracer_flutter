@@ -204,7 +204,7 @@ def main():
                                     stderr=subprocess.STDOUT, timeout=1200)
         content = log.read_text()
         if sdk_warning and is_sdk_pin_warning(result.returncode, content):
-            report['publish_warning'] = 'Intentional exact sentry_flutter 9.30.1 pin'
+            report['publish_warning'] = 'Intentional exact sentry_flutter 10.6.0 pin'
         elif result.returncode:
             print(content[-6000:], file=sys.stderr, flush=True)
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')

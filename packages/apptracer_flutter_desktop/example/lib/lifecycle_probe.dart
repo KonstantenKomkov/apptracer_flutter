@@ -16,16 +16,19 @@ Future<void> runLifecycleProbe() async {
     try {
       switch (command['action']) {
         case 'start':
-          await Tracer.startCollection(TracerOptions(
-            dsn: probeDsn,
-            release: '1.0.0',
-            dist: '1',
-            environment: 'desktop-acceptance',
-            preservePreviousReports: command['preserve'] == true,
-            initialCustomKeys: {
-              'probe_run': Platform.environment['TRACER_RUN_ID'] ?? 'lifecycle'
-            },
-          ));
+          await Tracer.startCollection(
+            TracerOptions(
+              dsn: probeDsn,
+              release: '1.0.0',
+              dist: '1',
+              environment: 'desktop-acceptance',
+              preservePreviousReports: command['preserve'] == true,
+              initialCustomKeys: {
+                'probe_run':
+                    Platform.environment['TRACER_RUN_ID'] ?? 'lifecycle',
+              },
+            ),
+          );
         case 'identify':
           final user = command['user'] as String;
           await Tracer.setUserId(user);
@@ -33,35 +36,38 @@ Future<void> runLifecycleProbe() async {
           Tracer.addBreadcrumb(TracerBreadcrumb(message: user));
         case 'capture':
           await Tracer.recordError(
-              command['message'] as String, StackTrace.current,
-              issueKey: command['issueKey'] as String?);
+            command['message'] as String,
+            StackTrace.current,
+            issueKey: command['issueKey'] as String?,
+          );
         case 'capture-async':
-          unawaited(Tracer.recordError(
-              command['message'] as String, StackTrace.current));
+          unawaited(
+            Tracer.recordError(
+              command['message'] as String,
+              StackTrace.current,
+            ),
+          );
         case 'stop':
           await Tracer.stopCollection();
         case 'clear':
           await Tracer.stopAndClearCollection();
         case 'crash':
-          await const MethodChannel('apptracer_desktop_example')
-              .invokeMethod<void>('nativeCrash');
+          await const MethodChannel(
+            'apptracer_desktop_example',
+          ).invokeMethod<void>('nativeCrash');
         case 'state':
           break;
         default:
           throw ArgumentError('Unknown lifecycle action');
       }
       final state = await Tracer.getCollectionState();
-      stdout.writeln('APPTRACER_RESULT ${jsonEncode({
-            'id': command['id'],
-            'state': state.state.name,
-            'reason': state.reason,
-            'enabled': Tracer.isEnabled,
-          })}');
+      stdout.writeln(
+        'APPTRACER_RESULT ${jsonEncode({'id': command['id'], 'state': state.state.name, 'reason': state.reason, 'enabled': Tracer.isEnabled})}',
+      );
     } catch (error) {
-      stdout.writeln('APPTRACER_RESULT ${jsonEncode({
-            'id': command['id'],
-            'error': error.runtimeType.toString(),
-          })}');
+      stdout.writeln(
+        'APPTRACER_RESULT ${jsonEncode({'id': command['id'], 'error': error.runtimeType.toString()})}',
+      );
     }
   }
 }

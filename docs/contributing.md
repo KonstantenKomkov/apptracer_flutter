@@ -92,16 +92,16 @@ the affected host's covered/total pair in the same review. The gates apply to
 individual critical files. There is no project-wide 100% coverage target.
 
 The desktop dry-run explicitly allows only pub's exact-pin warning for
-`sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
+`sentry_flutter 10.6.0` in the 2.0.0 source candidate. Published 1.0.1 pins 9.30.1.
 
 ## Flutter compatibility
 
 The common packages declare Flutter 3.22.0 as their minimum. CI tests that minimum separately from the
 reproducible baseline in `.github/flutter-version`; ordinary PRs never silently
 move that pin. The iOS workflow reads the same file. Desktop release acceptance
-keeps its separately audited toolchain pin. The desktop package requires Flutter
-3.24.0 and its example requires 3.35.0. Both run locally, and the desktop
-package participates in the baseline and latest-stable CI jobs.
+keeps its separately audited toolchain pin. The 2.0.0 desktop candidate and its example
+require Flutter 3.44.0 / Dart 3.12. Desktop unit tests and the combined publish
+dry run use Flutter 3.47.4. Published desktop 1.0.1 retains its 3.24.0 floor.
 
 A latest-stable canary runs on PRs, manual dispatch and a weekly schedule, with
 continue-on-error so its signal cannot replace the baseline. It also runs desktop

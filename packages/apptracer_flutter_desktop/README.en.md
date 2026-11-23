@@ -13,7 +13,7 @@ The Linux CMake hook resolves native source frames inside the crash daemon using
 matching Breakpad maps in `lib/symbols`. The example build helper generates these
 from the same build's DWARF; this native store does not contain Dart maps. Missing
 or mismatched maps preserve the original SDK report. The hook is pinned to
-sentry-native 0.16.6 and must be re-audited when upgrading the SDK.
+sentry-native 0.16.6 in published 1.0.1 and 0.17.6 in the 2.0.0 source candidate.
 For Dart AOT, the adapter reads an optional compact map from
 `lib/apptracer-dart-symbols/<build-id>.json.gz` before SDK serialization. Stack,
 loaded ELF and map build IDs must agree; the original stack is retained.
@@ -90,9 +90,11 @@ container for sandboxed apps), plus `async.log`. Legacy SDK caches are neither
 imported nor automatically deleted; app owners must plan migration cleanup.
 System macOS crash logs are not deleted.
 
-The macOS bridge uses public Cocoa 8.58.4 APIs and CocoaPods; SPM is not supported
-by this bridge. Official SDK serialization, crash handling and queueing remain in
-use; a session-local URLProtocol gates network delivery. See the
+The 2.0.0 candidate uses public Cocoa 9.35.0 APIs and Swift Package Manager.
+Official SDK serialization, crash handling and queueing remain in use; a
+session-local URLProtocol gates network delivery. The published 1.0.1 adapter stays
+on Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 drops cached envelopes on HTTP 5xx;
+a connection lost before an HTTP response can be retried after authorized restart. See the
 [local lifecycle evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 Windows has its own native queue/lifecycle implementation and separate acceptance below.
 
@@ -136,7 +138,7 @@ checks with an unelevated token. Windows 10 and ARM64 are untested.
 ## External consumer and migration
 
 See [desktop-migration.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md) for installation
-without monorepo overrides, CocoaPods setup, legacy-cache ownership and the
-package dry-run procedure. The tested baseline is Flutter 3.47.4 / Dart 3.13.3,
-sentry_flutter 9.30.1 / Cocoa 8.58.4 on macOS arm64. The bridge deployment target
+without monorepo overrides, SPM setup, legacy-cache ownership and the
+package dry-run procedure. The candidate baseline is Flutter 3.47.4 / Dart 3.13.3,
+sentry_flutter 10.6.0 / Cocoa 9.35.0 on macOS arm64. The bridge deployment target
 is macOS 12.0; this is not runtime acceptance on every older OS or Intel.

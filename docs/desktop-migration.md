@@ -9,11 +9,27 @@ Aurora is not supported by this adapter.
 
 ## Sentry upgrades
 
-The production pin remains `sentry_flutter 9.30.1` until a candidate passes every
-required acceptance stage. See the [internal API and native symbol inventory](desktop-sentry-dependencies.md).
+Published adapter 1.0.1 remains on `sentry_flutter 9.30.1`. The 2.0.0 source
+candidate selects 10.6.0, sentry-native 0.17.6 and Cocoa 9.35.0; it is not a
+supported release until every acceptance stage passes. See the
+[internal API and native symbol inventory](desktop-sentry-dependencies.md).
 `/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
 checkouts, with per-OS machine-readable results. It never merges or publishes.
-A pin-changing PR additionally needs hosted consumer and live Tracer evidence.
+The macOS release candidate passed a live Tracer smoke test for handled Dart,
+Flutter and unhandled async errors. [Task 33](tasks/task-33-sentry-10-migration.md)
+records the event IDs and remains open for the clean pub.dev consumer check
+after publication.
+
+On macOS this upgrade changes delivery during server outages. Cocoa 8.58.4 kept
+a cached envelope after HTTP 503. For desktop 2.0.0 we accepted the default
+Cocoa 9.35.0 behavior. After an HTTP 5xx, including 503, the SDK deletes the
+envelope and moves on, so an event rejected during an outage can be lost. A dropped connection with
+no HTTP response retains the envelope for an authorized restart with
+`preservePreviousReports: true`. Stop or clear still revokes replay. The
+lifecycle probe checks the original event ID on that restart. Roll back to
+desktop 1.0.1 with CocoaPods and Sentry Flutter 9.30.1 if 503 retention is required.
+[Cocoa 8.58.4 transport](https://github.com/getsentry/sentry-cocoa/blob/8.58.4/Sources/Sentry/SentryHttpTransport.m)
+and [Cocoa 9.35.0 transport](https://github.com/getsentry/sentry-cocoa/blob/9.35.0/Sources/Sentry/SentryHttpTransport.m).
 
 ## External application
 
@@ -36,11 +52,20 @@ checkout. Pub applies overrides from the consuming app. Production consumers
 resolve siblings from pub.dev. The staged consumer generates overrides pointing
 to its exported siblings. [Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides).
 
-Use CocoaPods, set `platform :osx, '12.0'` in the macOS Podfile and set the
-Runner deployment target to at least 12.0. Enable
+Published 1.0.1 requires CocoaPods. For the 2.0.0 source candidate, enable Swift
+Package Manager and set the Runner deployment target to at least 12.0; its
+[Package.swift](../packages/apptracer_flutter_desktop/macos/apptracer_flutter_desktop/Package.swift)
+shares Cocoa 9.35.0 with Sentry Flutter 10.6.0. The binary package manifest
+requires Swift tools 6.0. Enable
 `com.apple.security.network.client` in the sandboxed release entitlements.
-The example's [Podfile](../packages/apptracer_flutter_desktop/example/macos/Podfile)
-is a reference. Swift Package Manager is not supported by this bridge.
+Do not combine the candidate with the old CocoaPods bridge.
+
+For a universal macOS release with Xcode 27.0, use the tested Flutter 3.47.4
+toolchain. At the declared minimum of Flutter 3.44.0 / Dart 3.12.0, Flutter's
+framework-copy step passes both architectures to `lipo -verify_arch` in one
+call. Xcode 27.0 rejects that call even when the framework contains both
+slices. An arm64-only release built and delivered all three smoke events on
+this combination.
 
 The adapter registers automatically on macOS/Windows/Ubuntu Linux. Call the normal
 `Tracer.initialize` API with the target project's DSN; do not call
@@ -233,18 +258,21 @@ python -X utf8 tool/check_windows_consumer.py --candidate-facade --output build/
 ```
 
 An optional `--native-source <directory>` reuses a complete, audited sentry-native
-0.16.6 checkout. Both variants resolve siblings from pub.dev without overrides;
-the candidate uses the current facade source and the default uses hosted 1.0.0.
+checkout matching the selected adapter (0.17.6 for the source candidate, 0.16.6
+for published 1.0.1). The default resolves published facade 1.4.0 and adapter
+1.0.1 from pub.dev without overrides. The candidate uses isolated exports of the
+adapter, facade and their siblings.
 Both include the obfuscated FlutterError name fix.
 The harness performs package dry-runs, builds obfuscated release, relocates it,
 restricts PATH to Windows/System32 and verifies filtering/deduplication/source
 frames/clear. This does not replace clean-machine testing.
 [Local results and publication boundary](windows-local-acceptance.md).
 
-After publication, check both stable 1.0.0 packages using hosted dependencies only:
+After desktop 2.0.0 and the coordinated siblings are published, set
+`PUBLISHED_FACADE_VERSION` to the exact released facade version and run the hosted consumer:
 
 ```powershell
-python -X utf8 tool/check_windows_consumer.py --hosted-desktop 1.0.0 --facade-version 1.0.0 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 2.0.0 --facade-version $env:PUBLISHED_FACADE_VERSION --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
 ```
 
 This mode checks that every Tracer dependency resolves from pub.dev; it creates
@@ -253,7 +281,8 @@ no source export or dependency override. The publication record in
 
 ## Reproducible consumer and package check
 
-From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and CocoaPods:
+From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3, CocoaPods
+for production and Swift Package Manager for the candidate:
 
 ```sh
 python3 tool/check_macos_consumer.py --output build/macos-consumer/hosted

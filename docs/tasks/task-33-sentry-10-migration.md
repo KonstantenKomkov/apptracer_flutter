@@ -6,10 +6,42 @@
 [процесс candidate-обновлений](task-29-desktop-sentry-upgrades.md),
 [общий план](development_v1.md).
 
+## Подготовленный результат
+
+[PR №33](https://github.com/KonstantenKomkov/apptracer_flutter/pull/33) переводит
+source candidate 2.0.0 на Sentry Flutter 10.6.0, sentry-native 0.17.6, Cocoa
+9.35.0, Flutter 3.44 / Dart 3.12 и macOS SPM. После синхронизации с `main`
+`14f6dcc` и интеграции №34/37 Codex merge-review и полный `make check` прошли
+на head `09a2d1d`; platform CI завершился с 43 passed и 2 skipped
+([CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45228084723),
+[desktop candidate](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45228084675)).
+
+23 ноября 2026 года для desktop 2.0.0 принято штатное поведение Cocoa 9.35.0
+на macOS. После HTTP 503 SDK удаляет envelope и переходит к следующему.
+Мы принимаем риск потери отчёта при временной недоступности Tracer. При обрыве
+соединения до HTTP-ответа SDK сохраняет envelope для повторной отправки при
+разрешённом запуске. Подробнее в [migration guide](../desktop-migration.md#sentry-upgrades).
+
+Live smoke прошёл на macOS 23 ноября 2026 года. Release-сборка примера из
+`91bac1f` стартовала в 18:49:33 UTC с Sentry Flutter 10.6.0 и Cocoa 9.35.0.
+В проекте Tracer `Test` открыты карточки трёх событий. Во вкладке «Ключи»
+каждой карточки подтверждена метка `probe_run=macos-pr33-6a22402e036c`.
+
+| Событие | ID события в Tracer |
+| --- | --- |
+| Handled Dart | `11f1-e76e-a053eeb0-8e1c-c5e6fd97b46a` |
+| FlutterError | `11f1-e76e-a077a351-8e1c-c5e6fd97b46a` |
+| Unhandled async | `11f1-e76e-a09a94a2-8e1c-c5e6fd97b46a` |
+
+После отдельной публикации нужна проверка чистой установки desktop 2.0.0 с pub.dev.
+Опубликованный desktop 1.0.1 использует Sentry Flutter 9.30.1.
+
 ## Контекст
 
-Production pin — `sentry_flutter 9.30.1`. Candidate 10.6.0 не проходит analyze:
-удалены используемые integrations и изменены options/logger API. Кандидат также
+Опубликованный адаптер 1.0.1 использует `sentry_flutter 9.30.1`. До адаптации
+кандидат 10.6.0 не проходил analyze из-за переноса integrations и смены
+options/logger API. Исходники 2.0.0 используют 10.6.0. После выпуска
+нужна проверка установки 2.0.0 с pub.dev без overrides. Кандидат также
 повышает минимальный Flutter до 3.44 и меняет упаковку Apple на Swift Package
 Manager. Linux/Windows lifecycle зависит от внутренних FFI-структур SDK.
 
@@ -30,13 +62,14 @@ consent, stop/clear, owned queue, native crash и exact-build symbolication.
    для предупреждения pub в `tool/publish_dry_run.sh` с принятым кандидатом.
 4. Отдельно принять решение о major-версии `apptracer_flutter_desktop` и новом
    минимальном Flutter. Согласовать pubspec адаптера и example с матрицей CI:
-   общий analyze сейчас запускает desktop на Flutter 3.35.7, ниже минимума 10.6.0.
+   до миграции общий analyze запускал desktop на Flutter 3.35.7, ниже минимума 10.6.0.
    Сохранить проверку заявленного минимума общих пакетов. Обновить changelog и migration guide.
 5. Прогнать unit, release и runtime-матрицу Linux/macOS/Windows: deferred bootstrap,
    offline/retry, cancellation, stop/clear/revoke, account isolation, native crash,
    no-replay, Dart/native symbols и missing/mismatched maps.
-6. До выпуска проверить изолированный consumer с экспортом изменённого адаптера,
-   hosted-зависимостями без overrides и точной 10.x в lockfile. Провести live
+6. До выпуска проверить production consumer 1.0.1 с pub.dev без overrides и отдельно
+   staged consumer с экспортами адаптера, facade и согласованных sibling-пакетов.
+   Проверить точную 10.x в staged lockfile и отсутствие локальных файлов в архивах. Провести live
    Tracer smoke на этом кандидате. После отдельной публикации проверить чистую
    установку именно нового адаптера с pub.dev без path/git/overrides.
 7. Если миграция заблокирована, указать проверенную версию, попытку адаптации

@@ -19,10 +19,12 @@ class ConsumerPackageTests(unittest.TestCase):
         self.app = self.root / 'consumer'
         self.app.mkdir()
 
-    def check_graph(self, candidate, source, registry=PUB_DEV, transitive='hosted'):
-        graph = {'packages': [{'name': name, 'source': source, 'version': '1.0.0'}
+    def check_graph(self, candidate, source, registry=PUB_DEV, transitive='hosted', sdk=None):
+        versions = {DESKTOP: '2.0.0' if candidate else '1.0.1'}
+        graph = {'packages': [{'name': name, 'source': source, 'version': versions.get(name, '1.0.0')}
                               for name in CANDIDATES]}
-        graph['packages'].append({'name': 'sentry', 'source': transitive, 'version': '9.30.1'})
+        graph['packages'].append({'name': 'sentry_flutter', 'source': transitive,
+                                  'version': sdk or ('10.6.0' if candidate else '9.30.1')})
         (self.app / 'pubspec.lock').write_text('packages:\n' + ''.join(
             f'  {p["name"]}:\n    description:\n      url: "{registry}"\n    source: hosted\n'
             for p in graph['packages'] if p['source'] == 'hosted'))
@@ -39,8 +41,13 @@ class ConsumerPackageTests(unittest.TestCase):
     def test_hosted_rejects_a_mirror_or_non_hosted_transitive_dependency(self):
         with self.assertRaisesRegex(ValueError, 'pub.dev'):
             self.check_graph(False, 'hosted', registry='https://mirror.example')
-        with self.assertRaisesRegex(ValueError, 'sentry resolved from git'):
+        with self.assertRaisesRegex(ValueError, 'sentry_flutter resolved from git'):
             self.check_graph(False, 'hosted', transitive='git')
+
+    def test_consumer_rejects_sdk_from_the_other_release(self):
+        for candidate, source, sdk in [(False, 'hosted', '10.6.0'), (True, 'path', '9.30.1')]:
+            with self.subTest(candidate=candidate), self.assertRaisesRegex(ValueError, 'Expected sentry_flutter'):
+                self.check_graph(candidate, source, sdk=sdk)
 
     def test_manifest_records_worktree_contents_and_excludes_local_files(self):
         repo = self.root / 'repo'
@@ -92,14 +99,14 @@ class ConsumerPackageTests(unittest.TestCase):
 
     def test_sdk_pin_with_override_hint_does_not_excuse_other_warnings_or_errors(self):
         pin = ('Validating package...\n* Your dependency on "sentry_flutter" should allow more '
-               'than one version. For example:\n    sentry_flutter: ^9.30.1\n')
+               'than one version. For example:\n    sentry_flutter: ^10.6.0\n')
         hint = ('Package validation found the following hint:\n'
                 '* Non-dev dependencies are overridden in pubspec_overrides.yaml.\n')
         summary_with_hint = 'Package has 1 warning and 1 hint.'
         self.assertTrue(is_sdk_pin_warning(65, pin + 'Package has 1 warning.'))
         self.assertTrue(is_sdk_pin_warning(65, pin + hint + summary_with_hint))
         self.assertFalse(is_sdk_pin_warning(65, pin + '* Another warning.\n' + hint + summary_with_hint))
-        self.assertFalse(is_sdk_pin_warning(65, pin.replace('9.30.1', '9.30.2') + hint + summary_with_hint))
+        self.assertFalse(is_sdk_pin_warning(65, pin.replace('10.6.0', '9.30.1') + hint + summary_with_hint))
         for summary in ('Package has 2 warnings and 1 hint.', 'Package has 1 error and 1 warning.'):
             self.assertFalse(is_sdk_pin_warning(65, pin + summary))
         self.assertFalse(is_sdk_pin_warning(1, pin + 'Package has 1 warning.'))

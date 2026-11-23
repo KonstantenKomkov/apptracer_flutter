@@ -12,7 +12,8 @@ class LinuxStorage {
 
   /// Uses XDG data storage, independently of the installation directory.
   factory LinuxStorage.forApplication() {
-    final base = Platform.environment['XDG_DATA_HOME'] ??
+    final base =
+        Platform.environment['XDG_DATA_HOME'] ??
         '${Platform.environment['HOME']}/.local/share';
     if (!base.startsWith('/') ||
         base.split('/').any((part) => part == '.' || part == '..')) {
@@ -90,7 +91,7 @@ class LinuxStorage {
     if (await revoked.exists()) await revoked.delete();
   }
 
-  // sentry-native 0.16.6 disables retry polling in its crash daemon. Failed
+  // Recover preserved legacy 0.16.6 queues. Its daemon stored failed
   // native uploads have a bare UUID envelope plus a matching cached minidump.
   // Enroll these in the SDK's retry queue before init, while the namespace is
   // locked and its old daemon is stopped. The daemon splits the minidump out
@@ -100,7 +101,8 @@ class LinuxStorage {
     await _validate(cache.path);
     if (!await cache.exists()) return;
     final pattern = RegExp(
-        r'^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.envelope$');
+      r'^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.envelope$',
+    );
     await for (final entry in cache.list(followLinks: false)) {
       final match = pattern.firstMatch(entry.path.split('/').last);
       if (match == null) continue;
@@ -118,9 +120,12 @@ class LinuxStorage {
       await _validate(target);
       final bytes = await File(dump).readAsBytes();
       final item = SentryEnvelopeItem.fromAttachment(
-        SentryAttachment.fromUint8List(bytes, '${match.group(1)}.dmp',
-            attachmentType: SentryAttachment.typeMinidump,
-            contentType: 'application/octet-stream'),
+        SentryAttachment.fromUint8List(
+          bytes,
+          '${match.group(1)}.dmp',
+          attachmentType: SentryAttachment.typeMinidump,
+          contentType: 'application/octet-stream',
+        ),
       );
       final combined = BytesBuilder(copy: false)
         ..add(await File(entry.path).readAsBytes())

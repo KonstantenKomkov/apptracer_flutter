@@ -6,14 +6,18 @@ import 'package:ffi/ffi.dart';
 /// Queue-specific process and reparse-point checks in the Windows helper.
 class WindowsUploaders {
   static final _library = DynamicLibrary.open(
-      '${File(Platform.resolvedExecutable).parent.path}/apptracer_windows.dll');
+    '${File(Platform.resolvedExecutable).parent.path}/apptracer_windows.dll',
+  );
 
   static void _call(String name, String path) {
     if (!Platform.isWindows) throw UnsupportedError('windows_host_required');
     final value = path.toNativeUtf16();
     try {
-      final result = _library.lookupFunction<Uint32 Function(Pointer<Utf16>),
-          int Function(Pointer<Utf16>)>(name)(value);
+      final result = _library
+          .lookupFunction<
+            Uint32 Function(Pointer<Utf16>),
+            int Function(Pointer<Utf16>)
+          >(name)(value);
       if (result != 0) throw StateError('$name failed: $result');
     } finally {
       calloc.free(value);

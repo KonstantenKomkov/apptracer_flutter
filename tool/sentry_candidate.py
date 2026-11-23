@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Select an exact Sentry candidate and identify the SDKs in a desktop build."""
 import argparse
+import ctypes
+import hashlib
 import json
 import os
 import platform
@@ -34,6 +36,21 @@ def apply_version(path, version):
     path.write_text(PIN.sub(lambda m: m[1] + version, contents))
 
 
+def cocoa_evidence(app):
+    package = app / 'macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved'
+    pins = json.loads(package.read_text())['pins']
+    cocoa = next(pin for pin in pins if pin['identity'] == 'sentry-apple-binaries')
+    checkout = app / 'build/macos/SourcePackages/checkouts/sentry-apple-binaries'
+    revision = subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'],
+                                       text=True).strip()
+    tag_revision = subprocess.check_output(
+        ['git', '-C', str(checkout), 'rev-parse', f"refs/tags/{cocoa['state']['version']}^{{commit}}"],
+        text=True).strip()
+    if revision != cocoa['state']['revision'] or tag_revision != revision:
+        raise ValueError('Compiled Sentry Cocoa checkout differs from Package.resolved')
+    return {'sentryCocoa': cocoa['state']['version'], 'sentryCocoaRevision': revision}
+
+
 def build_evidence(version):
     lock = (EXAMPLE / 'pubspec.lock').read_text()
     resolved = re.search(r'^  sentry_flutter:\n(?:    [^\n]*\n)*?    version: "([^"]+)"$', lock, re.M)
@@ -42,21 +59,23 @@ def build_evidence(version):
 
     system = platform.system()
     if system == 'Darwin':
-        pods = (EXAMPLE / 'macos/Podfile.lock').read_text()
-        cocoa = re.search(r'^  - Sentry/HybridSDK \(([^)]+)\)', pods, re.M)
-        if not cocoa:
-            raise ValueError('Sentry Cocoa version missing from Podfile.lock')
-        native = {'sentryCocoa': cocoa[1]}
+        native = cocoa_evidence(EXAMPLE)
     else:
-        if system == 'Windows':
-            deps = Path(os.environ['RUNNER_TEMP']) / 'tracer-native'
-        else:
-            deps = EXAMPLE / 'build/linux/x64/release/_deps'
-        source = deps / 'sentry-native-src'
-        if not (source / '.git').exists():
-            raise ValueError(f'Cannot identify compiled sentry-native checkout at {source}')
-        native = {'sentryNative': subprocess.check_output(
-            ['git', '-C', str(source), 'describe', '--tags', '--always'], text=True).strip()}
+        binary = (EXAMPLE / 'build/windows/x64/runner/Release/sentry.dll' if system == 'Windows'
+                  else EXAMPLE / 'build/linux/x64/release/bundle/lib/libsentry.so')
+        # Windows 10.6.0 builds from a verified zip, without a git checkout.
+        # Query the library actually packaged with the app on both platforms.
+        sdk_version = ctypes.CDLL(str(binary.resolve())).sentry_sdk_version
+        sdk_version.argtypes = []
+        sdk_version.restype = ctypes.c_char_p
+        version_info = (EXAMPLE / system.lower() / 'flutter/ephemeral/.plugin_symlinks'
+                        / 'sentry_flutter/sentry-native/CMakeCache.txt').read_text()
+        expected = re.search(r'^version=(.+)$', version_info, re.M)
+        actual = sdk_version().decode('ascii')
+        if not expected or actual.split('+')[0] != expected[1]:
+            raise ValueError(f'Packaged sentry-native {actual} differs from the Flutter SDK pin')
+        native = {'sentryNative': actual,
+                  'sentryNativeSha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
     # flutter is a .bat launcher on Windows.
     flutter = 'flutter.bat' if system == 'Windows' else 'flutter'
     toolchain = json.loads(subprocess.check_output([flutter, '--version', '--machine'], text=True))

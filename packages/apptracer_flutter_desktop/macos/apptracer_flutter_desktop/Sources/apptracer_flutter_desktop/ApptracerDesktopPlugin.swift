@@ -100,6 +100,8 @@ private final class DesktopLifecycle: NSObject {
             options.debug = false
             options.sendDefaultPii = false
             options.sendClientReports = false
+            options.beforeSendLog = { _ in nil }
+            options.beforeSendMetric = { _ in nil }
             options.enableAutoSessionTracking = false
             options.enableAutoBreadcrumbTracking = false
             options.enableNetworkBreadcrumbs = false
@@ -109,10 +111,8 @@ private final class DesktopLifecycle: NSObject {
             options.enableTimeToFullDisplayTracing = false
             options.enableWatchdogTerminationTracking = false
             options.enableAppHangTracking = false
-            options.experimental.enableLogs = false
             options.enableSpotlight = false
             options.tracesSampleRate = 0
-            options.profilesSampleRate = 0
             options.beforeSend = { [weak self] event in self?.maySend() == true ? event : nil }
         }
         guard SentrySDK.isEnabled else { permit(false); return fail("native_start_failed") }
@@ -149,6 +149,7 @@ private final class DesktopLifecycle: NSObject {
             self.finishStop()
         }
         SentrySDK.close()
+        if SentrySDK.isEnabled { _ = fail("native_close_failed") }
         DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
             guard let self = self, self.stopping else { return }
             _ = self.fail("native_session_shutdown_timeout")

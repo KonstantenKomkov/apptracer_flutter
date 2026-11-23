@@ -1,4 +1,4 @@
-// This bridge is pinned to sentry_flutter 9.30.1 / sentry-native 0.16.6.
+// This bridge is pinned to sentry_flutter 10.6.0 / sentry-native 0.17.6.
 // The official SDK still owns mapping, HTTP delivery, scope and crash capture.
 // ignore_for_file: implementation_imports, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
 
@@ -21,6 +21,7 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
   final storage = WindowsStorage.forApplication();
   SentryFlutterOptions? _options;
   bool _started = false;
+  late final int Function() _nativeEnabled;
   bool _revoked = false;
   DynamicLibrary? _library;
   Pointer<Void> Function(Pointer<Uint8>, int)? _deserialize;
@@ -51,8 +52,10 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
   }
 
   /// Uses the official native HTTP/cache worker for SDK-serialized Dart events.
-  void configure(SentryFlutterOptions options,
-      {required bool Function() isAuthorized}) {
+  void configure(
+    SentryFlutterOptions options, {
+    required bool Function() isAuthorized,
+  }) {
     _isAuthorized = isAuthorized;
     _revoked = false;
     _options = options;
@@ -71,35 +74,46 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
     final directory = File(Platform.resolvedExecutable).parent.path;
     final library = _library = DynamicLibrary.open('$directory/sentry.dll');
     // Resolve every required symbol before allocating options or starting SDK.
-    final requireConsent = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Int),
-        void Function(Pointer<binding.sentry_options_s>,
-            int)>('sentry_options_set_require_user_consent');
+    final requireConsent = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Int),
+          void Function(Pointer<binding.sentry_options_s>, int)
+        >('sentry_options_set_require_user_consent');
     final give = library.lookupFunction<Void Function(), void Function()>(
-        'sentry_user_consent_give');
-    final cache = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Int),
-        void Function(Pointer<binding.sentry_options_s>,
-            int)>('sentry_options_set_cache_keep');
-    final retry = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Int),
-        void Function(Pointer<binding.sentry_options_s>,
-            int)>('sentry_options_set_http_retry');
-    final timeout = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Uint64),
-        void Function(Pointer<binding.sentry_options_s>,
-            int)>('sentry_options_set_shutdown_timeout');
-    _deserialize = library.lookupFunction<
-        Pointer<Void> Function(Pointer<Uint8>, UintPtr),
-        Pointer<Void> Function(
-            Pointer<Uint8>, int)>('sentry_envelope_deserialize');
-    _capture = library.lookupFunction<Void Function(Pointer<Void>),
-        void Function(Pointer<Void>)>('sentry_capture_envelope');
-    library
-        .lookup<NativeFunction<Void Function()>>('sentry_user_consent_revoke');
-    final enabled = library
-        .lookupFunction<Int Function(), int Function()>('sentry_is_enabled');
-    if (enabled() != 0) throw StateError('native_sentry_already_owned');
+      'sentry_user_consent_give',
+    );
+    final cache = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Int),
+          void Function(Pointer<binding.sentry_options_s>, int)
+        >('sentry_options_set_cache_keep');
+    final retry = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Int),
+          void Function(Pointer<binding.sentry_options_s>, int)
+        >('sentry_options_set_http_retry');
+    final timeout = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Uint64),
+          void Function(Pointer<binding.sentry_options_s>, int)
+        >('sentry_options_set_shutdown_timeout');
+    _deserialize = library
+        .lookupFunction<
+          Pointer<Void> Function(Pointer<Uint8>, UintPtr),
+          Pointer<Void> Function(Pointer<Uint8>, int)
+        >('sentry_envelope_deserialize');
+    _capture = library
+        .lookupFunction<
+          Void Function(Pointer<Void>),
+          void Function(Pointer<Void>)
+        >('sentry_capture_envelope');
+    library.lookup<NativeFunction<Void Function()>>(
+      'sentry_user_consent_revoke',
+    );
+    _nativeEnabled = library.lookupFunction<Int Function(), int Function()>(
+      'sentry_is_enabled',
+    );
+    if (_nativeEnabled() != 0) throw StateError('native_sentry_already_owned');
     String? handlerPath;
     for (final relative in ['sentry-crash.exe']) {
       final file = File('$directory/$relative');
@@ -109,14 +123,16 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
       }
     }
     if (handlerPath == null) throw StateError('windows_native_handler_missing');
-    final handler = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Pointer<Utf8>),
-        void Function(Pointer<binding.sentry_options_s>,
-            Pointer<Utf8>)>('sentry_options_set_handler_path');
-    final reporting = library.lookupFunction<
-        Void Function(Pointer<binding.sentry_options_s>, Int),
-        void Function(Pointer<binding.sentry_options_s>,
-            int)>('sentry_options_set_crash_reporting_mode');
+    final handler = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Pointer<Utf8>),
+          void Function(Pointer<binding.sentry_options_s>, Pointer<Utf8>)
+        >('sentry_options_set_handler_path');
+    final reporting = library
+        .lookupFunction<
+          Void Function(Pointer<binding.sentry_options_s>, Int),
+          void Function(Pointer<binding.sentry_options_s>, int)
+        >('sentry_options_set_crash_reporting_mode');
     final nativeOptions = sdk.SentryNative(options).createOptions(options);
     final path = handlerPath.toNativeUtf8();
     try {
@@ -137,6 +153,9 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
       throw StateError('windows_native_init_failed');
     }
     _started = true;
+    if (_nativeEnabled() == 0) {
+      throw StateError('windows_native_init_unconfirmed');
+    }
     give();
     options.sdk.addIntegration('apptracerWindowsLifecycle');
   }
@@ -147,7 +166,8 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
     // Both Dart envelopes and minidumps now obey native consent.
     if (_started) {
       _library!.lookupFunction<Void Function(), void Function()>(
-          'sentry_user_consent_revoke')();
+        'sentry_user_consent_revoke',
+      )();
     }
   }
 
@@ -189,6 +209,10 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
     await revoke();
     if (_started) {
       sdk.SentryNative.native.close();
+      // sentry_close returns the number of envelopes dumped, not a status.
+      if (_nativeEnabled() != 0) {
+        throw StateError('windows_native_close_failed');
+      }
       _started = false;
     }
   }

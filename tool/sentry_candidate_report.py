@@ -31,7 +31,11 @@ def make_report(needs, jobs):
             if key in ('linux', 'macos', 'symbols', 'windows'):
                 raw = needs[key]['outputs'].get('versions')
                 stage['versions'] = json.loads(raw) if raw else {}
-                if status == 'success' and stage['versions'].get('sentryFlutter') != version:
+                native_fields = (('sentryCocoa', 'sentryCocoaRevision') if platform == 'macos'
+                                 else ('sentryNative', 'sentryNativeSha256'))
+                versions = stage['versions']
+                if status == 'success' and (versions.get('sentryFlutter') != version or
+                        not all(versions.get(k) for k in ('flutter', 'dart', *native_fields))):
                     stage['status'] = 'missing-build-evidence'
             stages[key] = stage
         statuses = {stage['status'] for stage in stages.values()}

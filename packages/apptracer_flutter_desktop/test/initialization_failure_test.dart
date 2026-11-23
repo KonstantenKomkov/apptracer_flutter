@@ -9,15 +9,16 @@ import 'sdk_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('native startup failure is not hidden and appRunner runs once',
-      () async {
+  test('native startup failure is not hidden and appRunner runs once', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final probe = NativeSdkProbe()
       ..onCall = (call) async {
         if (call.method == 'initNativeSdk') {
           throw PlatformException(
-              code: 'native_unavailable', message: 'private DSN');
+            code: 'native_unavailable',
+            message: 'private DSN',
+          );
         }
         return null;
       };
@@ -30,9 +31,10 @@ void main() {
     final original = FlutterError.onError;
     await Tracer.initialize(
       options: const TracerOptions(
-          dsn: 'https://public@tracer.invalid/42',
-          release: '1',
-          captureZoneErrors: false),
+        dsn: 'https://public@tracer.invalid/42',
+        release: '1',
+        captureZoneErrors: false,
+      ),
       appRunner: () {
         runs++;
       },
@@ -40,8 +42,10 @@ void main() {
     expect(runs, 1);
     expect(Tracer.isEnabled, false);
     expect(FlutterError.onError, same(original));
-    expect((await adapter.getCollectionState()).reason,
-        'sentry_initialization_failed');
+    expect(
+      (await adapter.getCollectionState()).reason,
+      'sentry_initialization_failed',
+    );
     expect(probe.events, isEmpty);
 
     // The failed SDK has closed. Only the retained process owner bars a retry.
@@ -52,7 +56,9 @@ void main() {
     );
     expect(restarted.state, TracerCollectionState.error);
     expect(restarted.reason, 'sentry_already_owned');
-    expect(probe.calls.where((call) => call.method == 'initNativeSdk'),
-        hasLength(1));
+    expect(
+      probe.calls.where((call) => call.method == 'initNativeSdk'),
+      hasLength(1),
+    );
   });
 }

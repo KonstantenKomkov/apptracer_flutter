@@ -14,18 +14,21 @@ void main() {
       await file.writeAsString(value);
     }
 
-    await write('/etc/os-release',
-        'NAME="Ubuntu"\nVERSION_ID="22.04"\nPRETTY_NAME="Ubuntu 22.04.5 LTS"\nID=ubuntu\nSECRET=must-not-collect');
+    await write(
+      '/etc/os-release',
+      'NAME="Ubuntu"\nVERSION_ID="22.04"\nPRETTY_NAME="Ubuntu 22.04.5 LTS"\nID=ubuntu\nSECRET=must-not-collect',
+    );
     await write('/proc/sys/kernel/osrelease', '5.15.0-198-generic\n');
     await write('/sys/class/dmi/id/product_name', 'Standard PC\n');
     await write('/sys/class/dmi/id/sys_vendor', 'QEMU\n');
     await write('/sys/class/dmi/id/product_serial', 'must-not-collect');
     final contexts = await LinuxContexts.collect(root: root.path);
     final event = SentryEvent(
-        contexts: Contexts.fromJson({
-      'os': {'theme': 'dark'},
-      'apptracer': {'fatal': false},
-    }));
+      contexts: Contexts.fromJson({
+        'os': {'theme': 'dark'},
+        'apptracer': {'fatal': false},
+      }),
+    );
     contexts.apply(event);
     expect(event.contexts.operatingSystem?.name, 'Ubuntu');
     expect(event.contexts.operatingSystem?.version, '22.04');
@@ -33,8 +36,10 @@ void main() {
     expect(event.contexts.operatingSystem?.theme, 'dark');
     expect(event.contexts.device?.model, 'Standard PC');
     expect(event.contexts.device?.manufacturer, 'QEMU');
-    expect(event.contexts.toJson().toString(),
-        isNot(contains('must-not-collect')));
+    expect(
+      event.contexts.toJson().toString(),
+      isNot(contains('must-not-collect')),
+    );
     expect(event.contexts['apptracer'], {'fatal': false});
   });
 

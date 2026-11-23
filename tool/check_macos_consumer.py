@@ -19,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from consumer_packages import (PUB_DEV, SIBLINGS, check_candidates, check_consumer_graph,
                                consumer_dependencies, consumer_scope, is_sdk_pin_warning, write_overrides)
 from check_macos_desktop import envelope_events, read_http_body
+from sentry_candidate import cocoa_evidence
 
 
 MAIN = """import 'dart:io';
@@ -60,7 +61,6 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     repo = Path(__file__).resolve().parent.parent
-    package = Path('packages/apptracer_flutter_desktop')
     report = {'scope': consumer_scope(args.candidate_facade),
               'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
               'source_dirty': bool(subprocess.check_output(
@@ -71,7 +71,6 @@ def main():
     env['PUB_HOSTED_URL'] = PUB_DEV
     env.pop('GEM_HOME', None)
     env.pop('GEM_PATH', None)
-    env['COCOAPODS_DISABLE_STATS'] = 'true'
     counter = 0
 
     def run(command, cwd, allow_sdk_pin_warning=False):
@@ -84,7 +83,7 @@ def main():
                                     stderr=subprocess.STDOUT, timeout=1200)
         content = log.read_text()
         if allow_sdk_pin_warning and is_sdk_pin_warning(result.returncode, content):
-            report['publish_warning'] = 'Exact sentry_flutter 9.30.1 pin (intentional; SDK internals are version-specific)'
+            report['publish_warning'] = 'Exact sentry_flutter 10.6.0 pin (intentional; SDK internals are version-specific)'
             print(report['publish_warning'], flush=True)
         elif result.returncode:
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
@@ -99,18 +98,19 @@ def main():
             run(['flutter', 'create', '--platforms=macos', '--no-pub',
                  '--org', 'dev.apptracer.consumer', '--project-name',
                  'tracer_external_consumer', str(app)], root)
+            sdk_constraints = "sdk: ^3.12.0\n  flutter: '>=3.44.0'" if args.candidate_facade else "sdk: ^3.5.0"
             (app / 'pubspec.yaml').write_text(f"""name: tracer_external_consumer
 publish_to: none
 version: 1.0.0+1
 environment:
-  sdk: ^3.5.0
+  {sdk_constraints}
 dependencies:
   flutter:
     sdk: flutter
 {consumer_dependencies(args.candidate_facade)}flutter:
   uses-material-design: true
   config:
-    enable-swift-package-manager: false
+    enable-swift-package-manager: {str(args.candidate_facade).lower()}
 """)
             if args.candidate_facade:
                 write_overrides(app, SIBLINGS)
@@ -124,14 +124,20 @@ dependencies:
             entitlement = app / 'macos/Runner/Release.entitlements'
             entitlement.write_text(entitlement.read_text().replace(
                 '</dict>', '<key>com.apple.security.network.client</key><true/>\n</dict>'))
-            # Flutter's CocoaPods template, with the adapter's required minimum.
-            shutil.copy2(repo / package / 'example/macos/Podfile', app / 'macos/Podfile')
             run(['flutter', 'pub', 'get'], app)
             graph = json.loads(run(['dart', 'pub', 'deps', '--json'], app))
             check_consumer_graph(graph, root, app, args.candidate_facade, report)
             shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
             run(['flutter', 'analyze', '--no-pub', '--fatal-infos'], app)
             run(['flutter', 'build', 'macos', '--no-pub', '--release'], app)
+            if args.candidate_facade:
+                report.update(cocoa_evidence(app))
+                if report['sentryCocoa'] != '9.35.0':
+                    raise ValueError('Expected Sentry Cocoa 9.35.0 in the candidate')
+                shutil.copy2(app / 'macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved',
+                             output / 'consumer.Package.resolved')
+            else:
+                shutil.copy2(app / 'macos/Podfile.lock', output / 'consumer.Podfile.lock')
             events, failures = [], []
 
             class Receiver(BaseHTTPRequestHandler):

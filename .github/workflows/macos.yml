@@ -139,7 +139,7 @@ jobs:
       - name: Test native desktop storage
         working-directory: packages/apptracer_flutter_desktop
         run: |
-          swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
+          swiftc macos/apptracer_flutter_desktop/Sources/apptracer_flutter_desktop/DesktopStorage.swift macos/apptracer_flutter_desktop/Sources/apptracer_flutter_desktop/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
           "$RUNNER_TEMP/desktop-native-tests"
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
@@ -196,6 +196,7 @@ jobs:
             build/macos-acceptance/
             build/macos-consumer/
             packages/apptracer_flutter_desktop/example/pubspec.lock
-            packages/apptracer_flutter_desktop/example/macos/Podfile.lock
+            packages/apptracer_flutter_desktop/example/macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved
+            packages/apptracer_flutter_desktop/example/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
             packages/apptracer_flutter_desktop/example/macos-build.log
           retention-days: 14

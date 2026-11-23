@@ -194,9 +194,10 @@ The archived `apptracer_flutter_sentry` manual transport keeps `publish_to: none
 The first stable desktop release and its acceptance results are recorded
 [below](#stable-100--2026-10-24).
 
-Keep the exact `sentry_flutter: 9.30.1` dependency until the version-specific
-integration has been re-audited. Pub reports one intentional tight-constraint
-warning for desktop; no other warnings are accepted.
+Published desktop 1.0.1 pins `sentry_flutter: 9.30.1`. The 2.0.0 source candidate
+pins 10.6.0 and requires the platform and live acceptance recorded in
+[task 33](tasks/task-33-sentry-10-migration.md). Its dry run allows the single
+Pub warning for that exact dependency.
 
 After publication, run the Windows consumer with `--hosted-desktop` and
 `--facade-version` set to the exact newly published versions. It verifies

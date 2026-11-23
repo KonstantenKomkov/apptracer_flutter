@@ -24,8 +24,12 @@ void main() {
       };
     probe.install();
     final adapter = SentryDesktopTracer();
-    final start = adapter.startCollection(const TracerOptions(
-        dsn: 'https://public@tracer.invalid/42', release: '1'));
+    final start = adapter.startCollection(
+      const TracerOptions(
+        dsn: 'https://public@tracer.invalid/42',
+        release: '1',
+      ),
+    );
     await entered.future;
     final stop = adapter.stopCollection();
     release.complete();

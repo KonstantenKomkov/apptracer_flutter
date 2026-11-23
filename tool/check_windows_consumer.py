@@ -13,14 +13,16 @@ import tarfile
 import tempfile
 
 from check_linux_consumer import MAIN, runtime
+from consumer_packages import (PUB_DEV, SIBLINGS, check_candidates, check_consumer_graph,
+                               consumer_dependencies, consumer_scope, is_sdk_pin_warning, write_overrides)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate-facade', action='store_true')
-    parser.add_argument('--hosted-desktop', help='Use this published desktop version instead of a source export')
-    parser.add_argument('--facade-version', default='1.0.0', help='Exact hosted facade version (default: 1.0.0)')
+    parser.add_argument('--hosted-desktop', help='Exact published desktop version (default: 1.0.1)')
+    parser.add_argument('--facade-version', default='1.4.0', help='Exact hosted facade version (default: 1.4.0)')
     parser.add_argument('--bundle', type=Path, help='Only run a previously built consumer bundle')
     parser.add_argument('--dump-syms', required=True, type=Path)
     parser.add_argument('--native-source', type=Path)
@@ -35,9 +37,11 @@ def main():
     stable_flutter_error = args.candidate_facade or tuple(map(int, args.facade_version.split('-')[0].split('.'))) >= (0, 2, 2)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    report = {'success': False, 'published': False}
+    report = {'success': False, 'published': False,
+              'scope': 'Previously built bundle; runtime only' if args.bundle else consumer_scope(args.candidate_facade)}
     repo = Path(__file__).resolve().parent.parent
     env = {k: v for k, v in os.environ.items() if not k.startswith('TRACER_')}
+    env['PUB_HOSTED_URL'] = PUB_DEV
     env['SENTRY_NATIVE_BACKEND'] = 'native'
     env['GIT_CONFIG_COUNT'] = '1'
     env['GIT_CONFIG_KEY_0'] = 'core.longpaths'
@@ -55,33 +59,11 @@ def main():
             result = subprocess.run(command, cwd=cwd, env=env, stdout=stream,
                                     stderr=subprocess.STDOUT, timeout=1200)
         content = log.read_text(encoding='utf-8', errors='replace')
-        validation = content.split('Validating package...')[-1]
-        expected = (sdk_warning and result.returncode == 65
-                    and validation.count('\n* ') == 1
-                    and 'Your dependency on "sentry_flutter" should allow more than one version.' in validation
-                    and 'Package has 1 warning.' in validation and 'error' not in validation.lower())
-        if expected:
-            report['publish_warning'] = 'Intentional exact sentry_flutter 9.30.1 pin'
+        if sdk_warning and is_sdk_pin_warning(result.returncode, content):
+            report['publish_warning'] = 'Intentional exact sentry_flutter 10.6.0 pin'
         elif result.returncode:
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
         return content
-
-    def export(name, root):
-        package = Path('packages') / name
-        files = subprocess.check_output(['git', 'ls-files', '-z', '--cached', '--others',
-                                         '--exclude-standard', '--', str(package)], cwd=repo).decode().split('\0')
-        destination = root / name
-        manifest = {}
-        for relative in sorted(set(filter(None, files))):
-            path = Path(relative)
-            if path.name == 'pubspec_overrides.yaml':
-                continue
-            target = destination / path.relative_to(package)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(repo / path, target)
-            manifest[str(path.relative_to(package))] = hashlib.sha256(target.read_bytes()).hexdigest()
-        (output / f'{name}-export.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-        return destination
 
     try:
         if args.bundle:
@@ -91,38 +73,21 @@ def main():
             report['source_dirty'] = bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo))
             with tempfile.TemporaryDirectory(prefix='apptracer-consumer-') as directory:
                 root = Path(directory)
-                if args.hosted_desktop:
-                    desktop_dep = f'  apptracer_flutter_desktop: {args.hosted_desktop}\n'
-                    report['hosted_desktop_version'] = args.hosted_desktop
-                else:
-                    adapter = export('apptracer_flutter_desktop', root)
-                    pubspec = adapter / 'pubspec.yaml'
-                    pubspec.write_text(pubspec.read_text(encoding='utf-8').replace('publish_to: none\n', ''), encoding='utf-8')
-                    run(['flutter', 'pub', 'get'], adapter)
-                    run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], adapter)
-                    run(['flutter', 'test'], adapter)
-                    packed = run(['dart', 'pub', 'publish', '--dry-run'], adapter, sdk_warning=True)
-                    for forbidden in ('pubspec_overrides.yaml', '.env.tracer'):
-                        assert forbidden not in packed
-                    report['adapter_publish_dry_run'] = True
-                    desktop_dep = '  apptracer_flutter_desktop:\n    path: ../apptracer_flutter_desktop\n'
-                facade_dep = f'  apptracer_flutter: {args.facade_version}\n'
                 if args.candidate_facade:
-                    facade = export('apptracer_flutter', root)
-                    run(['flutter', 'pub', 'get', '--no-example'], facade)
-                    run(['flutter', 'analyze', '--fatal-infos', 'lib', 'test'], facade)
-                    run(['flutter', 'test'], facade)
-                    run(['dart', 'pub', 'publish', '--dry-run'], facade)
-                    report['facade_publish_dry_run'] = True
-                    facade_dep = '  apptracer_flutter:\n    path: ../apptracer_flutter\n'
+                    check_candidates(repo, root, output, run, report)
+                else:
+                    report['hosted_desktop_version'] = args.hosted_desktop or '1.0.1'
+                deps = consumer_dependencies(args.candidate_facade, facade=args.facade_version,
+                                             desktop=args.hosted_desktop or '1.0.1')
                 app = root / 'consumer'
                 run(['flutter', 'create', '--platforms=windows', '--no-pub', '--project-name',
                      'tracer_external_consumer', str(app)], root)
                 (app / 'pubspec.yaml').write_text('name: tracer_external_consumer\npublish_to: none\n'
                     'version: 1.0.0+1\nenvironment:\n  sdk: ^3.5.0\ndependencies:\n'
-                    '  flutter:\n    sdk: flutter\n' + facade_dep +
-                    desktop_dep +
+                    '  flutter:\n    sdk: flutter\n' + deps +
                     'flutter:\n  uses-material-design: true\n', encoding='utf-8')
+                if args.candidate_facade:
+                    write_overrides(app, SIBLINGS)
                 (app / 'lib/main.dart').write_text(MAIN.replace('Ubuntu', 'Windows').replace("stdout.writeln('CONSUMER_OK');", "await File(Platform.environment['TRACER_CONSUMER_DONE']!).writeAsString('CONSUMER_OK');"), encoding='utf-8')
                 shutil.rmtree(app / 'test')
                 (app / 'analysis_options.yaml').write_text('analyzer:\n  errors:\n    unused_import: error\n', encoding='utf-8')
@@ -130,24 +95,19 @@ def main():
                 content = cmake.read_text(encoding='utf-8')
                 if args.native_source:
                     source_path = args.native_source.resolve().as_posix()
+                    # 10.x downloads a zip before FetchContent sees overrides.
+                    env['SENTRY_NATIVE_FETCH_METHOD'] = 'git'
                     content = content.replace('include(flutter/generated_plugins.cmake)',
+                        'set(FETCHCONTENT_SOURCE_DIR_SN "' + source_path + '" CACHE PATH "Pinned local SDK" FORCE)\n'
                         'set(FETCHCONTENT_SOURCE_DIR_SENTRY-NATIVE "' + source_path + '" CACHE PATH "Pinned local SDK" FORCE)\n'
                         'include(flutter/generated_plugins.cmake)')
                 cmake.write_text(content, encoding='utf-8')
                 run(['flutter', 'pub', 'get'], app)
                 graph = json.loads(run(['dart', 'pub', 'deps', '--json'], app))
-                siblings = {p['name']: {'source': p['source'], 'version': p['version']}
-                            for p in graph['packages'] if p['name'].startswith('apptracer_')}
-                paths = set() if args.hosted_desktop else {'apptracer_flutter_desktop'}
-                if args.candidate_facade:
-                    paths.add('apptracer_flutter')
-                for name, metadata in siblings.items():
-                    assert metadata['source'] == ('path' if name in paths else 'hosted'), siblings
-                assert not list(root.rglob('pubspec_overrides.yaml'))
-                report['dependencies'] = siblings
+                check_consumer_graph(graph, root, app, args.candidate_facade, report)
                 shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
-                run(['flutter', 'analyze', '--fatal-infos'], app)
-                run(['flutter', 'build', 'windows', '--release', '--obfuscate',
+                run(['flutter', 'analyze', '--no-pub', '--fatal-infos'], app)
+                run(['flutter', 'build', 'windows', '--no-pub', '--release', '--obfuscate',
                      '--split-debug-info=build/symbols'], app)
                 bundle = app / 'build/windows/x64/runner/Release'
                 assert (bundle / 'sentry-crash.exe').is_file()

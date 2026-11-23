@@ -33,11 +33,11 @@ flutter pub get
 env -u GEM_HOME -u GEM_PATH flutter build macos --release
 ```
 
-The per-project Flutter configuration disables Swift Package Manager for this
-example; Sentry Flutter 9.30.1 uses CocoaPods. Unsetting the Ruby gem variables fixes
-the mixed RVM/Homebrew environment on the development machine; it does not modify
-system Ruby. The runner deployment target is macOS 12.0; this is a build setting,
-not a claim of runtime testing on macOS 12.
+The example uses Swift Package Manager with Sentry Flutter 10.6.0 and the matching
+Sentry Cocoa 9.35.0 binary. Unsetting the Ruby gem variables is optional and only
+avoids a mixed RVM/Homebrew environment on the development machine. The runner
+deployment target is macOS 12.0; this is a build setting, not a claim of runtime
+testing on macOS 12.
 
 Launch the executable in
 `build/macos/Build/Products/Release/apptracer_desktop_example.app/Contents/MacOS/`.

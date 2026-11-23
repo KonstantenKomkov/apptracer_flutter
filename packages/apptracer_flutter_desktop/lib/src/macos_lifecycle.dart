@@ -10,8 +10,10 @@ class MacOSLifecycle {
   static const channel = MethodChannel('apptracer_flutter_desktop/lifecycle');
 
   /// Awaits native acknowledgement and rejects explicit native failures.
-  static Future<TracerCollectionResult> invoke(String method,
-      [Map<String, Object?>? arguments]) async {
+  static Future<TracerCollectionResult> invoke(
+    String method, [
+    Map<String, Object?>? arguments,
+  ]) async {
     final result = await channel.invokeMapMethod<Object?, Object?>(method, {
       ...?arguments,
       'owner': _owner,
@@ -21,6 +23,11 @@ class MacOSLifecycle {
     if (state.state == TracerCollectionState.error) {
       throw StateError(state.reason ?? 'native_lifecycle_failed');
     }
+    if (method != 'initNativeSdk' &&
+        state.state != TracerCollectionState.disabled &&
+        state.state != TracerCollectionState.restartRequired) {
+      throw StateError('native_shutdown_not_confirmed');
+    }
     return state;
   }
 }
@@ -29,13 +36,17 @@ class MacOSLifecycle {
 /// envelope serialization, scope synchronization and native debug images.
 class MacOSLifecycleIntegration implements Integration<SentryFlutterOptions> {
   /// Creates a lifecycle integration for the authorized collection options.
-  MacOSLifecycleIntegration(this.tracer);
+  MacOSLifecycleIntegration(this.tracer, {required this.isAuthorized});
+
+  /// Rechecks consent after asynchronous release discovery.
+  final bool Function() isAuthorized;
 
   /// Includes the explicit policy for reports from previous processes.
   final TracerOptions tracer;
 
   @override
   Future<void> call(Hub hub, SentryFlutterOptions options) async {
+    if (!isAuthorized()) throw StateError('macos_start_revoked');
     final result = await MacOSLifecycle.invoke('initNativeSdk', {
       'dsn': options.dsn,
       'release': options.release,

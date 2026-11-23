@@ -1,19 +1,22 @@
 # Desktop Sentry dependency inventory
 
-Current production pin: `sentry_flutter 9.30.1`; verified native family:
-sentry-native 0.16.6 and Cocoa 8.58.4. This inventory is for candidate reviews,
-not a claim that newer versions work.
+Published production pin: `sentry_flutter 9.30.1`; verified native family:
+sentry-native 0.16.6 and Cocoa 8.58.4. The 2.0.0 source candidate selects
+`sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa 9.35.0. It remains subject
+to platform, hosted-consumer and live acceptance; this inventory is not a claim
+that every newer version works.
 
 ## Internal Dart APIs
 
 | Source | Used for | Public alternative / migration | Detection |
 |---|---|---|---|
-| `src/integrations/native_load_debug_images_integration.dart` | exact native debug images for AOT symbols | Keep private until an equivalent public integration exists; compare class and callbacks at every candidate | `linux_dart_symbols_test`, `windows_dart_symbols_test`, macOS symbol workflow |
-| `src/integrations/native_sdk_integration.dart` | native ownership and lifecycle | Evaluate the public integration registry before replacing; do not assume lifecycle is equivalent | deferred start, close failure and prestart stop tests |
-| `src/integrations/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
-| `src/native/c/binding.dart` | `sentry_options_s` layout | No public equivalent; candidate must revalidate struct layout rather than blindly update | resolver/analyze, Linux/Windows release and native crash |
+| `src/debug_images/native_load_debug_images_integration.dart` | exact native debug images for AOT symbols | Keep private until an equivalent public integration exists; moved from `src/integrations` in 10.6.0 | `linux_dart_symbols_test`, `windows_dart_symbols_test`, macOS symbol workflow |
+| `autoInitializeNativeSdk = false` | native ownership and lifecycle | Public option routes Windows scope and debug-image calls to the adapter-owned SDK. The integration allowlist removes the default initializer without importing its moved class. | deferred start, close failure and prestart stop tests |
+| `src/bindings/widgets_flutter_binding_integration.dart` | binding-safe integration startup | Moved from `src/integrations`; public `Integration<SentryFlutterOptions>` remains the boundary | `sdk_delivery_test`, `initialization_failure_test` |
+| `src/native/c/binding.dart` | opaque `sentry_options_s` pointer | SDK allocates options. The adapter uses C setters and verifies their signatures, enum values and pointer widths | resolver/analyze, Linux/Windows release and native crash |
 | `src/native/c/sentry_native.dart` | options construction, native init/close and scope contexts | Replace only with a public lifecycle/scope API that preserves stop/clear semantics | all desktop unit tests and platform runtime suites |
-| `SentryFlutter.init(options: ObservedSdkOptions())` | inject the diagnostic logger to detect swallowed startup errors | Re-evaluate if the SDK exposes equivalent failure reporting with debug disabled | `sdk_delivery_test` and initialization failure test |
+| `SentryFlutter.init` configuration callback | actual initialized options | The adapter checks package metadata lookup, the enabled hub and its own native integration marker. Close requires the native lifecycle acknowledgement. | `sdk_delivery_test` and initialization failure test |
+| `SentryFlutter.init(options:)` and `automatedTestMode` | attribute SDK exceptions to the active adapter operation | 10.6.0 compiles its internal logger out of release builds. The adapter observes processor and filter exceptions and requests exception propagation only during its scope updates and transport sends. Native lifecycle confirmation still uses the integration marker. | `delivery_diagnostics_test`, `sdk_delivery_test` |
 | `SentryStackTrace.baseAddr` and `buildId` constructor arguments | associate AOT frames with the exact debug image | Re-evaluate public debug-image mapping on each update | Dart symbol suites and event mapping |
 
 Public Sentry APIs used deliberately: `Sentry.init`, `Sentry.close`,
@@ -42,9 +45,10 @@ The Linux daemon wraps `sentry_value_set_by_key` at link time. The Windows
 daemon compiles a wrapper around `sentry_crash_daemon.c` and packages the
 `sentry-crash` and `sentry-wer` targets. Both integrations depend on upstream
 build internals. The relocated native crash and source-line probes exercise
-these hooks. On macOS the adapter also pins `Sentry/HybridSDK` in its podspec
+these hooks. On macOS the candidate pins the same `Sentry-Static` binary as
+Sentry Flutter in its Swift package
 and sets `urlSession`, `cacheDirectoryPath` and `shutdownTimeInterval` for
-consent and cancellation. CocoaPods resolution and the lifecycle suite check
+consent and cancellation. The SPM lock, compiled checkout and lifecycle suite check
 those dependencies. A new Cocoa pin requires a separate adapter change.
 
 ## Candidate evidence model
@@ -63,20 +67,21 @@ JSON files in the platform artifacts. Successful builds record the example's
 resolved Flutter SDK package, Sentry Cocoa or sentry-native, and Flutter/Dart
 toolchain. A skipped suite or missing build identity prevents a passing result.
 
-A pin-changing PR also requires hosted consumer evidence without monorepo
-overrides and a final live Tracer smoke. For rollback, restore the previous
+Before release, check the published production consumer, the staged candidate
+with its matching sibling exports, and a live Tracer smoke on the candidate.
+After publication, check the released candidate in a clean hosted consumer
+without overrides. For rollback, restore the previous
 accepted Dart and Cocoa pins together with their matching adapter revision.
 
 ## Candidate 10.6.0 on 2026-11-22
 
 Dependency resolution succeeded on macOS 15, Ubuntu 22.04 and Windows 2022.
-Analysis failed on all three runners. The adapter imports integrations removed
-in 10.6.0 and uses the former options and SDK logger API. Release builds and
+Analysis of the pre-migration adapter failed on all three runners. That adapter imported integrations moved
+in 10.6.0 and used the former options and SDK logger API. Release builds and
 native runtime suites were skipped by the workflow. The accepted production
 pin remains 9.30.1. [Candidate run](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45007640137).
 
-A migration would also need to address the candidate's Flutter 3.44 minimum
-(the desktop adapter supports 3.24) and Swift Package Manager on macOS,
-where the adapter pins Sentry/HybridSDK through CocoaPods.
+The 2.0.0 source migration adopts the Flutter 3.44 minimum and Swift Package
+Manager. Published 1.0.1 supports Flutter 3.24 and uses CocoaPods.
 [10.6.0 manifest](https://pub.dev/api/packages/sentry_flutter/versions/10.6.0)
 and [upstream Apple packaging change](https://github.com/getsentry/sentry-dart/pull/3879).

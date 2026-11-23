@@ -31,7 +31,8 @@ class LinuxContexts {
       }
     }
 
-    final release = await read('/etc/os-release') ??
+    final release =
+        await read('/etc/os-release') ??
         await read('/usr/lib/os-release') ??
         '';
     final fields = <String, String>{};

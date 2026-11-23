@@ -22,10 +22,10 @@ def consumer_scope(candidate):
     return 'Published production packages from pub.dev without overrides'
 
 
-def consumer_dependencies(candidate):
+def consumer_dependencies(candidate, *, facade='1.4.0', desktop='1.0.1'):
     if candidate:
         return f'  {FACADE}:\n    path: ../{FACADE}\n  {DESKTOP}:\n    path: ../{DESKTOP}\n'
-    return f'  {FACADE}: 1.4.0\n  {DESKTOP}: 1.0.1\n'
+    return f'  {FACADE}: {facade}\n  {DESKTOP}: {desktop}\n'
 
 
 def export_candidate(repo, root, output, name):
@@ -63,7 +63,7 @@ def is_sdk_pin_warning(status, log):
         return False
     hint = '* Non-dev dependencies are overridden in pubspec_overrides.yaml.'
     reported_hints = re.findall(r'^\* .*$', hints, re.MULTILINE)
-    return (re.search(r'^ +sentry_flutter: \^9\.30\.1$', warning, re.MULTILINE) is not None
+    return (re.search(r'^ +sentry_flutter: \^10\.6\.0$', warning, re.MULTILINE) is not None
             and len(reported_hints) == int(summary[1] or 0)
             and all(item == hint for item in reported_hints))
 
@@ -106,6 +106,16 @@ def check_consumer_graph(graph, root, app, candidate, report):
         expected = 'path' if candidate and name in CANDIDATES else 'hosted'
         if source != expected:
             raise ValueError(f'{name} resolved from {source}, expected {expected}')
+    desktop_version = siblings[DESKTOP]['version']
+    if candidate and desktop_version != '2.0.0':
+        raise ValueError(f'Expected desktop candidate 2.0.0, resolved {desktop_version}')
+    expected_sdk = {'1.0.1': '9.30.1', '2.0.0': '10.6.0'}.get(desktop_version)
+    sentry = next((p for p in graph['packages'] if p['name'] == 'sentry_flutter'), None)
+    if sentry is None:
+        raise ValueError('Missing sentry_flutter in consumer graph')
+    if expected_sdk and sentry['version'] != expected_sdk:
+        raise ValueError(f'Expected sentry_flutter {expected_sdk} for desktop {desktop_version}')
+    report['sentryFlutter'] = sentry['version']
     # Pub's JSON graph omits registry URLs. Check each hosted entry in its generated lockfile.
     urls = re.findall(r'^      url: (.+)$', (app / 'pubspec.lock').read_text(), re.MULTILINE)
     hosted_count = sum(p['source'] == 'hosted' for p in graph['packages'])

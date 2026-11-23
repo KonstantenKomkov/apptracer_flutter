@@ -40,8 +40,10 @@ with 0.4.2, the adapter restores the native context after each Dart report.
 
 The pubspec compatibility floor and the tested release pins are different claims.
 Flutter 3.22.0 / Dart 3.4.0 is the common packages’ declared minimum and has a dedicated analyze/unit-test CI
-job. Ordinary PRs use the reproducible pin in `.github/flutter-version` (3.35.7 at
-this update). Latest stable is a diagnostic, non-blocking canary for all common
+job. Common-package PR checks and the mobile examples use `.github/flutter-version`
+(3.35.7). The Sentry 10.6.0 desktop adapter requires Flutter 3.44.0 and Dart
+3.12. Its unit and release jobs and the combined package dry run use 3.47.4.
+Latest stable is a diagnostic, non-blocking canary for all common
 packages and desktop unit tests; it does not replace either pin. Desktop release
 acceptance retains its separately audited 3.47.4 toolchain. On 2026-11-21 the
 minimum matrix passed locally for all common packages, including Chrome; desktop
@@ -406,7 +408,9 @@ Consequences worth knowing:
 ## Desktop and Aurora OS
 
 The published optional desktop adapter supports the macOS, Windows and Ubuntu
-environments listed in the summary. Aurora remains unsupported.
+environments listed in the summary. The live and VM results below cover the
+published 9.30.1 SDK family. Acceptance of the 2.0.0 source candidate is tracked
+in [task 33](tasks/task-33-sentry-10-migration.md). Aurora remains unsupported.
 The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.

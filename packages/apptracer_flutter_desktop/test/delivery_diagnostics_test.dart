@@ -39,11 +39,13 @@ void main() {
     // Sentry otherwise chooses the Linux/Windows FFI binding from the host OS.
     // ignore: invalid_use_of_internal_member
     final sdk = Sentry.currentHub.options as SentryFlutterOptions;
-    final nativeObserver = sdk.scopeObservers
-        .indexWhere((observer) => observer is NativeScopeObserver);
+    final nativeObserver = sdk.scopeObservers.indexWhere(
+      (observer) => observer is NativeScopeObserver,
+    );
     // ignore: invalid_use_of_internal_member
-    sdk.scopeObservers[nativeObserver] =
-        NativeScopeObserver(SentryNativeChannel(sdk), sdk);
+    sdk.scopeObservers[nativeObserver] = NativeScopeObserver(
+      SentryNativeChannel(sdk),
+    );
 
     // Finish an earlier, unrelated SDK call while recordLog awaits native sync.
     final syncing = Completer<void>();
@@ -63,16 +65,18 @@ void main() {
     expect(syncing.isCompleted, isTrue);
     final messages = <String?>[];
     await Sentry.configureScope((scope) {
-      messages.addAll(scope.breadcrumbs
-          .where((crumb) => crumb.category == 'apptracer')
-          .map((crumb) => crumb.message));
+      messages.addAll(
+        scope.breadcrumbs
+            .where((crumb) => crumb.category == 'apptracer')
+            .map((crumb) => crumb.message),
+      );
     });
     expect(messages, ['breadcrumb']);
     expect(diagnostics, isEmpty);
 
     // The Dart SDK logs and swallows a breadcrumb hook failure on every host.
-    sdk.beforeBreadcrumb =
-        (_, __) => throw StateError('breadcrumb hook failed');
+    sdk.beforeBreadcrumb = (_, __) =>
+        throw StateError('breadcrumb hook failed');
     await adapter.recordLog('failed breadcrumb');
     expect(diagnostics.single.state, TracerDeliveryState.failed);
     expect(diagnostics.single.backend, 'sentry-sdk');
@@ -97,5 +101,44 @@ void main() {
     expect(diagnostics.last.state, TracerDeliveryState.failed);
     expect(diagnostics.last.operation, 'recordLog');
     expect(diagnostics.last.reason, 'operation_error');
+
+    for (final (method, operation, action) in [
+      (
+        'setTag',
+        'setCustomKey',
+        () => adapter.setCustomKey(key: 'key', value: 'value'),
+      ),
+      ('removeTag', 'removeCustomKey', () => adapter.removeCustomKey('key')),
+      ('setUser', 'setUserId', () => adapter.setUserId('user')),
+    ]) {
+      probe.onCall = (call) async {
+        if (call.method == method) throw PlatformException(code: 'private');
+        return null;
+      };
+      final count = diagnostics.length;
+      await action();
+      expect(diagnostics, hasLength(count + 1));
+      expect(diagnostics.last.operation, operation);
+      expect(diagnostics.last.reason, 'operation_error');
+    }
+
+    // Stop revokes the generation before an in-flight native failure returns.
+    final entered = Completer<void>();
+    final release = Completer<void>();
+    probe.onCall = (call) async {
+      if (call.method == 'addBreadcrumb') {
+        entered.complete();
+        await release.future;
+        throw PlatformException(code: 'revoked');
+      }
+      return null;
+    };
+    final count = diagnostics.length;
+    final inFlight = adapter.recordLog('revoked');
+    await entered.future;
+    final stopped = adapter.stopCollection();
+    release.complete();
+    await Future.wait([inFlight, stopped]);
+    expect(diagnostics, hasLength(count));
   });
 }
