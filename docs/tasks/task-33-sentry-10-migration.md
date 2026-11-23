@@ -22,16 +22,25 @@ source candidate 2.0.0 на Sentry Flutter 10.6.0, sentry-native 0.17.6, Cocoa
 соединения до HTTP-ответа SDK сохраняет envelope для повторной отправки при
 разрешённом запуске. Подробнее в [migration guide](../desktop-migration.md#sentry-upgrades).
 
-Для слияния PR остаётся live smoke с подтверждением событий в Tracer. После
-отдельной публикации нужна проверка чистой установки desktop 2.0.0 с pub.dev.
+Live smoke прошёл на macOS 23 ноября 2026 года. Release-сборка примера из
+`91bac1f` стартовала в 18:49:33 UTC с Sentry Flutter 10.6.0 и Cocoa 9.35.0.
+В проекте Tracer `Test` открыты карточки трёх событий. Во вкладке «Ключи»
+каждой карточки подтверждена метка `probe_run=macos-pr33-6a22402e036c`.
+
+| Событие | ID события в Tracer |
+| --- | --- |
+| Handled Dart | `11f1-e76e-a053eeb0-8e1c-c5e6fd97b46a` |
+| FlutterError | `11f1-e76e-a077a351-8e1c-c5e6fd97b46a` |
+| Unhandled async | `11f1-e76e-a09a94a2-8e1c-c5e6fd97b46a` |
+
+После отдельной публикации нужна проверка чистой установки desktop 2.0.0 с pub.dev.
 Опубликованный desktop 1.0.1 использует Sentry Flutter 9.30.1.
 
 ## Контекст
 
 Опубликованный адаптер 1.0.1 использует `sentry_flutter 9.30.1`. До адаптации
 кандидат 10.6.0 не проходил analyze из-за переноса integrations и смены
-options/logger API. Исходники 2.0.0 используют 10.6.0. Для приёмки остаются
-платформенные проверки исправленной ревизии и live Tracer smoke. После выпуска
+options/logger API. Исходники 2.0.0 используют 10.6.0. После выпуска
 нужна проверка установки 2.0.0 с pub.dev без overrides. Кандидат также
 повышает минимальный Flutter до 3.44 и меняет упаковку Apple на Swift Package
 Manager. Linux/Windows lifecycle зависит от внутренних FFI-структур SDK.

@@ -15,9 +15,10 @@ supported release until every acceptance stage passes. See the
 [internal API and native symbol inventory](desktop-sentry-dependencies.md).
 `/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
 checkouts, with per-OS machine-readable results. It never merges or publishes.
-[Task 33](tasks/task-33-sentry-10-migration.md) remains open. The candidate
-still needs a live Tracer smoke test before merge and a clean pub.dev consumer
-check after publication.
+The macOS release candidate passed a live Tracer smoke test for handled Dart,
+Flutter and unhandled async errors. [Task 33](tasks/task-33-sentry-10-migration.md)
+records the event IDs and remains open for the clean pub.dev consumer check
+after publication.
 
 On macOS this upgrade changes delivery during server outages. Cocoa 8.58.4 kept
 a cached envelope after HTTP 503. For desktop 2.0.0 we accepted the default
