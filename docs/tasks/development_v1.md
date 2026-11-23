@@ -112,7 +112,6 @@ Codex-ревью уточнило критерии приёмки, documentation
 | 34 | [Общая наблюдаемость доставки и lifecycle](task-34-delivery-diagnostics.md) | P1 | L | Затрагивает interface/facade/HTTP/desktop; не ждать сеть в recordError |
 | 35 | [Runtime-валидация TracerOptions](task-35-runtime-option-validation.md) | P2 | S | Независима; сохранить const API |
 | 36 | [Смысловая согласованность документации](task-36-current-docs-consistency.md) | P2 | S | Учитывать фактические результаты предыдущих задач |
-| 37 | [Risk-based desktop coverage](task-37-risk-based-coverage.md) | P2 | M | №28; host-aware baseline и lifecycle tests |
 | 1 | [Проверить SDK, конфигурацию проектов и границы поддержки](#task-1) | P0 | M | Ubuntu/Windows закрыты; целевая среда/доступы/API Авроры и общая сверка |
 | 5 | [Символизация Windows, macOS и Ubuntu/Linux](#task-5) | P1 | L | Ubuntu/Windows реализованы в принятом объёме; macOS live Dart AOT проверен, строки доступны локально; остаётся общая сверка |
 | 6 | [Нативный плагин Tracer для Авроры](#task-6) | P1 | XL | №1; Aurora SDK, Flutter embedder, устройство или совместимый эмулятор |

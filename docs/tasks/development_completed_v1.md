@@ -2,6 +2,16 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-37"></a>
+
+### П. 37. Risk-based coverage для desktop и lifecycle
+
+`sentry_desktop_tracer.dart` сравнивается с отдельными Linux/macOS/Windows
+baselines в обоих режимах reporter. CI реагирует на reporter/baseline-only diff,
+публикует summary и LCOV даже при failure; failed process owner получил отдельный
+behavioral regression test. Глобальный порог 100% не вводился.
+[Задача и результат](task-37-risk-based-coverage.md), [PR №37](https://github.com/KonstantenKomkov/apptracer_flutter/pull/37).
+
 <a id="task-32"></a>
 
 ### П. 32. Управляемое поведение privacy-фильтров при ошибках
