@@ -32,7 +32,16 @@ tool/bootstrap.sh   # pub get everywhere from tool/packages.tsv
 tool/check.sh       # format + analyze + test + coverage + publish dry-run
 make analyze        # analyze every catalog package, including desktop
 make test           # VM/Chrome tests and combined coverage
+python3 -m unittest discover -s tool/tests -p test_action_pins.py
+python3 tool/check_action_pins.py
 ```
+
+Every external action in `.github/workflows/` must use a full commit SHA followed by
+a version comment, for example `actions/checkout@<40-character-sha> # v7`. Local
+`uses: ./...` references stay unchanged. The lightweight `Action commit pins`
+workflow runs for workflow, checker and checker-test changes without triggering the
+Flutter matrix. Dependabot's root `github-actions` configuration covers the same
+references and retains their version comments when updating them.
 
 For Markdown changes, run the documentation workflow checks with Python 3.10+:
 

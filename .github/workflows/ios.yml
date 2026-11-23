@@ -62,11 +62,11 @@ jobs:
     name: Example (ios)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Read the reproducible Flutter baseline
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
