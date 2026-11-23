@@ -9,6 +9,10 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'packages/apptracer_flutter/pubspec*.yaml'
       - 'tool/check_macos*.py'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
+      - 'tool/tests/test_coverage_report.py'
       - '.github/workflows/macos.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -27,6 +31,10 @@ on:
       - 'packages/apptracer_flutter/lib/**'
       - 'packages/apptracer_flutter/pubspec*.yaml'
       - 'tool/check_macos*.py'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
+      - 'tool/tests/test_coverage_report.py'
       - '.github/workflows/macos.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -98,15 +106,31 @@ jobs:
           flutter pub get
           flutter analyze --fatal-infos
           flutter test --coverage
-          swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
-          "$RUNNER_TEMP/desktop-native-tests"
       - name: Report macos adapter coverage
         run: python3 tool/coverage_report.py --desktop-only
+      - name: Summarize desktop critical coverage
+        if: always() && hashFiles('build/coverage/desktop-macos/summary.json') != ''
+        run: |
+          python3 - <<'PY'
+          import json, os
+          summary = json.load(open('build/coverage/desktop-macos/summary.json'))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as target:
+              target.write('## Desktop critical coverage (macOS)\n')
+              for name, entry in summary['critical'].items():
+                  target.write(f"- {name}: {entry['covered']}/{entry['total']} "
+                               f"({entry['ratio']:.1%}), delta {entry['deltaPercentagePoints']:+.2f} pp\n")
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
         with:
           name: desktop-coverage-macos
           path: build/coverage/desktop-macos
           if-no-files-found: error
+      - name: Test native desktop storage
+        working-directory: packages/apptracer_flutter_desktop
+        run: |
+          swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
+          "$RUNNER_TEMP/desktop-native-tests"
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
         run: |

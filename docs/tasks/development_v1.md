@@ -110,7 +110,6 @@ Codex-ревью уточнило критерии приёмки, documentation
 | --- | --- | --- | --- | --- |
 | 33 | [Миграция desktop на Sentry 10.x](task-33-sentry-10-migration.md) | P1 | XL | №29 завершена. При блокере сохранить pin и оставить миграцию открытой |
 | 34 | [Общая наблюдаемость доставки и lifecycle](task-34-delivery-diagnostics.md) | P1 | L | Затрагивает interface/facade/HTTP/desktop; не ждать сеть в recordError |
-| 37 | [Risk-based desktop coverage](task-37-risk-based-coverage.md) | P2 | M | №28; host-aware baseline и lifecycle tests |
 | 1 | [Проверить SDK, конфигурацию проектов и границы поддержки](#task-1) | P0 | M | Ubuntu/Windows закрыты; целевая среда/доступы/API Авроры и общая сверка |
 | 5 | [Символизация Windows, macOS и Ubuntu/Linux](#task-5) | P1 | L | Ubuntu/Windows реализованы в принятом объёме; macOS live Dart AOT проверен, строки доступны локально; остаётся общая сверка |
 | 6 | [Нативный плагин Tracer для Авроры](#task-6) | P1 | XL | №1; Aurora SDK, Flutter embedder, устройство или совместимый эмулятор |

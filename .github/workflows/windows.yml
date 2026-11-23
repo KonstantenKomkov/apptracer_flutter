@@ -14,6 +14,10 @@ on:
       - 'tool/elf_build_id.py'
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
+      - 'tool/tests/test_coverage_report.py'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/windows.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -37,6 +41,10 @@ on:
       - 'tool/elf_build_id.py'
       - 'tool/build_windows_desktop.ps1'
       - 'tool/tests/test_desktop_receiver.py'
+      - 'tool/tests/test_coverage_report.py'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/windows.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -108,7 +116,21 @@ jobs:
           exit $LASTEXITCODE
       - name: Report windows adapter coverage
         run: python tool/coverage_report.py --desktop-only
+      - name: Summarize desktop critical coverage
+        if: always() && hashFiles('build/coverage/desktop-windows/summary.json') != ''
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          summary = json.load(open('build/coverage/desktop-windows/summary.json'))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as target:
+              target.write('## Desktop critical coverage (Windows)\n')
+              for name, entry in summary['critical'].items():
+                  target.write(f"- {name}: {entry['covered']}/{entry['total']} "
+                               f"({entry['ratio']:.1%}), delta {entry['deltaPercentagePoints']:+.2f} pp\n")
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
         with:
           name: desktop-coverage-windows
           path: build/coverage/desktop-windows
