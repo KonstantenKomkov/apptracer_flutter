@@ -150,6 +150,19 @@ Future<void> settle() async {
   }
 }
 
+Future<void> _record(TracerHttpTracer tracer, TracerEvent event) async {
+  await tracer.recordError(event);
+  await settle();
+}
+
+Future<void> _waitUntil(bool Function() condition) async {
+  for (var i = 0; i < 100; ++i) {
+    if (condition()) return;
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+  }
+  fail('Condition was not reached before timeout');
+}
+
 void main() {
   test('offline event persists and the same bytes are delivered after retry',
       () async {
@@ -160,7 +173,7 @@ void main() {
     final tracer = _tracer(client, store, clock, diagnostics);
     await tracer.startCollection(_options);
 
-    await tracer.recordError(_event('offline'));
+    await _record(tracer, _event('offline'));
     expect(store.records, hasLength(1));
     expect(clock.delays, [const Duration(seconds: 1)]);
     expect(
@@ -185,7 +198,7 @@ void main() {
     final clock = _Clock();
     final first = _tracer(firstClient, store, clock, []);
     await first.startCollection(_options);
-    await first.recordError(_event('before reload'));
+    await _record(first, _event('before reload'));
 
     final secondClient = _Client([]);
     final secondClock = _Clock()..now = clock.now;
@@ -213,11 +226,13 @@ void main() {
     final tracer = _tracer(client, store, clock, diagnostics);
     await tracer.startCollection(_options);
 
-    await tracer.recordError(_event('timeout'));
+    await _record(tracer, _event('timeout'));
+    await _waitUntil(() =>
+        diagnostics.any((value) => value.state == TracerDeliveryState.retry));
     expect(diagnostics.map((value) => value.state),
         contains(TracerDeliveryState.retry));
     await clock.fireNext();
-    await tracer.recordError(_event('bad request'));
+    await _record(tracer, _event('bad request'));
 
     expect(client.calls, 3);
     expect(
@@ -237,7 +252,7 @@ void main() {
     final clock = _Clock();
     final tracer = _tracer(client, TracerMemoryQueueStore(), clock, []);
     await tracer.startCollection(_options);
-    await tracer.recordError(_event('rate limited'));
+    await _record(tracer, _event('rate limited'));
 
     expect(clock.delays, [const Duration(seconds: 7)]);
     expect(client.calls, 1);
@@ -259,7 +274,7 @@ void main() {
     await settle();
     expect(
         diagnostics.any((value) => value.reason == 'malformed_record'), isTrue);
-    await first.recordError(_event('expired'));
+    await _record(first, _event('expired'));
 
     clock.now = clock.now.add(const Duration(seconds: 2));
     final secondClient = _Client([]);
@@ -307,7 +322,7 @@ void main() {
     final clock = _Clock();
     final tracer = _tracer(client, store, clock, []);
     await tracer.startCollection(_options);
-    await tracer.recordError(_event('revoked'));
+    await _record(tracer, _event('revoked'));
     await tracer.stopAndClearCollection();
     expect(store.records, isEmpty);
 
@@ -324,7 +339,7 @@ void main() {
     final diagnostics = <TracerDeliveryDiagnostic>[];
     final tracer = _tracer(client, _DeniedStore(), _Clock(), diagnostics);
     await tracer.startCollection(_options);
-    await tracer.recordError(_event('memory only'));
+    await _record(tracer, _event('memory only'));
 
     expect(client.calls, 1);
     expect(
@@ -351,7 +366,7 @@ void main() {
     await settle();
     expect(store.records, isEmpty);
     expect(client.calls, 0);
-    await tracer.recordError(_event('fresh'));
+    await _record(tracer, _event('fresh'));
     expect(client.bodies.single, contains('fresh'));
   });
 
@@ -360,7 +375,7 @@ void main() {
     final client = _Client([_Client.networkError()]);
     final tracer = _tracer(client, store, _Clock(), []);
     await tracer.startCollection(_options);
-    await tracer.recordError(_event('revoked'));
+    await _record(tracer, _event('revoked'));
     store.rejectClear = true;
     expect((await tracer.stopAndClearCollection()).state,
         TracerCollectionState.error);
@@ -384,7 +399,7 @@ void main() {
       final tracer = _tracer(client, store, clock, diagnostics,
           policy: TracerDeliveryPolicy(timeToLive: Duration(seconds: ttl)));
       await tracer.startCollection(_options);
-      await tracer.recordError(_event('rate limited'));
+      await _record(tracer, _event('rate limited'));
       expect(clock.delays.single, Duration(seconds: ttl == 3 ? 3 : 7));
       await clock.fireNext();
       expect(client.calls, ttl == 3 ? 1 : 2);
@@ -400,7 +415,7 @@ void main() {
     final clock = _Clock();
     final first = _tracer(_Client([_Client.networkError()]), store, clock, []);
     await first.startCollection(const TracerOptions(appToken: 'Aa'));
-    await first.recordError(_event('before reload'));
+    await _record(first, _event('before reload'));
     final record = store.records.single;
     store.records = [
       for (var i = 0; i < 3; i++) {...record, 'id': 'id-$i'}
@@ -427,8 +442,9 @@ void main() {
     final tracer = _tracer(client, TracerMemoryQueueStore(), clock, []);
     await tracer.startCollection(
         const TracerOptions(appToken: 'test', apiUrl: 'http://example.org'));
-    await tracer.recordError(_event('vendor contract'));
+    await _record(tracer, _event('vendor contract'));
     await cancelled.future;
+    await _waitUntil(() => clock.delays.isNotEmpty);
     await clock.fireNext();
     expect(client.maxActive, 1);
     for (final request in client.requests) {
@@ -478,5 +494,25 @@ void main() {
     expect(store.records, isEmpty);
     response.complete(await _Client.status(200)());
     await pending;
+  });
+
+  test(
+      'options listener supersedes the legacy listener without duplicate events',
+      () async {
+    final legacy = <TracerDeliveryDiagnostic>[];
+    final current = <TracerDeliveryDiagnostic>[];
+    final tracer =
+        _tracer(_Client([]), TracerMemoryQueueStore(), _Clock(), legacy);
+    await tracer.startCollection(
+      _options.copyWith(deliveryListener: current.add),
+    );
+
+    await _record(tracer, _event('diagnostic metadata'));
+
+    expect(legacy, isEmpty);
+    expect(current.map((event) => event.state),
+        containsAll([TracerDeliveryState.queued, TracerDeliveryState.sent]));
+    expect(current.map((event) => event.backend).toSet(), {'tracer-http'});
+    expect(current.map((event) => event.operation).toSet(), {'delivery'});
   });
 }

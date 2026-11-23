@@ -64,6 +64,7 @@ class TracerHttpTracer extends TracerPlatform {
   final TracerQueueStore _queueStore;
   final TracerDeliveryPolicy _policy;
   final TracerDeliveryListener? _deliveryListener;
+  TracerDeliveryListener? _activeDeliveryListener;
   final DateTime Function() _clock;
   final double Function() _random;
   final Future<void> Function(Duration delay)? _delay;
@@ -107,6 +108,7 @@ class TracerHttpTracer extends TracerPlatform {
   @override
   Future<void> initialize(TracerOptions options) async {
     _debug = options.debug;
+    _activeDeliveryListener = options.deliveryListener ?? _deliveryListener;
     if (!options.isCollectionEnabled) {
       await stopCollection();
       return;
@@ -209,6 +211,7 @@ class TracerHttpTracer extends TracerPlatform {
             reason: 'storage_clear_failed');
   }
 
+  /// Queues the event without waiting for its first HTTP response.
   @override
   Future<void> recordError(TracerEvent event) async {
     if (!_enabled) return;
@@ -251,7 +254,6 @@ class TracerHttpTracer extends TracerPlatform {
           reason: _storageFailed ? 'memory_only' : 'persisted');
     });
     if (_enabled && generation == _generation) unawaited(_pump());
-    await entry.attempted.future;
   }
 
   Future<void> _pump() async {
@@ -553,8 +555,14 @@ class TracerHttpTracer extends TracerPlatform {
   void _diagnose(TracerDeliveryState state,
       {int attempt = 0, required String reason}) {
     try {
-      _deliveryListener?.call(
-          TracerDeliveryDiagnostic(state, attempt: attempt, reason: reason));
+      _activeDeliveryListener?.call(
+        TracerDeliveryDiagnostic(
+          state,
+          attempt: attempt,
+          reason: reason,
+          backend: _backendName,
+        ),
+      );
     } on Object {
       // Diagnostics must never affect delivery.
     }

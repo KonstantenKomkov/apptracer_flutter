@@ -9,6 +9,10 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Add typed delivery/platform-lifecycle diagnostics through
+  `TracerOptions.deliveryListener`, with stable metadata and no payload or exception
+  text. Listener failures are isolated and reinitialization replaces the listener.
+
 - Add `TracerFilterErrorPolicy`. The default `sendOriginal` preserves existing
   behavior; `drop` prevents original Dart events, raw stacks and breadcrumbs from
   reaching the platform when their filter throws. Filter debug messages no longer

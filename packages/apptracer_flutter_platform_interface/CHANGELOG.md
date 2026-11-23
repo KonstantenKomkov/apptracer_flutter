@@ -9,6 +9,9 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Add shared `TracerDeliveryDiagnostic`, `TracerDeliveryState` and listener contract
+  with backend/operation metadata. `TracerOptions.deliveryListener` remains Dart-only.
+
 - Add the source-compatible `TracerOptions.filterErrorPolicy` with
   `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
   The policy is not serialized to native adapters and does not filter native crashes.

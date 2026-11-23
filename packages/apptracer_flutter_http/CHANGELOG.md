@@ -7,6 +7,13 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Move delivery diagnostics to the shared platform-interface contract and add
+  backend/operation metadata. `TracerOptions.deliveryListener` supersedes the legacy
+  constructor listener without duplicate events. `recordError` now completes after
+  queueing instead of awaiting the first HTTP response.
+
 ## [0.2.1] - 2026-11-22
 
 - Bound HTTP uploads by timeout, attempt count, queue size and age. Retry transient failures with jitter and support both forms of `Retry-After`.

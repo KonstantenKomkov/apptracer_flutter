@@ -56,6 +56,31 @@ native crashes или ранее записанные native SDK данные. �
 `event.copyWith(removeLibrary: true, removeContext: true)`. Каждый флаг можно
 применить отдельно.
 
+## Диагностика доставки и lifecycle
+
+`TracerOptions.deliveryListener` сообщает typed transitions HTTP-очереди и ошибки
+platform calls/lifecycle без чтения debug-логов:
+
+```dart
+TracerOptions(
+  deliveryListener: (diagnostic) {
+    myLogger.info(
+      '${diagnostic.backend}:${diagnostic.operation}:${diagnostic.reason}',
+    );
+  },
+)
+```
+
+Диагностика содержит только backend, operation, stable reason, state и attempt —
+без payload, текста исключений, stack trace, DSN или app token. Исключение listener
+игнорируется и не влияет на приложение. Повторная инициализация заменяет listener.
+
+`queued/retry/dropped/failed` описывают локальный transport. `sent` означает только
+HTTP-ответ ниже 400, а не появление события в консоли Tracer. HTTP `recordError`
+завершается после постановки в очередь, не ожидая сетевой ответ. Legacy
+`stopCollection` сохраняет `Future<void>`; его сбой виден через listener. Типизированный
+`stopAndClearCollection` дополнительно очищает отчёты и возвращает результат.
+
 ## Большие стектрейсы
 
 Дословный стек ограничен 8 КБ по умолчанию, разобранные кадры — 128. Начало

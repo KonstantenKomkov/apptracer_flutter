@@ -68,6 +68,13 @@ TracerEvent _event() => TracerEvent(
           DartStackTrace.parse('#0 main (package:example/main.dart:1:1)'),
     );
 
+Future<void> _record(TracerHttpTracer tracer, TracerEvent event) async {
+  await tracer.recordError(event);
+  for (var i = 0; i < 20; ++i) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+
 void main() {
   test('IndexedDB snapshot survives another store instance and clears',
       () async {
@@ -96,7 +103,7 @@ void main() {
     final first =
         _tracer(offlineClient, store, initialBackoff: const Duration(hours: 1));
     await first.startCollection(const TracerOptions(appToken: 'test'));
-    await first.recordError(_event());
+    await _record(first, _event());
     expect(
         (await store.load()).single['payload'], contains('indexed-db-reload'));
 
@@ -121,7 +128,7 @@ void main() {
     final revoking = _tracer(revokeClient, revokeStore,
         initialBackoff: const Duration(hours: 1));
     await revoking.startCollection(const TracerOptions(appToken: 'test'));
-    await revoking.recordError(_event());
+    await _record(revoking, _event());
     expect(await revokeStore.load(), hasLength(1));
     expect((await revoking.stopAndClearCollection()).state,
         TracerCollectionState.disabled);

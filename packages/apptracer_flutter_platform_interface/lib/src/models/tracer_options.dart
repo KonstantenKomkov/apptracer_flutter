@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'tracer_breadcrumb.dart';
 import 'tracer_collection_result.dart';
+import 'tracer_delivery_diagnostic.dart';
 import 'tracer_event.dart';
 
 /// Controls what happens when a Dart event or breadcrumb filter throws.
@@ -47,6 +48,7 @@ class TracerOptions {
     this.beforeSend,
     this.beforeBreadcrumb,
     this.filterErrorPolicy = TracerFilterErrorPolicy.sendOriginal,
+    this.deliveryListener,
     this.maxBreadcrumbs = 100,
     this.captureFlutterErrors = true,
     this.capturePlatformDispatcherErrors = true,
@@ -169,6 +171,12 @@ class TracerOptions {
   /// native SDK. Applications remain responsible for auditing their event data.
   final TracerFilterErrorPolicy filterErrorPolicy;
 
+  /// Receives personal-data-free HTTP and platform-lifecycle transitions.
+  ///
+  /// Listener exceptions are ignored. A later initialization replaces the listener
+  /// for subsequent diagnostics. `sent` means only an HTTP response below 400.
+  final TracerDeliveryListener? deliveryListener;
+
   /// Maximum number of breadcrumbs retained; the oldest are dropped first.
   final int maxBreadcrumbs;
 
@@ -267,6 +275,7 @@ class TracerOptions {
     BeforeSendCallback? beforeSend,
     BeforeBreadcrumbCallback? beforeBreadcrumb,
     TracerFilterErrorPolicy? filterErrorPolicy,
+    TracerDeliveryListener? deliveryListener,
     int? maxBreadcrumbs,
     bool? captureFlutterErrors,
     bool? capturePlatformDispatcherErrors,
@@ -294,6 +303,7 @@ class TracerOptions {
       beforeSend: beforeSend ?? this.beforeSend,
       beforeBreadcrumb: beforeBreadcrumb ?? this.beforeBreadcrumb,
       filterErrorPolicy: filterErrorPolicy ?? this.filterErrorPolicy,
+      deliveryListener: deliveryListener ?? this.deliveryListener,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
       captureFlutterErrors: captureFlutterErrors ?? this.captureFlutterErrors,
       capturePlatformDispatcherErrors: capturePlatformDispatcherErrors ??
@@ -314,7 +324,7 @@ class TracerOptions {
 
   /// Serializes the options that a platform implementation needs.
   ///
-  /// The callbacks are Dart-only and are deliberately not included.
+  /// Callbacks and listeners are Dart-only and are deliberately not included.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       // One value crosses the channel: the platform on the other side has no

@@ -56,6 +56,13 @@ const _options = TracerOptions(
     appToken: 'test-token',
     nativeInitialization: TracerNativeInitialization.deferred);
 
+Future<void> _record(TracerHttpTracer tracer, TracerEvent event) async {
+  await tracer.recordError(event);
+  for (var i = 0; i < 20; ++i) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+
 void main() {
   test('stop clears account data and ignores all diagnostics while disabled',
       () async {
@@ -66,19 +73,19 @@ void main() {
     await tracer.setUserId('ACCOUNT_A');
     await tracer.setCustomKey(key: 'ACCOUNT_A', value: 'old');
     await tracer.recordLog('ACCOUNT_A');
-    await tracer.recordError(_event('first'));
+    await _record(tracer, _event('first'));
     expect((await tracer.stopAndClearCollection()).state,
         TracerCollectionState.disabled);
     expect(client.closed, isFalse); // Caller owns an injected client.
     await tracer.setUserId('OFF_USER');
     await tracer.setCustomKey(key: 'OFF_KEY', value: 'off');
     await tracer.recordLog('OFF_LOG');
-    await tracer.recordError(_event('OFF_ERROR'));
+    await _record(tracer, _event('OFF_ERROR'));
     expect(client.bodies, hasLength(1));
     expect((await tracer.startCollection(_options)).isEnabled, isTrue);
     await tracer.setUserId('ACCOUNT_B');
     await tracer.recordLog('ACCOUNT_B');
-    await tracer.recordError(_event('second'));
+    await _record(tracer, _event('second'));
     expect(client.bodies, hasLength(2));
     final body = client.bodies.last;
     expect(body, contains('ACCOUNT_B'));
@@ -104,16 +111,16 @@ void main() {
       first.response = Completer<void>();
       final sending = tracer.recordError(_event('in-flight'));
       await first.entered.future;
+      await sending; // Queueing completes without waiting for the HTTP response.
       await tracer.stopAndClearCollection();
       expect(first.closed, isTrue);
       first.response!.complete();
-      await sending;
       expect(tracer.isEnabled, isFalse);
-      await tracer.recordError(_event('after-stop'));
+      await _record(tracer, _event('after-stop'));
       expect(first.bodies, hasLength(1));
       await tracer.startCollection(_options);
       expect(clients, hasLength(2));
-      await tracer.recordError(_event('new-consent'));
+      await _record(tracer, _event('new-consent'));
       expect(clients.last.bodies, hasLength(1));
       expect(clients.last.closed, isFalse);
       await tracer.stopAndClearCollection();
@@ -131,14 +138,14 @@ void main() {
     await tracer.startCollection(_options);
     expect((await tracer.startCollection(const TracerOptions())).isEnabled,
         isFalse);
-    await tracer.recordError(_event('missing-token'));
+    await _record(tracer, _event('missing-token'));
     await tracer.startCollection(_options);
     expect(
         (await tracer
                 .startCollection(_options.copyWith(isCollectionEnabled: false)))
             .isEnabled,
         isFalse);
-    await tracer.recordError(_event('disabled'));
+    await _record(tracer, _event('disabled'));
     expect(client.bodies, isEmpty);
   });
 }

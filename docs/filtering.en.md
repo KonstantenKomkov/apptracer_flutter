@@ -54,6 +54,31 @@ stack frames. To clear Flutter metadata in `beforeSend`, return
 `event.copyWith(removeLibrary: true, removeContext: true)`. Each flag can be
 used independently.
 
+## Delivery and lifecycle diagnostics
+
+`TracerOptions.deliveryListener` reports typed HTTP queue transitions and platform
+call/lifecycle failures without requiring debug logs:
+
+```dart
+TracerOptions(
+  deliveryListener: (diagnostic) {
+    myLogger.info(
+      '${diagnostic.backend}:${diagnostic.operation}:${diagnostic.reason}',
+    );
+  },
+)
+```
+
+Diagnostics contain only backend, operation, stable reason, state and attempt — no
+payload, exception text, stack trace, DSN or app token. A listener exception is
+ignored and cannot affect the application. Reinitialization replaces the listener.
+
+`queued/retry/dropped/failed` describe the local transport. `sent` means only an
+HTTP response below 400, not that the event appeared in the Tracer console. HTTP
+`recordError` completes after queueing rather than awaiting the network. Legacy
+`stopCollection` keeps `Future<void>`; report its failure through the listener.
+`stopAndClearCollection` also clears reports and returns a typed result.
+
 ## Large stack traces
 
 The verbatim trace is capped at 8 KiB by default and parsed frames at 128. The

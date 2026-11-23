@@ -22,6 +22,28 @@ TracerClient _client(
   );
 }
 
+class _FailingPlatform extends FakeTracerPlatform {
+  bool failEvents = false;
+  bool failCleanup = false;
+
+  @override
+  Future<void> recordError(TracerEvent event) async {
+    if (failEvents) throw StateError('private platform exception');
+    await super.recordError(event);
+  }
+
+  @override
+  Future<TracerCollectionResult> stopAndClearCollection() async {
+    if (failCleanup) {
+      return const TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'private native result',
+      );
+    }
+    return super.stopAndClearCollection();
+  }
+}
+
 void main() {
   group('TracerClient.start', () {
     test('does not start the platform when collection is disabled', () async {
@@ -599,6 +621,77 @@ void main() {
       await client.recordError(StateError('boom'), StackTrace.current);
 
       expect(platform.events.single.breadcrumbs.single.message, 'tapped save');
+    });
+  });
+
+  group('delivery diagnostics', () {
+    test('platform exceptions have stable metadata and no exception text',
+        () async {
+      final platform = _FailingPlatform()..failEvents = true;
+      final client = _client(platform);
+      final diagnostics = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(
+        attachRawStackTraceAsLog: false,
+        deliveryListener: diagnostics.add,
+      ));
+
+      await client.recordError(StateError('private event'), StackTrace.current);
+
+      expect(diagnostics.single.state, TracerDeliveryState.failed);
+      expect(diagnostics.single.operation, 'recordError');
+      expect(diagnostics.single.reason, 'platform_exception');
+      expect(diagnostics.single.backend, 'fake');
+      expect(diagnostics.single.toString(), isNot(contains('private')));
+    });
+
+    test('listener exceptions do not change delivery', () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      var calls = 0;
+      await client.start(TracerOptions(
+        attachRawStackTraceAsLog: false,
+        deliveryListener: (_) {
+          calls++;
+          throw StateError('private listener failure');
+        },
+      ));
+      platform.failEvents = true;
+
+      await client.recordError(StateError('boom'), StackTrace.current);
+
+      expect(calls, 1);
+      expect(platform.events, isEmpty);
+      expect(client.isEnabled, isTrue);
+    });
+
+    test('typed lifecycle errors use a fixed reason instead of result text',
+        () async {
+      final platform = _FailingPlatform()..failCleanup = true;
+      final client = _client(platform);
+      final diagnostics = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: diagnostics.add));
+
+      final result = await client.stopAndClearCollection();
+
+      expect(result.state, TracerCollectionState.error);
+      expect(diagnostics.single.operation, 'stopAndClearCollection');
+      expect(diagnostics.single.reason, 'operation_error');
+      expect(diagnostics.single.toString(), isNot(contains('private')));
+    });
+
+    test('reinitialization replaces the previous session listener', () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      final previous = <TracerDeliveryDiagnostic>[];
+      final current = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: previous.add));
+      await client.start(TracerOptions(deliveryListener: current.add));
+      platform.failEvents = true;
+
+      await client.recordError(StateError('boom'), StackTrace.current);
+
+      expect(previous, isEmpty);
+      expect(current.single.operation, 'recordError');
     });
   });
 

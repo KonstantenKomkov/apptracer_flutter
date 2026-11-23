@@ -41,7 +41,8 @@ class TracerClient {
   Future<void> _lifecycleTail = Future<void>.value();
 
   Future<TracerCollectionResult> _serialize(
-      Future<TracerCollectionResult> Function() action) {
+    Future<TracerCollectionResult> Function() action,
+  ) {
     final next = _lifecycleTail.then((_) => action());
     _lifecycleTail = next.then<void>((_) {}, onError: (Object _) {});
     return next;
@@ -107,16 +108,25 @@ class TracerClient {
           await platform.stopCollection();
           return await platform.getCollectionState();
         } catch (error) {
-          return TracerCollectionResult(TracerCollectionState.error,
-              reason: 'stop_failed: $error');
+          _diagnose(
+            TracerDeliveryState.failed,
+            operation: 'stopCollection',
+            reason: 'platform_exception',
+          );
+          return TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'stop_failed: $error',
+          );
         }
       });
     }
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'superseded');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'superseded',
+        );
       }
       if (!requested.isCollectionEnabled) {
         _disableDart();
@@ -126,8 +136,10 @@ class TracerClient {
         if (isEnabled) {
           final current = await platform.getCollectionState();
           if (generation != _generation) {
-            return const TracerCollectionResult(TracerCollectionState.disabled,
-                reason: 'superseded');
+            return const TracerCollectionResult(
+              TracerCollectionState.disabled,
+              reason: 'superseded',
+            );
           }
           if (current.isEnabled) return current;
         }
@@ -135,13 +147,23 @@ class TracerClient {
         _disableDart();
         final result = await platform.startCollection(requested);
         if (generation != _generation) {
-          return const TracerCollectionResult(TracerCollectionState.disabled,
-              reason: 'superseded');
+          return const TracerCollectionResult(
+            TracerCollectionState.disabled,
+            reason: 'superseded',
+          );
         }
+        _observeCollectionResult(result, 'startCollection');
         if (!result.isEnabled) return result;
         if (!platform.isEnabled) {
-          return const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'enabled_state_not_confirmed');
+          _diagnose(
+            TracerDeliveryState.failed,
+            operation: 'startCollection',
+            reason: 'operation_error',
+          );
+          return const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'enabled_state_not_confirmed',
+          );
         }
         _breadcrumbs = BreadcrumbBuffer(maxLength: requested.maxBreadcrumbs);
         _customKeys.addAll(requested.initialCustomKeys);
@@ -150,17 +172,27 @@ class TracerClient {
           if (generation != _generation) break;
           await _guard(
             () => platform.setCustomKey(key: entry.key, value: entry.value),
+            operation: 'setCustomKey',
           );
         }
         if (generation == _generation) _installHandlers();
         return generation == _generation
             ? result
-            : const TracerCollectionResult(TracerCollectionState.disabled,
-                reason: 'superseded');
+            : const TracerCollectionResult(
+                TracerCollectionState.disabled,
+                reason: 'superseded',
+              );
       } catch (error) {
+        _diagnose(
+          TracerDeliveryState.failed,
+          operation: 'startCollection',
+          reason: 'platform_exception',
+        );
         _disableDart();
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'start_failed: $error');
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'start_failed: $error',
+        );
       }
     });
   }
@@ -168,10 +200,19 @@ class TracerClient {
   /// Observes transport; never grants permission to emit Dart events.
   Future<TracerCollectionResult> getCollectionState() async {
     try {
-      return await platform.getCollectionState();
+      final result = await platform.getCollectionState();
+      _observeCollectionResult(result, 'getCollectionState');
+      return result;
     } catch (error) {
-      return TracerCollectionResult(TracerCollectionState.error,
-          reason: 'state_failed: $error');
+      _diagnose(
+        TracerDeliveryState.failed,
+        operation: 'getCollectionState',
+        reason: 'platform_exception',
+      );
+      return TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'state_failed: $error',
+      );
     }
   }
 
@@ -185,26 +226,43 @@ class TracerClient {
 
   /// Changes the host-installed native heap decision provider.
   Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
-      _diagnostic(() => platform.setHeapDumpEnabled(enabled),
-          allowDisabled: !enabled);
+      _diagnostic(
+        () => platform.setHeapDumpEnabled(enabled),
+        allowDisabled: !enabled,
+      );
 
   Future<TracerDiagnosticResult> _diagnostic(
-      Future<TracerDiagnosticResult> Function() operation,
-      {bool allowDisabled = false}) async {
+    Future<TracerDiagnosticResult> Function() operation, {
+    bool allowDisabled = false,
+  }) async {
     if (!isEnabled && !allowDisabled) {
-      return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
-          reason: 'collection_disabled');
+      return const TracerDiagnosticResult(
+        TracerDiagnosticState.disabled,
+        reason: 'collection_disabled',
+      );
     }
     final generation = _generation;
     try {
       final result = await operation();
+      if (generation == _generation) {
+        _observeDiagnosticResult(result, 'nativeDiagnostic');
+      }
       return generation == _generation
           ? result
-          : const TracerDiagnosticResult(TracerDiagnosticState.disabled,
-              reason: 'superseded');
+          : const TracerDiagnosticResult(
+              TracerDiagnosticState.disabled,
+              reason: 'superseded',
+            );
     } catch (_) {
-      return const TracerDiagnosticResult(TracerDiagnosticState.error,
-          reason: 'native_diagnostic_failed');
+      _diagnose(
+        TracerDeliveryState.failed,
+        operation: 'nativeDiagnostic',
+        reason: 'platform_exception',
+      );
+      return const TracerDiagnosticResult(
+        TracerDiagnosticState.error,
+        reason: 'native_diagnostic_failed',
+      );
     }
   }
 
@@ -216,14 +274,25 @@ class TracerClient {
     _suspendDart();
     return _serialize(() async {
       if (generation != _generation) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'superseded');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'superseded',
+        );
       }
       try {
-        return await platform.pauseCollection();
+        final result = await platform.pauseCollection();
+        _observeCollectionResult(result, 'pauseCollection');
+        return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'pause_failed: $error');
+        _diagnose(
+          TracerDeliveryState.failed,
+          operation: 'pauseCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'pause_failed: $error',
+        );
       }
     });
   }
@@ -233,27 +302,41 @@ class TracerClient {
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation || !_paused) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'no_live_pause');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'no_live_pause',
+        );
       }
       try {
         final result = await platform.resumeCollection();
         if (generation != _generation) {
-          return const TracerCollectionResult(TracerCollectionState.disabled,
-              reason: 'superseded');
+          return const TracerCollectionResult(
+            TracerCollectionState.disabled,
+            reason: 'superseded',
+          );
         }
+        _observeCollectionResult(result, 'resumeCollection');
         if (result.isEnabled && platform.isEnabled) {
           _paused = false;
           _started = true;
           _installHandlers();
         } else if (result.isEnabled) {
-          return const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'enabled_state_not_confirmed');
+          return const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'enabled_state_not_confirmed',
+          );
         }
         return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'resume_failed: $error');
+        _diagnose(
+          TracerDeliveryState.failed,
+          operation: 'resumeCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'resume_failed: $error',
+        );
       }
     });
   }
@@ -291,8 +374,15 @@ class TracerClient {
         await platform.stopCollection();
         return await platform.getCollectionState();
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'stop_failed: $error');
+        _diagnose(
+          TracerDeliveryState.failed,
+          operation: 'stopCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'stop_failed: $error',
+        );
       }
     });
   }
@@ -307,10 +397,19 @@ class TracerClient {
     );
     return _serialize(() async {
       try {
-        return await platform.stopAndClearCollection();
+        final result = await platform.stopAndClearCollection();
+        _observeCollectionResult(result, 'stopAndClearCollection');
+        return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'cleanup_failed: $error');
+        _diagnose(
+          TracerDeliveryState.failed,
+          operation: 'stopAndClearCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'cleanup_failed: $error',
+        );
       }
     });
   }
@@ -431,6 +530,7 @@ class TracerClient {
         () => platform.recordLog(
           _rawStackTraceLog(outgoing, options.maxRawStackTraceLogBytes),
         ),
+        operation: 'recordLog',
       );
     }
 
@@ -442,6 +542,7 @@ class TracerClient {
             ? outgoing
             : outgoing.copyWith(stackTrace: limited),
       ),
+      operation: 'recordError',
     );
   }
 
@@ -571,17 +672,24 @@ class TracerClient {
       } catch (_) {
         if (options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
           _log(
-              'beforeBreadcrumb threw; breadcrumb dropped by filter error policy');
+            'beforeBreadcrumb threw; breadcrumb dropped by filter error policy',
+          );
           return;
         }
         _log(
-            'beforeBreadcrumb threw; original breadcrumb kept by filter error policy');
+          'beforeBreadcrumb threw; original breadcrumb kept by filter error policy',
+        );
       }
     }
     if (!isEnabled || generation != _generation) return;
     _breadcrumbs.add(incoming);
     if (isEnabled && platform.mirrorsBreadcrumbsToLog) {
-      unawaited(_guard(() => platform.recordLog(incoming.toLogLine())));
+      unawaited(
+        _guard(
+          () => platform.recordLog(incoming.toLogLine()),
+          operation: 'recordLog',
+        ),
+      );
     }
   }
 
@@ -590,7 +698,7 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.recordLog(message));
+    await _guard(() => platform.recordLog(message), operation: 'recordLog');
   }
 
   /// Sets a custom key on every subsequent event.
@@ -605,7 +713,10 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.setCustomKey(key: key, value: value));
+    await _guard(
+      () => platform.setCustomKey(key: key, value: value),
+      operation: 'setCustomKey',
+    );
   }
 
   /// Removes a previously set custom key.
@@ -614,7 +725,10 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.removeCustomKey(key));
+    await _guard(
+      () => platform.removeCustomKey(key),
+      operation: 'removeCustomKey',
+    );
   }
 
   /// Associates subsequent events with [userId], or clears it when `null`.
@@ -622,13 +736,68 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.setUserId(userId));
+    await _guard(() => platform.setUserId(userId), operation: 'setUserId');
   }
 
-  Future<void> _guard(Future<void> Function() action) async {
+  void _diagnose(
+    TracerDeliveryState state, {
+    required String operation,
+    required String reason,
+  }) {
+    final listener = _options.deliveryListener;
+    if (listener == null) return;
+    try {
+      listener(
+        TracerDeliveryDiagnostic(
+          state,
+          reason: reason,
+          backend: platform.backendName,
+          operation: operation,
+        ),
+      );
+    } catch (_) {
+      // Diagnostics never affect collection or the host application.
+    }
+  }
+
+  void _observeCollectionResult(
+    TracerCollectionResult result,
+    String operation,
+  ) {
+    if (result.state == TracerCollectionState.error) {
+      _diagnose(
+        TracerDeliveryState.failed,
+        operation: operation,
+        reason: 'operation_error',
+      );
+    }
+  }
+
+  void _observeDiagnosticResult(
+    TracerDiagnosticResult result,
+    String operation,
+  ) {
+    if (result.state == TracerDiagnosticState.error) {
+      _diagnose(
+        TracerDeliveryState.failed,
+        operation: operation,
+        reason: 'operation_error',
+      );
+    }
+  }
+
+  Future<void> _guard(
+    Future<void> Function() action, {
+    required String operation,
+  }) async {
     try {
       await action();
     } catch (error) {
+      _diagnose(
+        TracerDeliveryState.failed,
+        operation: operation,
+        reason: 'platform_exception',
+      );
       _log('platform call failed: $error');
     }
   }

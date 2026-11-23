@@ -2,6 +2,8 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+void _deliveryListener(TracerDeliveryDiagnostic diagnostic) {}
+
 void main() {
   group('TracerOptions.resolvedAppToken', () {
     // The tests run on the Dart VM, so kIsWeb is false and the platform is
@@ -79,6 +81,22 @@ void main() {
               .filterErrorPolicy,
           TracerFilterErrorPolicy.sendOriginal);
       expect(options.toMap().containsKey('filterErrorPolicy'), isFalse);
+    });
+
+    test('delivery listener and diagnostic metadata preserve compatibility',
+        () {
+      const options = TracerOptions(deliveryListener: _deliveryListener);
+
+      expect(options.copyWith(release: '1.0.0').deliveryListener,
+          same(_deliveryListener));
+      expect(options.toMap().containsKey('deliveryListener'), isFalse);
+      const diagnostic = TracerDeliveryDiagnostic(
+        TracerDeliveryState.sent,
+        reason: 'http_200',
+      );
+      expect(diagnostic.backend, 'tracer-http');
+      expect(diagnostic.operation, 'delivery');
+      expect(diagnostic.attempt, 0);
     });
   });
 }
