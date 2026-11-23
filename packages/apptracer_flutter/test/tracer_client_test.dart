@@ -401,19 +401,21 @@ void main() {
       expect(platform.events.single.message, '[redacted]');
     });
 
-    test('a throwing hook does not lose the event', () async {
+    test('a throwing hook delivers the original event and raw stack by default',
+        () async {
       final platform = FakeTracerPlatform();
       final client = _client(platform);
       await client.start(
         TracerOptions(
-          attachRawStackTraceAsLog: false,
           beforeSend: (_) => throw StateError('hook is broken'),
         ),
       );
 
       await client.recordError(StateError('boom'), StackTrace.current);
 
-      expect(platform.events, hasLength(1));
+      expect(platform.events.single.error, isA<StateError>());
+      expect(platform.events.single.message, contains('boom'));
+      expect(platform.logs.single, contains('boom'));
     });
 
     test('drop policy blocks the original event and its raw stack', () async {
@@ -433,6 +435,24 @@ void main() {
       await client.recordError(StateError('private event'), StackTrace.current);
 
       expect(calls, 1);
+      expect(platform.events, isEmpty);
+      expect(platform.logs, isEmpty);
+    });
+
+    test('a failing debug printer cannot change a null filter result',
+        () async {
+      final platform = FakeTracerPlatform();
+      final client = _client(platform);
+      await client.start(TracerOptions(debug: true, beforeSend: (_) => null));
+      final previous = debugPrint;
+      addTearDown(() => debugPrint = previous);
+      var writes = 0;
+      debugPrint = (message, {wrapWidth}) {
+        if (++writes == 1) throw StateError('debug sink unavailable');
+      };
+
+      await client.recordError('private event', StackTrace.current);
+
       expect(platform.events, isEmpty);
       expect(platform.logs, isEmpty);
     });

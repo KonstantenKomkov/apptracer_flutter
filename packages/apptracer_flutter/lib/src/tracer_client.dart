@@ -390,7 +390,9 @@ class TracerClient {
     final generation = _generation;
     if (!isEnabled) return;
     var outgoing = event;
-    final beforeSend = _options.beforeSend;
+    // A hook can reinitialize the facade before it returns or throws.
+    final options = _options;
+    final beforeSend = options.beforeSend;
     if (beforeSend != null) {
       try {
         final filtered = beforeSend(outgoing);
@@ -400,7 +402,7 @@ class TracerClient {
         }
         outgoing = filtered;
       } catch (_) {
-        if (_options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+        if (options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
           _log('beforeSend threw; event dropped by filter error policy');
           return;
         }
@@ -423,17 +425,17 @@ class TracerClient {
     }
 
     if (!isEnabled || generation != _generation) return;
-    if (_options.attachRawStackTraceAsLog &&
+    if (options.attachRawStackTraceAsLog &&
         outgoing.stackTrace.raw.isNotEmpty) {
       await _guard(
         () => platform.recordLog(
-          _rawStackTraceLog(outgoing, _options.maxRawStackTraceLogBytes),
+          _rawStackTraceLog(outgoing, options.maxRawStackTraceLogBytes),
         ),
       );
     }
 
     if (!isEnabled || generation != _generation) return;
-    final limited = outgoing.stackTrace.limitFrames(_options.maxStackFrames);
+    final limited = outgoing.stackTrace.limitFrames(options.maxStackFrames);
     await _guard(
       () => platform.recordError(
         identical(limited, outgoing.stackTrace)
@@ -557,7 +559,8 @@ class TracerClient {
     if (!isEnabled) return;
     final generation = _generation;
     var incoming = breadcrumb;
-    final beforeBreadcrumb = _options.beforeBreadcrumb;
+    final options = _options;
+    final beforeBreadcrumb = options.beforeBreadcrumb;
     if (beforeBreadcrumb != null) {
       try {
         final filtered = beforeBreadcrumb(incoming);
@@ -566,7 +569,7 @@ class TracerClient {
         }
         incoming = filtered;
       } catch (_) {
-        if (_options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+        if (options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
           _log(
               'beforeBreadcrumb threw; breadcrumb dropped by filter error policy');
           return;
@@ -631,8 +634,11 @@ class TracerClient {
   }
 
   void _log(String message) {
-    if (_options.debug) {
+    if (!_options.debug) return;
+    try {
       debugPrint('apptracer_flutter: $message');
+    } catch (_) {
+      // The application's debug printer must never change a filter decision.
     }
   }
 }
