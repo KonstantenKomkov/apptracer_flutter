@@ -7,10 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [0.2.4] - 2026-11-23
 
 - Add shared `TracerDeliveryDiagnostic`, `TracerDeliveryState` and listener contract
-  with backend/operation metadata. `TracerOptions.deliveryListener` remains Dart-only.
+  through `delivery_diagnostics.dart` with backend/operation metadata. `TracerOptions.deliveryListener` remains Dart-only.
 - Move negative-limit errors from `TracerOptions` constructor assertions to
   facade startup validation in debug and release. The constructor remains
   `const` and accepts the same named parameters.

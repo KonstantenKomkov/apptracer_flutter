@@ -1,7 +1,6 @@
 import 'dart:async';
 
-export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart'
-    show TracerDeliveryDiagnostic, TracerDeliveryListener, TracerDeliveryState;
+export 'package:apptracer_flutter_platform_interface/delivery_diagnostics.dart';
 
 /// Bounds and timing for HTTP delivery and the owned event queue.
 class TracerDeliveryPolicy {

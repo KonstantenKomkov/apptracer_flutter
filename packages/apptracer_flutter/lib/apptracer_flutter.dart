@@ -45,9 +45,6 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerEvent,
         TracerDiagnosticResult,
         TracerDiagnosticState,
-        TracerDeliveryDiagnostic,
-        TracerDeliveryListener,
-        TracerDeliveryState,
         TracerFilterErrorPolicy,
         TracerOptions,
         TracerNativeInitialization,
@@ -56,6 +53,7 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerPlatform,
         TracerSeverity,
         UnsupportedTracerPlatform;
+export 'package:apptracer_flutter_platform_interface/delivery_diagnostics.dart';
 
 @Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
 export 'src/breadcrumb_buffer.dart';

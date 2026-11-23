@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
+import 'package:apptracer_flutter_platform_interface/delivery_diagnostics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';

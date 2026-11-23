@@ -22,7 +22,7 @@ dependencies:
   # Require the matching lifecycle adapters; older versions lack this contract.
   apptracer_flutter_android: ^0.4.2
   apptracer_flutter_ios: ^0.2.1
-  apptracer_flutter_platform_interface: ^0.2.3
+  apptracer_flutter_platform_interface: ^0.2.4
   apptracer_flutter_web: ^0.2.1
   flutter:
     sdk: flutter

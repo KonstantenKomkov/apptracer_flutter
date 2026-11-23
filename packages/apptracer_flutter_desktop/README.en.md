@@ -2,7 +2,7 @@
 
 [Русский](README.md)
 
-Stable 1.0.1 `TracerPlatform` adapter using the official **sentry_flutter 9.30.1**
+Desktop 2.0.0 `TracerPlatform` adapter using the official **sentry_flutter 10.6.0**
 SDK for macOS/Windows/Ubuntu Linux. macOS arm64 and Ubuntu x64 are
 accepted within their documented scope. Windows 11 x64 local acceptance is recorded below.
 
@@ -13,7 +13,7 @@ The Linux CMake hook resolves native source frames inside the crash daemon using
 matching Breakpad maps in `lib/symbols`. The example build helper generates these
 from the same build's DWARF; this native store does not contain Dart maps. Missing
 or mismatched maps preserve the original SDK report. The hook is pinned to
-sentry-native 0.16.6 in published 1.0.1 and 0.17.6 in the 2.0.0 source candidate.
+sentry-native 0.16.6 in published 1.0.1 and 0.17.6 in 2.0.0.
 For Dart AOT, the adapter reads an optional compact map from
 `lib/apptracer-dart-symbols/<build-id>.json.gz` before SDK serialization. Stack,
 loaded ELF and map build IDs must agree; the original stack is retained.
@@ -46,8 +46,11 @@ Install both stable packages from pub.dev:
 
 ```yaml
 dependencies:
-  apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop: ^1.0.1
+  apptracer_flutter: ^1.4.0
+  apptracer_flutter_desktop: ^2.0.0
+flutter:
+  config:
+    enable-swift-package-manager: true
 ```
 
 Pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
@@ -90,7 +93,7 @@ container for sandboxed apps), plus `async.log`. Legacy SDK caches are neither
 imported nor automatically deleted; app owners must plan migration cleanup.
 System macOS crash logs are not deleted.
 
-The 2.0.0 candidate uses public Cocoa 9.35.0 APIs and Swift Package Manager.
+Version 2.0.0 uses public Cocoa 9.35.0 APIs and Swift Package Manager.
 Official SDK serialization, crash handling and queueing remain in use; a
 session-local URLProtocol gates network delivery. The published 1.0.1 adapter stays
 on Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 drops cached envelopes on HTTP 5xx;
