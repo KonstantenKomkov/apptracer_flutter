@@ -371,11 +371,9 @@ class SentryDesktopTracer extends TracerPlatform {
     final listenerGeneration = _listenerGeneration;
     return _serial(() async {
       if (!_enabled || generation != _generation) return;
-      final failures = _sdkOptions?.failures;
       var reason = 'operation_error';
       try {
-        await action();
-        if (failures == _sdkOptions?.failures) return;
+        if (!await _sdkOptions!.loggedErrorDuring(action)) return;
       } catch (_) {
         reason = 'platform_exception';
       }
