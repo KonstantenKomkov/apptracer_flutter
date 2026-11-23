@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart'
     hide EventDeduplicator, TracerClient;
@@ -78,6 +79,88 @@ void main() {
 
       expect(bindings.flutterOnError, isNull);
       expect(bindings.platformOnError, isNull);
+    });
+  });
+
+  group('invalid limits', () {
+    for (final entry in <({TracerOptions options, String reason})>[
+      (
+        options: const TracerOptions(maxBreadcrumbs: -1),
+        reason: 'invalid_max_breadcrumbs',
+      ),
+      (
+        options: const TracerOptions(maxRawStackTraceLogBytes: -1),
+        reason: 'invalid_max_raw_stack_trace_log_bytes',
+      ),
+      (
+        options: const TracerOptions(maxStackFrames: -1),
+        reason: 'invalid_max_stack_frames',
+      ),
+    ]) {
+      test('${entry.reason} rejects start before backend initialization',
+          () async {
+        final platform = FakeTracerPlatform();
+        final client = _client(platform);
+
+        final result = await client.startCollection(entry.options);
+
+        expect(result.state, TracerCollectionState.error);
+        expect(result.reason, entry.reason);
+        expect(platform.initializeCalls, 0);
+        expect(client.isEnabled, isFalse);
+        expect(client.hasInstalledHandlers, isFalse);
+      });
+    }
+
+    test('a negative buffer limit is safe with assertions disabled', () async {
+      final directory =
+          Directory.systemTemp.createTempSync('tracer-no-asserts');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final stub = Directory('${directory.path}/stub')..createSync();
+      File('${stub.path}/lib/apptracer_flutter_platform_interface.dart')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('''
+class TracerBreadcrumb {
+  TracerBreadcrumb({required this.message});
+  final String message;
+}
+''');
+      final script = File('${directory.path}/main.dart');
+      script.writeAsStringSync('''
+import 'package:apptracer_flutter/src/breadcrumb_buffer.dart';
+import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
+
+void main() {
+  final buffer = BreadcrumbBuffer(maxLength: -1);
+  buffer.add(TracerBreadcrumb(message: 'safe'));
+  if (!buffer.isEmpty) throw StateError('negative buffer retained an entry');
+}
+''');
+      // Run the real buffer without Flutter's dart:ui dependency.
+      final config = File('${directory.path}/package_config.json');
+      config.writeAsStringSync(jsonEncode({
+        'configVersion': 2,
+        'packages': [
+          {
+            'name': 'apptracer_flutter',
+            'rootUri': Uri.directory(Directory.current.path).toString(),
+            'packageUri': 'lib/',
+          },
+          {
+            'name': 'apptracer_flutter_platform_interface',
+            'rootUri': Uri.directory(stub.path).toString(),
+            'packageUri': 'lib/',
+          },
+        ],
+      }));
+
+      final result = await Process.run('dart', [
+        '--enable-asserts=false',
+        '--packages=${config.path}',
+        script.path,
+      ]);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
     });
   });
 

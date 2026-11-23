@@ -9,6 +9,15 @@ import 'deduplicator.dart';
 import 'error_handler_chain.dart';
 import 'error_normalizer.dart';
 
+String? _invalidLimit(TracerOptions options) {
+  if (options.maxBreadcrumbs < 0) return 'invalid_max_breadcrumbs';
+  if (options.maxRawStackTraceLogBytes < 0) {
+    return 'invalid_max_raw_stack_trace_log_bytes';
+  }
+  if (options.maxStackFrames < 0) return 'invalid_max_stack_frames';
+  return null;
+}
+
 /// The Dart-side engine behind the [Tracer] facade.
 ///
 /// Kept as an ordinary object rather than a pile of statics so that the
@@ -99,6 +108,17 @@ class TracerClient {
   /// Starts transport without re-running appRunner or creating a guarded zone.
   Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
     final requested = options ?? _options;
+    final invalidLimit = _invalidLimit(requested);
+    if (invalidLimit != null) {
+      ++_generation;
+      _disableDart();
+      return Future<TracerCollectionResult>.value(
+        TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: invalidLimit,
+        ),
+      );
+    }
     if (!requested.isCollectionEnabled) {
       ++_generation;
       _disableDart();

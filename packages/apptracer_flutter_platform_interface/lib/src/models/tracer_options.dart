@@ -58,12 +58,7 @@ class TracerOptions {
     this.debug = false,
     this.apiUrl,
     this.initialCustomKeys = const <String, String>{},
-  })  : assert(maxBreadcrumbs >= 0, 'maxBreadcrumbs must not be negative'),
-        assert(
-          maxRawStackTraceLogBytes >= 0,
-          'maxRawStackTraceLogBytes must not be negative',
-        ),
-        assert(maxStackFrames >= 0, 'maxStackFrames must not be negative');
+  });
 
   /// The Tracer application token, found under *Настройки → Проект → API*.
   ///
@@ -170,6 +165,8 @@ class TracerOptions {
   final TracerFilterErrorPolicy filterErrorPolicy;
 
   /// Maximum number of breadcrumbs retained; the oldest are dropped first.
+  /// Zero disables the Dart buffer. A negative value rejects collection startup
+  /// with `invalid_max_breadcrumbs`, including release builds.
   final int maxBreadcrumbs;
 
   /// Whether to install a `FlutterError.onError` handler.
@@ -208,7 +205,8 @@ class TracerOptions {
   final bool attachRawStackTraceAsLog;
 
   /// Byte budget for the verbatim stack trace written to the platform log.
-  /// Zero means no limit.
+  /// Zero means no limit. A negative value rejects startup with
+  /// `invalid_max_raw_stack_trace_log_bytes`, including release builds.
   ///
   /// This is not a nicety. Android's log buffer is a **circular** 64 KiB
   /// buffer (`maxLogsLength` defaults to 65536, confirmed in the SDK
@@ -224,7 +222,8 @@ class TracerOptions {
   final int maxRawStackTraceLogBytes;
 
   /// Maximum number of parsed frames forwarded to the platform.
-  /// Zero means no limit.
+  /// Zero means no limit. A negative value rejects startup with
+  /// `invalid_max_stack_frames`, including release builds.
   ///
   /// Caps the structured payload — the synthetic `StackTraceElement[]` on
   /// Android, the frame array in a Sentry envelope. The frames nearest the

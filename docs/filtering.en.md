@@ -58,7 +58,10 @@ used independently.
 
 The verbatim trace is capped at 8 KiB by default and parsed frames at 128. The
 beginning is retained because it carries the `build_id` and frames nearest the
-throw. Adjust the limits if needed:
+throw. Negative values reject startup with stable `invalid_max_*` reasons in both
+debug and release, while `const TracerOptions` remains supported. Zero breadcrumbs
+disable only the Dart buffer; zero stack limits remain unlimited. Adjust the limits
+if needed:
 
 ```dart
 TracerOptions(

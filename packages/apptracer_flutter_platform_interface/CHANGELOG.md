@@ -9,6 +9,9 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Document release-mode rejection of negative `TracerOptions` limits with stable
+  reasons; const construction and zero/unlimited semantics remain unchanged.
+
 - Add the source-compatible `TracerOptions.filterErrorPolicy` with
   `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
   The policy is not serialized to native adapters and does not filter native crashes.
