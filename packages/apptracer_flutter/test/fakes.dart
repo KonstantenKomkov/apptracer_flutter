@@ -38,6 +38,7 @@ class FakeTracerPlatform extends TracerPlatform {
   final Map<String, String> keys = <String, String>{};
   final List<String?> userIds = <String?>[];
 
+  int startCalls = 0;
   int initializeCalls = 0;
   int stopCalls = 0;
   bool _enabled = false;
@@ -47,6 +48,12 @@ class FakeTracerPlatform extends TracerPlatform {
 
   @override
   String get backendName => 'fake';
+
+  @override
+  Future<TracerCollectionResult> startCollection(TracerOptions options) {
+    startCalls++;
+    return super.startCollection(options);
+  }
 
   @override
   Future<void> initialize(TracerOptions options) async {

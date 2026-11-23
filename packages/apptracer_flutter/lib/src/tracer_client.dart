@@ -9,6 +9,15 @@ import 'deduplicator.dart';
 import 'error_handler_chain.dart';
 import 'error_normalizer.dart';
 
+String? _invalidLimit(TracerOptions options) {
+  if (options.maxBreadcrumbs < 0) return 'invalid_max_breadcrumbs';
+  if (options.maxRawStackTraceLogBytes < 0) {
+    return 'invalid_max_raw_stack_trace_log_bytes';
+  }
+  if (options.maxStackFrames < 0) return 'invalid_max_stack_frames';
+  return null;
+}
+
 /// The Dart-side engine behind the [Tracer] facade.
 ///
 /// Kept as an ordinary object rather than a pile of statics so that the
@@ -38,6 +47,7 @@ class TracerClient {
   bool _started = false;
   bool _paused = false;
   int _generation = 0;
+  int? _startingGeneration;
   Future<void> _lifecycleTail = Future<void>.value();
 
   Future<TracerCollectionResult> _serialize(
@@ -86,6 +96,14 @@ class TracerClient {
   /// Never throws. A platform SDK that fails to start leaves the client
   /// disabled; the host application keeps running either way.
   Future<void> start(TracerOptions options) async {
+    if (options.isCollectionEnabled && _invalidLimit(options) != null) {
+      // Remember a rejected cold bootstrap for a later argumentless retry.
+      // A live, paused or starting session still owns its validated options.
+      if (!_started && !_paused && _startingGeneration != _generation) {
+        _options = options;
+      }
+      return;
+    }
     _options = options;
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
@@ -99,19 +117,24 @@ class TracerClient {
   /// Starts transport without re-running appRunner or creating a guarded zone.
   Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
     final requested = options ?? _options;
+    final reason = _invalidLimit(requested);
+    final invalid = reason == null
+        ? null
+        : TracerCollectionResult(TracerCollectionState.error, reason: reason);
     if (!requested.isCollectionEnabled) {
       ++_generation;
       _disableDart();
       return _serialize(() async {
         try {
           await platform.stopCollection();
-          return await platform.getCollectionState();
+          return invalid ?? await platform.getCollectionState();
         } catch (error) {
           return TracerCollectionResult(TracerCollectionState.error,
               reason: 'stop_failed: $error');
         }
       });
     }
+    if (invalid != null) return Future.value(invalid);
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation) {
@@ -133,6 +156,7 @@ class TracerClient {
         }
         _options = requested;
         _disableDart();
+        _startingGeneration = generation;
         final result = await platform.startCollection(requested);
         if (generation != _generation) {
           return const TracerCollectionResult(TracerCollectionState.disabled,
@@ -161,6 +185,8 @@ class TracerClient {
         _disableDart();
         return TracerCollectionResult(TracerCollectionState.error,
             reason: 'start_failed: $error');
+      } finally {
+        _startingGeneration = null;
       }
     });
   }
