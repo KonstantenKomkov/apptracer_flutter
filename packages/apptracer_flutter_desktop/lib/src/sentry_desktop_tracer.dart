@@ -38,6 +38,7 @@ class SentryDesktopTracer extends TracerPlatform {
   bool _attemptedNativeStart = false;
   bool _closeFailed = false;
   int _generation = 0;
+  int _listenerGeneration = 0;
   Future<void> _tail = Future<void>.value();
   TracerCollectionResult _state =
       const TracerCollectionResult(TracerCollectionState.disabled);
@@ -60,11 +61,25 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   @override
+  void configureDelivery(TracerOptions options,
+      {bool activateListener = true}) {
+    final previous = deliveryListener;
+    super.configureDelivery(options, activateListener: activateListener);
+    // Detaching and reattaching the same callback starts a new subscription.
+    if (previous != deliveryListener) ++_listenerGeneration;
+  }
+
+  @override
   Future<void> initialize(TracerOptions options) async {
     configureDelivery(options);
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
-      if (_attemptedNativeStart) await stopCollection();
+      if (_attemptedNativeStart) {
+        await stopCollection();
+      } else {
+        // A start may be queued but not yet have touched the native SDK.
+        ++_generation;
+      }
       return;
     }
     await startCollection(options);
@@ -353,7 +368,7 @@ class SentryDesktopTracer extends TracerPlatform {
     // Calls made while init is pending must not become data in a later session.
     if (!_enabled) return Future<void>.value();
     final generation = _generation;
-    final listener = deliveryListener;
+    final listenerGeneration = _listenerGeneration;
     return _serial(() async {
       if (!_enabled || generation != _generation) return;
       final failures = _sdkOptions?.failures;
@@ -364,10 +379,11 @@ class SentryDesktopTracer extends TracerPlatform {
       } catch (_) {
         reason = 'platform_exception';
       }
-      if (generation == _generation && listener == deliveryListener) {
+      if (generation == _generation &&
+          listenerGeneration == _listenerGeneration) {
         TracerDeliveryDiagnostic(TracerDeliveryState.failed,
                 backend: backendName, operation: operation, reason: reason)
-            .notify(listener);
+            .notify(deliveryListener);
       }
     });
   }

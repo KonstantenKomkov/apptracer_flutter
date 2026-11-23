@@ -17,10 +17,13 @@ void main() {
           : {'state': 'disabled'};
     probe.install();
     final adapter = SentryDesktopTracer();
-    await adapter.initialize(const TracerOptions(
+    const options = TracerOptions(
       dsn: 'https://public@tracer.invalid/42',
       nativeInitialization: TracerNativeInitialization.deferred,
-    ));
+    );
+    final pending = adapter.startCollection(options);
+    await adapter.initialize(options);
+    expect((await pending).state, TracerCollectionState.disabled);
     expect(probe.calls, isEmpty);
     await adapter.stopCollection();
     expect(probe.calls.map((c) => c.method), ['closeNativeSdk']);
