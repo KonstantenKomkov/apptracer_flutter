@@ -415,6 +415,61 @@ void main() {
 
       expect(platform.events, hasLength(1));
     });
+
+    test('drop policy blocks the original event and its raw stack', () async {
+      final platform = FakeTracerPlatform();
+      final client = _client(platform);
+      var calls = 0;
+      await client.start(
+        TracerOptions(
+          filterErrorPolicy: TracerFilterErrorPolicy.drop,
+          beforeSend: (_) {
+            calls++;
+            throw StateError('private filter failure');
+          },
+        ),
+      );
+
+      await client.recordError(StateError('private event'), StackTrace.current);
+
+      expect(calls, 1);
+      expect(platform.events, isEmpty);
+      expect(platform.logs, isEmpty);
+    });
+
+    test('debug filter diagnostics do not expose event or callback data',
+        () async {
+      final previousDebugPrint = debugPrint;
+      final messages = <String>[];
+      debugPrint = (message, {wrapWidth}) => messages.add(message ?? '');
+      addTearDown(() => debugPrint = previousDebugPrint);
+      final platform = FakeTracerPlatform();
+      final client = _client(platform);
+      await client.start(
+        TracerOptions(
+          debug: true,
+          filterErrorPolicy: TracerFilterErrorPolicy.drop,
+          beforeSend: (_) => throw StateError('private event filter error'),
+          beforeBreadcrumb: (_) =>
+              throw StateError('private breadcrumb filter error'),
+        ),
+      );
+
+      client.addBreadcrumb(TracerBreadcrumb(message: 'private breadcrumb'));
+      await client.recordError(StateError('private event'), StackTrace.current);
+
+      expect(
+          messages,
+          containsAll(<String>[
+            'apptracer_flutter: beforeBreadcrumb threw; '
+                'breadcrumb dropped by filter error policy',
+            'apptracer_flutter: beforeSend threw; '
+                'event dropped by filter error policy',
+          ]));
+      expect(messages.join('\n'), isNot(contains('private')));
+      expect(platform.events, isEmpty);
+      expect(platform.logs, isEmpty);
+    });
   });
 
   group('breadcrumbs', () {
@@ -465,6 +520,54 @@ void main() {
         ..addBreadcrumb(TracerBreadcrumb(message: 'no', category: 'secret'));
 
       expect(client.breadcrumbs, hasLength(1));
+    });
+
+    test('a throwing beforeBreadcrumb keeps the original by default', () async {
+      final platform = FakeTracerPlatform();
+      final client = _client(platform);
+      await client.start(
+        TracerOptions(
+          beforeBreadcrumb: (_) => throw StateError('hook is broken'),
+        ),
+      );
+
+      client.addBreadcrumb(TracerBreadcrumb(message: 'original'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.breadcrumbs.single.message, 'original');
+      expect(platform.logs.single, contains('original'));
+    });
+
+    test('drop policy blocks the native mirror and preserves earlier entries',
+        () async {
+      final platform = FakeTracerPlatform();
+      final client = _client(platform);
+      var calls = 0;
+      await client.start(
+        TracerOptions(
+          filterErrorPolicy: TracerFilterErrorPolicy.drop,
+          beforeBreadcrumb: (breadcrumb) {
+            calls++;
+            if (breadcrumb.category == 'secret') {
+              throw StateError('private filter failure');
+            }
+            return breadcrumb;
+          },
+        ),
+      );
+
+      client
+        ..addBreadcrumb(TracerBreadcrumb(message: 'safe'))
+        ..addBreadcrumb(
+          TracerBreadcrumb(message: 'private', category: 'secret'),
+        );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(calls, 2);
+      expect(client.breadcrumbs.map((entry) => entry.message), ['safe']);
+      expect(platform.logs, hasLength(1));
+      expect(platform.logs.single, contains('safe'));
+      expect(platform.logs.single, isNot(contains('private')));
     });
 
     test('are attached to the next event', () async {

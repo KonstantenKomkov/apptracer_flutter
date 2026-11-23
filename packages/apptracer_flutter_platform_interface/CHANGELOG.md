@@ -7,6 +7,12 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Add the source-compatible `TracerOptions.filterErrorPolicy` with
+  `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
+  The policy is not serialized to native adapters and does not filter native crashes.
+
 ## [0.2.3] - 2026-11-22
 
 - Events snapshot custom keys, breadcrumbs and stack frames. Breadcrumbs

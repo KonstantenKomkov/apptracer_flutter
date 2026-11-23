@@ -255,6 +255,62 @@ void main() {
     });
   });
 
+  group('filter error policy for automatic capture', () {
+    TracerOptions droppingOptions() {
+      return TracerOptions(
+        filterErrorPolicy: TracerFilterErrorPolicy.drop,
+        beforeSend: (_) => throw StateError('private automatic filter error'),
+      );
+    }
+
+    void expectNoLeakedEvent() {
+      expect(platform.events, isEmpty);
+      expect(platform.logs, isEmpty);
+      expect(Tracer.isEnabled, isTrue);
+    }
+
+    test('drops FlutterError events without writing their raw stacks',
+        () async {
+      await Tracer.initialize(options: droppingOptions(), appRunner: () {});
+
+      bindings.flutterOnError!(
+        FlutterErrorDetails(
+          exception: StateError('private FlutterError'),
+          stack: StackTrace.current,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expectNoLeakedEvent();
+    });
+
+    test('drops PlatformDispatcher errors without writing their raw stacks',
+        () async {
+      await Tracer.initialize(options: droppingOptions(), appRunner: () {});
+
+      bindings.platformOnError!(
+        StateError('private dispatcher error'),
+        StackTrace.current,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expectNoLeakedEvent();
+    });
+
+    test('drops guarded-zone errors without writing their raw stacks',
+        () async {
+      await Tracer.initialize(
+        options: droppingOptions(),
+        appRunner: () {
+          Timer.run(() => throw StateError('private zone error'));
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expectNoLeakedEvent();
+    });
+  });
+
   group('Tracer.stopCollection', () {
     test('stops reporting and allows a clean restart', () async {
       await Tracer.initialize(

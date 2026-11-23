@@ -395,13 +395,16 @@ class TracerClient {
       try {
         final filtered = beforeSend(outgoing);
         if (filtered == null) {
-          _log('event dropped by beforeSend: ${event.title}');
+          _log('event dropped by beforeSend');
           return;
         }
         outgoing = filtered;
-      } catch (error) {
-        // A throwing hook must not take the error report down with it.
-        _log('beforeSend threw, sending the original event: $error');
+      } catch (_) {
+        if (_options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+          _log('beforeSend threw; event dropped by filter error policy');
+          return;
+        }
+        _log('beforeSend threw; original event kept by filter error policy');
       }
     }
 
@@ -562,8 +565,14 @@ class TracerClient {
           return;
         }
         incoming = filtered;
-      } catch (error) {
-        _log('beforeBreadcrumb threw, keeping the original: $error');
+      } catch (_) {
+        if (_options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+          _log(
+              'beforeBreadcrumb threw; breadcrumb dropped by filter error policy');
+          return;
+        }
+        _log(
+            'beforeBreadcrumb threw; original breadcrumb kept by filter error policy');
       }
     }
     if (!isEnabled || generation != _generation) return;

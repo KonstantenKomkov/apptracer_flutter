@@ -30,6 +30,7 @@ error type and innermost named frame, excluding file and line number.
 
 ```dart
 TracerOptions(
+  filterErrorPolicy: TracerFilterErrorPolicy.drop,
   beforeSend: (event) => event.message.contains('@')
       ? event.copyWith(message: '<redacted>')
       : event,
@@ -37,8 +38,16 @@ TracerOptions(
 )
 ```
 
-Return `null` to drop an event or breadcrumb. If a hook throws, the client
-logs the exception and keeps the original event or breadcrumb.
+Return `null` to drop an event or breadcrumb. By default, `sendOriginal` keeps
+the original value when a hook throws. For fail-closed filtering, set
+`TracerFilterErrorPolicy.drop` as shown above: the failed filter is not called
+again, and original data reaches neither platform events/raw stacks nor the
+Dart/native breadcrumb buffers.
+
+Debug diagnostics for filter failures use fixed messages without exception text
+or event data. This policy covers Dart filters only; it does not filter native
+crashes or data already recorded by a native SDK, and it does not replace auditing
+your event data. The current default is preserved pending a separate API 2.0 decision.
 
 Starting with facade 1.4.0, events snapshot their custom keys, breadcrumbs and
 stack frames. To clear Flutter metadata in `beforeSend`, return

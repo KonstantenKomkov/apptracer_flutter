@@ -31,6 +31,7 @@ await Tracer.removeCustomKey('checkout_step');
 
 ```dart
 TracerOptions(
+  filterErrorPolicy: TracerFilterErrorPolicy.drop,
   beforeSend: (event) => event.message.contains('@')
       ? event.copyWith(message: '<скрыто>')
       : event,
@@ -38,8 +39,17 @@ TracerOptions(
 )
 ```
 
-Верните `null`, чтобы отбросить событие или breadcrumb. При исключении в хуке
-клиент пишет его в лог и сохраняет исходное событие или breadcrumb.
+Верните `null`, чтобы отбросить событие или breadcrumb. По умолчанию при
+исключении в хуке `sendOriginal` сохраняет исходное значение. Для безопасного
+fail-closed режима используйте `TracerFilterErrorPolicy.drop`, как в примере:
+ошибочный фильтр не вызывается повторно, а исходные данные не попадают ни в
+platform event/raw stack, ни в Dart/native breadcrumb buffers.
+
+Debug-диагностика таких ошибок содержит только фиксированное сообщение, без
+исключения и данных события. Policy применяется к Dart-фильтрам и не фильтрует
+native crashes или ранее записанные native SDK данные. Она не заменяет аудит
+отправляемых данных. Текущее значение по умолчанию сохранено до отдельного
+решения для API 2.0.
 
 С версии фасада 1.4.0 событие сохраняет снимок ключей, breadcrumbs и кадров стека.
 Для удаления метаданных Flutter в `beforeSend` верните
