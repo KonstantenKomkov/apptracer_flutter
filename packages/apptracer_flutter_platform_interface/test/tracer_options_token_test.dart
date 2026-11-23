@@ -1,5 +1,4 @@
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
-import 'package:apptracer_flutter_platform_interface/delivery_diagnostics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

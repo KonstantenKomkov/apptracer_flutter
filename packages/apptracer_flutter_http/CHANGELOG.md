@@ -7,7 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [0.3.0] - 2026-11-23
 
 - Move delivery diagnostics to the shared platform-interface contract and add
   backend/operation metadata. `TracerOptions.deliveryListener` supersedes the legacy

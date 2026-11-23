@@ -48,7 +48,7 @@ Stop отзывает replay и отменяет собственные
 
 ```yaml
 dependencies:
-  apptracer_flutter: ^1.4.0
+  apptracer_flutter: ^1.5.0
   apptracer_flutter_desktop: ^2.0.0
 flutter:
   config:

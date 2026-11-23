@@ -46,7 +46,7 @@ Install both stable packages from pub.dev:
 
 ```yaml
 dependencies:
-  apptracer_flutter: ^1.4.0
+  apptracer_flutter: ^1.5.0
   apptracer_flutter_desktop: ^2.0.0
 flutter:
   config:

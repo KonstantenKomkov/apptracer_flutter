@@ -61,6 +61,7 @@ def main():
     source.add_argument('--hosted-desktop', choices=('1.0.1', '2.0.0'), default='1.0.1')
     args = parser.parse_args()
     uses_spm = args.candidate_facade or args.hosted_desktop == '2.0.0'
+    facade_version = '1.5.0' if uses_spm else '1.4.0'
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     repo = Path(__file__).resolve().parent.parent
@@ -110,7 +111,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-{consumer_dependencies(args.candidate_facade, desktop=args.hosted_desktop)}flutter:
+{consumer_dependencies(args.candidate_facade, facade=facade_version, desktop=args.hosted_desktop)}flutter:
   uses-material-design: true
   config:
     enable-swift-package-manager: {str(uses_spm).lower()}
