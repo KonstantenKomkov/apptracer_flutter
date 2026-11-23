@@ -1,8 +1,24 @@
 # П. 34. Общая наблюдаемость доставки и lifecycle
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** L.
+**Статус:** выполнена. **Приоритет:** P1. **Сложность:** L.
 
 Связанный общий план: [development_v1.md](development_v1.md).
+
+## Результат
+
+[PR №34](https://github.com/KonstantenKomkov/apptracer_flutter/pull/34) добавил
+общий `TracerDeliveryDiagnostic/State/Listener`, nonblocking HTTP `recordError`,
+typed platform/lifecycle failures и listener replacement/exception isolation без
+payload, DSN или app token. Старый HTTP listener и `Future<void> stopCollection()`
+сохранены; `sent` остаётся HTTP-ответом, а не подтверждением в кабинете.
+
+Codex-ревью исправило account/session races и изоляцию listener, затем отделило
+published production consumer от staged candidate с unpublished siblings.
+Hosted consumer не получает overrides или alternate registry; publish archives
+не содержат local files. macOS hosted/candidate consumers прошли с одним ожидаемым
+событием; 44 tooling-теста и полный `make check` прошли. Критичное coverage не
+понижено: facade 98.67%, HTTP 94.46%, lifecycle 95.24%, parser 92.57%.
+Device/live acceptance не запускался.
 
 ## Контекст
 

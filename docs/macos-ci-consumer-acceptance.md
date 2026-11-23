@@ -60,11 +60,14 @@ development overrides and local environment files. Exact SDK pinning is retained
 because the integration uses version-specific APIs. The repository remains
 `publish_to: none`; no desktop version has been published by this check.
 
-Reproduce with:
+To reproduce this historical check at `ca23fc2`, run:
 
 ```sh
 python3 tool/check_macos_consumer.py --output build/macos-consumer
 ```
+
+For the current hosted and staged consumers, follow the
+[desktop consumer instructions](desktop-migration.md#reproducible-consumer-and-package-check).
 
 Local artifacts are under `build/macos-acceptance/` and
 `build/macos-consumer-final/`: logs, receiver reports, export inventory and

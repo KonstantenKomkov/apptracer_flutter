@@ -64,6 +64,7 @@ class TracerHttpTracer extends TracerPlatform {
   final TracerQueueStore _queueStore;
   final TracerDeliveryPolicy _policy;
   final TracerDeliveryListener? _deliveryListener;
+  String? _apiUrl;
   final DateTime Function() _clock;
   final double Function() _random;
   final Future<void> Function(Duration delay)? _delay;
@@ -105,8 +106,21 @@ class TracerHttpTracer extends TracerPlatform {
   bool get mirrorsBreadcrumbsToLog => true;
 
   @override
+  void configureDelivery(TracerOptions options,
+      {bool activateListener = true}) {
+    if (!options.isCollectionEnabled ||
+        options.resolvedAppToken != _appToken ||
+        options.apiUrl != _apiUrl) {
+      _endSession();
+    }
+    deliveryListener =
+        activateListener ? options.deliveryListener ?? _deliveryListener : null;
+  }
+
+  @override
   Future<void> initialize(TracerOptions options) async {
     _debug = options.debug;
+    configureDelivery(options);
     if (!options.isCollectionEnabled) {
       await stopCollection();
       return;
@@ -131,13 +145,14 @@ class TracerHttpTracer extends TracerPlatform {
         .convert(utf8.encode(jsonEncode([_scheme, host, token])))
         .toString();
     _appToken = token;
+    _apiUrl = options.apiUrl;
     _environment = options.resolvedEnvironment;
     _versionName = options.release ?? _versionName;
     _versionCode =
         int.tryParse(options.dist ?? '') ?? _versionCodeFrom(_versionName);
     final ready = await _synchronized(() async {
       if (generation != _generation) return false;
-      if (_cleanupPending && !await _clearStore()) return false;
+      if (_cleanupPending && !await _clearStore(generation)) return false;
       await _load(generation);
       return generation == _generation;
     });
@@ -159,23 +174,23 @@ class TracerHttpTracer extends TracerPlatform {
     if (_abort?.isCompleted == false) _abort!.complete();
     _abort = null;
     _appToken = null;
+    _apiUrl = null;
     _logs.clear();
     _customKeys.clear();
     _userId = null;
-    for (final entry in _queue) {
-      entry.finish();
-    }
     _queue.clear();
   }
 
-  Future<bool> _clearStore() async {
+  Future<bool> _clearStore(int generation) async {
     try {
       await _queueStore.clear();
       _cleanupPending = false;
       return true;
     } on Object {
       _cleanupPending = true;
-      _diagnose(TracerDeliveryState.failed, reason: 'storage_clear_failed');
+      if (generation == _generation) {
+        _diagnose(TracerDeliveryState.failed, reason: 'storage_clear_failed');
+      }
       return false;
     }
   }
@@ -189,8 +204,9 @@ class TracerHttpTracer extends TracerPlatform {
   Future<TracerCollectionResult> startCollection(TracerOptions options) async {
     await initialize(options);
     if (_cleanupPending) {
-      return const TracerCollectionResult(TracerCollectionState.error,
-          reason: 'storage_clear_failed');
+      return TracerCollectionResult(TracerCollectionState.error,
+          reason: 'storage_clear_failed',
+          failureReported: deliveryListener != null);
     }
     return getCollectionState();
   }
@@ -202,13 +218,16 @@ class TracerHttpTracer extends TracerPlatform {
       _client.close();
       _clientClosed = true;
     }
-    final cleared = await _synchronized(_clearStore);
+    final generation = _generation;
+    final cleared = await _synchronized(() => _clearStore(generation));
     return cleared
         ? const TracerCollectionResult(TracerCollectionState.disabled)
-        : const TracerCollectionResult(TracerCollectionState.error,
-            reason: 'storage_clear_failed');
+        : TracerCollectionResult(TracerCollectionState.error,
+            reason: 'storage_clear_failed',
+            failureReported: deliveryListener != null);
   }
 
+  /// Queues the event without waiting for its first HTTP response.
   @override
   Future<void> recordError(TracerEvent event) async {
     if (!_enabled) return;
@@ -234,24 +253,25 @@ class TracerHttpTracer extends TracerPlatform {
     );
     await _synchronized(() async {
       if (!_enabled || generation != _generation) {
-        entry.finish();
         return;
       }
       final expired = _dropExpired();
+      if (generation != _generation) return;
       if (entry.bytes > _policy.maxBytes) {
         if (expired) await _persist();
-        entry.finish();
+        if (generation != _generation) return;
         _diagnose(TracerDeliveryState.dropped, reason: 'event_too_large');
         return;
       }
       _queue.add(entry);
       _trimToLimits();
+      if (generation != _generation) return;
       await _persist();
+      if (generation != _generation) return;
       _diagnose(TracerDeliveryState.queued,
           reason: _storageFailed ? 'memory_only' : 'persisted');
     });
     if (_enabled && generation == _generation) unawaited(_pump());
-    await entry.attempted.future;
   }
 
   Future<void> _pump() async {
@@ -284,6 +304,7 @@ class TracerHttpTracer extends TracerPlatform {
           if (outcome.sent) {
             _queue.removeAt(0);
             await _persist();
+            if (generation != _generation) return;
             _diagnose(TracerDeliveryState.sent,
                 attempt: attempt, reason: 'http_${outcome.statusCode}');
             return;
@@ -291,6 +312,7 @@ class TracerHttpTracer extends TracerPlatform {
           if (!outcome.retryable || attempt >= _policy.maxAttempts) {
             _queue.removeAt(0);
             await _persist();
+            if (generation != _generation) return;
             _diagnose(TracerDeliveryState.dropped,
                 attempt: attempt,
                 reason: outcome.retryable ? 'retry_exhausted' : outcome.reason);
@@ -299,11 +321,11 @@ class TracerHttpTracer extends TracerPlatform {
           entry.nextAttemptAt =
               _nowMicros() + _backoff(attempt, outcome).inMicroseconds;
           await _persist();
+          if (generation != _generation) return;
           _diagnose(TracerDeliveryState.retry,
               attempt: attempt, reason: outcome.reason);
           if (generation == _generation) _scheduleIfWaiting(entry);
         });
-        entry.finish();
       }
     } finally {
       if (_pumpingGeneration == generation) _pumpingGeneration = null;
@@ -433,6 +455,7 @@ class TracerHttpTracer extends TracerPlatform {
     _canPersist = true;
     var changed = false;
     for (final record in records) {
+      if (generation != _generation) return;
       final entry = _QueueEntry.tryParse(record);
       if (entry == null) {
         changed = true;
@@ -451,16 +474,20 @@ class TracerHttpTracer extends TracerPlatform {
         _queue.add(entry);
       }
     }
-    if (_trimToLimits() || changed) await _persist();
+    if (generation != _generation) return;
+    if ((_trimToLimits() || changed) && generation == _generation) {
+      await _persist();
+    }
   }
 
   bool _trimToLimits() {
     final length = _queue.length;
     var bytes = _queueBytes();
-    while (_queue.length > _policy.maxEntries || bytes > _policy.maxBytes) {
+    final generation = _generation;
+    while (generation == _generation &&
+        (_queue.length > _policy.maxEntries || bytes > _policy.maxBytes)) {
       final dropped = _queue.removeAt(0);
       bytes -= dropped.bytes;
-      dropped.finish();
       _diagnose(TracerDeliveryState.dropped, reason: 'queue_overflow');
     }
     return length != _queue.length;
@@ -468,13 +495,13 @@ class TracerHttpTracer extends TracerPlatform {
 
   bool _dropExpired() {
     final length = _queue.length;
-    _queue.removeWhere((entry) {
-      if (!_expired(entry)) return false;
-      entry.finish();
+    _queue.removeWhere(_expired);
+    final removed = length - _queue.length;
+    final generation = _generation;
+    for (var i = 0; i < removed && generation == _generation; ++i) {
       _diagnose(TracerDeliveryState.dropped, reason: 'ttl_expired');
-      return true;
-    });
-    return length != _queue.length;
+    }
+    return removed > 0;
   }
 
   bool _expired(_QueueEntry entry) =>
@@ -484,11 +511,13 @@ class TracerHttpTracer extends TracerPlatform {
 
   Future<void> _persist() async {
     if (!_canPersist) return;
+    final generation = _generation;
     try {
       await _queueStore.save(
           _queue.map((entry) => entry.toRecord()).toList(growable: false));
-      _storageFailed = false;
+      if (generation == _generation) _storageFailed = false;
     } on Object {
+      if (generation != _generation) return;
       _storageFailed = true;
       _diagnose(TracerDeliveryState.failed, reason: 'storage_unavailable');
     }
@@ -552,12 +581,9 @@ class TracerHttpTracer extends TracerPlatform {
 
   void _diagnose(TracerDeliveryState state,
       {int attempt = 0, required String reason}) {
-    try {
-      _deliveryListener?.call(
-          TracerDeliveryDiagnostic(state, attempt: attempt, reason: reason));
-    } on Object {
-      // Diagnostics must never affect delivery.
-    }
+    TracerDeliveryDiagnostic(state,
+            attempt: attempt, reason: reason, backend: _backendName)
+        .notify(deliveryListener);
   }
 
   void _log(String message) {
@@ -584,11 +610,6 @@ class _QueueEntry {
   final int createdAt;
   int nextAttemptAt;
   int attempts;
-  final Completer<void> attempted = Completer<void>();
-
-  void finish() {
-    if (!attempted.isCompleted) attempted.complete();
-  }
 
   late final int bytes = utf8.encode(payload).length;
 
@@ -652,5 +673,5 @@ class _AttemptResult {
   final String reason;
   final String? retryAfter;
 
-  bool get sent => statusCode >= 200 && statusCode < 400 && reason == 'sent';
+  bool get sent => statusCode >= 100 && statusCode < 400 && reason == 'sent';
 }

@@ -54,6 +54,41 @@ stack frames. To clear Flutter metadata in `beforeSend`, return
 `event.copyWith(removeLibrary: true, removeContext: true)`. Each flag can be
 used independently.
 
+## Delivery and lifecycle diagnostics
+
+`TracerOptions.deliveryListener` reports typed HTTP queue transitions and platform
+call/lifecycle failures without requiring debug logs:
+
+```dart
+TracerOptions(
+  deliveryListener: (diagnostic) {
+    myLogger.info(
+      '${diagnostic.backend}:${diagnostic.operation}:${diagnostic.reason}',
+    );
+  },
+)
+```
+
+The listener receives the backend, operation, reason, state and attempt number.
+The built-in adapters use fixed codes such as `recordError/platform_exception`
+and `stopCollection/operation_error`. Payloads, exception messages, stacks and
+credentials stay out of these fields. A throwing listener or a failed Future
+returned by an async listener does not interrupt collection. A new initialization
+selects the listener for subsequent events. On HTTP, the options listener takes
+precedence over the optional transport constructor listener.
+
+With `TracerHttpTracer` and the registered web adapter, `recordError` waits for
+local queue processing, including the attempted storage write. An entry can be
+dropped or retained in memory. `sent` records an HTTP response below 400. Only the
+Tracer console can confirm that a report appeared there. Android, iOS and the
+desktop SDK retain their platform-call Future semantics and provide no delivery
+confirmation through this listener.
+
+Legacy `stopCollection` returns `Future<void>` and reports observable stop
+failures through the listener. `stopAndClearCollection` requests deletion of
+pending reports and returns a `TracerCollectionResult` describing the platform
+outcome, including unsupported cleanup and restart requirements.
+
 ## Large stack traces
 
 The verbatim trace is capped at 8 KiB by default and parsed frames at 128. The

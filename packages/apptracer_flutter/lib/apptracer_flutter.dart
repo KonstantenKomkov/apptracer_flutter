@@ -45,6 +45,9 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerEvent,
         TracerDiagnosticResult,
         TracerDiagnosticState,
+        TracerDeliveryDiagnostic,
+        TracerDeliveryListener,
+        TracerDeliveryState,
         TracerFilterErrorPolicy,
         TracerOptions,
         TracerNativeInitialization,
@@ -170,7 +173,9 @@ abstract final class Tracer {
   /// handlers were in place beforehand.
   ///
   /// Use [startCollection] to resume without bootstrapping the app again.
-  /// Native restart and cleanup capabilities depend on the platform.
+  /// Native restart and cleanup capabilities depend on the platform. This legacy
+  /// method keeps `Future<void>`; observe failures through
+  /// `TracerOptions.deliveryListener` or use [stopAndClearCollection] for a typed result.
   static Future<void> stopCollection() => _client.stop();
 
   /// Pauses a live session without deleting its reports, keys or user ID.
@@ -203,11 +208,12 @@ abstract final class Tracer {
 
   /// Explicitly starts collection after the application's decision.
   /// Does not invoke appRunner or create another zone.
-  static Future<TracerCollectionResult> startCollection(
-          [TracerOptions? options]) =>
+  static Future<TracerCollectionResult> startCollection([
+    TracerOptions? options,
+  ]) =>
       _client.startCollection(options);
 
-  /// Stops collection and clears pending reports and diagnostic buffers.
+  /// Stops collection and requests cleanup of pending reports and diagnostic buffers.
   /// New Dart events are rejected immediately, before this future completes.
   static Future<TracerCollectionResult> stopAndClearCollection() =>
       _client.stopAndClearCollection();
@@ -216,7 +222,9 @@ abstract final class Tracer {
   static Future<TracerCollectionResult> getCollectionState() =>
       _client.getCollectionState();
 
-  /// Reports a caught error.
+  /// Reports a caught error. The web adapter and `TracerHttpTracer` complete
+  /// after local queue processing. Native adapters await the platform call.
+  /// Only the HTTP queue emits a `sent` diagnostic.
   ///
   /// [fatal] marks the error as terminating. Note that on Android and iOS a
   /// fatal report counts against the crash-free metric, so reserve it for

@@ -21,6 +21,16 @@ Web appToken; shared example не включает лишний manual HTTP fall
 инструкции отделены от опубликованной 1.0.1 и исторических acceptance-протоколов.
 [Задача и результат](task-36-current-docs-consistency.md), [PR №36](https://github.com/KonstantenKomkov/apptracer_flutter/pull/36).
 
+<a id="task-34"></a>
+
+### П. 34. Общая наблюдаемость доставки и lifecycle
+
+Единый typed listener сообщает HTTP и platform/lifecycle outcomes без payload
+и credentials; `recordError` не ждёт сеть, старые API сохранены. Codex-ревью
+закрыло account/session races и разделило hosted production и staged candidate
+consumer acceptance с проверкой registry, dependency sources и publish archives.
+[Задача и результат](task-34-delivery-diagnostics.md), [PR №34](https://github.com/KonstantenKomkov/apptracer_flutter/pull/34).
+
 <a id="task-35"></a>
 
 ### П. 35. Runtime-валидация параметров TracerOptions

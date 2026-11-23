@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_delivery_diagnostic.dart';
 import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
@@ -46,6 +49,7 @@ class MethodChannelTracer extends TracerPlatform {
 
   @override
   Future<void> initialize(TracerOptions options) async {
+    configureDelivery(options);
     _debug = options.debug;
     final generation = ++_generation;
     if (!options.isCollectionEnabled) {
@@ -57,11 +61,25 @@ class MethodChannelTracer extends TracerPlatform {
     if (generation == _generation) _enabled = started ?? false;
   }
 
+  // Preserve virtual dispatch to existing stopCollection overrides. Only the
+  // facade's composite operation needs the exception to skip its state query.
+  static final _observingStop = Object();
+
+  @override
+  Future<TracerCollectionResult> stopCollectionAndGetState() =>
+      runZoned(super.stopCollectionAndGetState,
+          zoneValues: {_observingStop: this});
+
   @override
   Future<void> stopCollection() async {
     ++_generation;
     _enabled = false;
-    await _invoke<void>('stopCollection', _native.stopCollection);
+    if (identical(Zone.current[_observingStop], this)) {
+      await _withLegacy<void>(_native.stopCollection,
+          () => _channel.invokeMethod<void>('stopCollection'));
+    } else {
+      await _invoke<void>('stopCollection', _native.stopCollection);
+    }
   }
 
   @override
@@ -133,6 +151,7 @@ class MethodChannelTracer extends TracerPlatform {
 
   @override
   Future<TracerCollectionResult> startCollection(TracerOptions options) async {
+    configureDelivery(options);
     _debug = options.debug;
     final generation = ++_generation;
     if (!options.isCollectionEnabled) {
@@ -239,11 +258,24 @@ class MethodChannelTracer extends TracerPlatform {
 
   Future<T?> _invoke<T>(String method, Future<T> Function() call,
       [Object? Function()? arguments]) async {
+    final generation = _generation;
+    final listener = deliveryListener;
+    void failed() {
+      if (generation == _generation && listener == deliveryListener) {
+        TracerDeliveryDiagnostic(TracerDeliveryState.failed,
+                backend: backendName,
+                operation: method,
+                reason: 'platform_exception')
+            .notify(listener);
+      }
+    }
+
     try {
       return await _withLegacy<T?>(
           call, () => _channel.invokeMethod<T>(method, arguments?.call()));
     } on MissingPluginException {
-      _enabled = false;
+      if (generation == _generation) _enabled = false;
+      failed();
       if (_debug) {
         debugPrint(
           'apptracer_flutter: native implementation is missing, '
@@ -252,6 +284,7 @@ class MethodChannelTracer extends TracerPlatform {
       }
       return null;
     } on PlatformException catch (error) {
+      failed();
       if (_debug) {
         debugPrint('apptracer_flutter: $method failed: ${error.message}');
       }

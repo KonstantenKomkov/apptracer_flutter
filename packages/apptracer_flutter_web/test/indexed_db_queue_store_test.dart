@@ -56,7 +56,7 @@ TracerHttpTracer _tracer(
     deliveryListener: listener,
     deliveryPolicy: TracerDeliveryPolicy(
       initialBackoff: initialBackoff,
-      requestTimeout: const Duration(milliseconds: 50),
+      requestTimeout: const Duration(seconds: 10),
     ),
   );
 }
@@ -67,6 +67,17 @@ TracerEvent _event() => TracerEvent(
       stackTrace:
           DartStackTrace.parse('#0 main (package:example/main.dart:1:1)'),
     );
+
+Future<void> _recordOffline(TracerHttpTracer tracer) async {
+  final retry = Completer<void>();
+  await tracer.startCollection(TracerOptions(
+      appToken: 'test',
+      deliveryListener: (event) {
+        if (event.state == TracerDeliveryState.retry) retry.complete();
+      }));
+  await tracer.recordError(_event());
+  await retry.future;
+}
 
 void main() {
   test('IndexedDB snapshot survives another store instance and clears',
@@ -95,8 +106,7 @@ void main() {
     final offlineClient = _Client(true);
     final first =
         _tracer(offlineClient, store, initialBackoff: const Duration(hours: 1));
-    await first.startCollection(const TracerOptions(appToken: 'test'));
-    await first.recordError(_event());
+    await _recordOffline(first);
     expect(
         (await store.load()).single['payload'], contains('indexed-db-reload'));
 
@@ -120,8 +130,7 @@ void main() {
     final revokeClient = _Client(true);
     final revoking = _tracer(revokeClient, revokeStore,
         initialBackoff: const Duration(hours: 1));
-    await revoking.startCollection(const TracerOptions(appToken: 'test'));
-    await revoking.recordError(_event());
+    await _recordOffline(revoking);
     expect(await revokeStore.load(), hasLength(1));
     expect((await revoking.stopAndClearCollection()).state,
         TracerCollectionState.disabled);

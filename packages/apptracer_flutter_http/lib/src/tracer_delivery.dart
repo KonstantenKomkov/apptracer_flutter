@@ -1,5 +1,8 @@
 import 'dart:async';
 
+export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart'
+    show TracerDeliveryDiagnostic, TracerDeliveryListener, TracerDeliveryState;
+
 /// Bounds and timing for HTTP delivery and the owned event queue.
 class TracerDeliveryPolicy {
   /// Creates immutable delivery limits.
@@ -40,44 +43,6 @@ class TracerDeliveryPolicy {
   /// Maximum combined UTF-8 payload size.
   final int maxBytes;
 }
-
-/// Observable queue and request transitions.
-enum TracerDeliveryState {
-  /// Event was accepted into the current-session queue.
-  queued,
-
-  /// Server returned an HTTP status below 400.
-  sent,
-
-  /// Another attempt is scheduled.
-  retry,
-
-  /// Event was permanently removed without a successful response.
-  dropped,
-
-  /// Storage or scheduling failed.
-  failed,
-}
-
-/// Personal-data-free delivery state. `sent` only means an HTTP status below 400.
-class TracerDeliveryDiagnostic {
-  /// Creates a diagnostic value.
-  const TracerDeliveryDiagnostic(this.state,
-      {this.attempt = 0, required this.reason});
-
-  /// Transition kind.
-  final TracerDeliveryState state;
-
-  /// Attempt number, or zero for queue operations.
-  final int attempt;
-
-  /// Stable machine-readable reason without event data.
-  final String reason;
-}
-
-/// Receives optional delivery diagnostics.
-typedef TracerDeliveryListener = void Function(
-    TracerDeliveryDiagnostic diagnostic);
 
 /// JSON-compatible persisted queue record.
 typedef TracerQueueRecord = Map<String, Object?>;

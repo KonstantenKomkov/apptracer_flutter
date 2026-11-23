@@ -9,6 +9,10 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Move delivery diagnostics to the shared platform-interface contract and add
+  backend/operation metadata. `TracerOptions.deliveryListener` supersedes the legacy
+  constructor listener without duplicate events. `recordError` now completes after
+  queueing instead of awaiting the first HTTP response.
 - Document automatic Web delivery, manual HTTP registration for custom integrations,
   and the separate optional adapter for supported desktop configurations.
 

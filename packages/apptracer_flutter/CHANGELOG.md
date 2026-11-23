@@ -9,6 +9,9 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Add typed delivery/platform-lifecycle diagnostics through
+  `TracerOptions.deliveryListener`, with stable metadata and no payload or exception
+  text. Listener failures are isolated and reinitialization replaces the listener.
 - Validate negative breadcrumb/raw-stack/frame limits before backend startup with
   stable `invalid_max_*` errors, including deferred starts and disabled assertions.
   Negative `BreadcrumbBuffer` limits now disable buffering instead of evicting from

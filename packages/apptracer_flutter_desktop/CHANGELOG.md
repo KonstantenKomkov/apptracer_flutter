@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- Report observed SDK call failures with the operation name and a fixed reason
+  through the configured delivery listener. Capture still awaits the SDK.
+
 ## [1.0.1] - 2026-11-22
 
 - Wait for Linux native context updates before granting collection consent. Recheck authorization after each asynchronous update.

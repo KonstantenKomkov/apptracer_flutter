@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -21,7 +22,9 @@ void main() {
     final previousPlatform = TracerPlatform.instance;
     addTearDown(() => TracerPlatform.instance = previousPlatform);
     TracerPlatform.instance = adapter;
+    final diagnostics = <TracerDeliveryDiagnostic>[];
     await Tracer.startCollection(TracerOptions(
+      deliveryListener: diagnostics.add,
       dsn: 'https://public@tracer.invalid/42',
       release: '1.2.3',
       environment: 'test',
@@ -92,6 +95,20 @@ void main() {
             .any((c) => c.arguments.toString().contains('secret')),
         isFalse);
 
+    expect(diagnostics, isEmpty);
+    probe.onCall = (call) async {
+      if (call.method == 'captureEnvelope') {
+        throw PlatformException(code: 'private-sdk-error');
+      }
+      return null;
+    };
+    await Tracer.recordError('failed capture', StackTrace.current);
+    expect(diagnostics.single.backend, 'sentry-sdk');
+    expect(diagnostics.single.operation, 'recordError');
+    expect(diagnostics.single.reason, 'operation_error');
+    expect(diagnostics.single.state, TracerDeliveryState.failed);
+    probe.onCall = null;
+
     final other = SentryDesktopTracer();
     final refused = await other.startCollection(
         const TracerOptions(dsn: 'https://other@another.invalid/2'));
@@ -103,7 +120,7 @@ void main() {
     expect((await adapter.getCollectionState()).state,
         TracerCollectionState.restartRequired);
     await Tracer.recordError('after stop', StackTrace.current);
-    expect(probe.events, hasLength(1));
+    expect(probe.events, hasLength(2));
     expect((await adapter.stopAndClearCollection()).state,
         TracerCollectionState.restartRequired);
     expect(

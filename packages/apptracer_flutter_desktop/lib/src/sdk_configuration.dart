@@ -2,6 +2,8 @@
 // A version update must re-audit the allowlist and native failure propagation.
 // ignore_for_file: implementation_imports, experimental_member_use
 
+import 'dart:async';
+
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -67,8 +69,18 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
 /// The SDK's default diagnostic logger is gated by `debug`; this observer is
 /// deliberately independent of that gate. It sends no diagnostic telemetry.
 class ObservedSdkOptions extends SentryFlutterOptions {
-  /// Number of errors recorded at the SDK boundary.
+  final _operationErrorKey = Object();
+
+  /// Total SDK errors used by the lifecycle checks.
   int failures = 0;
+
+  /// Whether the SDK logged an error in this operation's async call chain.
+  Future<bool> loggedErrorDuring(Future<void> Function() action) async {
+    var failed = false;
+    void markFailed() => failed = true;
+    await runZoned(action, zoneValues: {_operationErrorKey: markFailed});
+    return failed;
+  }
 
   @override
   SdkLogCallback get log => (
@@ -78,6 +90,11 @@ class ObservedSdkOptions extends SentryFlutterOptions {
         Object? exception,
         StackTrace? stackTrace,
       }) {
-        if (level.ordinal >= SentryLevel.error.ordinal) failures++;
+        if (level.ordinal >= SentryLevel.error.ordinal) {
+          failures++;
+          final markFailed =
+              Zone.current[_operationErrorKey] as void Function()?;
+          markFailed?.call();
+        }
       };
 }

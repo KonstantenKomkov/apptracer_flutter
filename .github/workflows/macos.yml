@@ -6,9 +6,14 @@ on:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
-      - 'packages/apptracer_flutter/lib/**'
-      - 'packages/apptracer_flutter/pubspec*.yaml'
+      - 'packages/apptracer_flutter_android/**'
+      - 'packages/apptracer_flutter_ios/**'
+      - 'packages/apptracer_flutter_http/**'
+      - 'packages/apptracer_flutter_web/**'
+      - 'packages/apptracer_flutter/**'
+      - 'tool/consumer_packages.py'
       - 'tool/check_macos*.py'
+      - 'tool/tests/test_consumer_packages.py'
       - 'tool/coverage_report.py'
       - 'tool/coverage_baseline.json'
       - 'tool/desktop_coverage_baseline.json'
@@ -28,9 +33,14 @@ on:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
-      - 'packages/apptracer_flutter/lib/**'
-      - 'packages/apptracer_flutter/pubspec*.yaml'
+      - 'packages/apptracer_flutter_android/**'
+      - 'packages/apptracer_flutter_ios/**'
+      - 'packages/apptracer_flutter_http/**'
+      - 'packages/apptracer_flutter_web/**'
+      - 'packages/apptracer_flutter/**'
+      - 'tool/consumer_packages.py'
       - 'tool/check_macos*.py'
+      - 'tool/tests/test_consumer_packages.py'
       - 'tool/coverage_report.py'
       - 'tool/coverage_baseline.json'
       - 'tool/desktop_coverage_baseline.json'
@@ -70,7 +80,7 @@ jobs:
     outputs:
       versions: ${{ steps.evidence.outputs.versions }}
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 50
     env:
       COCOAPODS_DISABLE_STATS: 'true'
     defaults:
@@ -152,9 +162,12 @@ jobs:
             python3 tool/check_macos_desktop.py --app "$app" --scenario "$scenario" --output "build/macos-acceptance/$scenario.json"
           done
           python3 tool/check_macos_lifecycle.py --app "$app" --output build/macos-acceptance/lifecycle.json
-      - name: Build external consumer without monorepo overrides
+      - name: Build published production consumer without overrides
         if: inputs.sentry_candidate == ''
-        run: python3 tool/check_macos_consumer.py --output build/macos-consumer
+        run: python3 tool/check_macos_consumer.py --output build/macos-consumer/hosted
+      - name: Check staged packages and build external candidate consumer
+        if: inputs.sentry_candidate == ''
+        run: python3 tool/check_macos_consumer.py --candidate-facade --output build/macos-consumer/candidate
       - name: Record binary and symbol identity
         if: success()
         run: |
