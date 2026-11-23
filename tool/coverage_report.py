@@ -3,6 +3,7 @@
 import argparse
 import html
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -41,15 +42,17 @@ def collect(rows: list[dict]) -> tuple[dict, list[str], list[str]]:
         included.append(package)
         current = None
         measured = False
-        for line in lcov.read_text().splitlines():
+        library = ROOT / package / 'lib'
+        for line in lcov.read_text(encoding='utf-8').splitlines():
             if line.startswith('SF:'):
-                source = line[3:].replace('\\', '/')
-                if source.startswith(package + '/'):
-                    source = source[len(package) + 1:]
-                if not source.startswith('lib/') or generated(source):
+                source = Path(os.path.normpath(line[3:].replace('\\', '/')))
+                if not source.is_absolute():
+                    base = ROOT if source.is_relative_to(package) else ROOT / package
+                    source = base / source
+                if not source.is_relative_to(library) or generated(source.as_posix()):
                     current = None
                 else:
-                    current = f'{package}/{source}'
+                    current = source.relative_to(ROOT).as_posix()
                     files.setdefault(current, {})
             elif line.startswith('DA:') and current:
                 measured = True
@@ -83,10 +86,14 @@ def write_report(output: Path, files: dict, included: list, skipped: list,
         if path not in summary_files or not summary_files[path]['total']:
             raise SystemExit(f'Missing critical file coverage: {path}')
         current = summary_files[path]
+        if path not in baseline:
+            raise SystemExit(f'Missing critical coverage baseline for {scope}: {path}')
         previous = baseline[path]
-        ratio = current['covered'] / current['total'] if current['total'] else 0
+        if previous['total'] <= 0 or not 0 <= previous['covered'] <= previous['total']:
+            raise SystemExit(f'Invalid coverage baseline counts for {scope}: {path}')
+        ratio = current['covered'] / current['total']
         entry = {**current, 'ratio': ratio}
-        old_ratio = previous['covered'] / previous['total'] if previous['total'] else 0
+        old_ratio = previous['covered'] / previous['total']
         entry['baselineRatio'] = old_ratio
         entry['deltaPercentagePoints'] = (ratio - old_ratio) * 100
         critical[name] = entry
@@ -137,6 +144,8 @@ def main() -> None:
     parser.add_argument('--desktop-only', action='store_true')
     args = parser.parse_args()
     rows = packages()
+    if sys.platform not in DESKTOP_OS:
+        raise SystemExit(f'Unsupported desktop coverage platform: {sys.platform}')
     host = DESKTOP_OS[sys.platform]
     desktop = [row for row in rows if row['path'] == DESKTOP]
     files, included, skipped = collect(desktop)
@@ -153,15 +162,13 @@ def main() -> None:
     regressions = write_report(
         args.output / ('desktop-' + host), files, included, skipped,
         desktop_baselines[host], DESKTOP_CRITICAL, 'desktop-' + host, excluded)
-    if regressions:
-        raise SystemExit('Critical coverage below baseline: ' + ', '.join(regressions))
     if not args.desktop_only:
         files, included, skipped = collect([row for row in rows if row['path'] != DESKTOP])
-        regressions = write_report(args.output, files, included, skipped,
-                                   json.loads(args.baseline.read_text()), CRITICAL,
-                                   'common packages', [])
-        if regressions:
-            raise SystemExit('Critical coverage below baseline: ' + ', '.join(regressions))
+        regressions.extend(write_report(args.output, files, included, skipped,
+                                        json.loads(args.baseline.read_text()), CRITICAL,
+                                        'common packages', []))
+    if regressions:
+        raise SystemExit('Critical coverage below baseline: ' + ', '.join(regressions))
 
 
 if __name__ == '__main__':

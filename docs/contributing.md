@@ -80,13 +80,17 @@ covered/total counts in `tool/coverage_baseline.json` in the same change.
 Desktop coverage is written separately to `build/coverage/desktop-<os>/`.
 Each native workflow uploads its host report, including shared adapter code
 and files for that OS. The JSON lists the other platforms’ excluded files.
-`desktop_lifecycle` tracks `sentry_desktop_tracer.dart` against the current host's
-covered/total counts in `tool/desktop_coverage_baseline.json`; the three hosts are
-never combined into a misleading shared percentage. Both ordinary and
-`--desktop-only` runs fail on a decrease after writing the report. Platform CI
-also adds the critical summary to the job summary and uploads artifacts on failure.
-Review the affected lifecycle branches before intentionally updating those counts.
-Run the host check with `python3 tool/coverage_report.py --desktop-only`.
+`desktop_lifecycle` compares the line coverage ratio of `sentry_desktop_tracer.dart`
+with the current host's entry in `tool/desktop_coverage_baseline.json`. Both
+`make check` and `python3 tool/coverage_report.py --desktop-only` fail on a
+decrease. Each platform workflow publishes the counts and delta in its job
+summary and uploads the report even when the coverage gate fails.
+
+For an intentional change, inspect the affected lines in each host's LCOV
+artifact, explain the lifecycle outcomes covered or missed in the PR, and update
+the affected host's covered/total pair in the same review. The gates apply to
+individual critical files. There is no project-wide 100% coverage target.
+
 The desktop dry-run explicitly allows only pub's exact-pin warning for
 `sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
 

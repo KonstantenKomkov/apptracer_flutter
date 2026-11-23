@@ -118,8 +118,9 @@ jobs:
         run: python tool/coverage_report.py --desktop-only
       - name: Summarize desktop critical coverage
         if: always() && hashFiles('build/coverage/desktop-windows/summary.json') != ''
+        shell: bash
         run: |
-          python3 - <<'PY'
+          python - <<'PY'
           import json, os
           summary = json.load(open('build/coverage/desktop-windows/summary.json'))
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as target:

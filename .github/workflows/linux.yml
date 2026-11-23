@@ -116,15 +116,6 @@ jobs:
           flutter pub get
           flutter analyze --fatal-infos
           flutter test --coverage
-          cd ../apptracer_flutter
-          flutter pub get --no-example
-          flutter analyze --fatal-infos lib test
-          flutter test
-          cd ../apptracer_flutter_desktop
-          cd example
-          flutter pub get
-          flutter analyze --fatal-infos
-          flutter test
       - name: Report linux adapter coverage
         run: python3 tool/coverage_report.py --desktop-only
       - name: Summarize desktop critical coverage
@@ -145,6 +136,16 @@ jobs:
           name: desktop-coverage-linux
           path: build/coverage/desktop-linux
           if-no-files-found: error
+      - name: Analyze and test facade and desktop example
+        working-directory: packages/apptracer_flutter
+        run: |
+          flutter pub get --no-example
+          flutter analyze --fatal-infos lib test
+          flutter test
+          cd ../apptracer_flutter_desktop/example
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
       - name: Build release and preserve symbols
         run: bash tool/build_linux_desktop.sh
       - name: Identify compiled Sentry SDKs

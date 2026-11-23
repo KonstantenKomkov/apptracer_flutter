@@ -106,8 +106,6 @@ jobs:
           flutter pub get
           flutter analyze --fatal-infos
           flutter test --coverage
-          swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
-          "$RUNNER_TEMP/desktop-native-tests"
       - name: Report macos adapter coverage
         run: python3 tool/coverage_report.py --desktop-only
       - name: Summarize desktop critical coverage
@@ -128,6 +126,11 @@ jobs:
           name: desktop-coverage-macos
           path: build/coverage/desktop-macos
           if-no-files-found: error
+      - name: Test native desktop storage
+        working-directory: packages/apptracer_flutter_desktop
+        run: |
+          swiftc macos/Classes/DesktopStorage.swift macos/Classes/RevocableSession.swift test/native/main.swift -o "$RUNNER_TEMP/desktop-native-tests"
+          "$RUNNER_TEMP/desktop-native-tests"
       - name: Build release example
         working-directory: packages/apptracer_flutter_desktop/example
         run: |
