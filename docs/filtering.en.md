@@ -58,10 +58,17 @@ used independently.
 
 The verbatim trace is capped at 8 KiB by default and parsed frames at 128. The
 beginning is retained because it carries the `build_id` and frames nearest the
-throw. Negative values reject startup with stable `invalid_max_*` reasons in both
-debug and release, while `const TracerOptions` remains supported. Zero breadcrumbs
-disable only the Dart buffer; zero stack limits remain unlimited. Adjust the limits
-if needed:
+throw. A zero limit keeps all raw bytes or parsed frames. Setting
+`maxBreadcrumbs` to zero disables Dart breadcrumb storage. The facade still
+mirrors breadcrumbs to backends that request it. Each backend controls its own
+retention.
+
+The facade validates limits at startup in debug and release. A negative
+`maxBreadcrumbs`, `maxRawStackTraceLogBytes` or `maxStackFrames` makes
+`Tracer.startCollection` return `error` with reason `invalid_max_breadcrumbs`,
+`invalid_max_raw_stack_trace_log_bytes` or `invalid_max_stack_frames`,
+respectively. With deferred initialization the check applies to the explicit
+start. In either mode `Tracer.initialize` still runs `appRunner` once.
 
 ```dart
 TracerOptions(

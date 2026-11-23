@@ -81,39 +81,35 @@ void main() {
       expect(Tracer.isEnabled, isFalse);
     });
 
-    test('with invalid limits still calls appRunner once without backend start',
-        () async {
-      var calls = 0;
-
-      await Tracer.initialize(
-        options: const TracerOptions(maxStackFrames: -1),
-        appRunner: () => calls++,
-      );
-
-      expect(calls, 1);
-      expect(Tracer.isEnabled, isFalse);
-      expect(platform.initializeCalls, 0);
-    });
-
-    test('deferred explicit start validates options and runs appRunner once',
-        () async {
-      var calls = 0;
-      await Tracer.initialize(
-        options: const TracerOptions(
-          maxRawStackTraceLogBytes: -1,
-          nativeInitialization: TracerNativeInitialization.deferred,
+    for (final mode in TracerNativeInitialization.values) {
+      for (final (limits, reason) in const [
+        (TracerOptions(maxBreadcrumbs: -1), 'invalid_max_breadcrumbs'),
+        (
+          TracerOptions(maxRawStackTraceLogBytes: -1),
+          'invalid_max_raw_stack_trace_log_bytes',
         ),
-        appRunner: () => calls++,
-      );
+        (TracerOptions(maxStackFrames: -1), 'invalid_max_stack_frames'),
+      ]) {
+        test('$mode with $reason runs appRunner once and rejects startup',
+            () async {
+          var calls = 0;
+          await Tracer.initialize(
+            options: limits.copyWith(nativeInitialization: mode),
+            appRunner: () => calls++,
+          );
+          expect(calls, 1);
+          expect(Tracer.isEnabled, isFalse);
+          expect(platform.startCalls, 0);
 
-      final result = await Tracer.startCollection();
-
-      expect(result.state, TracerCollectionState.error);
-      expect(result.reason, 'invalid_max_raw_stack_trace_log_bytes');
-      expect(calls, 1);
-      expect(platform.initializeCalls, 0);
-      expect(Tracer.isEnabled, isFalse);
-    });
+          final result = await Tracer.startCollection();
+          expect(result.state, TracerCollectionState.error);
+          expect(result.reason, reason);
+          expect(calls, 1);
+          expect(platform.startCalls, 0);
+          expect(Tracer.client.hasInstalledHandlers, isFalse);
+        });
+      }
+    }
 
     test('with the guarded zone switched off', () async {
       var calls = 0;

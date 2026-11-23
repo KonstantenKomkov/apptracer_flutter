@@ -259,6 +259,58 @@ void main() {
     expect(platform.stopCalls, 1);
   });
 
+  test('invalid start preserves a live session and its paused context',
+      () async {
+    const valid = TracerOptions(initialCustomKeys: {'session': 'original'});
+    const invalid = TracerOptions(maxStackFrames: -1);
+    await client.startCollection(valid);
+    client.addBreadcrumb(TracerBreadcrumb(message: 'original'));
+    expect((await client.startCollection(invalid)).reason,
+        'invalid_max_stack_frames');
+    expect(client.isEnabled, isTrue);
+    expect(client.hasInstalledHandlers, isTrue);
+
+    await client.pauseCollection();
+    await client.start(invalid);
+    expect((await client.resumeCollection()).isEnabled, isTrue);
+    expect(client.options, same(valid));
+    expect(client.customKeys['session'], 'original');
+    expect(client.breadcrumbs.single.message, 'original');
+    expect(platform.operations, ['start']);
+  });
+
+  test('invalid bootstrap leaves an in-flight valid start intact', () async {
+    const valid = TracerOptions(maxStackFrames: 1);
+    platform.starting = Completer<void>();
+    final started = client.startCollection(valid);
+    await Future<void>.delayed(Duration.zero);
+    await client.start(const TracerOptions(maxStackFrames: -1));
+    platform.starting!.complete();
+    expect((await started).isEnabled, isTrue);
+    expect(client.options, same(valid));
+    expect(client.hasInstalledHandlers, isTrue);
+    expect(platform.operations, ['start']);
+  });
+
+  test('explicit opt-out with an invalid limit still stops the backend',
+      () async {
+    platform.starting = Completer<void>();
+    final started = client.startCollection(const TracerOptions());
+    await Future<void>.delayed(Duration.zero);
+    final disabled = client.startCollection(
+      const TracerOptions(isCollectionEnabled: false, maxBreadcrumbs: -1),
+    );
+    platform.starting!.complete();
+    expect((await started).reason, 'superseded');
+    final result = await disabled;
+    expect(result.state, TracerCollectionState.error);
+    expect(result.reason, 'invalid_max_breadcrumbs');
+    expect(platform.operations, ['start']);
+    expect(platform.stopCalls, 1);
+    expect(platform.isEnabled, isFalse);
+    expect(client.isEnabled, isFalse);
+  });
+
   test('repeated start does not initialize a second service', () async {
     await Future.wait([
       client.startCollection(const TracerOptions()),
