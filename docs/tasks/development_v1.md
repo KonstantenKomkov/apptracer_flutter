@@ -108,7 +108,6 @@ Codex-ревью уточнило критерии приёмки, documentation
 
 | № | Задача | Приоритет | Сложность | Зависимости / заметки |
 | --- | --- | --- | --- | --- |
-| 31 | [Воспроизводимые GitHub Actions по commit SHA](task-31-github-actions-sha.md) | P0 | S | Независима; первый инфраструктурный PR |
 | 33 | [Миграция desktop на Sentry 10.x](task-33-sentry-10-migration.md) | P1 | XL | №29 завершена. При блокере сохранить pin и оставить миграцию открытой |
 | 34 | [Общая наблюдаемость доставки и lifecycle](task-34-delivery-diagnostics.md) | P1 | L | Затрагивает interface/facade/HTTP/desktop; не ждать сеть в recordError |
 | 35 | [Runtime-валидация TracerOptions](task-35-runtime-option-validation.md) | P2 | S | Независима; сохранить const API |

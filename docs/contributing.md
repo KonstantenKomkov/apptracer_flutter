@@ -34,6 +34,21 @@ make analyze        # analyze every catalog package, including desktop
 make test           # VM/Chrome tests and combined coverage
 ```
 
+Every external action in `.github/workflows/` must use a full commit SHA followed by
+a version comment, for example `actions/checkout@<40-character-sha> # v7`. Local
+`uses: ./...` references are allowed. The lightweight `Action commit pins`
+workflow checks changes to workflows, the checker, its dependency and its tests.
+A PR changing only `.github/workflows/docs.yml` runs the pins and documentation
+checks. Changes under `tool/` also match the existing Flutter CI filter.
+Dependabot's root `github-actions` configuration covers the workflow references.
+
+```sh
+python3 -m venv build/pins-venv
+build/pins-venv/bin/python -m pip install -r tool/requirements-action-pins.txt
+build/pins-venv/bin/python -m unittest discover -s tool/tests -p test_action_pins.py
+build/pins-venv/bin/python tool/check_action_pins.py
+```
+
 For Markdown changes, run the documentation workflow checks with Python 3.10+:
 
 ```sh
