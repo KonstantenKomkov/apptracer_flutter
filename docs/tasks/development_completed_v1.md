@@ -2,6 +2,16 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-34"></a>
+
+### П. 34. Общая наблюдаемость доставки и lifecycle
+
+Единый typed listener сообщает HTTP и platform/lifecycle outcomes без payload
+и credentials; `recordError` не ждёт сеть, старые API сохранены. Codex-ревью
+закрыло account/session races и разделило hosted production и staged candidate
+consumer acceptance с проверкой registry, dependency sources и publish archives.
+[Задача и результат](task-34-delivery-diagnostics.md), [PR №34](https://github.com/KonstantenKomkov/apptracer_flutter/pull/34).
+
 <a id="task-32"></a>
 
 ### П. 32. Управляемое поведение privacy-фильтров при ошибках
