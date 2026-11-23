@@ -186,9 +186,22 @@ void main() {
   });
 
   test('a PlatformException from the native side does not propagate', () async {
-    await tracer.initialize(const TracerOptions(appToken: 'token'));
-    native.operationError = platformError;
-    await expectLater(tracer.recordLog('hello'), completes);
+    final diagnostics = <TracerDeliveryDiagnostic>[];
+    await tracer.initialize(TracerOptions(
+        appToken: 'private token',
+        deliveryListener: (event) async {
+          diagnostics.add(event);
+          await Future<void>.value();
+          throw StateError('private async listener failure');
+        }));
+    native.operationError =
+        PlatformException(code: 'private', message: 'private exception');
+    await expectLater(tracer.recordLog('private payload'), completes);
+    expect(diagnostics.single.backend, 'test');
+    expect(diagnostics.single.operation, 'recordLog');
+    expect(diagnostics.single.reason, 'platform_exception');
+    expect(diagnostics.single.attempt, 0);
+    expect(diagnostics.single.state, TracerDeliveryState.failed);
   });
 
   test('forwards custom key and user id operations', () async {
@@ -199,6 +212,35 @@ void main() {
     await tracer.setUserId('u-1');
     expect(
         native.calls, <String>['setCustomKey', 'removeCustomKey', 'setUserId']);
+  });
+
+  test(
+      'legacy stop queries state after the typed stop and preserves an error result',
+      () async {
+    native.collectionHandler = (_) =>
+        NativeCollectionResult(state: 'error', reason: 'private state detail');
+    final result = await tracer.stopCollectionAndGetState();
+    expect(result.state, TracerCollectionState.error);
+    expect(native.calls, ['stopCollection', 'getCollectionState']);
+    expect(tracer.isEnabled, isFalse);
+  });
+
+  test('legacy-only host gets stop and state without a cleanup call', () async {
+    const channel = MethodChannel('test/legacy-stop');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <String>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call.method);
+      if (call.method == 'stopCollection') return null;
+      return {'state': 'restartRequired'};
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final legacy =
+        MethodChannelTracer(channel: channel, backendName: 'ios-native');
+    expect((await legacy.stopCollectionAndGetState()).state,
+        TracerCollectionState.restartRequired);
+    expect(calls, ['stopCollection', 'getCollectionState']);
   });
 
   test('stopCollection disables the client', () async {

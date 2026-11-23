@@ -56,7 +56,7 @@ TracerHttpTracer _tracer(
     deliveryListener: listener,
     deliveryPolicy: TracerDeliveryPolicy(
       initialBackoff: initialBackoff,
-      requestTimeout: const Duration(milliseconds: 50),
+      requestTimeout: const Duration(seconds: 10),
     ),
   );
 }
@@ -68,11 +68,15 @@ TracerEvent _event() => TracerEvent(
           DartStackTrace.parse('#0 main (package:example/main.dart:1:1)'),
     );
 
-Future<void> _record(TracerHttpTracer tracer, TracerEvent event) async {
-  await tracer.recordError(event);
-  for (var i = 0; i < 20; ++i) {
-    await Future<void>.delayed(Duration.zero);
-  }
+Future<void> _recordOffline(TracerHttpTracer tracer) async {
+  final retry = Completer<void>();
+  await tracer.startCollection(TracerOptions(
+      appToken: 'test',
+      deliveryListener: (event) {
+        if (event.state == TracerDeliveryState.retry) retry.complete();
+      }));
+  await tracer.recordError(_event());
+  await retry.future;
 }
 
 void main() {
@@ -102,8 +106,7 @@ void main() {
     final offlineClient = _Client(true);
     final first =
         _tracer(offlineClient, store, initialBackoff: const Duration(hours: 1));
-    await first.startCollection(const TracerOptions(appToken: 'test'));
-    await _record(first, _event());
+    await _recordOffline(first);
     expect(
         (await store.load()).single['payload'], contains('indexed-db-reload'));
 
@@ -127,8 +130,7 @@ void main() {
     final revokeClient = _Client(true);
     final revoking = _tracer(revokeClient, revokeStore,
         initialBackoff: const Duration(hours: 1));
-    await revoking.startCollection(const TracerOptions(appToken: 'test'));
-    await _record(revoking, _event());
+    await _recordOffline(revoking);
     expect(await revokeStore.load(), hasLength(1));
     expect((await revoking.stopAndClearCollection()).state,
         TracerCollectionState.disabled);

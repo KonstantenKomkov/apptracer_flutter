@@ -69,15 +69,25 @@ TracerOptions(
 )
 ```
 
-Diagnostics contain only backend, operation, stable reason, state and attempt — no
-payload, exception text, stack trace, DSN or app token. A listener exception is
-ignored and cannot affect the application. Reinitialization replaces the listener.
+The listener receives the backend, operation, reason, state and attempt number.
+The built-in adapters use fixed codes such as `recordError/platform_exception`
+and `stopCollection/operation_error`. Payloads, exception messages, stacks and
+credentials stay out of these fields. A throwing listener or a failed Future
+returned by an async listener does not interrupt collection. A new initialization
+selects the listener for subsequent events. On HTTP, the options listener takes
+precedence over the optional transport constructor listener.
 
-`queued/retry/dropped/failed` describe the local transport. `sent` means only an
-HTTP response below 400, not that the event appeared in the Tracer console. HTTP
-`recordError` completes after queueing rather than awaiting the network. Legacy
-`stopCollection` keeps `Future<void>`; report its failure through the listener.
-`stopAndClearCollection` also clears reports and returns a typed result.
+With `TracerHttpTracer` and the registered web adapter, `recordError` waits for
+local queue processing, including the attempted storage write. An entry can be
+dropped or retained in memory. `sent` records an HTTP response below 400. Only the
+Tracer console can confirm that a report appeared there. Android, iOS and the
+desktop SDK retain their platform-call Future semantics and provide no delivery
+confirmation through this listener.
+
+Legacy `stopCollection` returns `Future<void>` and reports observable stop
+failures through the listener. `stopAndClearCollection` requests deletion of
+pending reports and returns a `TracerCollectionResult` describing the platform
+outcome, including unsupported cleanup and restart requirements.
 
 ## Large stack traces
 

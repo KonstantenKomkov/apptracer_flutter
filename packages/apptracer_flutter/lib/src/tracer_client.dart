@@ -87,38 +87,53 @@ class TracerClient {
   /// Never throws. A platform SDK that fails to start leaves the client
   /// disabled; the host application keeps running either way.
   Future<void> start(TracerOptions options) async {
+    _configureDelivery(options);
     _options = options;
+    if (!options.isCollectionEnabled &&
+        (_started || _paused || platform.isEnabled)) {
+      await _startCollection(options);
+      return;
+    }
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
       ++_generation;
       _disableDart();
       return;
     }
-    await startCollection(options);
+    await _startCollection(options);
+  }
+
+  void _configureDelivery(TracerOptions options) {
+    final listenerChanged =
+        _options.deliveryListener != options.deliveryListener;
+    if (listenerChanged ||
+        _options.resolvedAppToken != options.resolvedAppToken ||
+        _options.apiUrl != options.apiUrl ||
+        _options.dsn != options.dsn ||
+        _options.isCollectionEnabled != options.isCollectionEnabled) {
+      ++_generation;
+      platform.configureDelivery(options, activateListener: false);
+    }
+    if (!_started && !_paused) {
+      _options = options;
+    } else if (listenerChanged) {
+      _options = _options.copyWith(
+          deliveryListener: options.deliveryListener,
+          removeDeliveryListener: options.deliveryListener == null);
+    }
   }
 
   /// Starts transport without re-running appRunner or creating a guarded zone.
   Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
-    final requested = options ?? _options;
+    if (options != null) _configureDelivery(options);
+    return _startCollection(options ?? _options);
+  }
+
+  Future<TracerCollectionResult> _startCollection(TracerOptions requested) {
     if (!requested.isCollectionEnabled) {
-      ++_generation;
+      final generation = ++_generation;
       _disableDart();
-      return _serialize(() async {
-        try {
-          await platform.stopCollection();
-          return await platform.getCollectionState();
-        } catch (error) {
-          _diagnose(
-            TracerDeliveryState.failed,
-            operation: 'stopCollection',
-            reason: 'platform_exception',
-          );
-          return TracerCollectionResult(
-            TracerCollectionState.error,
-            reason: 'stop_failed: $error',
-          );
-        }
-      });
+      return _serialize(() => _stopPlatform(generation));
     }
     final generation = _generation;
     return _serialize(() async {
@@ -128,13 +143,14 @@ class TracerClient {
           reason: 'superseded',
         );
       }
-      if (!requested.isCollectionEnabled) {
-        _disableDart();
-        return const TracerCollectionResult(TracerCollectionState.disabled);
-      }
+      var operation = 'startCollection';
       try {
+        platform.configureDelivery(requested);
         if (isEnabled) {
+          operation = 'getCollectionState';
           final current = await platform.getCollectionState();
+          _observeCollectionResult(current, operation, generation);
+          operation = 'startCollection';
           if (generation != _generation) {
             return const TracerCollectionResult(
               TracerCollectionState.disabled,
@@ -152,11 +168,11 @@ class TracerClient {
             reason: 'superseded',
           );
         }
-        _observeCollectionResult(result, 'startCollection');
+        _observeCollectionResult(result, 'startCollection', generation);
         if (!result.isEnabled) return result;
         if (!platform.isEnabled) {
           _diagnose(
-            TracerDeliveryState.failed,
+            generation,
             operation: 'startCollection',
             reason: 'operation_error',
           );
@@ -184,11 +200,11 @@ class TracerClient {
               );
       } catch (error) {
         _diagnose(
-          TracerDeliveryState.failed,
-          operation: 'startCollection',
+          generation,
+          operation: operation,
           reason: 'platform_exception',
         );
-        _disableDart();
+        if (generation == _generation) _disableDart();
         return TracerCollectionResult(
           TracerCollectionState.error,
           reason: 'start_failed: $error',
@@ -199,13 +215,14 @@ class TracerClient {
 
   /// Observes transport; never grants permission to emit Dart events.
   Future<TracerCollectionResult> getCollectionState() async {
+    final generation = _generation;
     try {
       final result = await platform.getCollectionState();
-      _observeCollectionResult(result, 'getCollectionState');
+      _observeCollectionResult(result, 'getCollectionState', generation);
       return result;
     } catch (error) {
       _diagnose(
-        TracerDeliveryState.failed,
+        generation,
         operation: 'getCollectionState',
         reason: 'platform_exception',
       );
@@ -218,20 +235,22 @@ class TracerClient {
 
   /// Runs an opt-in Android heap dump off the platform thread.
   Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
-      _diagnostic(() => platform.runHeapDump(tag: tag));
+      _diagnostic('runHeapDump', () => platform.runHeapDump(tag: tag));
 
   /// Requests a one-time sample from an already installed disk module.
   Future<TracerDiagnosticResult> runDiskUsage() =>
-      _diagnostic(platform.runDiskUsage);
+      _diagnostic('runDiskUsage', platform.runDiskUsage);
 
   /// Changes the host-installed native heap decision provider.
   Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
       _diagnostic(
+        'setHeapDumpEnabled',
         () => platform.setHeapDumpEnabled(enabled),
         allowDisabled: !enabled,
       );
 
   Future<TracerDiagnosticResult> _diagnostic(
+    String name,
     Future<TracerDiagnosticResult> Function() operation, {
     bool allowDisabled = false,
   }) async {
@@ -244,8 +263,8 @@ class TracerClient {
     final generation = _generation;
     try {
       final result = await operation();
-      if (generation == _generation) {
-        _observeDiagnosticResult(result, 'nativeDiagnostic');
+      if (result.state == TracerDiagnosticState.error) {
+        _diagnose(generation, operation: name, reason: 'operation_error');
       }
       return generation == _generation
           ? result
@@ -255,8 +274,8 @@ class TracerClient {
             );
     } catch (_) {
       _diagnose(
-        TracerDeliveryState.failed,
-        operation: 'nativeDiagnostic',
+        generation,
+        operation: name,
         reason: 'platform_exception',
       );
       return const TracerDiagnosticResult(
@@ -281,11 +300,11 @@ class TracerClient {
       }
       try {
         final result = await platform.pauseCollection();
-        _observeCollectionResult(result, 'pauseCollection');
+        _observeCollectionResult(result, 'pauseCollection', generation);
         return result;
       } catch (error) {
         _diagnose(
-          TracerDeliveryState.failed,
+          generation,
           operation: 'pauseCollection',
           reason: 'platform_exception',
         );
@@ -315,12 +334,14 @@ class TracerClient {
             reason: 'superseded',
           );
         }
-        _observeCollectionResult(result, 'resumeCollection');
+        _observeCollectionResult(result, 'resumeCollection', generation);
         if (result.isEnabled && platform.isEnabled) {
           _paused = false;
           _started = true;
           _installHandlers();
         } else if (result.isEnabled) {
+          _diagnose(generation,
+              operation: 'resumeCollection', reason: 'operation_error');
           return const TracerCollectionResult(
             TracerCollectionState.error,
             reason: 'enabled_state_not_confirmed',
@@ -329,7 +350,7 @@ class TracerClient {
         return result;
       } catch (error) {
         _diagnose(
-          TracerDeliveryState.failed,
+          generation,
           operation: 'resumeCollection',
           reason: 'platform_exception',
         );
@@ -363,33 +384,32 @@ class TracerClient {
   ///
   /// Always reaches the platform, including before a successful Dart start.
   Future<void> stop() async {
-    ++_generation;
+    final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(
       initialCustomKeys: const <String, String>{},
       preservePreviousReports: false,
     );
-    await _serialize(() async {
-      try {
-        await platform.stopCollection();
-        return await platform.getCollectionState();
-      } catch (error) {
-        _diagnose(
-          TracerDeliveryState.failed,
-          operation: 'stopCollection',
-          reason: 'platform_exception',
-        );
-        return TracerCollectionResult(
-          TracerCollectionState.error,
-          reason: 'stop_failed: $error',
-        );
-      }
-    });
+    await _serialize(() => _stopPlatform(generation));
+  }
+
+  Future<TracerCollectionResult> _stopPlatform(int generation) async {
+    try {
+      if (generation == _generation) platform.configureDelivery(_options);
+      final result = await platform.stopCollectionAndGetState();
+      _observeCollectionResult(result, 'stopCollection', generation);
+      return result;
+    } catch (error) {
+      _diagnose(generation,
+          operation: 'stopCollection', reason: 'platform_exception');
+      return TracerCollectionResult(TracerCollectionState.error,
+          reason: 'stop_failed: $error');
+    }
   }
 
   /// Revokes Dart collection synchronously, then stops and purges transport.
   Future<TracerCollectionResult> stopAndClearCollection() {
-    ++_generation;
+    final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(
       initialCustomKeys: const <String, String>{},
@@ -397,12 +417,13 @@ class TracerClient {
     );
     return _serialize(() async {
       try {
+        if (generation == _generation) platform.configureDelivery(_options);
         final result = await platform.stopAndClearCollection();
-        _observeCollectionResult(result, 'stopAndClearCollection');
+        _observeCollectionResult(result, 'stopAndClearCollection', generation);
         return result;
       } catch (error) {
         _diagnose(
-          TracerDeliveryState.failed,
+          generation,
           operation: 'stopAndClearCollection',
           reason: 'platform_exception',
         );
@@ -740,49 +761,26 @@ class TracerClient {
   }
 
   void _diagnose(
-    TracerDeliveryState state, {
+    int generation, {
     required String operation,
     required String reason,
   }) {
+    if (generation != _generation) return;
     final listener = _options.deliveryListener;
     if (listener == null) return;
-    try {
-      listener(
-        TracerDeliveryDiagnostic(
-          state,
-          reason: reason,
-          backend: platform.backendName,
-          operation: operation,
-        ),
-      );
-    } catch (_) {
-      // Diagnostics never affect collection or the host application.
-    }
+    TracerDeliveryDiagnostic(TracerDeliveryState.failed,
+            reason: reason, backend: platform.backendName, operation: operation)
+        .notify(listener);
   }
 
   void _observeCollectionResult(
     TracerCollectionResult result,
     String operation,
+    int generation,
   ) {
-    if (result.state == TracerCollectionState.error) {
-      _diagnose(
-        TracerDeliveryState.failed,
-        operation: operation,
-        reason: 'operation_error',
-      );
-    }
-  }
-
-  void _observeDiagnosticResult(
-    TracerDiagnosticResult result,
-    String operation,
-  ) {
-    if (result.state == TracerDiagnosticState.error) {
-      _diagnose(
-        TracerDeliveryState.failed,
-        operation: operation,
-        reason: 'operation_error',
-      );
+    if (result.state == TracerCollectionState.error &&
+        !result.failureReported) {
+      _diagnose(generation, operation: operation, reason: 'operation_error');
     }
   }
 
@@ -790,11 +788,12 @@ class TracerClient {
     Future<void> Function() action, {
     required String operation,
   }) async {
+    final generation = _generation;
     try {
       await action();
     } catch (error) {
       _diagnose(
-        TracerDeliveryState.failed,
+        generation,
         operation: operation,
         reason: 'platform_exception',
       );

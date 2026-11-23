@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_delivery_diagnostic.dart';
 import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
@@ -50,7 +51,19 @@ abstract class TracerPlatform extends PlatformInterface {
 
   /// Short identifier of the delivery backend, used in diagnostics — for
   /// example `android-native`, `ios-native`, `sentry-http` or `unsupported`.
+  /// Use a fixed identifier without account data or credentials.
   String get backendName;
+
+  /// Updates diagnostics even when an already running SDK needs no second start.
+  /// A pending session detaches listeners while earlier cleanup finishes.
+  void configureDelivery(TracerOptions options,
+      {bool activateListener = true}) {
+    deliveryListener = activateListener ? options.deliveryListener : null;
+  }
+
+  /// Listener for the current session. Backends may supply a constructor fallback.
+  @protected
+  TracerDeliveryListener? deliveryListener;
 
   /// Whether breadcrumbs have to be mirrored into the platform log buffer as
   /// they happen.
@@ -89,6 +102,13 @@ abstract class TracerPlatform extends PlatformInterface {
   ///
   /// Must be idempotent.
   Future<void> stopCollection();
+
+  /// Performs the legacy stop and observes its result without requesting a purge.
+  /// Older implementations continue to receive their [stopCollection] call.
+  Future<TracerCollectionResult> stopCollectionAndGetState() async {
+    await stopCollection();
+    return getCollectionState();
+  }
 
   /// Temporarily disables a live SDK without purging reports or account data.
   /// This is not consent withdrawal or cancellation of in-flight uploads.

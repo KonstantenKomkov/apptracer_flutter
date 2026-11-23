@@ -260,10 +260,14 @@ void main() {
   });
 
   test('repeated start does not initialize a second service', () async {
-    await Future.wait([
-      client.startCollection(const TracerOptions()),
-      client.startCollection(const TracerOptions()),
+    final options =
+        TracerOptions(appToken: 'account', deliveryListener: (_) {});
+    final results = await Future.wait([
+      client.startCollection(options),
+      client.startCollection(options.copyWith()),
     ]);
+    expect(results.map((result) => result.state),
+        [TracerCollectionState.enabled, TracerCollectionState.enabled]);
     expect(platform.initializeCalls, 1);
   });
 

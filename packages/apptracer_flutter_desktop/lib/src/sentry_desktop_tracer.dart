@@ -61,6 +61,7 @@ class SentryDesktopTracer extends TracerPlatform {
 
   @override
   Future<void> initialize(TracerOptions options) async {
+    configureDelivery(options);
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
       if (_attemptedNativeStart) await stopCollection();
@@ -71,6 +72,7 @@ class SentryDesktopTracer extends TracerPlatform {
 
   @override
   Future<TracerCollectionResult> startCollection(TracerOptions options) {
+    configureDelivery(options);
     if (!options.isCollectionEnabled) {
       return stopCollection().then((_) => _state);
     }
@@ -347,43 +349,58 @@ class SentryDesktopTracer extends TracerPlatform {
   @override
   Future<TracerCollectionResult> getCollectionState() async => _state;
 
-  Future<void> _whileEnabled(Future<void> Function() action) {
+  Future<void> _whileEnabled(String operation, Future<void> Function() action) {
     // Calls made while init is pending must not become data in a later session.
     if (!_enabled) return Future<void>.value();
     final generation = _generation;
+    final listener = deliveryListener;
     return _serial(() async {
       if (!_enabled || generation != _generation) return;
+      final failures = _sdkOptions?.failures;
+      var reason = 'operation_error';
       try {
         await action();
-      } catch (_) {/* Diagnostics must not break the app. */}
+        if (failures == _sdkOptions?.failures) return;
+      } catch (_) {
+        reason = 'platform_exception';
+      }
+      if (generation == _generation && listener == deliveryListener) {
+        TracerDeliveryDiagnostic(TracerDeliveryState.failed,
+                backend: backendName, operation: operation, reason: reason)
+            .notify(listener);
+      }
     });
   }
 
   @override
-  Future<void> recordError(TracerEvent event) => _whileEnabled(() async {
+  Future<void> recordError(TracerEvent event) =>
+      _whileEnabled('recordError', () async {
         await Sentry.captureEvent(toSentryEvent(event),
             hint: Hint.withMap({'apptracer.event': event}));
       });
 
   @override
-  Future<void> recordLog(String message) => _whileEnabled(() async {
+  Future<void> recordLog(String message) =>
+      _whileEnabled('recordLog', () async {
         await Sentry.addBreadcrumb(
             Breadcrumb(message: message, category: 'apptracer'));
       });
 
   @override
   Future<void> setCustomKey({required String key, required String value}) =>
-      _whileEnabled(() async {
+      _whileEnabled('setCustomKey', () async {
         await Sentry.configureScope((scope) => scope.setTag(key, value));
       });
 
   @override
-  Future<void> removeCustomKey(String key) => _whileEnabled(() async {
+  Future<void> removeCustomKey(String key) =>
+      _whileEnabled('removeCustomKey', () async {
         await Sentry.configureScope((scope) => scope.removeTag(key));
       });
 
   @override
-  Future<void> setUserId(String? userId) => _whileEnabled(() async {
+  Future<void> setUserId(String? userId) =>
+      _whileEnabled('setUserId', () async {
         await Sentry.configureScope((scope) =>
             scope.setUser(userId == null ? null : SentryUser(id: userId)));
       });

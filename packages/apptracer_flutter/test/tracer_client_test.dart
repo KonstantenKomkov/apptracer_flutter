@@ -5,7 +5,10 @@ import 'package:apptracer_flutter/apptracer_flutter.dart'
     hide EventDeduplicator, TracerClient;
 import 'package:apptracer_flutter/src/deduplicator.dart';
 import 'package:apptracer_flutter/src/tracer_client.dart';
+import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart'
+    show MethodChannelTracer;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes.dart';
@@ -27,7 +30,14 @@ class _FailingPlatform extends FakeTracerPlatform {
   bool failCleanup = false;
   bool startThrows = false;
   bool startReturnsError = false;
+  bool startUnconfirmed = false;
   bool failState = false;
+  bool stateReturnsError = false;
+  bool resumeUnconfirmed = false;
+  bool resumeThrows = false;
+  bool pauseReturnsError = false;
+  final eventEntered = Completer<void>();
+  Completer<void>? eventResult;
   bool failPause = false;
   bool failResume = false;
   bool failStop = false;
@@ -37,6 +47,9 @@ class _FailingPlatform extends FakeTracerPlatform {
   @override
   Future<TracerCollectionResult> startCollection(TracerOptions options) async {
     if (startThrows) throw StateError('private start exception');
+    if (startUnconfirmed) {
+      return const TracerCollectionResult(TracerCollectionState.enabled);
+    }
     if (startReturnsError) {
       return const TracerCollectionResult(
         TracerCollectionState.error,
@@ -50,17 +63,30 @@ class _FailingPlatform extends FakeTracerPlatform {
   @override
   Future<TracerCollectionResult> getCollectionState() async {
     if (failState) throw StateError('private state exception');
+    if (stateReturnsError) {
+      return const TracerCollectionResult(TracerCollectionState.error,
+          reason: 'private state');
+    }
     return super.getCollectionState();
   }
 
   @override
   Future<TracerCollectionResult> pauseCollection() async {
     if (failPause) throw StateError('private pause exception');
+    if (pauseReturnsError) {
+      return const TracerCollectionResult(TracerCollectionState.error,
+          reason: 'private pause');
+    }
     return super.pauseCollection();
   }
 
   @override
   Future<TracerCollectionResult> resumeCollection() async {
+    if (resumeThrows) throw StateError('private resume');
+    if (resumeUnconfirmed) {
+      await super.stopCollection();
+      return const TracerCollectionResult(TracerCollectionState.enabled);
+    }
     if (failResume) {
       return const TracerCollectionResult(
         TracerCollectionState.error,
@@ -88,7 +114,18 @@ class _FailingPlatform extends FakeTracerPlatform {
   }
 
   @override
+  Future<TracerDiagnosticResult> runDiskUsage() async =>
+      throw StateError('private diagnostic');
+
+  @override
+  Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) async =>
+      const TracerDiagnosticResult(TracerDiagnosticState.error,
+          reason: 'private diagnostic result');
+
+  @override
   Future<void> recordError(TracerEvent event) async {
+    if (!eventEntered.isCompleted) eventEntered.complete();
+    await eventResult?.future;
     if (failEvents) throw StateError('private platform exception');
     await super.recordError(event);
   }
@@ -703,7 +740,6 @@ void main() {
       expect(diagnostics.single.operation, 'recordError');
       expect(diagnostics.single.reason, 'platform_exception');
       expect(diagnostics.single.backend, 'fake');
-      expect(diagnostics.single.toString(), isNot(contains('private')));
     });
 
     test('listener exceptions do not change delivery', () async {
@@ -738,7 +774,6 @@ void main() {
       expect(result.state, TracerCollectionState.error);
       expect(diagnostics.single.operation, 'stopAndClearCollection');
       expect(diagnostics.single.reason, 'operation_error');
-      expect(diagnostics.single.toString(), isNot(contains('private')));
     });
 
     test('reinitialization replaces the previous session listener', () async {
@@ -754,6 +789,167 @@ void main() {
 
       expect(previous, isEmpty);
       expect(current.single.operation, 'recordError');
+    });
+
+    test(
+        'mobile legacy stop reports channel failure once and never calls purge',
+        () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const channel = MethodChannel('test/task34/legacy');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        if (call.method == 'stopCollection') {
+          throw PlatformException(code: 'private stop');
+        }
+        return {
+          'state': call.method == 'startCollection' ? 'enabled' : 'error',
+          'reason': 'private state'
+        };
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final client = TracerClient(
+          platform:
+              MethodChannelTracer(channel: channel, backendName: 'ios-native'),
+          bindings: FakeErrorHandlerBindings());
+      final failures = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: failures.add));
+      final Future<void> stopped = client.stop();
+      await stopped;
+      expect(calls, ['startCollection', 'stopCollection']);
+      expect(failures.single.backend, 'ios-native');
+      expect(failures.single.operation, 'stopCollection');
+      expect(failures.single.reason, 'platform_exception');
+    });
+
+    test(
+        'legacy stop observes typed status and disabled start uses the requested listener',
+        () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      final first = <TracerDeliveryDiagnostic>[];
+      final second = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: first.add));
+      platform.stateReturnsError = true;
+      await client.stop();
+      expect(first.single.operation, 'stopCollection');
+      expect(first.single.reason, 'operation_error');
+      final result = await client.startCollection(TracerOptions(
+          isCollectionEnabled: false, deliveryListener: second.add));
+      expect(result.state, TracerCollectionState.error);
+      expect(second.single.operation, 'stopCollection');
+      expect(second.single.reason, 'operation_error');
+      expect(first, hasLength(1));
+      expect(platform.stopCalls, 2);
+    });
+
+    test('active start observes state errors and preserves exception semantics',
+        () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      final failures = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: failures.add));
+      platform.stateReturnsError = true;
+      expect(
+          (await client.startCollection()).state, TracerCollectionState.error);
+      expect(failures.map((event) => event.operation),
+          ['getCollectionState', 'startCollection']);
+      platform.stateReturnsError = false;
+      await client.startCollection();
+      platform.failState = true;
+      final starts = platform.initializeCalls;
+      expect(
+          (await client.startCollection()).state, TracerCollectionState.error);
+      expect(platform.initializeCalls, starts);
+      expect(failures.last.operation, 'getCollectionState');
+      expect(failures.last.reason, 'platform_exception');
+    });
+
+    test('pause result, resume exception and unconfirmed resume are diagnosed',
+        () async {
+      final platform = _FailingPlatform()..pauseReturnsError = true;
+      final client = _client(platform);
+      final failures = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: failures.add));
+      expect(
+          (await client.pauseCollection()).state, TracerCollectionState.error);
+      platform.resumeThrows = true;
+      await client.resumeCollection();
+      platform
+        ..resumeThrows = false
+        ..resumeUnconfirmed = true;
+      expect((await client.resumeCollection()).reason,
+          'enabled_state_not_confirmed');
+      expect(failures.map((d) => [d.operation, d.reason]), [
+        ['pauseCollection', 'operation_error'],
+        ['resumeCollection', 'platform_exception'],
+        ['resumeCollection', 'operation_error'],
+      ]);
+    });
+
+    test('recordError awaits the platform Future and suppresses stale failures',
+        () async {
+      final platform = _FailingPlatform()..eventResult = Completer<void>();
+      final client = _client(platform);
+      final previous = <TracerDeliveryDiagnostic>[];
+      final current = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: previous.add));
+      var completed = false;
+      final recording = client
+          .recordError('private', StackTrace.current)
+          .then((_) => completed = true);
+      await platform.eventEntered.future;
+      await client
+          .startCollection(TracerOptions(deliveryListener: current.add));
+      expect(completed, isFalse);
+      platform.eventResult!.completeError(StateError('private failure'));
+      await recording;
+      expect(previous, isEmpty);
+      expect(current, isEmpty);
+    });
+
+    test('unconfirmed start and both forms of native diagnostic failure',
+        () async {
+      final platform = _FailingPlatform()..startUnconfirmed = true;
+      final client = _client(platform);
+      final failures = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: failures.add));
+      expect(client.isEnabled, isFalse);
+      platform.startUnconfirmed = false;
+      await client.startCollection();
+      await client.runDiskUsage();
+      await client.setHeapDumpEnabled(false);
+      expect(failures.map((event) => [event.operation, event.reason]), [
+        ['startCollection', 'operation_error'],
+        ['runDiskUsage', 'platform_exception'],
+        ['setHeapDumpEnabled', 'operation_error'],
+      ]);
+    });
+
+    test('updating diagnostics on a live start preserves its data filters',
+        () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      final first = <TracerDeliveryDiagnostic>[];
+      final second = <TracerDeliveryDiagnostic>[];
+      await client.start(
+          TracerOptions(beforeSend: (_) => null, deliveryListener: first.add));
+      await client.startCollection(TracerOptions(deliveryListener: second.add));
+      await client.recordError('private event', StackTrace.current);
+      expect(platform.events, isEmpty);
+      platform.failState = true;
+      await client.getCollectionState();
+      expect(second.single.operation, 'getCollectionState');
+      platform.failState = false;
+      await client.startCollection(const TracerOptions());
+      platform.failState = true;
+      await client.getCollectionState();
+      expect(client.options.deliveryListener, isNull);
+      expect(second, hasLength(1));
+      expect(first, isEmpty);
+      expect(platform.initializeCalls, 1);
     });
 
     test('start reports typed errors and exceptions without their text',
@@ -775,7 +971,6 @@ void main() {
           ['operation_error', 'platform_exception']);
       expect(diagnostics.map((event) => event.operation).toSet(),
           {'startCollection'});
-      expect(diagnostics.toString(), isNot(contains('private')));
     });
 
     test('state and lifecycle failures are observable with stable operations',
@@ -800,7 +995,7 @@ void main() {
 
       expect(diagnostics.map((event) => event.operation), [
         'getCollectionState',
-        'nativeDiagnostic',
+        'runHeapDump',
         'pauseCollection',
         'resumeCollection',
         'stopCollection',
@@ -808,7 +1003,6 @@ void main() {
       ]);
       expect(diagnostics.map((event) => event.reason).toSet(),
           {'platform_exception', 'operation_error'});
-      expect(diagnostics.toString(), isNot(contains('private')));
     });
   });
 

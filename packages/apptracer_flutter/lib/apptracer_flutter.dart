@@ -213,7 +213,7 @@ abstract final class Tracer {
   ]) =>
       _client.startCollection(options);
 
-  /// Stops collection and clears pending reports and diagnostic buffers.
+  /// Stops collection and requests cleanup of pending reports and diagnostic buffers.
   /// New Dart events are rejected immediately, before this future completes.
   static Future<TracerCollectionResult> stopAndClearCollection() =>
       _client.stopAndClearCollection();
@@ -222,8 +222,9 @@ abstract final class Tracer {
   static Future<TracerCollectionResult> getCollectionState() =>
       _client.getCollectionState();
 
-  /// Reports a caught error. HTTP backends complete after queueing, without waiting
-  /// for a network response; native backends retain their existing Future semantics.
+  /// Reports a caught error. The web adapter and `TracerHttpTracer` complete
+  /// after local queue processing. Native adapters await the platform call.
+  /// Only the HTTP queue emits a `sent` diagnostic.
   ///
   /// [fatal] marks the error as terminating. Note that on Android and iOS a
   /// fatal report counts against the crash-free metric, so reserve it for

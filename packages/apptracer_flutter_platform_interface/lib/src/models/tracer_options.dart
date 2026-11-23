@@ -261,6 +261,7 @@ class TracerOptions {
   final Map<String, String> initialCustomKeys;
 
   /// Returns a copy with the given fields replaced.
+  /// Set [removeDeliveryListener] to detach the current listener.
   TracerOptions copyWith({
     String? appToken,
     String? iosAppToken,
@@ -276,6 +277,7 @@ class TracerOptions {
     BeforeBreadcrumbCallback? beforeBreadcrumb,
     TracerFilterErrorPolicy? filterErrorPolicy,
     TracerDeliveryListener? deliveryListener,
+    bool removeDeliveryListener = false,
     int? maxBreadcrumbs,
     bool? captureFlutterErrors,
     bool? capturePlatformDispatcherErrors,
@@ -303,7 +305,9 @@ class TracerOptions {
       beforeSend: beforeSend ?? this.beforeSend,
       beforeBreadcrumb: beforeBreadcrumb ?? this.beforeBreadcrumb,
       filterErrorPolicy: filterErrorPolicy ?? this.filterErrorPolicy,
-      deliveryListener: deliveryListener ?? this.deliveryListener,
+      deliveryListener: removeDeliveryListener
+          ? null
+          : deliveryListener ?? this.deliveryListener,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
       captureFlutterErrors: captureFlutterErrors ?? this.captureFlutterErrors,
       capturePlatformDispatcherErrors: capturePlatformDispatcherErrors ??

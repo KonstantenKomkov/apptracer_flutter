@@ -32,6 +32,11 @@ class TracerDeliveryDiagnostic {
     this.operation = 'delivery',
   });
 
+  /// Invokes an optional listener and isolates synchronous and asynchronous errors.
+  void notify(TracerDeliveryListener? listener) {
+    if (listener != null) Future<void>.sync(() => listener(this)).ignore();
+  }
+
   /// Transition kind.
   final TracerDeliveryState state;
 
