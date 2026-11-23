@@ -56,8 +56,12 @@ Future<void> report() async {
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--candidate-facade', action='store_true')
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument('--candidate-facade', action='store_true')
+    source.add_argument('--hosted-desktop', choices=('1.0.1', '2.0.0'), default='1.0.1')
     args = parser.parse_args()
+    uses_spm = args.candidate_facade or args.hosted_desktop == '2.0.0'
+    facade_version = '1.5.0' if uses_spm else '1.4.0'
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     repo = Path(__file__).resolve().parent.parent
@@ -98,7 +102,7 @@ def main():
             run(['flutter', 'create', '--platforms=macos', '--no-pub',
                  '--org', 'dev.apptracer.consumer', '--project-name',
                  'tracer_external_consumer', str(app)], root)
-            sdk_constraints = "sdk: ^3.12.0\n  flutter: '>=3.44.0'" if args.candidate_facade else "sdk: ^3.5.0"
+            sdk_constraints = "sdk: ^3.12.0\n  flutter: '>=3.44.0'" if uses_spm else "sdk: ^3.5.0"
             (app / 'pubspec.yaml').write_text(f"""name: tracer_external_consumer
 publish_to: none
 version: 1.0.0+1
@@ -107,10 +111,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-{consumer_dependencies(args.candidate_facade)}flutter:
+{consumer_dependencies(args.candidate_facade, facade=facade_version, desktop=args.hosted_desktop)}flutter:
   uses-material-design: true
   config:
-    enable-swift-package-manager: {str(args.candidate_facade).lower()}
+    enable-swift-package-manager: {str(uses_spm).lower()}
 """)
             if args.candidate_facade:
                 write_overrides(app, SIBLINGS)
@@ -130,10 +134,10 @@ dependencies:
             shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
             run(['flutter', 'analyze', '--no-pub', '--fatal-infos'], app)
             run(['flutter', 'build', 'macos', '--no-pub', '--release'], app)
-            if args.candidate_facade:
+            if uses_spm:
                 report.update(cocoa_evidence(app))
                 if report['sentryCocoa'] != '9.35.0':
-                    raise ValueError('Expected Sentry Cocoa 9.35.0 in the candidate')
+                    raise ValueError('Expected Sentry Cocoa 9.35.0 for desktop 2.0.0')
                 shutil.copy2(app / 'macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved',
                              output / 'consumer.Package.resolved')
             else:

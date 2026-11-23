@@ -8,9 +8,9 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter: ^1.4.0
+  apptracer_flutter: ^1.5.0
   # The network permission warm-up uses TracerHttpTracer.defaultHost.
-  apptracer_flutter_http: ^0.2.1
+  apptracer_flutter_http: ^0.3.0
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter

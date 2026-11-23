@@ -7,7 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## [Unreleased]
+## [1.5.0] - 2026-11-23
 
 - Add typed delivery/platform-lifecycle diagnostics through
   `TracerOptions.deliveryListener`, with stable metadata and no payload or exception

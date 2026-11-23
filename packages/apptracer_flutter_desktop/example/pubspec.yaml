@@ -8,7 +8,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^1.0.0
+  apptracer_flutter: ^1.5.0
   apptracer_flutter_desktop:
     path: ..
 dev_dependencies:

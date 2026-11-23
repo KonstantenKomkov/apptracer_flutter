@@ -7,6 +7,10 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [0.5.0] - 2026-11-23
+
+- Use platform interface 0.3.0 for the shared delivery diagnostics API.
+
 ## [0.4.2] - 2026-11-22
 
 - Support the typed Pigeon host channel alongside the existing channel. Apply filtered event context to each Dart report and restore the persistent native scope afterward.

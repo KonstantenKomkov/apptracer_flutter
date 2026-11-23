@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-Стабильный адаптер 1.0.1 `TracerPlatform` на **официальном sentry_flutter 9.30.1**.
+Адаптер 2.0.0 `TracerPlatform` на **официальном sentry_flutter 10.6.0**.
 Dart-код предназначен для Windows/macOS/Ubuntu Linux. Для Windows 11 x64
 проверены native backend, stop/clear, offline/retry, исходные Dart/native кадры,
 доставка в Tracer и два внешних потребителя. Все 24 сценария текущего Windows CI
@@ -16,7 +16,7 @@ Dart-событий и native-отчётов. Linux требует `SENTRY_NATIV
 Linux CMake добавляет в crash daemon восстановление native-файлов/строк по
 совпадающим Breakpad-картам в `lib/symbols`. Build helper создаёт их из DWARF
 этой же сборки; Dart AOT-карты туда не включаются. Пустые или несовпадающие карты
-не мешают доставке исходного отчёта. Версия sentry-native — 0.16.6 в опубликованном 1.0.1 и 0.17.6 в исходниках кандидата 2.0.0.
+не мешают доставке исходного отчёта. Версия sentry-native — 0.16.6 в опубликованном 1.0.1 и 0.17.6 в версии 2.0.0.
 Для Dart AOT адаптер автоматически читает отдельную компактную карту из
 `lib/apptracer-dart-symbols/<build-id>.json.gz` и заполняет function/file/line
 перед сериализацией официальным SDK. Проверяются build ID стека, загруженного ELF
@@ -48,8 +48,11 @@ Stop отзывает replay и отменяет собственные
 
 ```yaml
 dependencies:
-  apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop: ^1.0.1
+  apptracer_flutter: ^1.5.0
+  apptracer_flutter_desktop: ^2.0.0
+flutter:
+  config:
+    enable-swift-package-manager: true
 ```
 
 На Windows/macOS/Linux адаптер регистрируется автоматически. При явном выборе
@@ -137,7 +140,7 @@ SIGABRT доставляется, но файлы/строки не восста
   Опциональные точные Dart/PDB-карты раскрывают function/file/line; их можно
   не создавать. Plugin token для карт не нужен. [Команды](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).
 
-Кандидат 2.0.0 использует публичные API Cocoa 9.35.0 и Swift Package Manager,
+Адаптер 2.0.0 использует публичные API Cocoa 9.35.0 и Swift Package Manager,
 сохраняя официальный SDK для сериализации, scope, crash handler и очереди.
 Session-local `URLProtocol` только ограничивает сетевую отправку. Опубликованный
 адаптер 1.0.1 остаётся на Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 удаляет отчёт

@@ -2,7 +2,7 @@ name: apptracer_flutter_http
 description: >-
   Pure-Dart HTTP transport for reporting Dart errors to Tracer (apptracer.ru).
   Used by the apptracer_flutter Web adapter and available for custom integrations.
-version: 0.2.1
+version: 0.3.0
 repository: https://github.com/KonstantenKomkov/apptracer_flutter
 issue_tracker: https://github.com/KonstantenKomkov/apptracer_flutter/issues
 
@@ -17,7 +17,7 @@ environment:
   flutter: ">=3.22.0"
 
 dependencies:
-  apptracer_flutter_platform_interface: ^0.2.0
+  apptracer_flutter_platform_interface: ^0.3.0
   crypto: ^3.0.5
   flutter:
     sdk: flutter
