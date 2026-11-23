@@ -6,11 +6,13 @@ on:
     paths:
       - '.github/workflows/**'
       - 'tool/check_action_pins.py'
+      - 'tool/requirements-action-pins.txt'
       - 'tool/tests/test_action_pins.py'
   pull_request:
     paths:
       - '.github/workflows/**'
       - 'tool/check_action_pins.py'
+      - 'tool/requirements-action-pins.txt'
       - 'tool/tests/test_action_pins.py'
   workflow_dispatch:
 
@@ -22,6 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install the workflow YAML parser
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pins-venv"
+          "$RUNNER_TEMP/pins-venv/bin/python" -m pip install -r tool/requirements-action-pins.txt
+          echo "$RUNNER_TEMP/pins-venv/bin" >> "$GITHUB_PATH"
       - name: Test the action pin checker
         run: python3 -m unittest discover -s tool/tests -p test_action_pins.py
       - name: Check external action commit pins
