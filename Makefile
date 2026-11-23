@@ -78,8 +78,8 @@ example-ios: $(TRACER_ENV) ## Пример на iOS
 		flutter run --dart-define=TRACER_APP_TOKEN=$$TRACER_IOS_APP_TOKEN
 
 # Web говорит с собственным API Tracer и использует appToken JS-проекта.
-# Desktop собирается отдельным example: optional apptracer_flutter_desktop
-# использует официальный Sentry SDK и DSN соответствующего Tracer-проекта.
+# В packages/apptracer_flutter_desktop/example отдельный пример для desktop.
+# Его адаптер использует официальный Sentry SDK и DSN целевого проекта Tracer.
 example-web: $(TRACER_ENV) ## Пример в Chrome (собственный API Tracer)
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter run -d chrome --dart-define=TRACER_APP_TOKEN=$$TRACER_JS_APP_TOKEN

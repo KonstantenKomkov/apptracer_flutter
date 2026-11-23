@@ -8,26 +8,17 @@
 
 English version: [README.en.md](README.en.md).
 
-Пакет шлёт `POST /api/crash/uploadBatch`, авторизуясь тем же `appToken`, что и
-Android-плагин. Формат восстановлен перехватом живого запроса JS-SDK вендора и
-описан в
-[web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
+На Web этот транспорт автоматически подключает `apptracer_flutter_web`. Он отправляет
+ошибки Dart на `POST /api/crash/uploadBatch` с `appToken` JS-проекта.
+[Формат запроса](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md)
+восстановлен по запросу JavaScript SDK вендора.
 
-> Раньше пакет назывался `apptracer_flutter_sentry` и говорил по протоколу
-> Sentry. Для web это оказалось неверно: там у Tracer есть собственный SDK,
-> DSN обычному JS-проекту не выдаётся, и события идут в их собственный приём.
-> Sentry-путь у Tracer существует, но для платформ без своего SDK и с DSN,
-> который выдаётся при заведении проекта через VK Cloud, — он остался
-> отдельным пакетом
-> [`apptracer_flutter_sentry`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_sentry).
-> Разделены 26.08.2026, до первой публикации.
+Для поддерживаемых настольных конфигураций подключите необязательный стабильный
+адаптер `apptracer_flutter_desktop`. Он использует официальный Sentry SDK с DSN
+целевого проекта Tracer. Аврора ОС не поддерживается. См.
+[матрицу платформ](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md#summary).
 
-На **web** его подключает `apptracer_flutter_web` автоматически. Для поддерживаемых
-desktop-конфигураций рекомендуем optional `apptracer_flutter_desktop` с официальным
-Sentry SDK и DSN, а не ручной HTTP transport. Ручная регистрация остаётся для
-собственных/legacy сценариев; для Авроры нет проверенного HTTP-решения по умолчанию.
-См. [матрицу платформ](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
-Пример ручной регистрации:
+Пример ручного подключения HTTP-транспорта для собственной интеграции:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';
@@ -36,7 +27,7 @@ import 'package:apptracer_flutter_http/apptracer_flutter_http.dart';
 void main() {
   TracerPlatform.instance = TracerHttpTracer(
     facts: PlatformClientFacts(),
-    sdkVersion: '0.1.0',
+    sdkVersion: '0.2.1',
   );
   Tracer.initialize(
     options: const TracerOptions(appToken: 'appToken из настроек проекта'),
@@ -45,15 +36,12 @@ void main() {
 }
 ```
 
-`appToken` берётся в разделе **Настройки** проекта Tracer.
-
 ## Область применения
 
-Только ошибки Dart. Нативные краши, ANR и зависания требуют нативного SDK: на
-Android и iOS правильный выбор — нативные реализации, а на Аврора ОС вендор
-предлагает C/C++-библиотеку и системные минидампы, до которых из Dart не
-дотянуться. То есть на десктопе и Авроре пакет закрывает свою половину, но
-заменой нативному SDK не становится.
+HTTP-транспорт передаёт только ошибки Dart. Для нативных сбоев, ANR и зависаний нужен нативный SDK.
+
+26.08.2026, до первой публикации, ручную реализацию протокола Sentry выделили
+в отдельный пакет [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter_sentry/README.md), теперь архивный.
 
 ## Статус
 

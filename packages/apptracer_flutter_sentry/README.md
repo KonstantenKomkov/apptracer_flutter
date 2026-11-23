@@ -1,8 +1,10 @@
 # apptracer_flutter_sentry
 
 Этот ручной транспорт архивирован. Исходники остаются по прежнему пути для
-Git-зависимостей. Для Windows, Linux и macOS используйте
-`apptracer_flutter_desktop`. [Переход на desktop-адаптер](../../docs/desktop-migration.md#moving-from-the-manual-transport).
+Git-зависимостей. На поддерживаемых конфигурациях macOS, Windows и Ubuntu
+используйте необязательный адаптер `apptracer_flutter_desktop` с официальным
+Sentry SDK и DSN целевого проекта Tracer. Аврора ОС не поддерживается.
+[Переход на desktop-адаптер](../../docs/desktop-migration.md#moving-from-the-manual-transport).
 
 Транспорт по протоколу Sentry на чистом Dart для
 [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter) —
@@ -17,14 +19,9 @@ Tracer принимает события по протоколу Sentry на п�
 выдаётся в разделе **Настройки → Проект → API**, но только если проект заведён
 через **VK Cloud**.
 
-Для Flutter это десктоп, а также Аврора ОС, где у вендора есть C/C++-SDK с
-системными минидампами, до которого из Dart не дотянуться.
-
-> **Ни одна из этих платформ не поддерживается релизом 0.1.0**, и ни одна из них
-> ни разу не проверялась на живом проекте. Поэтому на pub.dev пакета нет:
-> подключайте его зависимостью из git. К тому же DSN выдаётся
-> только проекту, заведённому через VK Cloud: у обычного проекта Tracer его нет
-> — проверено 26.08.2026.
+> На момент релиза 0.1.0 пути для десктопа и Авроры не были проверены
+> на живом проекте, поэтому ручной транспорт не публиковали на pub.dev.
+> В обычном проекте Tracer, проверенном 26.08.2026, DSN отсутствовал.
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';

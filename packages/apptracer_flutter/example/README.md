@@ -43,10 +43,10 @@ flutter run -d <iphone> --dart-define=TRACER_APP_TOKEN=$TRACER_IOS_APP_TOKEN
 flutter run -d chrome   --dart-define=TRACER_APP_TOKEN=$TRACER_JS_APP_TOKEN
 ```
 
-Android, iOS и web не требуют Sentry DSN: web говорит с собственным приёмом
-Tracer по `appToken`. Для desktop используйте отдельный example и optional
-`apptracer_flutter_desktop` с DSN соответствующего проекта; этот общий пример
-не регистрирует desktop backend автоматически.
+На Web используется `appToken` JS-проекта. Для настольных приложений есть
+[отдельный пример](../../apptracer_flutter_desktop/example/README.md). Он подключает
+необязательный адаптер `apptracer_flutter_desktop` и передаёт официальному Sentry SDK
+DSN целевого проекта Tracer.
 
 Без токенов приложение всё равно запускается: интеграция сообщает, что она
 выключена, а кнопки просто поднимают ошибки локально. Это и есть путь мягкой
@@ -125,8 +125,9 @@ flutter build ios --simulator --debug
 ## Web
 
 ```sh
-flutter build web --release --source-maps
-TRACER_PLUGIN_TOKEN=... ../../../tool/upload_web_sourcemaps.sh 1.0.0
+flutter build web --release --source-maps \
+  --dart-define=TRACER_APP_TOKEN="$TRACER_JS_APP_TOKEN"
+TRACER_PLUGIN_TOKEN="$TRACER_JS_PLUGIN_TOKEN" ../../../tool/upload_web_sourcemaps.sh 1.0.0
 ```
 
 ## Автопрогон

@@ -186,12 +186,12 @@ class UnsupportedTracerPlatform extends TracerPlatform {
     _warned = true;
     debugPrint(
       'apptracer_flutter: no Tracer implementation is registered for '
-      '${defaultTargetPlatform.name}, so Dart errors are being discarded. '
-      'Android and iOS are covered by the bundled native plugins. On macOS, '
-      'Windows and Ubuntu Linux, add optional apptracer_flutter_desktop and '
-      'set TracerOptions.dsn. Web uses its project appToken. For Aurora OS '
-      'and other targets, consult docs/platform-matrix.md before selecting '
-      'a custom transport.',
+      '${kIsWeb ? 'web' : defaultTargetPlatform.name}, so Dart errors are being discarded. '
+      'Android, iOS and Web use the bundled plugins. Web needs the JS project appToken. '
+      'For supported macOS, Windows and Ubuntu configurations, add '
+      'apptracer_flutter_desktop and set TracerOptions.dsn to the target Tracer '
+      'project DSN for the official Sentry SDK. Aurora OS is unsupported. '
+      'See docs/platform-matrix.md.',
     );
   }
 

@@ -12,9 +12,6 @@ as pub.dev expects.
 - Add the source-compatible `TracerOptions.filterErrorPolicy` with
   `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
   The policy is not serialized to native adapters and does not filter native crashes.
-
-## [Unreleased]
-
 - Correct current-platform guidance: stable desktop support uses optional
   `apptracer_flutter_desktop` and a Sentry DSN; Web uses appToken. The inert-platform
   warning no longer directs desktop users to the legacy manual HTTP transport.

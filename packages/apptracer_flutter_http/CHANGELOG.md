@@ -9,8 +9,8 @@ as pub.dev expects.
 
 ## [Unreleased]
 
-- Clarify that the optional official Sentry desktop adapter is the default for
-  supported desktop configurations; manual HTTP remains for custom/legacy use.
+- Document automatic Web delivery, manual HTTP registration for custom integrations,
+  and the separate optional adapter for supported desktop configurations.
 
 ## [0.2.1] - 2026-11-22
 
@@ -82,6 +82,6 @@ live project on 2026-08-26, no project is issued a DSN and the vendor's own SDKs
 post to their own API, so both the name and the protocol were replaced before
 the first release.
 
-[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v1.3.0...HEAD
 [0.2.0]: https://github.com/KonstantenKomkov/apptracer_flutter/compare/v0.1.3...v0.2.0
 [0.1.0]: https://github.com/KonstantenKomkov/apptracer_flutter/releases/tag/v0.1.0
