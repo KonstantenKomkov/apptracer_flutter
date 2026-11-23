@@ -40,6 +40,14 @@ consumer acceptance с проверкой registry, dependency sources и publis
 не изменён; invalid repeat start не разрушает действующую сессию.
 [Задача и результат](task-35-runtime-option-validation.md), [PR №35](https://github.com/KonstantenKomkov/apptracer_flutter/pull/35).
 
+<a id="task-33"></a>
+
+### П. 33. Миграция desktop на Sentry 10.x
+
+Desktop 2.0.0 опубликован с Sentry Flutter 10.6.0. Пройдены платформенные
+проверки, live smoke и установка из pub.dev в чистое macOS-приложение.
+[Задача и результаты](task-33-sentry-10-migration.md).
+
 <a id="task-32"></a>
 
 ### П. 32. Управляемое поведение privacy-фильтров при ошибках

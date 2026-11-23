@@ -38,7 +38,7 @@ TracerOptions(
 )
 ```
 
-Return `null` to drop an event or breadcrumb. By default, `sendOriginal` keeps
+Facade 1.5.0 exposes `TracerOptions.filterErrorPolicy`. Return `null` to drop an event or breadcrumb. By default, `sendOriginal` keeps
 the original value when a hook throws. For fail-closed filtering, set
 `TracerFilterErrorPolicy.drop` as shown above: the failed filter is not called
 again, and original data reaches neither platform events/raw stacks nor the

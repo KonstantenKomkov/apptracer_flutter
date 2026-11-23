@@ -21,8 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate-facade', action='store_true')
-    parser.add_argument('--hosted-desktop', help='Exact published desktop version (default: 1.0.1)')
-    parser.add_argument('--facade-version', default='1.4.0', help='Exact hosted facade version (default: 1.4.0)')
+    parser.add_argument('--hosted-desktop', help='Exact published desktop version (default: 2.0.0)')
+    parser.add_argument('--facade-version', help='Exact hosted facade version (defaults to the matching release)')
     parser.add_argument('--bundle', type=Path, help='Only run a previously built consumer bundle')
     parser.add_argument('--dump-syms', required=True, type=Path)
     parser.add_argument('--native-source', type=Path)
@@ -34,6 +34,7 @@ def main():
     for version in [args.facade_version, args.hosted_desktop]:
         if version and not re.fullmatch(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?', version):
             parser.error('Expected an exact package version')
+    args.facade_version = args.facade_version or ('1.4.0' if args.hosted_desktop == '1.0.1' else '1.5.0')
     stable_flutter_error = args.candidate_facade or tuple(map(int, args.facade_version.split('-')[0].split('.'))) >= (0, 2, 2)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -76,9 +77,9 @@ def main():
                 if args.candidate_facade:
                     check_candidates(repo, root, output, run, report)
                 else:
-                    report['hosted_desktop_version'] = args.hosted_desktop or '1.0.1'
+                    report['hosted_desktop_version'] = args.hosted_desktop or '2.0.0'
                 deps = consumer_dependencies(args.candidate_facade, facade=args.facade_version,
-                                             desktop=args.hosted_desktop or '1.0.1')
+                                             desktop=args.hosted_desktop or '2.0.0')
                 app = root / 'consumer'
                 run(['flutter', 'create', '--platforms=windows', '--no-pub', '--project-name',
                      'tracer_external_consumer', str(app)], root)

@@ -4,6 +4,13 @@ Current versions and limitations belong to [platform-matrix.md](platform-matrix.
 This file preserves release-specific notes instead of mixing them into the quick
 start. Dated acceptance documents are historical evidence, not promises for newer code.
 
+## apptracer_flutter 1.5.0 and desktop 2.0.0
+
+The facade and adapters use a common delivery listener. On desktop, upgrade
+the facade and adapter together. macOS uses Swift Package Manager, and the
+desktop package requires Flutter 3.44 / Dart 3.12 or later.
+[Release versions and archive hashes](publishing.md#coordinated-desktop-200-release).
+
 ## apptracer_flutter 1.4.0
 
 Use `copyWith(removeLibrary: true, removeContext: true)` in `beforeSend` to
