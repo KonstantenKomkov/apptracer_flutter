@@ -42,5 +42,15 @@ void main() {
     expect((await adapter.getCollectionState()).reason,
         'sentry_initialization_failed');
     expect(probe.events, isEmpty);
+
+    // A fresh object must not bypass the process owner after a failed start.
+    final other = SentryDesktopTracer();
+    final restarted = await other.startCollection(
+      const TracerOptions(dsn: 'https://public@tracer.invalid/42'),
+    );
+    expect(restarted.state, TracerCollectionState.error);
+    expect(restarted.reason, 'sentry_already_owned');
+    expect(probe.calls.where((call) => call.method == 'initNativeSdk'),
+        hasLength(1));
   });
 }

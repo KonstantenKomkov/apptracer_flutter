@@ -80,6 +80,13 @@ covered/total counts in `tool/coverage_baseline.json` in the same change.
 Desktop coverage is written separately to `build/coverage/desktop-<os>/`.
 Each native workflow uploads its host report, including shared adapter code
 and files for that OS. The JSON lists the other platforms’ excluded files.
+`desktop_lifecycle` tracks `sentry_desktop_tracer.dart` against the current host's
+covered/total counts in `tool/desktop_coverage_baseline.json`; the three hosts are
+never combined into a misleading shared percentage. Both ordinary and
+`--desktop-only` runs fail on a decrease after writing the report. Platform CI
+also adds the critical summary to the job summary and uploads artifacts on failure.
+Review the affected lifecycle branches before intentionally updating those counts.
+Run the host check with `python3 tool/coverage_report.py --desktop-only`.
 The desktop dry-run explicitly allows only pub's exact-pin warning for
 `sentry_flutter 9.30.1`; the constraint is not widened before task 29 acceptance.
 

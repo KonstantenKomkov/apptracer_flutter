@@ -21,6 +21,9 @@ on:
       - 'tool/prepare_linux_dart_runtime_symbols.py'
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/linux.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -51,6 +54,9 @@ on:
       - 'tool/prepare_linux_dart_runtime_symbols.py'
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/linux.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -121,7 +127,20 @@ jobs:
           flutter test
       - name: Report linux adapter coverage
         run: python3 tool/coverage_report.py --desktop-only
+      - name: Summarize desktop critical coverage
+        if: always() && hashFiles('build/coverage/desktop-linux/summary.json') != ''
+        run: |
+          python3 - <<'PY'
+          import json, os
+          summary = json.load(open('build/coverage/desktop-linux/summary.json'))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as target:
+              target.write('## Desktop critical coverage (Linux)\n')
+              for name, entry in summary['critical'].items():
+                  target.write(f"- {name}: {entry['covered']}/{entry['total']} "
+                               f"({entry['ratio']:.1%}), delta {entry['deltaPercentagePoints']:+.2f} pp\n")
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
         with:
           name: desktop-coverage-linux
           path: build/coverage/desktop-linux

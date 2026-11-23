@@ -22,9 +22,15 @@ class CoverageReportTest(unittest.TestCase):
         self.baseline.write_text(json.dumps({
             path: {'covered': 1, 'total': 2} for path in report.CRITICAL.values()
         }))
+        self.desktop_baseline = self.root / 'tool/desktop_coverage_baseline.json'
+        self.desktop_baseline.write_text(json.dumps({
+            host: {next(iter(report.DESKTOP_CRITICAL.values())): {'covered': 1, 'total': 2}}
+            for host in report.DESKTOP_OS.values()
+        }))
         paths = list(report.CRITICAL.values()) + [
             f'{report.DESKTOP}/lib/src/{name}.dart'
-            for name in ('shared', 'linux_storage', 'windows_storage', 'macos_lifecycle')
+            for name in ('shared', 'sentry_desktop_tracer', 'linux_storage',
+                         'windows_storage', 'macos_lifecycle')
         ]
         rows = {}
         for path in paths:
@@ -69,7 +75,35 @@ class CoverageReportTest(unittest.TestCase):
                 summary = json.loads((self.output / 'summary.json').read_text())
                 self.assertNotIn(report.DESKTOP, summary['packages'])
                 desktop = json.loads((self.output / f'desktop-{host}/summary.json').read_text())
-                self.assertEqual(desktop['overall']['total'], 4)
+                self.assertEqual(desktop['overall']['total'], 6)
+                self.assertIn('desktop_lifecycle', desktop['critical'])
                 names = [Path(path).stem for path in desktop['files']]
                 self.assertIn('shared', names)
                 self.assertTrue(any(name.startswith(host + '_') for name in names))
+
+    def test_desktop_regression_fails_and_intentional_update_passes(self):
+        path = next(iter(report.DESKTOP_CRITICAL.values()))
+        lcov = self.root / report.DESKTOP / 'coverage/lcov.info'
+        lcov.write_text(lcov.read_text().replace(
+            'sentry_desktop_tracer.dart\nDA:1,1',
+            'sentry_desktop_tracer.dart\nDA:1,0'))
+        with patch.object(sys, 'platform', 'darwin'):
+            with patch.object(sys, 'argv', ['coverage_report.py', '--desktop-only']):
+                with self.assertRaisesRegex(SystemExit, 'desktop_lifecycle'):
+                    self.run_report()
+        summary = json.loads((self.output / 'desktop-macos/summary.json').read_text())
+        self.assertEqual(summary['critical']['desktop_lifecycle']['deltaPercentagePoints'], -50)
+        baseline = json.loads(self.desktop_baseline.read_text())
+        baseline['macos'][path]['covered'] = 0
+        self.desktop_baseline.write_text(json.dumps(baseline))
+        with patch.object(sys, 'platform', 'darwin'):
+            with patch.object(sys, 'argv', ['coverage_report.py', '--desktop-only']):
+                self.run_report()
+
+    def test_missing_host_baseline_fails_explicitly(self):
+        baseline = json.loads(self.desktop_baseline.read_text())
+        del baseline['windows']
+        self.desktop_baseline.write_text(json.dumps(baseline))
+        with patch.object(sys, 'platform', 'win32'):
+            with self.assertRaisesRegex(SystemExit, 'host: windows'):
+                self.run_report()

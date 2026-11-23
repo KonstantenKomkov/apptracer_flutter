@@ -17,6 +17,9 @@ CRITICAL = {
     'lifecycle': 'packages/apptracer_flutter_platform_interface/lib/src/method_channel_tracer.dart',
     'http_transport': 'packages/apptracer_flutter_http/lib/src/tracer_http_tracer.dart',
 }
+DESKTOP_CRITICAL = {
+    'desktop_lifecycle': f'{DESKTOP}/lib/src/sentry_desktop_tracer.dart',
+}
 
 
 def generated(path: str) -> bool:
@@ -128,6 +131,8 @@ See <a href="summary.json">file breakdown and omissions</a> or <a href="lcov.inf
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, default=ROOT / 'tool/coverage_baseline.json')
+    parser.add_argument('--desktop-baseline', type=Path,
+                        default=ROOT / 'tool/desktop_coverage_baseline.json')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/coverage')
     parser.add_argument('--desktop-only', action='store_true')
     args = parser.parse_args()
@@ -142,8 +147,14 @@ def main() -> None:
                       if path.name.startswith(foreign))
     for path in excluded:
         files.pop(path, None)
-    write_report(args.output / ('desktop-' + host), files, included, skipped, {}, {},
-                 'desktop-' + host, excluded)
+    desktop_baselines = json.loads(args.desktop_baseline.read_text())
+    if host not in desktop_baselines:
+        raise SystemExit(f'Missing desktop coverage baseline for host: {host}')
+    regressions = write_report(
+        args.output / ('desktop-' + host), files, included, skipped,
+        desktop_baselines[host], DESKTOP_CRITICAL, 'desktop-' + host, excluded)
+    if regressions:
+        raise SystemExit('Critical coverage below baseline: ' + ', '.join(regressions))
     if not args.desktop_only:
         files, included, skipped = collect([row for row in rows if row['path'] != DESKTOP])
         regressions = write_report(args.output, files, included, skipped,
