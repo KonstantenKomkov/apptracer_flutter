@@ -13,7 +13,7 @@ The Linux CMake hook resolves native source frames inside the crash daemon using
 matching Breakpad maps in `lib/symbols`. The example build helper generates these
 from the same build's DWARF; this native store does not contain Dart maps. Missing
 or mismatched maps preserve the original SDK report. The hook is pinned to
-sentry-native 0.16.6 and must be re-audited when upgrading the SDK.
+sentry-native 0.16.6 in published 1.0.1 and 0.17.6 in the 2.0.0 source candidate.
 For Dart AOT, the adapter reads an optional compact map from
 `lib/apptracer-dart-symbols/<build-id>.json.gz` before SDK serialization. Stack,
 loaded ELF and map build IDs must agree; the original stack is retained.
@@ -93,7 +93,8 @@ System macOS crash logs are not deleted.
 The 2.0.0 candidate uses public Cocoa 9.35.0 APIs and Swift Package Manager.
 Official SDK serialization, crash handling and queueing remain in use; a
 session-local URLProtocol gates network delivery. The published 1.0.1 adapter stays
-on Cocoa 8.58.4/CocoaPods until the candidate completes acceptance. See the
+on Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 drops cached envelopes on HTTP 5xx;
+a connection lost before an HTTP response can be retried after authorized restart. See the
 [local lifecycle evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 Windows has its own native queue/lifecycle implementation and separate acceptance below.
 

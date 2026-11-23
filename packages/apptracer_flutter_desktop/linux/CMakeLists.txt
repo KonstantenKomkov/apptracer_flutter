@@ -8,7 +8,7 @@ if(NOT TARGET sentry-crash)
 endif()
 
 # Enrich frames in the healthy daemon process, after the SDK assembles its
-# event and before serialization. This GNU linker hook is tied to SDK 0.16.6.
+# event and before serialization. This GNU linker hook is tied to SDK 0.17.6.
 # The app's signal handler and the SDK's transport/queue remain unchanged.
 target_sources(sentry-crash PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/native_symbols.cc")
 target_compile_features(sentry-crash PRIVATE cxx_std_17)

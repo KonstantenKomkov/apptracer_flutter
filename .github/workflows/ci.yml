@@ -90,7 +90,7 @@ jobs:
         run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          flutter-version: ${{ matrix.package == 'apptracer_flutter_desktop' && '3.47.4' || env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -399,11 +399,10 @@ jobs:
     # install to run something that takes half a minute.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Read the reproducible Flutter baseline
-        run: echo "FLUTTER_VERSION=$(cat .github/flutter-version)" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          # The archive check includes the Sentry 10 desktop adapter.
+          flutter-version: '3.47.4'
           channel: stable
           cache: true
 

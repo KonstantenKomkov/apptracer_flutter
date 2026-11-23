@@ -65,8 +65,6 @@ jobs:
       versions: ${{ steps.evidence.outputs.versions }}
     runs-on: macos-15
     timeout-minutes: 25
-    env:
-      COCOAPODS_DISABLE_STATS: 'true'
     steps:
       - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
@@ -99,7 +97,7 @@ jobs:
             --symbols packages/apptracer_flutter_desktop/example/build/dart-symbols \
             --output build/macos-dart-symbols
           cp packages/apptracer_flutter_desktop/example/pubspec.lock build/macos-dart-symbols/
-          cp packages/apptracer_flutter_desktop/example/macos/Podfile.lock build/macos-dart-symbols/
+          cp packages/apptracer_flutter_desktop/example/macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved build/macos-dart-symbols/
           git rev-parse HEAD > build/macos-dart-symbols/revision.txt
       - uses: actions/upload-artifact@v7
         if: always()

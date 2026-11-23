@@ -96,6 +96,8 @@ void main() {
       expect(event.toString(), isNot(contains('sensitive')));
       await Tracer.recordError('drop', StackTrace.fromString(raw));
       // An unrelated direct Sentry call must not bypass Tracer filtering.
+      Sentry.logger.error('unfiltered SDK log');
+      Sentry.metrics.count('unfiltered.sdk.metric', 1);
       await Sentry.captureMessage('bypass');
       expect(probe.events, hasLength(1));
       expect(

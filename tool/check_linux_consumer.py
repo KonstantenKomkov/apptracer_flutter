@@ -212,9 +212,10 @@ def main():
         expected = (sdk_warning and result.returncode == 65
                     and validation.count('\n* ') == 1
                     and 'Your dependency on "sentry_flutter" should allow more than one version.' in validation
+                    and '    sentry_flutter: ^10.6.0' in validation.splitlines()
                     and 'Package has 1 warning.' in validation and 'error' not in validation.lower())
         if expected:
-            report['publish_warning'] = 'Intentional exact sentry_flutter 9.30.1 pin'
+            report['publish_warning'] = 'Intentional exact sentry_flutter 10.6.0 pin'
         elif result.returncode:
             print(content[-6000:], file=sys.stderr, flush=True)
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')

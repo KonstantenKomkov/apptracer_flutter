@@ -1,6 +1,3 @@
-// Existing public test argument names stay unchanged.
-// ignore_for_file: prefer_initializing_formals
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -14,9 +11,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// Missing, corrupt or mismatched maps leave the original SDK event intact.
 class WindowsDartSymbols {
   /// [directory] is injectable for isolated tests. Construction performs no IO.
-  WindowsDartSymbols({String? directory, String? appImage})
-    : _directory = directory,
-      _appImage = appImage;
+  WindowsDartSymbols({this._directory, this._appImage});
 
   final String? _directory;
   final String? _appImage;

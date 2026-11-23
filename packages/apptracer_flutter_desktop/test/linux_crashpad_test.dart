@@ -4,14 +4,18 @@ import 'package:apptracer_flutter_desktop/src/linux_uploaders.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('procfs inspection leaves unrelated running processes alone', () async {
-    final temporary = await Directory.systemTemp.createTemp('tracer-proc-test');
-    try {
-      await LinuxUploaders.stop('${temporary.path}/never-used-queue');
-    } finally {
-      await temporary.delete();
-    }
-  }, skip: !Platform.isLinux);
+  test(
+    'Linux uploader shutdown leaves processes outside the owned queue running',
+    () async {
+      final temporary = await Directory.systemTemp.createTemp('tracer-proc');
+      try {
+        await LinuxUploaders.stop('${temporary.path}/never-used-queue');
+      } finally {
+        await temporary.delete();
+      }
+    },
+    skip: !Platform.isLinux,
+  );
   test('only the exact private queue and user authorize a Crashpad stop', () {
     const executable = '/opt/example/lib/crashpad_handler';
     const queue = '/home/user/.local/share/apptracer_desktop/example/v1/queue';

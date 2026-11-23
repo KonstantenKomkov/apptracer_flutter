@@ -91,7 +91,7 @@ class LinuxStorage {
     if (await revoked.exists()) await revoked.delete();
   }
 
-  // sentry-native 0.16.6 disables retry polling in its crash daemon. Failed
+  // Recover preserved legacy 0.16.6 queues. Its daemon stored failed
   // native uploads have a bare UUID envelope plus a matching cached minidump.
   // Enroll these in the SDK's retry queue before init, while the namespace is
   // locked and its old daemon is stopped. The daemon splits the minidump out

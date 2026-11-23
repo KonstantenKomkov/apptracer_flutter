@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'event_mapping.dart';
@@ -107,7 +109,7 @@ class SentryDesktopTracer extends TracerPlatform {
       }
       _owner = this;
       _attemptedNativeStart = true;
-      final sdk = SentryFlutterOptions();
+      late SentryFlutterOptions configured;
       try {
         if (defaultTargetPlatform == TargetPlatform.linux) {
           _linux ??= LinuxLifecycle();
@@ -125,48 +127,64 @@ class SentryDesktopTracer extends TracerPlatform {
             return _state;
           }
         }
-        await SentryFlutter.init(
-          (sdk) {
-            configureDesktopSdk(sdk, options);
-            _linux?.configure(
-              sdk,
-              isAuthorized: () => generation == _generation,
+        // LoadReleaseIntegration logs and swallows platform failures. Resolve
+        // its cached input before the SDK can install native integrations.
+        if (options.release == null || options.dist == null) {
+          WidgetsFlutterBinding.ensureInitialized();
+          await PackageInfo.fromPlatform();
+          if (generation != _generation) {
+            await _close();
+            return _state;
+          }
+        }
+        await SentryFlutter.init((sdk) {
+          // Sentry catches configuration exceptions. Supply the DSN only after
+          // ownership, transport and filtering have all been configured.
+          sdk.dsn = null;
+          configureDesktopSdk(sdk, options);
+          if (defaultTargetPlatform == TargetPlatform.macOS) {
+            sdk.addIntegration(
+              MacOSLifecycleIntegration(
+                options,
+                isAuthorized: () => generation == _generation,
+              ),
             );
-            _windows?.configure(
-              sdk,
-              isAuthorized: () => generation == _generation,
-            );
-            sdk.beforeSend = (event, hint) async {
-              final source = hint.get('apptracer.event');
-              if (!_enabled ||
-                  generation != _generation ||
-                  source is! TracerEvent) {
-                return null;
-              }
-              final filtered = restoreFilteredFields(event, source);
-              _linux?.contexts?.apply(filtered);
-              _windows?.applyContexts(filtered);
-              if (_linux != null) await _dartSymbols.resolve(filtered, source);
-              if (_windows != null) {
-                await _windowsDartSymbols.resolve(filtered, source);
-              }
-              // A symbol-file read can yield while stop revokes collection.
-              if (!_enabled || generation != _generation) return null;
-              return filtered;
-            };
-            // Only recordLog supplies native breadcrumbs; automatic integrations
-            // are disabled. Tracer invokes the user's breadcrumb filter first.
-          },
-          // The same options instance lets us confirm our native integration.
-          // ignore: invalid_use_of_internal_member
-          options: sdk,
-        );
+          }
+          _linux?.configure(sdk, isAuthorized: () => generation == _generation);
+          _windows?.configure(
+            sdk,
+            isAuthorized: () => generation == _generation,
+          );
+          sdk.beforeSend = (event, hint) async {
+            final source = hint.get('apptracer.event');
+            if (!_enabled ||
+                generation != _generation ||
+                source is! TracerEvent) {
+              return null;
+            }
+            final filtered = restoreFilteredFields(event, source);
+            _linux?.contexts?.apply(filtered);
+            _windows?.applyContexts(filtered);
+            if (_linux != null) await _dartSymbols.resolve(filtered, source);
+            if (_windows != null) {
+              await _windowsDartSymbols.resolve(filtered, source);
+            }
+            // A symbol-file read can yield while stop revokes collection.
+            if (!_enabled || generation != _generation) return null;
+            return filtered;
+          };
+          // Only recordLog supplies native breadcrumbs; automatic integrations
+          // are disabled. Tracer invokes the user's breadcrumb filter first.
+          sdk.dsn = options.dsn!.trim();
+          configured = sdk;
+        });
         final integration = defaultTargetPlatform == TargetPlatform.macOS
             ? 'apptracerMacOSLifecycle'
             : defaultTargetPlatform == TargetPlatform.linux
             ? 'apptracerLinuxLifecycle'
             : 'apptracerWindowsLifecycle';
-        if (!Sentry.isEnabled || !sdk.sdk.integrations.contains(integration)) {
+        if (!Sentry.isEnabled ||
+            !configured.sdk.integrations.contains(integration)) {
           throw StateError('native_start_not_confirmed');
         }
         if (generation != _generation) {
@@ -180,6 +198,7 @@ class SentryDesktopTracer extends TracerPlatform {
       } catch (_) {
         _enabled = false;
         await _close();
+        if (_closeFailed) return _state;
         return _state = const TracerCollectionResult(
           TracerCollectionState.error,
           reason: 'sentry_initialization_failed',
@@ -249,8 +268,9 @@ class SentryDesktopTracer extends TracerPlatform {
       return;
     }
     try {
-      await _linux?.revoke();
-      await _windows?.revoke();
+      // Close the owned FFI SDK even if the Dart hub has already gone away.
+      await _linux?.close();
+      await _windows?.close();
       // Cancel the native session BEFORE Dart/Cocoa close can flush its queue.
       final nativeState = defaultTargetPlatform == TargetPlatform.macOS
           ? await MacOSLifecycle.invoke('closeNativeSdk')

@@ -1,24 +1,20 @@
 // The internal integration types are intentionally tied to sentry_flutter 10.6.0.
 // A version update must re-audit the allowlist and native failure propagation.
-// ignore_for_file: implementation_imports, experimental_member_use
+// ignore_for_file: implementation_imports
 
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
-import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:sentry_flutter/src/debug_images/native_load_debug_images_integration.dart';
-import 'package:sentry_flutter/src/native/native_sdk_integration.dart';
 import 'package:sentry_flutter/src/bindings/widgets_flutter_binding_integration.dart';
-
-import 'macos_lifecycle.dart';
+import 'package:sentry_flutter/src/debug_images/native_load_debug_images_integration.dart';
 
 /// Configures the pinned SDK without installing a second Dart error owner.
 void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
   sdk
-    ..dsn = tracer.dsn!.trim()
     ..release = tracer.release
     ..environment = tracer.resolvedEnvironment
     ..dist = tracer.dist
     ..debug = false
+    ..autoInitializeNativeSdk = false
     ..sendDefaultPii = false
     ..attachStacktrace = false
     ..attachThreads = false
@@ -43,18 +39,8 @@ void configureDesktopSdk(SentryFlutterOptions sdk, TracerOptions tracer) {
   for (final integration in sdk.integrations.toList()) {
     if (integration is! WidgetsFlutterBindingIntegration &&
         integration is! LoadReleaseIntegration &&
-        integration is! NativeSdkIntegration &&
         integration is! LoadNativeDebugImagesIntegration) {
       sdk.removeIntegration(integration);
     }
-    if ((defaultTargetPlatform == TargetPlatform.macOS ||
-            defaultTargetPlatform == TargetPlatform.linux ||
-            defaultTargetPlatform == TargetPlatform.windows) &&
-        integration is NativeSdkIntegration) {
-      sdk.removeIntegration(integration);
-    }
-  }
-  if (defaultTargetPlatform == TargetPlatform.macOS) {
-    sdk.addIntegration(MacOSLifecycleIntegration(tracer));
   }
 }

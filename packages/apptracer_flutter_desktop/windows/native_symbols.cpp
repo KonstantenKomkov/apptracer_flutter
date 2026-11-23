@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <vector>
 
-// Pinned to sentry-native 0.16.6. This file is linked only into sentry-crash,
+// Pinned to sentry-native 0.17.6. This file is linked only into sentry-crash,
 // never into the crashed process. Missing or mismatched symbols leave the
 // original SDK frames intact. No subprocess or network symbolizer is used.
 namespace {

@@ -188,6 +188,8 @@ def main():
         marker_index = len(received)
         command('capture', message='authorized-offline-restart')
         wait_marker('authorized-offline-restart', marker_index)
+        offline_id = events_since(marker_index)[0]['event_id']
+        assert offline_id
         terminate()
         mode = 'online'
         marker_index = len(received)
@@ -195,6 +197,7 @@ def main():
         quiet(marker_index)
         command('start', expected='enabled', preserve=True)
         wait_marker('authorized-offline-restart', marker_index)
+        assert [e['event_id'] for e in events_since(marker_index)] == [offline_id]
         command('clear', expected='restartRequired')
         terminate()
 

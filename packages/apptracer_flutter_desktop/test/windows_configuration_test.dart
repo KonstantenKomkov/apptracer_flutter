@@ -1,5 +1,3 @@
-// ignore_for_file: experimental_member_use
-
 import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:apptracer_flutter_desktop/src/sdk_configuration.dart';
 import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_interface.dart';
@@ -49,6 +47,7 @@ void main() {
       options,
       const TracerOptions(dsn: 'https://public@tracer.invalid/42'),
     );
+    expect(options.autoInitializeNativeSdk, false);
     expect(options.enableAutoSessionTracking, false);
     expect(options.tracesSampleRate, 0);
     expect(options.integrations.whereType<OnErrorIntegration>(), isEmpty);

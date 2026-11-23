@@ -16,7 +16,7 @@ Dart-событий и native-отчётов. Linux требует `SENTRY_NATIV
 Linux CMake добавляет в crash daemon восстановление native-файлов/строк по
 совпадающим Breakpad-картам в `lib/symbols`. Build helper создаёт их из DWARF
 этой же сборки; Dart AOT-карты туда не включаются. Пустые или несовпадающие карты
-не мешают доставке исходного отчёта. Механизм привязан к sentry-native 0.16.6.
+не мешают доставке исходного отчёта. Версия sentry-native — 0.16.6 в опубликованном 1.0.1 и 0.17.6 в исходниках кандидата 2.0.0.
 Для Dart AOT адаптер автоматически читает отдельную компактную карту из
 `lib/apptracer-dart-symbols/<build-id>.json.gz` и заполняет function/file/line
 перед сериализацией официальным SDK. Проверяются build ID стека, загруженного ELF
@@ -140,7 +140,9 @@ SIGABRT доставляется, но файлы/строки не восста
 Кандидат 2.0.0 использует публичные API Cocoa 9.35.0 и Swift Package Manager,
 сохраняя официальный SDK для сериализации, scope, crash handler и очереди.
 Session-local `URLProtocol` только ограничивает сетевую отправку. Опубликованный
-адаптер 1.0.1 остаётся на Cocoa 8.58.4/CocoaPods до завершения приёмки кандидата.
+адаптер 1.0.1 остаётся на Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 удаляет отчёт
+после HTTP 5xx. При обрыве связи до получения ответа очередь сохраняется для
+повторной отправки после разрешённого перезапуска.
 Подробные сценарии и пределы: [macOS lifecycle](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
 
 ## Зависимости и переход

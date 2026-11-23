@@ -9,9 +9,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// Missing, corrupt or mismatched maps leave the original SDK event intact.
 class LinuxDartSymbols {
   /// [directory] is injectable for isolated tests. Construction performs no IO.
-  // Keep the existing public argument name rather than renaming it to _directory.
-  // ignore: prefer_initializing_formals
-  LinuxDartSymbols({String? directory}) : _directory = directory;
+  LinuxDartSymbols({this._directory});
 
   final String? _directory;
   String? _loadedId;

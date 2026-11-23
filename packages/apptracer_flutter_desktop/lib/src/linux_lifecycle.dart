@@ -1,4 +1,4 @@
-// This bridge is pinned to sentry_flutter 9.30.1 / sentry-native 0.16.6.
+// This bridge is pinned to sentry_flutter 10.6.0 / sentry-native 0.17.6.
 // The official SDK still owns mapping, HTTP delivery, scope and crash capture.
 // ignore_for_file: implementation_imports, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
 
@@ -22,6 +22,7 @@ class LinuxLifecycle implements Integration<SentryFlutterOptions>, Transport {
   final storage = LinuxStorage.forApplication();
   SentryFlutterOptions? _options;
   bool _started = false;
+  late final int Function() _nativeEnabled;
   bool _revoked = false;
   DynamicLibrary? _library;
   Pointer<Void> Function(Pointer<Uint8>, int)? _deserialize;
@@ -94,10 +95,10 @@ class LinuxLifecycle implements Integration<SentryFlutterOptions>, Transport {
     library.lookup<NativeFunction<Void Function()>>(
       'sentry_user_consent_revoke',
     );
-    final enabled = library.lookupFunction<Int Function(), int Function()>(
+    _nativeEnabled = library.lookupFunction<Int Function(), int Function()>(
       'sentry_is_enabled',
     );
-    if (enabled() != 0) throw StateError('native_sentry_already_owned');
+    if (_nativeEnabled() != 0) throw StateError('native_sentry_already_owned');
     final directory = File(Platform.resolvedExecutable).parent.path;
     String? handlerPath;
     for (final relative in [
@@ -142,11 +143,22 @@ class LinuxLifecycle implements Integration<SentryFlutterOptions>, Transport {
       throw StateError('linux_native_init_failed');
     }
     _started = true;
-    final native = sdk.SentryNative(options);
-    for (final entry in contexts!.values.entries) {
-      await native.setContexts(entry.key, entry.value);
-      if (_revoked || !_isAuthorized()) throw StateError('linux_start_revoked');
+    if (_nativeEnabled() == 0) {
+      throw StateError('linux_native_init_unconfirmed');
     }
+    // The SDK scope wrapper catches FFI failures. Use the generated setter
+    // here so a failed required context cannot be followed by consent.
+    for (final entry in contexts!.values.entries) {
+      final key = entry.key.toNativeUtf8();
+      try {
+        final value = sdk.dynamicToNativeValue(entry.value);
+        if (value == null) throw StateError('linux_native_context_invalid');
+        sdk.SentryNative.native.set_context(key.cast(), value);
+      } finally {
+        malloc.free(key);
+      }
+    }
+    if (_revoked || !_isAuthorized()) throw StateError('linux_start_revoked');
     give();
     options.sdk.addIntegration('apptracerLinuxLifecycle');
   }
@@ -200,6 +212,10 @@ class LinuxLifecycle implements Integration<SentryFlutterOptions>, Transport {
     await revoke();
     if (_started) {
       sdk.SentryNative.native.close();
+      // sentry_close returns the number of envelopes dumped, not a status.
+      if (_nativeEnabled() != 0) {
+        throw StateError('linux_native_close_failed');
+      }
       _started = false;
     }
   }

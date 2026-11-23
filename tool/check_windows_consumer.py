@@ -59,9 +59,10 @@ def main():
         expected = (sdk_warning and result.returncode == 65
                     and validation.count('\n* ') == 1
                     and 'Your dependency on "sentry_flutter" should allow more than one version.' in validation
+                    and '    sentry_flutter: ^10.6.0' in validation.splitlines()
                     and 'Package has 1 warning.' in validation and 'error' not in validation.lower())
         if expected:
-            report['publish_warning'] = 'Intentional exact sentry_flutter 9.30.1 pin'
+            report['publish_warning'] = 'Intentional exact sentry_flutter 10.6.0 pin'
         elif result.returncode:
             raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
         return content
@@ -130,7 +131,10 @@ def main():
                 content = cmake.read_text(encoding='utf-8')
                 if args.native_source:
                     source_path = args.native_source.resolve().as_posix()
+                    # 10.x downloads a zip before FetchContent sees overrides.
+                    env['SENTRY_NATIVE_FETCH_METHOD'] = 'git'
                     content = content.replace('include(flutter/generated_plugins.cmake)',
+                        'set(FETCHCONTENT_SOURCE_DIR_SN "' + source_path + '" CACHE PATH "Pinned local SDK" FORCE)\n'
                         'set(FETCHCONTENT_SOURCE_DIR_SENTRY-NATIVE "' + source_path + '" CACHE PATH "Pinned local SDK" FORCE)\n'
                         'include(flutter/generated_plugins.cmake)')
                 cmake.write_text(content, encoding='utf-8')

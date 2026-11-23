@@ -8,8 +8,9 @@
 - Update moved integration imports and the envelope channel probe. Confirm native
   startup through the adapter's lifecycle integration instead of the removed SDK
   options logger. Preserve consent, owned queues, filtering and restart requirements.
-- Model offline acceptance with dropped connections; HTTP 5xx responses may discard
-  envelopes rather than being presented as a guaranteed retry case.
+- macOS delivery changes during server outages. Cocoa 8.58.4 retained HTTP 503
+  envelopes. Cocoa 9.35.0 discards HTTP 5xx envelopes. A connection dropped
+  before a response still retains the original event for authorized replay.
 
 ## [1.0.1] - 2026-11-22
 

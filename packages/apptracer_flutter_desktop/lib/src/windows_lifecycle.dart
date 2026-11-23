@@ -1,4 +1,4 @@
-// This bridge is pinned to sentry_flutter 9.30.1 / sentry-native 0.16.6.
+// This bridge is pinned to sentry_flutter 10.6.0 / sentry-native 0.17.6.
 // The official SDK still owns mapping, HTTP delivery, scope and crash capture.
 // ignore_for_file: implementation_imports, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
 
@@ -21,6 +21,7 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
   final storage = WindowsStorage.forApplication();
   SentryFlutterOptions? _options;
   bool _started = false;
+  late final int Function() _nativeEnabled;
   bool _revoked = false;
   DynamicLibrary? _library;
   Pointer<Void> Function(Pointer<Uint8>, int)? _deserialize;
@@ -109,10 +110,10 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
     library.lookup<NativeFunction<Void Function()>>(
       'sentry_user_consent_revoke',
     );
-    final enabled = library.lookupFunction<Int Function(), int Function()>(
+    _nativeEnabled = library.lookupFunction<Int Function(), int Function()>(
       'sentry_is_enabled',
     );
-    if (enabled() != 0) throw StateError('native_sentry_already_owned');
+    if (_nativeEnabled() != 0) throw StateError('native_sentry_already_owned');
     String? handlerPath;
     for (final relative in ['sentry-crash.exe']) {
       final file = File('$directory/$relative');
@@ -152,6 +153,9 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
       throw StateError('windows_native_init_failed');
     }
     _started = true;
+    if (_nativeEnabled() == 0) {
+      throw StateError('windows_native_init_unconfirmed');
+    }
     give();
     options.sdk.addIntegration('apptracerWindowsLifecycle');
   }
@@ -205,6 +209,10 @@ class WindowsLifecycle implements Integration<SentryFlutterOptions>, Transport {
     await revoke();
     if (_started) {
       sdk.SentryNative.native.close();
+      // sentry_close returns the number of envelopes dumped, not a status.
+      if (_nativeEnabled() != 0) {
+        throw StateError('windows_native_close_failed');
+      }
       _started = false;
     }
   }

@@ -18,6 +18,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from check_macos_desktop import envelope_events
+from sentry_candidate import cocoa_evidence
 
 
 MAIN = """import 'dart:io';
@@ -84,6 +85,7 @@ def main():
             allow_sdk_pin_warning and result.returncode == 65
             and validation.count('\n* ') == 1
             and 'Your dependency on "sentry_flutter" should allow more than one version.' in validation
+            and '    sentry_flutter: ^10.6.0' in validation.splitlines()
             and 'Package has 1 warning.' in validation
             and 'error' not in validation.lower()
         )
@@ -161,10 +163,16 @@ flutter:
             assert all(p['source'] == 'hosted' for name, p in siblings.items()
                        if name != 'apptracer_flutter_desktop'), siblings
             assert not (app / 'pubspec_overrides.yaml').exists()
+            sentry = next(p for p in graph['packages'] if p['name'] == 'sentry_flutter')
+            assert (sentry['source'], sentry['version']) == ('hosted', '10.6.0'), sentry
+            report['sentryFlutter'] = sentry['version']
             report['dependencies'] = siblings
             shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
             run(['flutter', 'analyze', '--fatal-infos'], app)
             run(['flutter', 'build', 'macos', '--release'], app)
+            report.update(cocoa_evidence(app))
+            shutil.copy2(app / 'macos/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved',
+                         output / 'consumer.Package.resolved')
             events, failures = [], []
 
             class Receiver(BaseHTTPRequestHandler):

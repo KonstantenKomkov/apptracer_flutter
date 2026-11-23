@@ -17,6 +17,16 @@ supported release until every acceptance stage passes. See the
 checkouts, with per-OS machine-readable results. It never merges or publishes.
 A pin-changing PR additionally needs hosted consumer and live Tracer evidence.
 
+On macOS this upgrade changes delivery during server outages. Cocoa 8.58.4 kept
+a cached envelope after HTTP 503. Cocoa 9.35.0 deletes it after an HTTP 5xx,
+so an event rejected during an outage can be lost. A dropped connection with
+no HTTP response retains the envelope for an authorized restart with
+`preservePreviousReports: true`. Stop or clear still revokes replay. The
+lifecycle probe checks the original event ID on that restart. Roll back to
+desktop 1.0.1 with CocoaPods and Sentry Flutter 9.30.1 if 503 retention is required.
+[Cocoa 8.58.4 transport](https://github.com/getsentry/sentry-cocoa/blob/8.58.4/Sources/Sentry/SentryHttpTransport.m)
+and [Cocoa 9.35.0 transport](https://github.com/getsentry/sentry-cocoa/blob/9.35.0/Sources/Sentry/SentryHttpTransport.m).
+
 ## External application
 
 Install the facade and optional desktop adapter from pub.dev:
@@ -41,9 +51,17 @@ the consumer must resolve public siblings from pub.dev
 Published 1.0.1 requires CocoaPods. For the 2.0.0 source candidate, enable Swift
 Package Manager and set the Runner deployment target to at least 12.0; its
 [Package.swift](../packages/apptracer_flutter_desktop/macos/apptracer_flutter_desktop/Package.swift)
-shares Cocoa 9.35.0 with Sentry Flutter 10.6.0. Enable
+shares Cocoa 9.35.0 with Sentry Flutter 10.6.0. The binary package manifest
+requires Swift tools 6.0. Enable
 `com.apple.security.network.client` in the sandboxed release entitlements.
 Do not combine the candidate with the old CocoaPods bridge.
+
+For a universal macOS release with Xcode 27.0, use the tested Flutter 3.47.4
+toolchain. At the declared minimum of Flutter 3.44.0 / Dart 3.12.0, Flutter's
+framework-copy step passes both architectures to `lipo -verify_arch` in one
+call. Xcode 27.0 rejects that call even when the framework contains both
+slices. An arm64-only release built and delivered all three smoke events on
+this combination.
 
 The adapter registers automatically on macOS/Windows/Ubuntu Linux. Call the normal
 `Tracer.initialize` API with the target project's DSN; do not call
@@ -235,7 +253,8 @@ python -X utf8 tool/check_windows_consumer.py --candidate-facade --output build/
 ```
 
 An optional `--native-source <directory>` reuses a complete, audited sentry-native
-0.16.6 checkout. Both variants resolve siblings from pub.dev without overrides;
+checkout matching the selected adapter (0.17.6 for the source candidate, 0.16.6
+for published 1.0.1). Both variants resolve siblings from pub.dev without overrides;
 the candidate uses the current facade source and the default uses hosted 1.0.0.
 Both include the obfuscated FlutterError name fix.
 The harness performs package dry-runs, builds obfuscated release, relocates it,
@@ -243,10 +262,10 @@ restricts PATH to Windows/System32 and verifies filtering/deduplication/source
 frames/clear. This does not replace clean-machine testing.
 [Local results and publication boundary](windows-local-acceptance.md).
 
-After publication, check both stable 1.0.0 packages using hosted dependencies only:
+After desktop 2.0.0 is published, verify the new adapter with a hosted-only consumer:
 
 ```powershell
-python -X utf8 tool/check_windows_consumer.py --hosted-desktop 1.0.0 --facade-version 1.0.0 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 2.0.0 --facade-version 1.4.0 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
 ```
 
 This mode checks that every Tracer dependency resolves from pub.dev; it creates
@@ -271,7 +290,7 @@ at a local receiver. No real DSN or plugin token is read.
 
 The exact SDK pin produces one known Pub warning in `dart pub publish --dry-run`.
 The check accepts only that warning; other warnings/errors fail. The pin is
-intentional because SDK integrations and observer APIs are version-specific.
+intentional because SDK integrations and native bindings are version-specific.
 Logs, the dependency lockfile, export file list and event are written under
 the output directory. This checks an isolated path consumer, not a published
 desktop version or a Git install. Actual publication and a hosted desktop
