@@ -62,11 +62,8 @@ class TracerOptions {
 
   /// The Tracer application token, found under *Настройки → Проект → API*.
   ///
-  /// Enough on its own for an application that ships on one platform. Where
-  /// several do, give each its own token through [iosAppToken] and
-  /// [webAppToken] instead of choosing between them by hand — every platform
-  /// is a separate Tracer project with a token of its own, and only one of
-  /// them can be right in a given build.
+  /// An iOS-only or Web-only app can use its project's token here. Use
+  /// [iosAppToken] and [webAppToken] for separate projects in a shared build.
   ///
   /// Whichever of the three applies is resolved by [resolvedAppToken], which is
   /// what implementations read.
@@ -98,14 +95,12 @@ class TracerOptions {
     return appToken;
   }
 
-  /// A Sentry DSN issued for the Tracer project.
+  /// The Sentry DSN of the target desktop project in Tracer.
   ///
-  /// Tracer ingests events over the Sentry protocol, which is how platforms
-  /// without a native Tracer SDK are covered. The experimental
-  /// apptracer_flutter_desktop adapter passes this to the official Sentry SDK.
-  /// The legacy apptracer_flutter_sentry package implements the protocol itself.
-  /// Neither is selected just by setting this value: register the desired
-  /// platform adapter. See `docs/platform-matrix.md`.
+  /// Add the optional stable `apptracer_flutter_desktop` dependency. Flutter
+  /// registers its adapter on desktop, and the adapter passes this DSN to the
+  /// official Sentry SDK. Web uses [webAppToken] or [appToken].
+  /// See the [supported configurations](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md#summary).
   final String? dsn;
 
   /// Deployment environment, for example `prod`, `test` or `dev`.
