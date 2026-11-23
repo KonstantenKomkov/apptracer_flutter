@@ -20,16 +20,21 @@ HTTP transport уже выдаёт `TracerDeliveryDiagnostic`, но общий f
 
 1. Спроектировать общий typed diagnostic model/listener в platform interface:
    backend, operation, stable reason, attempt и состояние без payload/tokens.
-2. Подключить listener через `TracerOptions` либо facade с безопасной обработкой
-   исключений и повторной инициализации. Сохранить source compatibility текущего API.
+2. Подключить listener через публичный facade или его `TracerOptions`, включая
+   автоматически зарегистрированный `AppTracerWeb`. Сохранить source compatibility
+   текущего API и исключить вызовы listener предыдущей сессии после смены аккаунта.
 3. Передавать HTTP `queued/retry/dropped/failed/sent` через общий контракт. `sent`
-   по-прежнему означает только HTTP-ответ, не подтверждение консолью Tracer.
+   по-прежнему означает HTTP-ответ со статусом ниже 400.
 4. Добавить диагностику platform call/lifecycle failures для native и desktop без
-   выдумывания delivery confirmations, которых SDK не предоставляет.
+   выдумывания delivery confirmations, которых SDK не предоставляет. Обработать
+   исключения и возвращённые `TracerCollectionResult` со статусом `error`.
+   Использовать фиксированные диагностические коды: строка `result.reason`
+   может содержать исходный текст исключения.
 5. Сохранить существующий HTTP listener как совместимый API или явно адаптировать
    его без двойных событий.
-6. Не менять тип `stopCollection` в текущем major; задокументировать typed
-   `stopAndClearCollection` и подготовить унификацию lifecycle API к 2.0.
+6. Сохранить `Future<void> stopCollection()` и сообщать наблюдаемый сбой остановки
+   через listener. Описать отдельно `stopAndClearCollection`, который также
+   очищает отчёты и возвращает типизированный результат.
 7. Обновить RU/EN guides, Dartdoc и changelogs примерами production diagnostics.
 
 ## Критерии приёмки
@@ -37,7 +42,9 @@ HTTP transport уже выдаёт `TracerDeliveryDiagnostic`, но общий f
 - Приложение получает typed failures для HTTP и platform calls без debug mode.
 - Callback не получает сообщение ошибки, stack, event payload, DSN или app token.
 - Исключение listener не влияет на доставку и приложение; события не дублируются.
-- `recordError` не ждёт сеть; stop/revoke немедленно закрывают приём новых событий.
+- На Web/HTTP `recordError` завершается при ещё не завершившемся HTTP-запросе.
+  На остальных backend сохранить семантику возвращаемого Future и не вводить
+  дополнительное ожидание сети. Stop/revoke немедленно закрывают приём новых Dart-событий.
 - Старый API остаётся совместимым, ограничения native SDK явно описаны.
 
 ## Проверки

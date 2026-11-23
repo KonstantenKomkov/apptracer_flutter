@@ -20,9 +20,11 @@ Link checker подтверждает существование ссылок, �
 
 ## Сделать
 
-1. Исправить Makefile, `TracerOptions.dsn`, library docs HTTP transport и
-   `UnsupportedTracerPlatform` guidance: desktop использует optional official
-   Sentry adapter и DSN; ручной HTTP не является рекомендуемым desktop default.
+1. Исправить комментарий в Makefile, Dartdoc `TracerOptions.dsn`, library docs
+   HTTP transport и текст предупреждения `UnsupportedTracerPlatform`. Для
+   поддерживаемых desktop-конфигураций указать optional `apptracer_flutter_desktop`,
+   официальный Sentry SDK и DSN. Для Web сохранить инструкцию с app token,
+   для Авроры — фактический статус из [матрицы](../platform-matrix.md).
 2. Проверить соседние RU/EN quick start, package docs и platform matrix на те же
    устаревшие утверждения и статусы старых версий.
 3. Ссылаться на platform matrix для изменяемых версий/поддержки, сохраняя нужные
@@ -44,7 +46,9 @@ Link checker подтверждает существование ссылок, �
 
 - Documentation unit/link checker для всех tracked Markdown.
 - Analyze затронутых пакетов, полный `make check` при изменении Dart comments/code.
-- Ручная сверка с `docs/platform-matrix.md` и текущими pubspec.
+- Сверить заявленные версии с [записями публикаций](../publishing.md),
+  ограничения — с матрицей, отдельно отметить версии из рабочего pubspec,
+  которые ещё не опубликованы.
 
 ## Не входит
 

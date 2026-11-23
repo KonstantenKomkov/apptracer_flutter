@@ -91,8 +91,10 @@ desktop Sentry updates и навигация документации. Кажд�
 **План улучшений 22 ноября 2026:** по итогам повторного ревью добавлены №31–37:
 воспроизводимые Actions, политика ошибок privacy-фильтров, миграция Sentry 10.x,
 наблюдаемость доставки, runtime-валидация, актуальность документации и desktop
-coverage. Каждая выполняется отдельным PR с независимым ревью. Следующий
-свободный номер — **38**.
+coverage. Задачи не объединять в один PR. Каждый PR проходит независимое ревью.
+План создан в [PR №30](https://github.com/KonstantenKomkov/apptracer_flutter/pull/30);
+Codex-ревью уточнило критерии приёмки, documentation tests и проверка 93 Markdown-файлов
+прошли. Следующий свободный номер — **38**.
 
 Выполненные работы переносить в `development_completed_v1.md` в этой папке,
 сохраняя номера и ссылки; полный список — в конце этого плана.
@@ -108,7 +110,7 @@ coverage. Каждая выполняется отдельным PR с неза�
 | --- | --- | --- | --- | --- |
 | 31 | [Воспроизводимые GitHub Actions по commit SHA](task-31-github-actions-sha.md) | P0 | S | Независима; первый инфраструктурный PR |
 | 32 | [Политика ошибок privacy-фильтров](task-32-filter-error-policy.md) | P1 | M | Независима; сохранить текущее поведение по умолчанию |
-| 33 | [Миграция desktop на Sentry 10.x](task-33-sentry-10-migration.md) | P1 | XL | №29; полная desktop/hosted/live приёмка либо явный блокер без смены pin |
+| 33 | [Миграция desktop на Sentry 10.x](task-33-sentry-10-migration.md) | P1 | XL | №29 завершена. При блокере сохранить pin и оставить миграцию открытой |
 | 34 | [Общая наблюдаемость доставки и lifecycle](task-34-delivery-diagnostics.md) | P1 | L | Затрагивает interface/facade/HTTP/desktop; не ждать сеть в recordError |
 | 35 | [Runtime-валидация TracerOptions](task-35-runtime-option-validation.md) | P2 | S | Независима; сохранить const API |
 | 36 | [Смысловая согласованность документации](task-36-current-docs-consistency.md) | P2 | S | Учитывать фактические результаты предыдущих задач |
