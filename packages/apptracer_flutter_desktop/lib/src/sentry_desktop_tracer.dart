@@ -31,6 +31,7 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   static SentryDesktopTracer? _owner;
+  late final ObservedSdkOptions _sdkOptions;
   LinuxLifecycle? _linux;
   WindowsLifecycle? _windows;
   final _dartSymbols = LinuxDartSymbols();
@@ -39,6 +40,7 @@ class SentryDesktopTracer extends TracerPlatform {
   bool _attemptedNativeStart = false;
   bool _closeFailed = false;
   int _generation = 0;
+  int _listenerGeneration = 0;
   Future<void> _tail = Future<void>.value();
   TracerCollectionResult _state = const TracerCollectionResult(
     TracerCollectionState.disabled,
@@ -62,10 +64,27 @@ class SentryDesktopTracer extends TracerPlatform {
   }
 
   @override
+  void configureDelivery(
+    TracerOptions options, {
+    bool activateListener = true,
+  }) {
+    final previous = deliveryListener;
+    super.configureDelivery(options, activateListener: activateListener);
+    // Detaching and reattaching the same callback starts a new subscription.
+    if (previous != deliveryListener) ++_listenerGeneration;
+  }
+
+  @override
   Future<void> initialize(TracerOptions options) async {
+    configureDelivery(options);
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
-      if (_attemptedNativeStart) await stopCollection();
+      if (_attemptedNativeStart) {
+        await stopCollection();
+      } else {
+        // A start may be queued but not yet have touched the native SDK.
+        ++_generation;
+      }
       return;
     }
     await startCollection(options);
@@ -73,6 +92,7 @@ class SentryDesktopTracer extends TracerPlatform {
 
   @override
   Future<TracerCollectionResult> startCollection(TracerOptions options) {
+    configureDelivery(options);
     if (!options.isCollectionEnabled) {
       return stopCollection().then((_) => _state);
     }
@@ -109,8 +129,8 @@ class SentryDesktopTracer extends TracerPlatform {
       }
       _owner = this;
       _attemptedNativeStart = true;
-      late SentryFlutterOptions configured;
       try {
+        _sdkOptions = ObservedSdkOptions();
         if (defaultTargetPlatform == TargetPlatform.linux) {
           _linux ??= LinuxLifecycle();
           await _linux!.prepare(options.preservePreviousReports);
@@ -155,6 +175,7 @@ class SentryDesktopTracer extends TracerPlatform {
             sdk,
             isAuthorized: () => generation == _generation,
           );
+          _sdkOptions.observeTransport();
           sdk.beforeSend = (event, hint) async {
             final source = hint.get('apptracer.event');
             if (!_enabled ||
@@ -176,15 +197,15 @@ class SentryDesktopTracer extends TracerPlatform {
           // Only recordLog supplies native breadcrumbs; automatic integrations
           // are disabled. Tracer invokes the user's breadcrumb filter first.
           sdk.dsn = options.dsn!.trim();
-          configured = sdk;
-        });
+          // ignore: invalid_use_of_internal_member
+        }, options: _sdkOptions);
         final integration = defaultTargetPlatform == TargetPlatform.macOS
             ? 'apptracerMacOSLifecycle'
             : defaultTargetPlatform == TargetPlatform.linux
             ? 'apptracerLinuxLifecycle'
             : 'apptracerWindowsLifecycle';
         if (!Sentry.isEnabled ||
-            !configured.sdk.integrations.contains(integration)) {
+            !_sdkOptions.sdk.integrations.contains(integration)) {
           throw StateError('native_start_not_confirmed');
         }
         if (generation != _generation) {
@@ -394,30 +415,45 @@ class SentryDesktopTracer extends TracerPlatform {
   @override
   Future<TracerCollectionResult> getCollectionState() async => _state;
 
-  Future<void> _whileEnabled(Future<void> Function() action) {
+  Future<void> _whileEnabled(String operation, Future<void> Function() action) {
     // Calls made while init is pending must not become data in a later session.
     if (!_enabled) return Future<void>.value();
     final generation = _generation;
+    final listenerGeneration = _listenerGeneration;
     return _serial(() async {
       if (!_enabled || generation != _generation) return;
+      var reason = 'operation_error';
       try {
-        await action();
+        if (!await _sdkOptions.loggedErrorDuring(action)) return;
       } catch (_) {
-        /* Diagnostics must not break the app. */
+        reason = 'platform_exception';
+      }
+      if (generation == _generation &&
+          listenerGeneration == _listenerGeneration) {
+        TracerDeliveryDiagnostic(
+          TracerDeliveryState.failed,
+          backend: backendName,
+          operation: operation,
+          reason: reason,
+        ).notify(deliveryListener);
       }
     });
   }
 
   @override
-  Future<void> recordError(TracerEvent event) => _whileEnabled(() async {
-    await Sentry.captureEvent(
-      toSentryEvent(event),
-      hint: Hint.withMap({'apptracer.event': event}),
-    );
-  });
+  Future<void> recordError(TracerEvent event) =>
+      _whileEnabled('recordError', () async {
+        await Sentry.captureEvent(
+          toSentryEvent(event),
+          hint: Hint.withMap({'apptracer.event': event}),
+        );
+      });
+
+  Future<void> _updateScope(String operation, Future<void> Function() action) =>
+      _whileEnabled(operation, () => _sdkOptions.observeSdkCall(action));
 
   @override
-  Future<void> recordLog(String message) => _whileEnabled(() async {
+  Future<void> recordLog(String message) => _updateScope('recordLog', () async {
     await Sentry.addBreadcrumb(
       Breadcrumb(message: message, category: 'apptracer'),
     );
@@ -425,17 +461,18 @@ class SentryDesktopTracer extends TracerPlatform {
 
   @override
   Future<void> setCustomKey({required String key, required String value}) =>
-      _whileEnabled(() async {
+      _updateScope('setCustomKey', () async {
         await Sentry.configureScope((scope) => scope.setTag(key, value));
       });
 
   @override
-  Future<void> removeCustomKey(String key) => _whileEnabled(() async {
-    await Sentry.configureScope((scope) => scope.removeTag(key));
-  });
+  Future<void> removeCustomKey(String key) =>
+      _updateScope('removeCustomKey', () async {
+        await Sentry.configureScope((scope) => scope.removeTag(key));
+      });
 
   @override
-  Future<void> setUserId(String? userId) => _whileEnabled(() async {
+  Future<void> setUserId(String? userId) => _updateScope('setUserId', () async {
     await Sentry.configureScope(
       (scope) => scope.setUser(userId == null ? null : SentryUser(id: userId)),
     );

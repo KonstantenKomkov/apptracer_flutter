@@ -9,8 +9,7 @@ environment:
 
 dependencies:
   apptracer_flutter: ^1.4.0
-  # Only needed on targets without a native Tracer SDK (desktop, Aurora).
-  # Android, iOS and web work without it.
+  # The network permission warm-up uses TracerHttpTracer.defaultHost.
   apptracer_flutter_http: ^0.2.1
   cupertino_icons: ^1.0.8
   flutter:

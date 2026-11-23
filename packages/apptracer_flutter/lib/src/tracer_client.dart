@@ -9,6 +9,15 @@ import 'deduplicator.dart';
 import 'error_handler_chain.dart';
 import 'error_normalizer.dart';
 
+String? _invalidLimit(TracerOptions options) {
+  if (options.maxBreadcrumbs < 0) return 'invalid_max_breadcrumbs';
+  if (options.maxRawStackTraceLogBytes < 0) {
+    return 'invalid_max_raw_stack_trace_log_bytes';
+  }
+  if (options.maxStackFrames < 0) return 'invalid_max_stack_frames';
+  return null;
+}
+
 /// The Dart-side engine behind the [Tracer] facade.
 ///
 /// Kept as an ordinary object rather than a pile of statics so that the
@@ -38,10 +47,13 @@ class TracerClient {
   bool _started = false;
   bool _paused = false;
   int _generation = 0;
+  int? _startingGeneration;
+  String? _rejectedBootstrapReason;
   Future<void> _lifecycleTail = Future<void>.value();
 
   Future<TracerCollectionResult> _serialize(
-      Future<TracerCollectionResult> Function() action) {
+    Future<TracerCollectionResult> Function() action,
+  ) {
     final next = _lifecycleTail.then((_) => action());
     _lifecycleTail = next.then<void>((_) {}, onError: (Object _) {});
     return next;
@@ -86,62 +98,128 @@ class TracerClient {
   /// Never throws. A platform SDK that fails to start leaves the client
   /// disabled; the host application keeps running either way.
   Future<void> start(TracerOptions options) async {
+    final reason = _invalidLimit(options);
+    if (options.isCollectionEnabled && reason != null) {
+      // Remember a rejected cold bootstrap for a later argumentless retry.
+      // A live, paused or starting session still owns its validated options.
+      if (!_started && !_paused && _startingGeneration != _generation) {
+        _rejectedBootstrapReason = reason;
+      }
+      return;
+    }
+    _configureDelivery(options);
     _options = options;
+    if (!options.isCollectionEnabled &&
+        (_started ||
+            _paused ||
+            _startingGeneration != null ||
+            platform.isEnabled)) {
+      await _startCollection(options);
+      return;
+    }
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
       ++_generation;
       _disableDart();
       return;
     }
-    await startCollection(options);
+    await _startCollection(options);
+  }
+
+  void _configureDelivery(TracerOptions options) {
+    _rejectedBootstrapReason = null;
+    final listenerChanged =
+        _options.deliveryListener != options.deliveryListener;
+    if (listenerChanged ||
+        _options.resolvedAppToken != options.resolvedAppToken ||
+        _options.apiUrl != options.apiUrl ||
+        _options.dsn != options.dsn ||
+        _options.isCollectionEnabled != options.isCollectionEnabled) {
+      ++_generation;
+      platform.configureDelivery(options, activateListener: false);
+    }
+    if (!_started && !_paused) {
+      _options = options;
+    } else if (listenerChanged) {
+      _options = _options.copyWith(
+          deliveryListener: options.deliveryListener,
+          removeDeliveryListener: options.deliveryListener == null);
+    }
   }
 
   /// Starts transport without re-running appRunner or creating a guarded zone.
   Future<TracerCollectionResult> startCollection([TracerOptions? options]) {
-    final requested = options ?? _options;
-    if (!requested.isCollectionEnabled) {
-      ++_generation;
-      _disableDart();
-      return _serialize(() async {
-        try {
-          await platform.stopCollection();
-          return await platform.getCollectionState();
-        } catch (error) {
-          return TracerCollectionResult(TracerCollectionState.error,
-              reason: 'stop_failed: $error');
-        }
-      });
+    final rejected = _rejectedBootstrapReason;
+    if (options == null && rejected != null) {
+      return Future.value(TracerCollectionResult(TracerCollectionState.error,
+          reason: rejected));
     }
+    if (options != null &&
+        (!options.isCollectionEnabled || _invalidLimit(options) == null)) {
+      _configureDelivery(options);
+    }
+    return _startCollection(options ?? _options);
+  }
+
+  Future<TracerCollectionResult> _startCollection(TracerOptions requested) {
+    final reason = _invalidLimit(requested);
+    final invalid = reason == null
+        ? null
+        : TracerCollectionResult(TracerCollectionState.error, reason: reason);
+    if (!requested.isCollectionEnabled) {
+      final generation = ++_generation;
+      _disableDart();
+      return _serialize(
+          () => _stopPlatform(generation, invalidResult: invalid));
+    }
+    if (invalid != null) return Future.value(invalid);
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'superseded');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'superseded',
+        );
       }
-      if (!requested.isCollectionEnabled) {
-        _disableDart();
-        return const TracerCollectionResult(TracerCollectionState.disabled);
-      }
+      var operation = 'startCollection';
       try {
+        platform.configureDelivery(requested);
         if (isEnabled) {
+          operation = 'getCollectionState';
           final current = await platform.getCollectionState();
+          _observeCollectionResult(current, operation, generation);
+          operation = 'startCollection';
           if (generation != _generation) {
-            return const TracerCollectionResult(TracerCollectionState.disabled,
-                reason: 'superseded');
+            return const TracerCollectionResult(
+              TracerCollectionState.disabled,
+              reason: 'superseded',
+            );
           }
           if (current.isEnabled) return current;
         }
         _options = requested;
+        _rejectedBootstrapReason = null;
         _disableDart();
+        _startingGeneration = generation;
         final result = await platform.startCollection(requested);
         if (generation != _generation) {
-          return const TracerCollectionResult(TracerCollectionState.disabled,
-              reason: 'superseded');
+          return const TracerCollectionResult(
+            TracerCollectionState.disabled,
+            reason: 'superseded',
+          );
         }
+        _observeCollectionResult(result, 'startCollection', generation);
         if (!result.isEnabled) return result;
         if (!platform.isEnabled) {
-          return const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'enabled_state_not_confirmed');
+          _diagnose(
+            generation,
+            operation: 'startCollection',
+            reason: 'operation_error',
+          );
+          return const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'enabled_state_not_confirmed',
+          );
         }
         _breadcrumbs = BreadcrumbBuffer(maxLength: requested.maxBreadcrumbs);
         _customKeys.addAll(requested.initialCustomKeys);
@@ -150,61 +228,102 @@ class TracerClient {
           if (generation != _generation) break;
           await _guard(
             () => platform.setCustomKey(key: entry.key, value: entry.value),
+            operation: 'setCustomKey',
           );
         }
         if (generation == _generation) _installHandlers();
         return generation == _generation
             ? result
-            : const TracerCollectionResult(TracerCollectionState.disabled,
-                reason: 'superseded');
+            : const TracerCollectionResult(
+                TracerCollectionState.disabled,
+                reason: 'superseded',
+              );
       } catch (error) {
-        _disableDart();
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'start_failed: $error');
+        _diagnose(
+          generation,
+          operation: operation,
+          reason: 'platform_exception',
+        );
+        if (generation == _generation) _disableDart();
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'start_failed: $error',
+        );
+      } finally {
+        _startingGeneration = null;
       }
     });
   }
 
   /// Observes transport; never grants permission to emit Dart events.
   Future<TracerCollectionResult> getCollectionState() async {
+    final generation = _generation;
     try {
-      return await platform.getCollectionState();
+      final result = await platform.getCollectionState();
+      _observeCollectionResult(result, 'getCollectionState', generation);
+      return result;
     } catch (error) {
-      return TracerCollectionResult(TracerCollectionState.error,
-          reason: 'state_failed: $error');
+      _diagnose(
+        generation,
+        operation: 'getCollectionState',
+        reason: 'platform_exception',
+      );
+      return TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'state_failed: $error',
+      );
     }
   }
 
   /// Runs an opt-in Android heap dump off the platform thread.
   Future<TracerDiagnosticResult> runHeapDump({required String tag}) =>
-      _diagnostic(() => platform.runHeapDump(tag: tag));
+      _diagnostic('runHeapDump', () => platform.runHeapDump(tag: tag));
 
   /// Requests a one-time sample from an already installed disk module.
   Future<TracerDiagnosticResult> runDiskUsage() =>
-      _diagnostic(platform.runDiskUsage);
+      _diagnostic('runDiskUsage', platform.runDiskUsage);
 
   /// Changes the host-installed native heap decision provider.
   Future<TracerDiagnosticResult> setHeapDumpEnabled(bool enabled) =>
-      _diagnostic(() => platform.setHeapDumpEnabled(enabled),
-          allowDisabled: !enabled);
+      _diagnostic(
+        'setHeapDumpEnabled',
+        () => platform.setHeapDumpEnabled(enabled),
+        allowDisabled: !enabled,
+      );
 
   Future<TracerDiagnosticResult> _diagnostic(
-      Future<TracerDiagnosticResult> Function() operation,
-      {bool allowDisabled = false}) async {
+    String name,
+    Future<TracerDiagnosticResult> Function() operation, {
+    bool allowDisabled = false,
+  }) async {
     if (!isEnabled && !allowDisabled) {
-      return const TracerDiagnosticResult(TracerDiagnosticState.disabled,
-          reason: 'collection_disabled');
+      return const TracerDiagnosticResult(
+        TracerDiagnosticState.disabled,
+        reason: 'collection_disabled',
+      );
     }
     final generation = _generation;
     try {
       final result = await operation();
+      if (result.state == TracerDiagnosticState.error) {
+        _diagnose(generation, operation: name, reason: 'operation_error');
+      }
       return generation == _generation
           ? result
-          : const TracerDiagnosticResult(TracerDiagnosticState.disabled,
-              reason: 'superseded');
+          : const TracerDiagnosticResult(
+              TracerDiagnosticState.disabled,
+              reason: 'superseded',
+            );
     } catch (_) {
-      return const TracerDiagnosticResult(TracerDiagnosticState.error,
-          reason: 'native_diagnostic_failed');
+      _diagnose(
+        generation,
+        operation: name,
+        reason: 'platform_exception',
+      );
+      return const TracerDiagnosticResult(
+        TracerDiagnosticState.error,
+        reason: 'native_diagnostic_failed',
+      );
     }
   }
 
@@ -216,14 +335,25 @@ class TracerClient {
     _suspendDart();
     return _serialize(() async {
       if (generation != _generation) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'superseded');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'superseded',
+        );
       }
       try {
-        return await platform.pauseCollection();
+        final result = await platform.pauseCollection();
+        _observeCollectionResult(result, 'pauseCollection', generation);
+        return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'pause_failed: $error');
+        _diagnose(
+          generation,
+          operation: 'pauseCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'pause_failed: $error',
+        );
       }
     });
   }
@@ -233,27 +363,43 @@ class TracerClient {
     final generation = _generation;
     return _serialize(() async {
       if (generation != _generation || !_paused) {
-        return const TracerCollectionResult(TracerCollectionState.disabled,
-            reason: 'no_live_pause');
+        return const TracerCollectionResult(
+          TracerCollectionState.disabled,
+          reason: 'no_live_pause',
+        );
       }
       try {
         final result = await platform.resumeCollection();
         if (generation != _generation) {
-          return const TracerCollectionResult(TracerCollectionState.disabled,
-              reason: 'superseded');
+          return const TracerCollectionResult(
+            TracerCollectionState.disabled,
+            reason: 'superseded',
+          );
         }
+        _observeCollectionResult(result, 'resumeCollection', generation);
         if (result.isEnabled && platform.isEnabled) {
           _paused = false;
           _started = true;
           _installHandlers();
         } else if (result.isEnabled) {
-          return const TracerCollectionResult(TracerCollectionState.error,
-              reason: 'enabled_state_not_confirmed');
+          _diagnose(generation,
+              operation: 'resumeCollection', reason: 'operation_error');
+          return const TracerCollectionResult(
+            TracerCollectionState.error,
+            reason: 'enabled_state_not_confirmed',
+          );
         }
         return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'resume_failed: $error');
+        _diagnose(
+          generation,
+          operation: 'resumeCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'resume_failed: $error',
+        );
       }
     });
   }
@@ -280,26 +426,40 @@ class TracerClient {
   ///
   /// Always reaches the platform, including before a successful Dart start.
   Future<void> stop() async {
-    ++_generation;
+    final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(
       initialCustomKeys: const <String, String>{},
       preservePreviousReports: false,
     );
-    await _serialize(() async {
-      try {
-        await platform.stopCollection();
-        return await platform.getCollectionState();
-      } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'stop_failed: $error');
+    await _serialize(() => _stopPlatform(generation));
+  }
+
+  Future<TracerCollectionResult> _stopPlatform(
+    int generation, {
+    TracerCollectionResult? invalidResult,
+  }) async {
+    try {
+      if (generation == _generation) platform.configureDelivery(_options);
+      final result = await platform.stopCollectionAndGetState();
+      _observeCollectionResult(result, 'stopCollection', generation);
+      if (invalidResult != null &&
+          (result.state == TracerCollectionState.disabled ||
+              result.state == TracerCollectionState.restartRequired)) {
+        return invalidResult;
       }
-    });
+      return result;
+    } catch (error) {
+      _diagnose(generation,
+          operation: 'stopCollection', reason: 'platform_exception');
+      return TracerCollectionResult(TracerCollectionState.error,
+          reason: 'stop_failed: $error');
+    }
   }
 
   /// Revokes Dart collection synchronously, then stops and purges transport.
   Future<TracerCollectionResult> stopAndClearCollection() {
-    ++_generation;
+    final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(
       initialCustomKeys: const <String, String>{},
@@ -307,10 +467,20 @@ class TracerClient {
     );
     return _serialize(() async {
       try {
-        return await platform.stopAndClearCollection();
+        if (generation == _generation) platform.configureDelivery(_options);
+        final result = await platform.stopAndClearCollection();
+        _observeCollectionResult(result, 'stopAndClearCollection', generation);
+        return result;
       } catch (error) {
-        return TracerCollectionResult(TracerCollectionState.error,
-            reason: 'cleanup_failed: $error');
+        _diagnose(
+          generation,
+          operation: 'stopAndClearCollection',
+          reason: 'platform_exception',
+        );
+        return TracerCollectionResult(
+          TracerCollectionState.error,
+          reason: 'cleanup_failed: $error',
+        );
       }
     });
   }
@@ -390,18 +560,23 @@ class TracerClient {
     final generation = _generation;
     if (!isEnabled) return;
     var outgoing = event;
-    final beforeSend = _options.beforeSend;
+    // A hook can reinitialize the facade before it returns or throws.
+    final options = _options;
+    final beforeSend = options.beforeSend;
     if (beforeSend != null) {
       try {
         final filtered = beforeSend(outgoing);
         if (filtered == null) {
-          _log('event dropped by beforeSend: ${event.title}');
+          _log('event dropped by beforeSend');
           return;
         }
         outgoing = filtered;
-      } catch (error) {
-        // A throwing hook must not take the error report down with it.
-        _log('beforeSend threw, sending the original event: $error');
+      } catch (_) {
+        if (options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+          _log('beforeSend threw; event dropped by filter error policy');
+          return;
+        }
+        _log('beforeSend threw; original event kept by filter error policy');
       }
     }
 
@@ -420,23 +595,25 @@ class TracerClient {
     }
 
     if (!isEnabled || generation != _generation) return;
-    if (_options.attachRawStackTraceAsLog &&
+    if (options.attachRawStackTraceAsLog &&
         outgoing.stackTrace.raw.isNotEmpty) {
       await _guard(
         () => platform.recordLog(
-          _rawStackTraceLog(outgoing, _options.maxRawStackTraceLogBytes),
+          _rawStackTraceLog(outgoing, options.maxRawStackTraceLogBytes),
         ),
+        operation: 'recordLog',
       );
     }
 
     if (!isEnabled || generation != _generation) return;
-    final limited = outgoing.stackTrace.limitFrames(_options.maxStackFrames);
+    final limited = outgoing.stackTrace.limitFrames(options.maxStackFrames);
     await _guard(
       () => platform.recordError(
         identical(limited, outgoing.stackTrace)
             ? outgoing
             : outgoing.copyWith(stackTrace: limited),
       ),
+      operation: 'recordError',
     );
   }
 
@@ -554,7 +731,8 @@ class TracerClient {
     if (!isEnabled) return;
     final generation = _generation;
     var incoming = breadcrumb;
-    final beforeBreadcrumb = _options.beforeBreadcrumb;
+    final options = _options;
+    final beforeBreadcrumb = options.beforeBreadcrumb;
     if (beforeBreadcrumb != null) {
       try {
         final filtered = beforeBreadcrumb(incoming);
@@ -562,14 +740,27 @@ class TracerClient {
           return;
         }
         incoming = filtered;
-      } catch (error) {
-        _log('beforeBreadcrumb threw, keeping the original: $error');
+      } catch (_) {
+        if (options.filterErrorPolicy == TracerFilterErrorPolicy.drop) {
+          _log(
+            'beforeBreadcrumb threw; breadcrumb dropped by filter error policy',
+          );
+          return;
+        }
+        _log(
+          'beforeBreadcrumb threw; original breadcrumb kept by filter error policy',
+        );
       }
     }
     if (!isEnabled || generation != _generation) return;
     _breadcrumbs.add(incoming);
     if (isEnabled && platform.mirrorsBreadcrumbsToLog) {
-      unawaited(_guard(() => platform.recordLog(incoming.toLogLine())));
+      unawaited(
+        _guard(
+          () => platform.recordLog(incoming.toLogLine()),
+          operation: 'recordLog',
+        ),
+      );
     }
   }
 
@@ -578,7 +769,7 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.recordLog(message));
+    await _guard(() => platform.recordLog(message), operation: 'recordLog');
   }
 
   /// Sets a custom key on every subsequent event.
@@ -593,7 +784,10 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.setCustomKey(key: key, value: value));
+    await _guard(
+      () => platform.setCustomKey(key: key, value: value),
+      operation: 'setCustomKey',
+    );
   }
 
   /// Removes a previously set custom key.
@@ -602,7 +796,10 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.removeCustomKey(key));
+    await _guard(
+      () => platform.removeCustomKey(key),
+      operation: 'removeCustomKey',
+    );
   }
 
   /// Associates subsequent events with [userId], or clears it when `null`.
@@ -610,20 +807,56 @@ class TracerClient {
     if (!isEnabled) {
       return;
     }
-    await _guard(() => platform.setUserId(userId));
+    await _guard(() => platform.setUserId(userId), operation: 'setUserId');
   }
 
-  Future<void> _guard(Future<void> Function() action) async {
+  void _diagnose(
+    int generation, {
+    required String operation,
+    required String reason,
+  }) {
+    if (generation != _generation) return;
+    final listener = _options.deliveryListener;
+    if (listener == null) return;
+    TracerDeliveryDiagnostic(TracerDeliveryState.failed,
+            reason: reason, backend: platform.backendName, operation: operation)
+        .notify(listener);
+  }
+
+  void _observeCollectionResult(
+    TracerCollectionResult result,
+    String operation,
+    int generation,
+  ) {
+    if (result.state == TracerCollectionState.error &&
+        !result.failureReported) {
+      _diagnose(generation, operation: operation, reason: 'operation_error');
+    }
+  }
+
+  Future<void> _guard(
+    Future<void> Function() action, {
+    required String operation,
+  }) async {
+    final generation = _generation;
     try {
       await action();
     } catch (error) {
+      _diagnose(
+        generation,
+        operation: operation,
+        reason: 'platform_exception',
+      );
       _log('platform call failed: $error');
     }
   }
 
   void _log(String message) {
-    if (_options.debug) {
+    if (!_options.debug) return;
+    try {
       debugPrint('apptracer_flutter: $message');
+    } catch (_) {
+      // The application's debug printer must never change a filter decision.
     }
   }
 }

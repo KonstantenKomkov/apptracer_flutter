@@ -41,11 +41,12 @@ flutter run -d <iphone> --dart-define=TRACER_APP_TOKEN=$TRACER_IOS_APP_TOKEN
 flutter run -d chrome   --dart-define=TRACER_APP_TOKEN=$TRACER_JS_APP_TOKEN
 ```
 
-No Sentry DSN is needed anywhere: web speaks Tracer's own ingest with the same
-`appToken`, and the platforms the vendor has no SDK for are not supported by
-this example.
+The Web backend uses the JS project's `appToken`. For desktop, use the
+[desktop example](../../apptracer_flutter_desktop/example/README.md). It adds the
+optional `apptracer_flutter_desktop` adapter and configures the official Sentry
+SDK with the target Tracer project's DSN.
 
-Without them the app still runs: the integration reports that it is disabled and
+Without tokens the shared example still runs: the integration reports that it is disabled and
 the buttons do nothing but raise errors locally. That is the graceful-degradation
 path, and it is worth seeing at least once.
 
@@ -59,10 +60,12 @@ env 'ORG_GRADLE_PROJECT_tracer.enabled=true' flutter build apk --release \
   --obfuscate --split-debug-info=build/symbols
 ```
 
-`android/app/tracer.gradle` fails the build when `tracer.enabled=true` is
-passed without both tokens, rather than producing a release whose crashes go
-nowhere. A real application applies the plugin unconditionally; see the
-[README](../README.md#android).
+`android/app/tracer.gradle` requires `TRACER_APP_TOKEN` when the SDK is enabled.
+The example accepts `-Ptracer.uploadMapping=false` and
+`-Ptracer.uploadNativeSymbols=false` independently (both default to true).
+If both are false, only `TRACER_APP_TOKEN` is needed; otherwise also provide
+`TRACER_PLUGIN_TOKEN`. Mapping-off uses a zero build UUID on SDK 1.6.1.
+See the [Android setup](../README.en.md#android).
 
 After an obfuscated build, check that the symbol file matches the binary:
 
@@ -104,8 +107,9 @@ flutter build ios --simulator --debug
 ## Web
 
 ```sh
-flutter build web --release --source-maps
-TRACER_PLUGIN_TOKEN=... ../../../tool/upload_web_sourcemaps.sh 1.0.0
+flutter build web --release --source-maps \
+  --dart-define=TRACER_APP_TOKEN="$TRACER_JS_APP_TOKEN"
+TRACER_PLUGIN_TOKEN="$TRACER_JS_PLUGIN_TOKEN" ../../../tool/upload_web_sourcemaps.sh 1.0.0
 ```
 
 ## Driving the checks automatically
@@ -183,8 +187,3 @@ It cannot be combined with managed `tracer.deferred`: WorkManager cleanup for
 these modules is unsupported. Normal builds do not include these dependencies.
 Heap dumps can pause the VM/UI; relaxed worker constraints do not guarantee
 retention or retry of offline samples. See the [commands and evidence](../../../docs/android-sdk-1.6.1-diagnostics.md).
-
-The example accepts `-Ptracer.uploadMapping=false` and
-`-Ptracer.uploadNativeSymbols=false` independently (both default to true).
-If both are false, only `TRACER_APP_TOKEN` is needed; otherwise also provide
-`TRACER_PLUGIN_TOKEN`. Mapping-off uses a zero build UUID on SDK 1.6.1.

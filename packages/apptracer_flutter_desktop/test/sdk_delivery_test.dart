@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_desktop/apptracer_flutter_desktop.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -22,8 +23,10 @@ void main() {
       final previousPlatform = TracerPlatform.instance;
       addTearDown(() => TracerPlatform.instance = previousPlatform);
       TracerPlatform.instance = adapter;
+      final diagnostics = <TracerDeliveryDiagnostic>[];
       await Tracer.startCollection(
         TracerOptions(
+          deliveryListener: diagnostics.add,
           dsn: 'https://public@tracer.invalid/42',
           release: '1.2.3',
           environment: 'test',
@@ -107,6 +110,33 @@ void main() {
         isFalse,
       );
 
+      expect(diagnostics, isEmpty);
+      probe.onCall = (call) async {
+        if (call.method == 'captureEnvelope') {
+          throw PlatformException(code: 'private-sdk-error');
+        }
+        return null;
+      };
+      await Tracer.recordError('failed capture', StackTrace.current);
+      expect(diagnostics.single.backend, 'sentry-sdk');
+      expect(diagnostics.single.operation, 'recordError');
+      expect(diagnostics.single.reason, 'operation_error');
+      expect(diagnostics.single.state, TracerDeliveryState.failed);
+      probe.onCall = null;
+
+      // An SDK callback can drop deliberately or fail before the transport.
+      // Only the exception belongs to delivery diagnostics.
+      final processor = _ProbeProcessor();
+      sdkOptions.addEventProcessor(processor);
+      await Tracer.recordError('processor drop', StackTrace.current);
+      expect(diagnostics, hasLength(1));
+      processor.fail = true;
+      await Tracer.recordError('processor failure', StackTrace.current);
+      expect(diagnostics, hasLength(2));
+      expect(diagnostics.last.operation, 'recordError');
+      expect(diagnostics.last.reason, 'operation_error');
+      sdkOptions.removeEventProcessor(processor);
+
       final other = SentryDesktopTracer();
       final refused = await other.startCollection(
         const TracerOptions(dsn: 'https://other@another.invalid/2'),
@@ -121,7 +151,7 @@ void main() {
         TracerCollectionState.restartRequired,
       );
       await Tracer.recordError('after stop', StackTrace.current);
-      expect(probe.events, hasLength(1));
+      expect(probe.events, hasLength(2));
       expect(
         (await adapter.stopAndClearCollection()).state,
         TracerCollectionState.restartRequired,
@@ -141,4 +171,14 @@ void main() {
     },
     skip: !Platform.isMacOS,
   );
+}
+
+class _ProbeProcessor implements EventProcessor {
+  bool fail = false;
+
+  @override
+  Future<SentryEvent?> apply(SentryEvent event, Hint hint) async {
+    if (fail) throw StateError('private processor failure');
+    return null;
+  }
 }

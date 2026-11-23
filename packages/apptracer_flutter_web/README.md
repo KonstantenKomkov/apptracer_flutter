@@ -18,16 +18,15 @@ Flutter не умеет включать в себя npm-пакеты. Поэт�
 из чистого Dart, через
 [`apptracer_flutter_http`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_http).
 
-Раньше отсюда уходили конверты Sentry: считалось, что Tracer принимает события
-по протоколу Sentry на всех платформах. Проверка 26.08.2026 этого не
-подтвердила — DSN не выдаётся ни одному проекту, а в SDK вендора никакого Sentry
-нет. Формат снят с живого запроса и описан в
+До 26.08.2026 эта реализация отправляла конверты Sentry. Проверка в тот день
+показала, что обычный JS-проект получает `appToken`, а JavaScript SDK вендора
+использует HTTP-приём Tracer. Перехваченный запрос описан в
 [web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 Из этого следует:
 
-* `TracerOptions.appToken` обязателен, и это `appToken` **JS-проекта**. `dsn` на
-  этом пути не используется вовсе.
+* Передайте `appToken` **JS-проекта** в `TracerOptions.webAppToken` или общем
+  поле `appToken`. Web-адаптер игнорирует `dsn`.
 * Перехватываются только ошибки Dart. Падение в постороннем `<script>` не
   видно.
 * Кадры — это кадры `dart2js`, а сорсмапы Tracer сопоставляет **по пути файла,

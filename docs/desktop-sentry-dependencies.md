@@ -16,6 +16,7 @@ that every newer version works.
 | `src/native/c/binding.dart` | opaque `sentry_options_s` pointer | SDK allocates options. The adapter uses C setters and verifies their signatures, enum values and pointer widths | resolver/analyze, Linux/Windows release and native crash |
 | `src/native/c/sentry_native.dart` | options construction, native init/close and scope contexts | Replace only with a public lifecycle/scope API that preserves stop/clear semantics | all desktop unit tests and platform runtime suites |
 | `SentryFlutter.init` configuration callback | actual initialized options | The adapter checks package metadata lookup, the enabled hub and its own native integration marker. Close requires the native lifecycle acknowledgement. | `sdk_delivery_test` and initialization failure test |
+| `SentryFlutter.init(options:)` and `automatedTestMode` | attribute SDK exceptions to the active adapter operation | 10.6.0 compiles its internal logger out of release builds. The adapter observes processor and filter exceptions and requests exception propagation only during its scope updates and transport sends. Native lifecycle confirmation still uses the integration marker. | `delivery_diagnostics_test`, `sdk_delivery_test` |
 | `SentryStackTrace.baseAddr` and `buildId` constructor arguments | associate AOT frames with the exact debug image | Re-evaluate public debug-image mapping on each update | Dart symbol suites and event mapping |
 
 Public Sentry APIs used deliberately: `Sentry.init`, `Sentry.close`,
@@ -66,8 +67,10 @@ JSON files in the platform artifacts. Successful builds record the example's
 resolved Flutter SDK package, Sentry Cocoa or sentry-native, and Flutter/Dart
 toolchain. A skipped suite or missing build identity prevents a passing result.
 
-A pin-changing PR also requires hosted consumer evidence without monorepo
-overrides and a final live Tracer smoke. For rollback, restore the previous
+Before release, check the published production consumer, the staged candidate
+with its matching sibling exports, and a live Tracer smoke on the candidate.
+After publication, check the released candidate in a clean hosted consumer
+without overrides. For rollback, restore the previous
 accepted Dart and Cocoa pins together with their matching adapter revision.
 
 ## Candidate 10.6.0 on 2026-11-22

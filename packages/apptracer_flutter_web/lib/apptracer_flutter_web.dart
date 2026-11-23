@@ -63,6 +63,13 @@ class AppTracerWeb extends TracerHttpTracer {
   int _initialization = 0;
 
   @override
+  void configureDelivery(TracerOptions options,
+      {bool activateListener = true}) {
+    ++_initialization;
+    super.configureDelivery(options, activateListener: activateListener);
+  }
+
+  @override
   Future<TracerCollectionResult> stopAndClearCollection() {
     ++_initialization;
     return super.stopAndClearCollection();
@@ -81,7 +88,8 @@ class AppTracerWeb extends TracerHttpTracer {
   /// would be worse than one reporting an unknown version.
   @override
   Future<void> initialize(TracerOptions options) async {
-    final initialization = ++_initialization;
+    configureDelivery(options);
+    final initialization = _initialization;
     if (!options.isCollectionEnabled ||
         (options.resolvedAppToken ?? '').isEmpty ||
         (options.release != null && options.dist != null)) {

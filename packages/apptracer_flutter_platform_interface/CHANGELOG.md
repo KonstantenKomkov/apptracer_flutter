@@ -7,6 +7,21 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Add shared `TracerDeliveryDiagnostic`, `TracerDeliveryState` and listener contract
+  with backend/operation metadata. `TracerOptions.deliveryListener` remains Dart-only.
+- Move negative-limit errors from `TracerOptions` constructor assertions to
+  facade startup validation in debug and release. The constructor remains
+  `const` and accepts the same named parameters.
+
+- Add the source-compatible `TracerOptions.filterErrorPolicy` with
+  `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
+  The policy is not serialized to native adapters and does not filter native crashes.
+- Correct current-platform guidance: stable desktop support uses optional
+  `apptracer_flutter_desktop` and a Sentry DSN; Web uses appToken. The inert-platform
+  warning no longer directs desktop users to the legacy manual HTTP transport.
+
 ## [0.2.3] - 2026-11-22
 
 - Events snapshot custom keys, breadcrumbs and stack frames. Breadcrumbs

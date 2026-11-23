@@ -22,20 +22,6 @@ import 'src/crash_inside_dart.dart';
 const String _appToken = String.fromEnvironment('TRACER_APP_TOKEN');
 
 void main() {
-  // Android and iOS register their implementations automatically, and web
-  // registers its HTTP transport for itself. Desktop and Aurora OS have no
-  // native SDK a Flutter application can reach — none at all for desktop, a
-  // C/C++ library and system minidumps for Aurora — so the pure-Dart transport
-  // is registered by hand there. Neither platform is supported by this release
-  // and neither has ever been run against a real project; this is here so the
-  // example still starts rather than as a promise that it works.
-  if (_needsDartTransport && _appToken.isNotEmpty) {
-    TracerPlatform.instance = TracerHttpTracer(
-      facts: PlatformClientFacts(),
-      sdkVersion: '0.2.1',
-    );
-  }
-
   Tracer.initialize(
     options: TracerOptions(
       appToken: _appToken.isEmpty ? null : _appToken,
@@ -116,22 +102,6 @@ bool get _hasNativeFailures =>
 
 /// Whether the ANR button makes sense here.
 bool get _hasAnr => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-
-bool get _needsDartTransport {
-  if (kIsWeb) {
-    return false;
-  }
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-    case TargetPlatform.iOS:
-      return false;
-    case TargetPlatform.linux:
-    case TargetPlatform.macOS:
-    case TargetPlatform.windows:
-    case TargetPlatform.fuchsia:
-      return true;
-  }
-}
 
 /// Root of the example application.
 class ExampleApp extends StatelessWidget {

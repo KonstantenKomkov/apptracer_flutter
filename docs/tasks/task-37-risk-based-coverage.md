@@ -1,9 +1,24 @@
 # П. 37. Risk-based coverage для desktop и lifecycle
 
-**Статус:** открыта. **Приоритет:** P2. **Сложность:** M.
+**Статус:** выполнена. **Приоритет:** P2. **Сложность:** M.
 
 Связанные документы: [единые проверки №28](task-28-unified-checks-coverage.md),
 [команды](../contributing.md#commands), [общий план](development_v1.md).
+
+## Результат
+
+[PR №37](https://github.com/KonstantenKomkov/apptracer_flutter/pull/37) добавил
+host-aware baseline для `sentry_desktop_tracer.dart`: Linux 100/184,
+macOS 137/184, Windows 100/184. Оба режима reporter валят regression; три desktop
+workflows реагируют на reporter/baseline-only changes и публикуют summary/artifacts
+при failure. Дополнительный behavioral test запрещает новому adapter instance
+обойти retained failed process owner.
+
+Codex-ревью исправило Windows shell, немедленную загрузку доступного coverage,
+объединённый отчёт simultaneous regressions и нормализацию LCOV paths. Прошли
+46 tool-тестов, desktop tests и полный `make check`; fresh macOS coverage сохранил
+137/184, archived Linux/Windows LCOV воспроизвели 100/184 без понижения baselines.
+Это unit/LCOV evidence, а не замена native runtime или live acceptance.
 
 ## Контекст
 

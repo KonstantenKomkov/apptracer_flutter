@@ -10,7 +10,7 @@
 
 [PR №33](https://github.com/KonstantenKomkov/apptracer_flutter/pull/33) переводит
 source candidate 2.0.0 на Sentry Flutter 10.6.0, sentry-native 0.17.6, Cocoa
-9.35.0, Flutter 3.44 / Dart 3.12 и macOS SPM. Codex-ревью и полный `make check`
+9.35.0, Flutter 3.44 / Dart 3.12 и macOS SPM. До интеграции №34/37 Codex-ревью и полный `make check`
 прошли; исправленный platform CI завершился с 43 passed и 2 skipped
 ([CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45156546843),
 [desktop candidate](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45156546723)).
@@ -55,8 +55,9 @@ consent, stop/clear, owned queue, native crash и exact-build symbolication.
 5. Прогнать unit, release и runtime-матрицу Linux/macOS/Windows: deferred bootstrap,
    offline/retry, cancellation, stop/clear/revoke, account isolation, native crash,
    no-replay, Dart/native symbols и missing/mismatched maps.
-6. До выпуска проверить изолированный consumer с экспортом изменённого адаптера,
-   hosted-зависимостями без overrides и точной 10.x в lockfile. Провести live
+6. До выпуска проверить production consumer 1.0.1 с pub.dev без overrides и отдельно
+   staged consumer с экспортами адаптера, facade и согласованных sibling-пакетов.
+   Проверить точную 10.x в staged lockfile и отсутствие локальных файлов в архивах. Провести live
    Tracer smoke на этом кандидате. После отдельной публикации проверить чистую
    установку именно нового адаптера с pub.dev без path/git/overrides.
 7. Если миграция заблокирована, указать проверенную версию, попытку адаптации

@@ -11,6 +11,8 @@
 - macOS delivery changes during server outages. Cocoa 8.58.4 retained HTTP 503
   envelopes. Cocoa 9.35.0 discards HTTP 5xx envelopes. A connection dropped
   before a response still retains the original event for authorized replay.
+- Report observed SDK call failures with the operation name and a fixed reason
+  through the configured delivery listener. Capture still awaits the SDK.
 
 ## [1.0.1] - 2026-11-22
 

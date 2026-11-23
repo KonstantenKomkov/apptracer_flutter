@@ -1,8 +1,20 @@
 # П. 31. Воспроизводимые GitHub Actions по commit SHA
 
-**Статус:** открыта. **Приоритет:** P0. **Сложность:** S.
+**Статус:** выполнена. **Приоритет:** P0. **Сложность:** S.
 
 Связанный общий план: [development_v1.md](development_v1.md).
+
+## Результат
+
+[PR №31](https://github.com/KonstantenKomkov/apptracer_flutter/pull/31) закрепил
+61 внешнюю ссылку полными SHA восьми сохранённых версий actions. Пять локальных
+reusable-вызовов не изменены. Checker использует YAML AST и координаты комментариев,
+а не построчное совпадение; добавлены pinned `PyYAML 6.0.3` и отдельный лёгкий CI.
+
+Codex-ревью исправило обработку quoted/flow-style/multiline YAML и ложные совпадения
+в shell scripts. После исправлений прошли 38 `tool/tests`, девять checker unit-тестов,
+проверка 12 workflow, actionlint, documentation tests и ссылки в 93 Markdown-файлах.
+Device/live acceptance не относится к этому изменению и не запускался.
 
 ## Контекст
 

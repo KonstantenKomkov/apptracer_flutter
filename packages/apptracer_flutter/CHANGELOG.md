@@ -7,6 +7,21 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## [Unreleased]
+
+- Add typed delivery/platform-lifecycle diagnostics through
+  `TracerOptions.deliveryListener`, with stable metadata and no payload or exception
+  text. Listener failures are isolated and reinitialization replaces the listener.
+- Validate negative breadcrumb/raw-stack/frame limits before backend startup with
+  stable `invalid_max_*` errors, including deferred starts and disabled assertions.
+  Negative `BreadcrumbBuffer` limits now disable buffering instead of evicting from
+  an empty queue. The `const TracerOptions` API is unchanged.
+
+- Add `TracerFilterErrorPolicy`. The default `sendOriginal` preserves existing
+  behavior; `drop` prevents original Dart events, raw stacks and breadcrumbs from
+  reaching the platform when their filter throws. Filter debug messages no longer
+  include callback exceptions or event titles. Revisit the default before API 2.0.
+
 ## [1.4.0] - 2026-11-22
 
 - Events and breadcrumbs snapshot their input collections. In `beforeSend`,

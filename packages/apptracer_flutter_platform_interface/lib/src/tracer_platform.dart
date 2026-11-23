@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'models/tracer_event.dart';
+import 'models/tracer_delivery_diagnostic.dart';
 import 'models/tracer_diagnostic_result.dart';
 import 'models/tracer_collection_result.dart';
 import 'models/tracer_options.dart';
@@ -50,7 +51,19 @@ abstract class TracerPlatform extends PlatformInterface {
 
   /// Short identifier of the delivery backend, used in diagnostics — for
   /// example `android-native`, `ios-native`, `sentry-http` or `unsupported`.
+  /// Use a fixed identifier without account data or credentials.
   String get backendName;
+
+  /// Updates diagnostics even when an already running SDK needs no second start.
+  /// A pending session detaches listeners while earlier cleanup finishes.
+  void configureDelivery(TracerOptions options,
+      {bool activateListener = true}) {
+    deliveryListener = activateListener ? options.deliveryListener : null;
+  }
+
+  /// Listener for the current session. Backends may supply a constructor fallback.
+  @protected
+  TracerDeliveryListener? deliveryListener;
 
   /// Whether breadcrumbs have to be mirrored into the platform log buffer as
   /// they happen.
@@ -89,6 +102,13 @@ abstract class TracerPlatform extends PlatformInterface {
   ///
   /// Must be idempotent.
   Future<void> stopCollection();
+
+  /// Performs the legacy stop and observes its result without requesting a purge.
+  /// Older implementations continue to receive their [stopCollection] call.
+  Future<TracerCollectionResult> stopCollectionAndGetState() async {
+    await stopCollection();
+    return getCollectionState();
+  }
 
   /// Temporarily disables a live SDK without purging reports or account data.
   /// This is not consent withdrawal or cancellation of in-flight uploads.
@@ -186,11 +206,11 @@ class UnsupportedTracerPlatform extends TracerPlatform {
     _warned = true;
     debugPrint(
       'apptracer_flutter: no Tracer implementation is registered for '
-      '${defaultTargetPlatform.name}, so Dart errors are being discarded. '
-      'Android and iOS are covered by the bundled native plugins. On any '
-      'other target, register the pure-Dart transport yourself: '
-      'TracerPlatform.instance = TracerHttpTracer(...) from '
-      'package:apptracer_flutter_http, with TracerOptions.appToken set. '
+      '${kIsWeb ? 'web' : defaultTargetPlatform.name}, so Dart errors are being discarded. '
+      'Android, iOS and Web use the bundled plugins. Web needs the JS project appToken. '
+      'For supported macOS, Windows and Ubuntu configurations, add '
+      'apptracer_flutter_desktop and set TracerOptions.dsn to the target Tracer '
+      'project DSN for the official Sentry SDK. Aurora OS is unsupported. '
       'See docs/platform-matrix.md.',
     );
   }

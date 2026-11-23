@@ -34,6 +34,21 @@ make analyze        # analyze every catalog package, including desktop
 make test           # VM/Chrome tests and combined coverage
 ```
 
+Every external action in `.github/workflows/` must use a full commit SHA followed by
+a version comment, for example `actions/checkout@<40-character-sha> # v7`. Local
+`uses: ./...` references are allowed. The lightweight `Action commit pins`
+workflow checks changes to workflows, the checker, its dependency and its tests.
+A PR changing only `.github/workflows/docs.yml` runs the pins and documentation
+checks. Changes under `tool/` also match the existing Flutter CI filter.
+Dependabot's root `github-actions` configuration covers the workflow references.
+
+```sh
+python3 -m venv build/pins-venv
+build/pins-venv/bin/python -m pip install -r tool/requirements-action-pins.txt
+build/pins-venv/bin/python -m unittest discover -s tool/tests -p test_action_pins.py
+build/pins-venv/bin/python tool/check_action_pins.py
+```
+
 For Markdown changes, run the documentation workflow checks with Python 3.10+:
 
 ```sh
@@ -65,6 +80,17 @@ covered/total counts in `tool/coverage_baseline.json` in the same change.
 Desktop coverage is written separately to `build/coverage/desktop-<os>/`.
 Each native workflow uploads its host report, including shared adapter code
 and files for that OS. The JSON lists the other platforms’ excluded files.
+`desktop_lifecycle` compares the line coverage ratio of `sentry_desktop_tracer.dart`
+with the current host's entry in `tool/desktop_coverage_baseline.json`. Both
+`make check` and `python3 tool/coverage_report.py --desktop-only` fail on a
+decrease. Each platform workflow publishes the counts and delta in its job
+summary and uploads the report even when the coverage gate fails.
+
+For an intentional change, inspect the affected lines in each host's LCOV
+artifact, explain the lifecycle outcomes covered or missed in the PR, and update
+the affected host's covered/total pair in the same review. The gates apply to
+individual critical files. There is no project-wide 100% coverage target.
+
 The desktop dry-run explicitly allows only pub's exact-pin warning for
 `sentry_flutter 10.6.0` in the 2.0.0 source candidate. Published 1.0.1 pins 9.30.1.
 

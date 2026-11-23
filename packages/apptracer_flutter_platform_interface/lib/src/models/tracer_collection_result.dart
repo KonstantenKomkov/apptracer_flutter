@@ -19,12 +19,18 @@ enum TracerCollectionState {
 /// Result of a lifecycle operation. An error never grants collection.
 class TracerCollectionResult {
   /// Creates an operation result.
-  const TracerCollectionResult(this.state, {this.reason});
+  const TracerCollectionResult(this.state,
+      {this.reason, this.failureReported = false});
+
+  /// Whether the backend already emitted a diagnostic for this operation's failure.
+  /// The facade forwards errors from other backends itself.
+  final bool failureReported;
 
   /// Transport state reported by the platform.
   final TracerCollectionState state;
 
-  /// Stable diagnostic code, not a consent decision.
+  /// Platform detail, which may contain exception text. Use a delivery diagnostic
+  /// when recording a failure in application telemetry.
   final String? reason;
 
   /// Whether this result confirms running collection.

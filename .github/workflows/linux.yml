@@ -6,8 +6,12 @@ on:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
-      - 'packages/apptracer_flutter/lib/**'
-      - 'packages/apptracer_flutter/pubspec*.yaml'
+      - 'packages/apptracer_flutter_android/**'
+      - 'packages/apptracer_flutter_ios/**'
+      - 'packages/apptracer_flutter_http/**'
+      - 'packages/apptracer_flutter_web/**'
+      - 'packages/apptracer_flutter/**'
+      - 'tool/consumer_packages.py'
       - 'tool/check_*desktop.py'
       - 'tool/check_linux_runtime.py'
       - 'tool/check_linux_consumer.py'
@@ -21,6 +25,9 @@ on:
       - 'tool/prepare_linux_dart_runtime_symbols.py'
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/linux.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -36,8 +43,12 @@ on:
     paths:
       - 'packages/apptracer_flutter_desktop/**'
       - 'packages/apptracer_flutter_platform_interface/**'
-      - 'packages/apptracer_flutter/lib/**'
-      - 'packages/apptracer_flutter/pubspec*.yaml'
+      - 'packages/apptracer_flutter_android/**'
+      - 'packages/apptracer_flutter_ios/**'
+      - 'packages/apptracer_flutter_http/**'
+      - 'packages/apptracer_flutter_web/**'
+      - 'packages/apptracer_flutter/**'
+      - 'tool/consumer_packages.py'
       - 'tool/check_*desktop.py'
       - 'tool/check_linux_runtime.py'
       - 'tool/check_linux_consumer.py'
@@ -51,6 +62,9 @@ on:
       - 'tool/prepare_linux_dart_runtime_symbols.py'
       - 'tool/check_linux_dart_display.py'
       - 'tool/tests/**'
+      - 'tool/coverage_report.py'
+      - 'tool/coverage_baseline.json'
+      - 'tool/desktop_coverage_baseline.json'
       - '.github/workflows/linux.yml'
       - '!**/*.md'
       - '!**/*.rst'
@@ -84,12 +98,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install build and headless GUI dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang llvm-14 cmake ninja-build pkg-config libgtk-3-dev libgles2 libcurl4-openssl-dev liblzma-dev xvfb openjdk-17-jdk
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.47.4'
           channel: stable
@@ -110,22 +124,36 @@ jobs:
           flutter pub get
           flutter analyze --fatal-infos
           flutter test --coverage
-          cd ../apptracer_flutter
-          flutter pub get --no-example
-          flutter analyze --fatal-infos lib test
-          flutter test
-          cd ../apptracer_flutter_desktop
-          cd example
-          flutter pub get
-          flutter analyze --fatal-infos
-          flutter test
       - name: Report linux adapter coverage
         run: python3 tool/coverage_report.py --desktop-only
+      - name: Summarize desktop critical coverage
+        if: always() && hashFiles('build/coverage/desktop-linux/summary.json') != ''
+        run: |
+          python3 - <<'PY'
+          import json, os
+          summary = json.load(open('build/coverage/desktop-linux/summary.json'))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as target:
+              target.write('## Desktop critical coverage (Linux)\n')
+              for name, entry in summary['critical'].items():
+                  target.write(f"- {name}: {entry['covered']}/{entry['total']} "
+                               f"({entry['ratio']:.1%}), delta {entry['deltaPercentagePoints']:+.2f} pp\n")
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
         with:
           name: desktop-coverage-linux
           path: build/coverage/desktop-linux
           if-no-files-found: error
+      - name: Analyze and test facade and desktop example
+        working-directory: packages/apptracer_flutter
+        run: |
+          flutter pub get --no-example
+          flutter analyze --fatal-infos lib test
+          flutter test
+          cd ../apptracer_flutter_desktop/example
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
       - name: Build release and preserve symbols
         run: bash tool/build_linux_desktop.sh
       - name: Identify compiled Sentry SDKs
@@ -169,7 +197,7 @@ jobs:
             python3 tool/symbolize_linux_native.py --dump "$dump" --runner "$bundle/apptracer_desktop_example" --symbols build/linux-acceptance/symbols/breakpad --stackwalk build/linux-symbol-tools/minidump-stackwalk --output build/linux-acceptance/native-symbols.json
             break
           done
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: ubuntu-22.04-x64-preparation
@@ -185,12 +213,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install consumer build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang llvm-14 cmake ninja-build pkg-config libgtk-3-dev libgles2 libcurl4-openssl-dev liblzma-dev xvfb openjdk-17-jdk
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.47.4'
           channel: stable
@@ -203,7 +231,7 @@ jobs:
         run: |
           xvfb-run -a python3 tool/check_linux_consumer.py --output build/ubuntu-consumer-hosted
           xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade --output build/ubuntu-consumer-candidate
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: ubuntu-22.04-x64-consumer

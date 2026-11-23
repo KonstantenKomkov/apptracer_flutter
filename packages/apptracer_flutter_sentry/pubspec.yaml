@@ -5,10 +5,7 @@ description: >-
   own and documents the Sentry route instead.
 version: 0.2.0
 
-# Not published for now: none of the platforms this transport exists for —
-# desktop and Aurora OS — are supported by the 0.1.0 release, and none of them
-# has ever been run against a live Tracer project. Use it from a git dependency
-# until that changes. See docs/publishing.md.
+# Archived manual transport retained for existing Git dependencies.
 publish_to: none
 
 repository: https://github.com/KonstantenKomkov/apptracer_flutter

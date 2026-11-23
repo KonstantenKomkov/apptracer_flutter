@@ -2,7 +2,17 @@ import 'package:flutter/foundation.dart';
 
 import 'tracer_breadcrumb.dart';
 import 'tracer_collection_result.dart';
+import 'tracer_delivery_diagnostic.dart';
 import 'tracer_event.dart';
+
+/// Controls what happens when a Dart event or breadcrumb filter throws.
+enum TracerFilterErrorPolicy {
+  /// Deliver the original value, preserving the historical behavior.
+  sendOriginal,
+
+  /// Drop the value without calling the failed filter again or forwarding it.
+  drop,
+}
 
 /// Inspects and optionally rewrites an event before it is delivered.
 ///
@@ -37,6 +47,8 @@ class TracerOptions {
     this.preservePreviousReports = false,
     this.beforeSend,
     this.beforeBreadcrumb,
+    this.filterErrorPolicy = TracerFilterErrorPolicy.sendOriginal,
+    this.deliveryListener,
     this.maxBreadcrumbs = 100,
     this.captureFlutterErrors = true,
     this.capturePlatformDispatcherErrors = true,
@@ -48,20 +60,12 @@ class TracerOptions {
     this.debug = false,
     this.apiUrl,
     this.initialCustomKeys = const <String, String>{},
-  })  : assert(maxBreadcrumbs >= 0, 'maxBreadcrumbs must not be negative'),
-        assert(
-          maxRawStackTraceLogBytes >= 0,
-          'maxRawStackTraceLogBytes must not be negative',
-        ),
-        assert(maxStackFrames >= 0, 'maxStackFrames must not be negative');
+  });
 
   /// The Tracer application token, found under *Настройки → Проект → API*.
   ///
-  /// Enough on its own for an application that ships on one platform. Where
-  /// several do, give each its own token through [iosAppToken] and
-  /// [webAppToken] instead of choosing between them by hand — every platform
-  /// is a separate Tracer project with a token of its own, and only one of
-  /// them can be right in a given build.
+  /// An iOS-only or Web-only app can use its project's token here. Use
+  /// [iosAppToken] and [webAppToken] for separate projects in a shared build.
   ///
   /// Whichever of the three applies is resolved by [resolvedAppToken], which is
   /// what implementations read.
@@ -93,14 +97,12 @@ class TracerOptions {
     return appToken;
   }
 
-  /// A Sentry DSN issued for the Tracer project.
+  /// The Sentry DSN of the target desktop project in Tracer.
   ///
-  /// Tracer ingests events over the Sentry protocol, which is how platforms
-  /// without a native Tracer SDK are covered. The experimental
-  /// apptracer_flutter_desktop adapter passes this to the official Sentry SDK.
-  /// The legacy apptracer_flutter_sentry package implements the protocol itself.
-  /// Neither is selected just by setting this value: register the desired
-  /// platform adapter. See `docs/platform-matrix.md`.
+  /// Add the optional stable `apptracer_flutter_desktop` dependency. Flutter
+  /// registers its adapter on desktop, and the adapter passes this DSN to the
+  /// official Sentry SDK. Web uses [webAppToken] or [appToken].
+  /// See the [supported configurations](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md#summary).
   final String? dsn;
 
   /// Deployment environment, for example `prod`, `test` or `dev`.
@@ -151,7 +153,23 @@ class TracerOptions {
   /// Hook invoked for every breadcrumb just before it is buffered.
   final BeforeBreadcrumbCallback? beforeBreadcrumb;
 
+  /// Whether a throwing [beforeSend] or [beforeBreadcrumb] keeps or drops the
+  /// original Dart value. Defaults to [TracerFilterErrorPolicy.sendOriginal]
+  /// for compatibility; reconsider this default before API 2.0.
+  ///
+  /// This policy cannot filter native crashes or data already captured by a
+  /// native SDK. Applications remain responsible for auditing their event data.
+  final TracerFilterErrorPolicy filterErrorPolicy;
+
+  /// Receives personal-data-free HTTP and platform-lifecycle transitions.
+  ///
+  /// Listener exceptions are ignored. A later initialization replaces the listener
+  /// for subsequent diagnostics. `sent` means only an HTTP response below 400.
+  final TracerDeliveryListener? deliveryListener;
+
   /// Maximum number of breadcrumbs retained; the oldest are dropped first.
+  /// Zero disables the Dart buffer. A negative value rejects collection startup
+  /// with `invalid_max_breadcrumbs`, including release builds.
   final int maxBreadcrumbs;
 
   /// Whether to install a `FlutterError.onError` handler.
@@ -190,7 +208,8 @@ class TracerOptions {
   final bool attachRawStackTraceAsLog;
 
   /// Byte budget for the verbatim stack trace written to the platform log.
-  /// Zero means no limit.
+  /// Zero means no limit. A negative value rejects startup with
+  /// `invalid_max_raw_stack_trace_log_bytes`, including release builds.
   ///
   /// This is not a nicety. Android's log buffer is a **circular** 64 KiB
   /// buffer (`maxLogsLength` defaults to 65536, confirmed in the SDK
@@ -206,7 +225,8 @@ class TracerOptions {
   final int maxRawStackTraceLogBytes;
 
   /// Maximum number of parsed frames forwarded to the platform.
-  /// Zero means no limit.
+  /// Zero means no limit. A negative value rejects startup with
+  /// `invalid_max_stack_frames`, including release builds.
   ///
   /// Caps the structured payload — the synthetic `StackTraceElement[]` on
   /// Android, the frame array in a Sentry envelope. The frames nearest the
@@ -235,6 +255,7 @@ class TracerOptions {
   final Map<String, String> initialCustomKeys;
 
   /// Returns a copy with the given fields replaced.
+  /// Set [removeDeliveryListener] to detach the current listener.
   TracerOptions copyWith({
     String? appToken,
     String? iosAppToken,
@@ -248,6 +269,9 @@ class TracerOptions {
     bool? preservePreviousReports,
     BeforeSendCallback? beforeSend,
     BeforeBreadcrumbCallback? beforeBreadcrumb,
+    TracerFilterErrorPolicy? filterErrorPolicy,
+    TracerDeliveryListener? deliveryListener,
+    bool removeDeliveryListener = false,
     int? maxBreadcrumbs,
     bool? captureFlutterErrors,
     bool? capturePlatformDispatcherErrors,
@@ -274,6 +298,10 @@ class TracerOptions {
           preservePreviousReports ?? this.preservePreviousReports,
       beforeSend: beforeSend ?? this.beforeSend,
       beforeBreadcrumb: beforeBreadcrumb ?? this.beforeBreadcrumb,
+      filterErrorPolicy: filterErrorPolicy ?? this.filterErrorPolicy,
+      deliveryListener: removeDeliveryListener
+          ? null
+          : deliveryListener ?? this.deliveryListener,
       maxBreadcrumbs: maxBreadcrumbs ?? this.maxBreadcrumbs,
       captureFlutterErrors: captureFlutterErrors ?? this.captureFlutterErrors,
       capturePlatformDispatcherErrors: capturePlatformDispatcherErrors ??
@@ -294,7 +322,7 @@ class TracerOptions {
 
   /// Serializes the options that a platform implementation needs.
   ///
-  /// The callbacks are Dart-only and are deliberately not included.
+  /// Callbacks and listeners are Dart-only and are deliberately not included.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       // One value crosses the channel: the platform on the other side has no

@@ -1,8 +1,10 @@
 # apptracer_flutter_sentry
 
 This manual transport is archived. Its source remains at the same path for
-existing Git dependencies. Use `apptracer_flutter_desktop` on Windows, Linux
-and macOS. [Migration instructions](../../docs/desktop-migration.md#moving-from-the-manual-transport).
+existing Git dependencies. On supported macOS, Windows and Ubuntu configurations,
+use the optional `apptracer_flutter_desktop` adapter with the official Sentry SDK
+and the target Tracer project's DSN. Aurora OS is unsupported.
+[Migration instructions](../../docs/desktop-migration.md#moving-from-the-manual-transport).
 
 A pure-Dart Sentry-protocol transport for
 [`apptracer_flutter`](https://github.com/KonstantenKomkov/apptracer_flutter),
@@ -17,14 +19,9 @@ of its own — that is the vendor's documented recommendation. The Sentry DSN is
 issued under **Settings → Project → API**, but only for a project created
 through **VK Cloud**.
 
-For Flutter that means desktop, and Aurora OS, where the vendor's C/C++ SDK with
-system minidumps cannot be reached from Dart.
-
-> **Neither platform is supported by the 0.1.0 release**, and neither has ever
-> been run against a live project. That is why this package is not on pub.dev:
-> depend on it from git. The DSN, too, is
-> issued only for a project created through VK Cloud — an ordinary Tracer
-> project has none, measured 2026-08-26.
+> During the 0.1.0 release, the desktop and Aurora paths had no live
+> verification, so the manual transport was kept out of pub.dev. The
+> ordinary Tracer project checked on 2026-08-26 had no DSN.
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';

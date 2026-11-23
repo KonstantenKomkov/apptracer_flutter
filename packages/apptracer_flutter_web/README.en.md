@@ -18,16 +18,15 @@ same ingest that SDK speaks — `POST /api/crash/uploadBatch`, authenticated by
 the project's `appToken` — from pure Dart, through
 [`apptracer_flutter_http`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_http).
 
-It used to post Sentry envelopes, on the belief that Tracer ingests over the
-Sentry protocol everywhere. Checked on 2026-08-26, that did not hold: no project
-is issued a DSN, and the vendor's SDK contains no Sentry at all. The format was
-recovered from a captured request and written down in
+Before 2026-08-26 this implementation sent Sentry envelopes. Verification on
+that date showed that ordinary JS projects receive an `appToken` and the
+vendor's JavaScript SDK uses Tracer's HTTP ingest. The captured request is in
 [web-protocol.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/web-protocol.md).
 
 Consequences:
 
-* `TracerOptions.appToken` is required, and it is the **JS project's**
-  `appToken`. `dsn` is not used on this path at all.
+* Pass the **JS project's** token in `TracerOptions.webAppToken` or the shared
+  `appToken` field. The Web adapter ignores `dsn`.
 * Only Dart errors are captured. A failure inside an unrelated third-party
   `<script>` is invisible.
 * Frames are `dart2js` frames, and Tracer matches source maps **by file path,

@@ -2,6 +2,62 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-37"></a>
+
+### П. 37. Risk-based coverage для desktop и lifecycle
+
+`sentry_desktop_tracer.dart` сравнивается с отдельными Linux/macOS/Windows
+baselines в обоих режимах reporter. CI реагирует на reporter/baseline-only diff,
+публикует summary и LCOV даже при failure; failed process owner получил отдельный
+behavioral regression test. Глобальный порог 100% не вводился.
+[Задача и результат](task-37-risk-based-coverage.md), [PR №37](https://github.com/KonstantenKomkov/apptracer_flutter/pull/37).
+
+<a id="task-36"></a>
+
+### П. 36. Смысловая согласованность актуальной документации
+
+RU/EN quick start, Dartdoc и package docs используют актуальные desktop DSN и
+Web appToken; shared example не включает лишний manual HTTP fallback. Текущие
+инструкции отделены от опубликованной 1.0.1 и исторических acceptance-протоколов.
+[Задача и результат](task-36-current-docs-consistency.md), [PR №36](https://github.com/KonstantenKomkov/apptracer_flutter/pull/36).
+
+<a id="task-34"></a>
+
+### П. 34. Общая наблюдаемость доставки и lifecycle
+
+Единый typed listener сообщает HTTP и platform/lifecycle outcomes без payload
+и credentials; `recordError` не ждёт сеть, старые API сохранены. Codex-ревью
+закрыло account/session races и разделило hosted production и staged candidate
+consumer acceptance с проверкой registry, dependency sources и publish archives.
+[Задача и результат](task-34-delivery-diagnostics.md), [PR №34](https://github.com/KonstantenKomkov/apptracer_flutter/pull/34).
+
+<a id="task-35"></a>
+
+### П. 35. Runtime-валидация параметров TracerOptions
+
+Три отрицательных лимита получают стабильные typed errors и в release, включая
+автоматический и явный запуск. Нулевые лимиты сохраняют прежний смысл, const API
+не изменён; invalid repeat start не разрушает действующую сессию.
+[Задача и результат](task-35-runtime-option-validation.md), [PR №35](https://github.com/KonstantenKomkov/apptracer_flutter/pull/35).
+
+<a id="task-32"></a>
+
+### П. 32. Управляемое поведение privacy-фильтров при ошибках
+
+`TracerFilterErrorPolicy.drop` не пропускает исходные Dart-данные после сбоя
+фильтра; `sendOriginal` остаётся совместимым default. Ручные и automatic capture,
+native mirror, reentrant callbacks и debug diagnostics покрыты тестами.
+[Задача и результат](task-32-filter-error-policy.md), [PR №32](https://github.com/KonstantenKomkov/apptracer_flutter/pull/32).
+
+<a id="task-31"></a>
+
+### П. 31. Воспроизводимые GitHub Actions по commit SHA
+
+Все 61 внешних `uses:` закреплены полными SHA с комментариями сохранённых версий.
+YAML-checker и девять unit-тестов подключены к отдельному workflow-scoped CI;
+локальные reusable workflows поддерживаются. Codex-ревью и 38 tool-тестов прошли.
+[Задача и результат](task-31-github-actions-sha.md), [PR №31](https://github.com/KonstantenKomkov/apptracer_flutter/pull/31).
+
 <a id="task-30"></a>
 
 ### П. 30. Навигация и актуальность документации

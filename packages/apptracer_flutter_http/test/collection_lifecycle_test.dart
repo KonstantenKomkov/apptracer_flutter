@@ -26,7 +26,7 @@ class _Facts extends TracerClientFacts {
 
 class _Client extends http.BaseClient {
   final List<String> bodies = <String>[];
-  final Completer<void> entered = Completer<void>();
+  Completer<void> entered = Completer<void>();
   Completer<void>? response;
   bool closed = false;
 
@@ -67,6 +67,7 @@ void main() {
     await tracer.setCustomKey(key: 'ACCOUNT_A', value: 'old');
     await tracer.recordLog('ACCOUNT_A');
     await tracer.recordError(_event('first'));
+    await client.entered.future;
     expect((await tracer.stopAndClearCollection()).state,
         TracerCollectionState.disabled);
     expect(client.closed, isFalse); // Caller owns an injected client.
@@ -78,7 +79,9 @@ void main() {
     expect((await tracer.startCollection(_options)).isEnabled, isTrue);
     await tracer.setUserId('ACCOUNT_B');
     await tracer.recordLog('ACCOUNT_B');
+    client.entered = Completer<void>();
     await tracer.recordError(_event('second'));
+    await client.entered.future;
     expect(client.bodies, hasLength(2));
     final body = client.bodies.last;
     expect(body, contains('ACCOUNT_B'));
@@ -97,23 +100,27 @@ void main() {
       () async {
     final clients = <_Client>[];
     await http.runWithClient(() async {
-      final tracer =
-          TracerHttpTracer(facts: const _Facts(), sdkVersion: 'test');
+      final tracer = TracerHttpTracer(
+          facts: const _Facts(),
+          sdkVersion: 'test',
+          deliveryPolicy:
+              const TracerDeliveryPolicy(requestTimeout: Duration(days: 1)));
       await tracer.startCollection(_options);
       final first = clients.single;
       first.response = Completer<void>();
       final sending = tracer.recordError(_event('in-flight'));
       await first.entered.future;
+      await sending; // Queueing completes without waiting for the HTTP response.
       await tracer.stopAndClearCollection();
       expect(first.closed, isTrue);
       first.response!.complete();
-      await sending;
       expect(tracer.isEnabled, isFalse);
       await tracer.recordError(_event('after-stop'));
       expect(first.bodies, hasLength(1));
       await tracer.startCollection(_options);
       expect(clients, hasLength(2));
       await tracer.recordError(_event('new-consent'));
+      await clients.last.entered.future;
       expect(clients.last.bodies, hasLength(1));
       expect(clients.last.closed, isFalse);
       await tracer.stopAndClearCollection();
