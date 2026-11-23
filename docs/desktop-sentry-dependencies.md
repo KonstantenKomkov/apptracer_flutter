@@ -1,10 +1,8 @@
 # Desktop Sentry dependency inventory
 
-Published production pin: `sentry_flutter 9.30.1`; verified native family:
-sentry-native 0.16.6 and Cocoa 8.58.4. The 2.0.0 source candidate selects
-`sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa 9.35.0. It remains subject
-to platform, hosted-consumer and live acceptance; this inventory is not a claim
-that every newer version works.
+Desktop 2.0.0 pins `sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa
+9.35.0. Its predecessor, desktop 1.0.1, uses Sentry Flutter 9.30.1,
+sentry-native 0.16.6 and Cocoa 8.58.4.
 
 ## Internal Dart APIs
 
@@ -78,8 +76,8 @@ accepted Dart and Cocoa pins together with their matching adapter revision.
 Dependency resolution succeeded on macOS 15, Ubuntu 22.04 and Windows 2022.
 Analysis of the pre-migration adapter failed on all three runners. That adapter imported integrations moved
 in 10.6.0 and used the former options and SDK logger API. Release builds and
-native runtime suites were skipped by the workflow. The accepted production
-pin remains 9.30.1. [Candidate run](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45007640137).
+native runtime suites were skipped by the workflow. The production
+pin at the time was 9.30.1. [Candidate run](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45007640137).
 
 The 2.0.0 source migration adopts the Flutter 3.44 minimum and Swift Package
 Manager. Published 1.0.1 supports Flutter 3.24 and uses CocoaPods.

@@ -1,6 +1,6 @@
 # Desktop installation and migration
 
-The optional `apptracer_flutter_desktop` package is published at 1.0.1.
+The optional `apptracer_flutter_desktop` package is published at 2.0.0.
 The accepted macOS scope is recorded in
 [macos-lifecycle-acceptance.md](macos-lifecycle-acceptance.md); Ubuntu 22.04.5
 x86_64 VM evidence is in [linux-preparation.md](linux-preparation.md).
@@ -9,16 +9,14 @@ Aurora is not supported by this adapter.
 
 ## Sentry upgrades
 
-Published adapter 1.0.1 remains on `sentry_flutter 9.30.1`. The 2.0.0 source
-candidate selects 10.6.0, sentry-native 0.17.6 and Cocoa 9.35.0; it is not a
-supported release until every acceptance stage passes. See the
+Desktop 2.0.0 uses `sentry_flutter 10.6.0`, sentry-native 0.17.6 and Cocoa
+9.35.0. See the
 [internal API and native symbol inventory](desktop-sentry-dependencies.md).
 `/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
 checkouts, with per-OS machine-readable results. It never merges or publishes.
 The macOS release candidate passed a live Tracer smoke test for handled Dart,
 Flutter and unhandled async errors. [Task 33](tasks/task-33-sentry-10-migration.md)
-records the event IDs and remains open for the clean pub.dev consumer check
-after publication.
+records the event IDs and the clean pub.dev consumer check.
 
 On macOS this upgrade changes delivery during server outages. Cocoa 8.58.4 kept
 a cached envelope after HTTP 503. For desktop 2.0.0 we accepted the default
@@ -39,11 +37,11 @@ Install the facade and optional desktop adapter from pub.dev:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^1.4.0
-  apptracer_flutter_desktop: ^1.0.1
+  apptracer_flutter: ^1.5.0
+  apptracer_flutter_desktop: ^2.0.0
 flutter:
   config:
-    enable-swift-package-manager: false
+    enable-swift-package-manager: true
 ```
 
 For source development, a pinned git revision or isolated path copy is also
@@ -52,13 +50,13 @@ checkout. Pub applies overrides from the consuming app. Production consumers
 resolve siblings from pub.dev. The staged consumer generates overrides pointing
 to its exported siblings. [Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides).
 
-Published 1.0.1 requires CocoaPods. For the 2.0.0 source candidate, enable Swift
+Published 1.0.1 requires CocoaPods. For 2.0.0, enable Swift
 Package Manager and set the Runner deployment target to at least 12.0; its
 [Package.swift](../packages/apptracer_flutter_desktop/macos/apptracer_flutter_desktop/Package.swift)
 shares Cocoa 9.35.0 with Sentry Flutter 10.6.0. The binary package manifest
 requires Swift tools 6.0. Enable
 `com.apple.security.network.client` in the sandboxed release entitlements.
-Do not combine the candidate with the old CocoaPods bridge.
+Use the Swift Package Manager bridge for 2.0.0.
 
 For a universal macOS release with Xcode 27.0, use the tested Flutter 3.47.4
 toolchain. At the declared minimum of Flutter 3.44.0 / Dart 3.12.0, Flutter's
@@ -192,8 +190,8 @@ xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade \
 Each run builds a newly generated release app,
 relocates it into a path with spaces/Cyrillic, checks automatic registration,
 filtered data, deduplication, exact-build source frames and stop/clear using a
-loopback receiver. The default app uses published facade 1.4.0 and desktop
-1.0.1 with hosted dependencies. `--candidate-facade` tests and publish-dry-runs
+loopback receiver. The default app uses published facade 1.5.0 and desktop
+2.0.0 with hosted dependencies. `--candidate-facade` tests and publish-dry-runs
 the exported adapter and facade with their staged sibling dependencies. The exported `consumer-bundle.tar.gz` can
 also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
@@ -227,7 +225,7 @@ dependencies out of an existing mobile graph.
 
 ## Windows consumer
 
-Use `apptracer_flutter_desktop ^1.0.1` alongside `apptracer_flutter ^1.4.0`. Before
+Use `apptracer_flutter_desktop ^2.0.0` alongside `apptracer_flutter ^1.5.0`. Before
 `flutter build windows --release`, set `$env:SENTRY_NATIVE_BACKEND = 'native'`.
 The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
 `sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release
@@ -258,9 +256,9 @@ python -X utf8 tool/check_windows_consumer.py --candidate-facade --output build/
 ```
 
 An optional `--native-source <directory>` reuses a complete, audited sentry-native
-checkout matching the selected adapter (0.17.6 for the source candidate, 0.16.6
-for published 1.0.1). The default resolves published facade 1.4.0 and adapter
-1.0.1 from pub.dev without overrides. The candidate uses isolated exports of the
+checkout matching the selected adapter (0.17.6 for 2.0.0, 0.16.6
+for published 1.0.1). The default resolves published facade 1.5.0 and adapter
+2.0.0 from pub.dev without overrides. The candidate uses isolated exports of the
 adapter, facade and their siblings.
 Both include the obfuscated FlutterError name fix.
 The harness performs package dry-runs, builds obfuscated release, relocates it,
@@ -268,11 +266,10 @@ restricts PATH to Windows/System32 and verifies filtering/deduplication/source
 frames/clear. This does not replace clean-machine testing.
 [Local results and publication boundary](windows-local-acceptance.md).
 
-After desktop 2.0.0 and the coordinated siblings are published, set
-`PUBLISHED_FACADE_VERSION` to the exact released facade version and run the hosted consumer:
+Run the hosted consumer with the coordinated release versions:
 
 ```powershell
-python -X utf8 tool/check_windows_consumer.py --hosted-desktop 2.0.0 --facade-version $env:PUBLISHED_FACADE_VERSION --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
+python -X utf8 tool/check_windows_consumer.py --hosted-desktop 2.0.0 --facade-version 1.5.0 --output build/windows-consumer-published --dump-syms D:\Tools\Symbols\dump-syms\dump_syms.exe
 ```
 
 This mode checks that every Tracer dependency resolves from pub.dev; it creates
@@ -281,8 +278,7 @@ no source export or dependency override. The publication record in
 
 ## Reproducible consumer and package check
 
-From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3, CocoaPods
-for production and Swift Package Manager for the candidate:
+From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and Swift Package Manager:
 
 ```sh
 python3 tool/check_macos_consumer.py --output build/macos-consumer/hosted
@@ -302,5 +298,4 @@ The check accepts only that warning; other warnings/errors fail. The pin is
 intentional because SDK integrations and observer APIs are version-specific.
 Both output directories contain logs, the consumer lockfile and the received event.
 The candidate directory also contains a manifest of relative source paths and
-SHA-256 hashes for each exported package. After publishing the candidate versions,
-update the hosted consumer pins and rerun the default check against pub.dev.
+SHA-256 hashes for each exported package.

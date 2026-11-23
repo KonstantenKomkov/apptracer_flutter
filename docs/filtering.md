@@ -40,7 +40,7 @@ TracerOptions(
 ```
 
 Верните `null`, чтобы отбросить событие или breadcrumb. По умолчанию при
-исключении в хуке `sendOriginal` сохраняет исходное значение. Для безопасного
+исключении в хуке `sendOriginal` сохраняет исходное значение. С версии фасада 1.5.0 для безопасного
 fail-closed режима используйте `TracerFilterErrorPolicy.drop`, как в примере:
 ошибочный фильтр не вызывается повторно, а исходные данные не попадают ни в
 platform event/raw stack, ни в Dart/native breadcrumb buffers.

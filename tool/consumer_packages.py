@@ -22,7 +22,7 @@ def consumer_scope(candidate):
     return 'Published production packages from pub.dev without overrides'
 
 
-def consumer_dependencies(candidate, *, facade='1.4.0', desktop='1.0.1'):
+def consumer_dependencies(candidate, *, facade='1.5.0', desktop='2.0.0'):
     if candidate:
         return f'  {FACADE}:\n    path: ../{FACADE}\n  {DESKTOP}:\n    path: ../{DESKTOP}\n'
     return f'  {FACADE}: {facade}\n  {DESKTOP}: {desktop}\n'

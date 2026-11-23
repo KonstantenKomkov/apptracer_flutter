@@ -1,5 +1,33 @@
 # Publishing
 
+## Coordinated desktop 2.0.0 release
+
+Facade 1.5.0 and desktop 2.0.0 use platform interface 0.3.0. The interface
+exposes delivery diagnostics through its existing public library. HTTP 0.3.0,
+Web 0.3.0, Android 0.5.0 and iOS 0.3.0 select the same interface. Desktop
+pins Sentry Flutter 10.6.0, Cocoa 9.35.0 and sentry-native 0.17.6.
+
+All seven hosted archives matched the registry SHA-256 and every packaged file
+matched release commit `6f0f054`. Each package passed its final publication
+dry run with hosted dependencies. Desktop reported its documented exact SDK
+pin warning. [Release PR](https://github.com/KonstantenKomkov/apptracer_flutter/pull/38).
+
+| Package | Files verified | Archive SHA-256 |
+| --- | ---: | --- |
+| [apptracer_flutter 1.5.0](https://pub.dev/packages/apptracer_flutter/versions/1.5.0) | 122 | `8cc36e60a98ade59c6b1e763df3c82a60cca4a6a8a372854cbfe9c72c6db3c5e` |
+| [apptracer_flutter_android 0.5.0](https://pub.dev/packages/apptracer_flutter_android/versions/0.5.0) | 47 | `c0f3a451912f01577fe6e40db7d5ef868f95581ca9ced27ed96baa7c7d384573` |
+| [apptracer_flutter_desktop 2.0.0](https://pub.dev/packages/apptracer_flutter_desktop/versions/2.0.0) | 112 | `5dd28c5d04011915683bb5e48638a5b4ec56b0915464b5ea5493777d80ea9ead` |
+| [apptracer_flutter_http 0.3.0](https://pub.dev/packages/apptracer_flutter_http/versions/0.3.0) | 17 | `813ae2bada6b42af58005eaaee911e2f6fa5152108a6babc0a11586f6aaf68c4` |
+| [apptracer_flutter_ios 0.3.0](https://pub.dev/packages/apptracer_flutter_ios/versions/0.3.0) | 18 | `51238a0a17616cfc053ca50aa6bbe3a6340db3b8a206e293ae38f2a331a04bf3` |
+| [apptracer_flutter_platform_interface 0.3.0](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.3.0) | 31 | `ec4fd1c6eb4ce35c0e28fb546409906990a3a5509f6ab09fea94ece18914a0cb` |
+| [apptracer_flutter_web 0.3.0](https://pub.dev/packages/apptracer_flutter_web/versions/0.3.0) | 11 | `ef6b76213aa86a145f396087f0419a1ea0359e7deb00014decdf08305c0ea6fd` |
+
+A clean macOS release consumer resolved all seven packages from pub.dev, analyzed,
+built with Swift Package Manager, and delivered one event with its expected user,
+tag and breadcrumb to a local receiver. The lockfiles recorded Sentry Flutter
+10.6.0 and Cocoa 9.35.0. The earlier [live smoke](tasks/task-33-sentry-10-migration.md)
+confirmed three separate events from the release candidate in Tracer.
+
 ## Flutter 1.4.0 release (2026-11-22)
 
 Release `v1.4.0` ships immutable event collections, Flutter metadata redaction

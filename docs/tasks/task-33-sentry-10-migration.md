@@ -1,6 +1,6 @@
 # П. 33. Миграция desktop-адаптера на Sentry 10.x
 
-**Статус:** открыта. **Приоритет:** P1. **Сложность:** XL.
+**Статус:** выполнена. **Приоритет:** P1. **Сложность:** XL.
 
 Связанные документы: [инвентарь SDK](../desktop-sentry-dependencies.md),
 [процесс candidate-обновлений](task-29-desktop-sentry-upgrades.md),
@@ -33,15 +33,16 @@ Live smoke прошёл на macOS 23 ноября 2026 года. Release-сбо
 | FlutterError | `11f1-e76e-a077a351-8e1c-c5e6fd97b46a` |
 | Unhandled async | `11f1-e76e-a09a94a2-8e1c-c5e6fd97b46a` |
 
-После отдельной публикации нужна проверка чистой установки desktop 2.0.0 с pub.dev.
-Опубликованный desktop 1.0.1 использует Sentry Flutter 9.30.1.
+Desktop 2.0.0 опубликован вместе с фасадом 1.5.0. Внешнее приложение на macOS
+получило все семь пакетов с pub.dev без overrides, прошло analyze и release-сборку.
+Приёмник подтвердил одно событие с ожидаемым пользователем, тегом и breadcrumb.
+[Версии и проверенные архивы](../publishing.md#coordinated-desktop-200-release).
 
 ## Контекст
 
 Опубликованный адаптер 1.0.1 использует `sentry_flutter 9.30.1`. До адаптации
 кандидат 10.6.0 не проходил analyze из-за переноса integrations и смены
-options/logger API. Исходники 2.0.0 используют 10.6.0. После выпуска
-нужна проверка установки 2.0.0 с pub.dev без overrides. Кандидат также
+options/logger API. Выпуск 2.0.0 использует 10.6.0,
 повышает минимальный Flutter до 3.44 и меняет упаковку Apple на Swift Package
 Manager. Linux/Windows lifecycle зависит от внутренних FFI-структур SDK.
 

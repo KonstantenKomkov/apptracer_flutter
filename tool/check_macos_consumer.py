@@ -58,7 +58,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     source = parser.add_mutually_exclusive_group()
     source.add_argument('--candidate-facade', action='store_true')
-    source.add_argument('--hosted-desktop', choices=('1.0.1', '2.0.0'), default='1.0.1')
+    source.add_argument('--hosted-desktop', choices=('1.0.1', '2.0.0'), default='2.0.0')
     args = parser.parse_args()
     uses_spm = args.candidate_facade or args.hosted_desktop == '2.0.0'
     facade_version = '1.5.0' if uses_spm else '1.4.0'

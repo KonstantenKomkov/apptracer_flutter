@@ -28,13 +28,13 @@ macOS 15 arm64 CI and isolated consumer checks:
 Tracer project.
 
 The desktop rows record the 1.0.0 acceptance results. For those configurations,
-the [published desktop adapter is 1.0.1](publishing.md#flutter-130-release-2026-11-22).
+the earlier hosted release was desktop 1.0.1. The [desktop 2.0.0 release](publishing.md#coordinated-desktop-200-release) uses Sentry Flutter 10.6.0.
 It uses the official Sentry SDK with the target Tracer project's DSN.
 
-Facade 1.4.0 requires platform interface `^0.2.3` and Android adapter `^0.4.2`. Starting
+Facade 1.5.0 requires platform interface `^0.3.0` and Android adapter `^0.5.0`. Starting
 with 0.4.2, the adapter restores the native context after each Dart report.
 [Verified scope and concurrency limits](android-event-context.md) ·
-[Published packages](publishing.md#flutter-140-release-2026-11-22).
+[Published packages](publishing.md#coordinated-desktop-200-release).
 
 ## Flutter toolchain
 

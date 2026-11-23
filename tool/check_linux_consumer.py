@@ -224,7 +224,7 @@ def main():
                 run(['flutter', 'create', '--platforms=linux', '--no-pub', '--project-name',
                      'tracer_external_consumer', str(app)], root)
                 (app / 'pubspec.yaml').write_text('name: tracer_external_consumer\npublish_to: none\n'
-                    'version: 1.0.0+1\nenvironment:\n  sdk: ^3.5.0\ndependencies:\n'
+                    'version: 1.0.0+1\nenvironment:\n  sdk: ^3.12.0\ndependencies:\n'
                     '  flutter:\n    sdk: flutter\n' + consumer_dependencies(args.candidate_facade) +
                     'flutter:\n  uses-material-design: true\n')
                 if args.candidate_facade:
