@@ -2,6 +2,15 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-31"></a>
+
+### П. 31. Воспроизводимые GitHub Actions по commit SHA
+
+Все 61 внешних `uses:` закреплены полными SHA с комментариями сохранённых версий.
+YAML-checker и девять unit-тестов подключены к отдельному workflow-scoped CI;
+локальные reusable workflows поддерживаются. Codex-ревью и 38 tool-тестов прошли.
+[Задача и результат](task-31-github-actions-sha.md), [PR №31](https://github.com/KonstantenKomkov/apptracer_flutter/pull/31).
+
 <a id="task-30"></a>
 
 ### П. 30. Навигация и актуальность документации
