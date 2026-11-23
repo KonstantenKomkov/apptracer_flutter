@@ -25,6 +25,67 @@ TracerClient _client(
 class _FailingPlatform extends FakeTracerPlatform {
   bool failEvents = false;
   bool failCleanup = false;
+  bool startThrows = false;
+  bool startReturnsError = false;
+  bool failState = false;
+  bool failPause = false;
+  bool failResume = false;
+  bool failStop = false;
+  bool cleanupThrows = false;
+  bool diagnosticReturnsError = false;
+
+  @override
+  Future<TracerCollectionResult> startCollection(TracerOptions options) async {
+    if (startThrows) throw StateError('private start exception');
+    if (startReturnsError) {
+      return const TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'private start result',
+      );
+    }
+    await initialize(options);
+    return getCollectionState();
+  }
+
+  @override
+  Future<TracerCollectionResult> getCollectionState() async {
+    if (failState) throw StateError('private state exception');
+    return super.getCollectionState();
+  }
+
+  @override
+  Future<TracerCollectionResult> pauseCollection() async {
+    if (failPause) throw StateError('private pause exception');
+    return super.pauseCollection();
+  }
+
+  @override
+  Future<TracerCollectionResult> resumeCollection() async {
+    if (failResume) {
+      return const TracerCollectionResult(
+        TracerCollectionState.error,
+        reason: 'private resume result',
+      );
+    }
+    return super.resumeCollection();
+  }
+
+  @override
+  Future<void> stopCollection() async {
+    if (failStop) throw StateError('private stop exception');
+    await super.stopCollection();
+  }
+
+  @override
+  Future<TracerDiagnosticResult> runHeapDump({required String tag}) async {
+    if (diagnosticReturnsError) {
+      return const TracerDiagnosticResult(
+        TracerDiagnosticState.error,
+        reason: 'private diagnostic result',
+      );
+    }
+    return super.runHeapDump(tag: tag);
+  }
 
   @override
   Future<void> recordError(TracerEvent event) async {
@@ -34,6 +95,7 @@ class _FailingPlatform extends FakeTracerPlatform {
 
   @override
   Future<TracerCollectionResult> stopAndClearCollection() async {
+    if (cleanupThrows) throw StateError('private cleanup exception');
     if (failCleanup) {
       return const TracerCollectionResult(
         TracerCollectionState.error,
@@ -692,6 +754,61 @@ void main() {
 
       expect(previous, isEmpty);
       expect(current.single.operation, 'recordError');
+    });
+
+    test('start reports typed errors and exceptions without their text',
+        () async {
+      final platform = _FailingPlatform()..startReturnsError = true;
+      final client = _client(platform);
+      final diagnostics = <TracerDeliveryDiagnostic>[];
+      final options = TracerOptions(deliveryListener: diagnostics.add);
+
+      var result = await client.startCollection(options);
+      expect(result.state, TracerCollectionState.error);
+      platform
+        ..startReturnsError = false
+        ..startThrows = true;
+      result = await client.startCollection(options);
+
+      expect(result.state, TracerCollectionState.error);
+      expect(diagnostics.map((event) => event.reason),
+          ['operation_error', 'platform_exception']);
+      expect(diagnostics.map((event) => event.operation).toSet(),
+          {'startCollection'});
+      expect(diagnostics.toString(), isNot(contains('private')));
+    });
+
+    test('state and lifecycle failures are observable with stable operations',
+        () async {
+      final platform = _FailingPlatform();
+      final client = _client(platform);
+      final diagnostics = <TracerDeliveryDiagnostic>[];
+      await client.start(TracerOptions(deliveryListener: diagnostics.add));
+
+      platform.failState = true;
+      await client.getCollectionState();
+      platform.diagnosticReturnsError = true;
+      await client.runHeapDump(tag: 'test');
+      platform.failPause = true;
+      await client.pauseCollection();
+      platform.failResume = true;
+      await client.resumeCollection();
+      platform.failStop = true;
+      await client.stop();
+      platform.cleanupThrows = true;
+      await client.stopAndClearCollection();
+
+      expect(diagnostics.map((event) => event.operation), [
+        'getCollectionState',
+        'nativeDiagnostic',
+        'pauseCollection',
+        'resumeCollection',
+        'stopCollection',
+        'stopAndClearCollection',
+      ]);
+      expect(diagnostics.map((event) => event.reason).toSet(),
+          {'platform_exception', 'operation_error'});
+      expect(diagnostics.toString(), isNot(contains('private')));
     });
   });
 
