@@ -31,10 +31,10 @@ flutter:
 ```
 
 For source development, a pinned git revision or isolated path copy is also
-supported. Do not copy the repository's `pubspec_overrides.yaml` into the app: its sibling paths are for
-repository development. Pub ignores overrides declared by dependencies;
-the consumer must resolve public siblings from pub.dev
-([Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides)).
+supported. The repository's `pubspec_overrides.yaml` files use paths specific to its
+checkout. Pub applies overrides from the consuming app. Production consumers
+resolve siblings from pub.dev. The staged consumer generates overrides pointing
+to its exported siblings. [Dart dependency rules](https://dart.dev/tools/pub/dependencies#dependency-overrides).
 
 Use CocoaPods, set `platform :osx, '12.0'` in the macOS Podfile and set the
 Runner deployment target to at least 12.0. Enable
@@ -164,11 +164,12 @@ xvfb-run -a python3 tool/check_linux_consumer.py --candidate-facade \
   --output build/ubuntu-consumer-candidate
 ```
 
-It validates staged publish candidates, builds a newly generated release app,
+Each run builds a newly generated release app,
 relocates it into a path with spaces/Cyrillic, checks automatic registration,
 filtered data, deduplication, exact-build source frames and stop/clear using a
-loopback receiver. `--candidate-facade` exports the current facade without
-changing its release version or publishing. The exported `consumer-bundle.tar.gz` can
+loopback receiver. The default app uses published facade 1.4.0 and desktop
+1.0.1 with hosted dependencies. `--candidate-facade` tests and publish-dry-runs
+the exported adapter and facade with their staged sibling dependencies. The exported `consumer-bundle.tar.gz` can
 also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
 ## Moving from the manual transport
@@ -255,21 +256,22 @@ no source export or dependency override. The publication record in
 From the repository root on macOS with Flutter 3.47.4 / Dart 3.13.3 and CocoaPods:
 
 ```sh
-python3 tool/check_macos_consumer.py --output build/macos-consumer
+python3 tool/check_macos_consumer.py --output build/macos-consumer/hosted
+python3 tool/check_macos_consumer.py --candidate-facade --output build/macos-consumer/candidate
 ```
 
-This exports only tracked desktop package files into a temporary directory
-outside the repository, removes development overrides, and validates a staged
-publish candidate. It then creates a new Flutter macOS app with exactly one
-path dependency (that export) and hosted public sibling dependencies. It checks
-the resolved sources, analyzes and builds release, and verifies automatic
-plugin registration by receiving one error with user ID, key and breadcrumb
+The first consumer resolves the production packages from pub.dev without
+overrides. The second uses isolated exports of the desktop adapter, facade
+and their siblings. It analyzes and tests the adapter and facade, then checks
+both publish dry-run inventories for `pubspec_overrides.yaml` and `.env.tracer`. Each consumer
+records its scope, resolved dependency sources and lockfile, builds release,
+and verifies registration by receiving one error with user ID, key and breadcrumb
 at a local receiver. No real DSN or plugin token is read.
 
 The exact SDK pin produces one known Pub warning in `dart pub publish --dry-run`.
 The check accepts only that warning; other warnings/errors fail. The pin is
 intentional because SDK integrations and observer APIs are version-specific.
-Logs, the dependency lockfile, export file list and event are written under
-the output directory. This checks an isolated path consumer, not a published
-desktop version or a Git install. Actual publication and a hosted desktop
-consumer remain separate release steps.
+Both output directories contain logs, the consumer lockfile and the received event.
+The candidate directory also contains a manifest of relative source paths and
+SHA-256 hashes for each exported package. After publishing the candidate versions,
+update the hosted consumer pins and rerun the default check against pub.dev.

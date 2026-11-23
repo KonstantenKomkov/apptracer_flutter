@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Build an external macOS consumer of an isolated desktop package export.
 
-Only the desktop adapter is a path dependency. All public sibling packages
-resolve from pub.dev, with no overrides or workspace. No credentials are read.
-The export is also checked with pub publish --dry-run; nothing is published.
+The default consumer resolves published packages from pub.dev. --candidate-facade
+checks isolated worktree exports, including publish dry-runs. Never publishes.
 """
 import argparse
 import gzip
@@ -17,7 +16,9 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from check_macos_desktop import envelope_events
+from consumer_packages import (PUB_DEV, SIBLINGS, check_candidates, check_consumer_graph,
+                               consumer_dependencies, consumer_scope, is_sdk_pin_warning, write_overrides)
+from check_macos_desktop import envelope_events, read_http_body
 
 
 MAIN = """import 'dart:io';
@@ -54,18 +55,20 @@ Future<void> report() async {
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--candidate-facade', action='store_true')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     repo = Path(__file__).resolve().parent.parent
     package = Path('packages/apptracer_flutter_desktop')
-    report = {'scope': 'isolated path export + hosted public dependencies; local delivery only',
+    report = {'scope': consumer_scope(args.candidate_facade),
               'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip(),
               'source_dirty': bool(subprocess.check_output(
-                  ['git', 'status', '--porcelain', '--', str(package)], cwd=repo, text=True)),
+                  ['git', 'status', '--porcelain'], cwd=repo, text=True)),
               'success': False}
     env = {key: value for key, value in os.environ.items()
            if not key.startswith('TRACER_')}
+    env['PUB_HOSTED_URL'] = PUB_DEV
     env.pop('GEM_HOME', None)
     env.pop('GEM_PATH', None)
     env['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -80,15 +83,7 @@ def main():
             result = subprocess.run(command, cwd=cwd, env=env, stdout=stream,
                                     stderr=subprocess.STDOUT, timeout=1200)
         content = log.read_text()
-        validation = content.split('Validating package...')[-1]
-        sdk_pin_warning = (
-            allow_sdk_pin_warning and result.returncode == 65
-            and validation.count('\n* ') == 1
-            and 'Your dependency on "sentry_flutter" should allow more than one version.' in validation
-            and 'Package has 1 warning.' in validation
-            and 'error' not in validation.lower()
-        )
-        if sdk_pin_warning:
+        if allow_sdk_pin_warning and is_sdk_pin_warning(result.returncode, content):
             report['publish_warning'] = 'Exact sentry_flutter 9.30.1 pin (intentional; SDK internals are version-specific)'
             print(report['publish_warning'], flush=True)
         elif result.returncode:
@@ -98,34 +93,13 @@ def main():
     try:
         with tempfile.TemporaryDirectory(prefix='tracer external consumer ') as directory:
             root = Path(directory)
-            exported = root / 'adapter'
-            tracked = subprocess.check_output(
-                ['git', 'ls-files', '-z', '--', str(package)], cwd=repo).decode().split('\0')
-            exported_files = []
-            for relative in filter(None, tracked):
-                path = Path(relative)
-                if path.name == 'pubspec_overrides.yaml':
-                    continue
-                target = exported / path.relative_to(package)
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(repo / path, target)
-                exported_files.append(str(path.relative_to(package)))
-            report['exported_files'] = exported_files
-            pubspec = exported / 'pubspec.yaml'
-            original = pubspec.read_text()
-            # Prepare an isolated package export; this check never publishes.
-            pubspec.write_text(original.replace('publish_to: none\n', ''))
-            run(['flutter', 'pub', 'get'], exported)
-            archive_log = run(['dart', 'pub', 'publish', '--dry-run'], exported, allow_sdk_pin_warning=True)
-            assert 'pubspec_overrides.yaml' not in archive_log
-            assert '.env.tracer' not in archive_log
-            report['publish_dry_run'] = True
-            pubspec.write_text(original)
+            if args.candidate_facade:
+                check_candidates(repo, root, output, run, report)
             app = root / 'consumer'
             run(['flutter', 'create', '--platforms=macos', '--no-pub',
                  '--org', 'dev.apptracer.consumer', '--project-name',
                  'tracer_external_consumer', str(app)], root)
-            (app / 'pubspec.yaml').write_text("""name: tracer_external_consumer
+            (app / 'pubspec.yaml').write_text(f"""name: tracer_external_consumer
 publish_to: none
 version: 1.0.0+1
 environment:
@@ -133,14 +107,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^1.0.0
-  apptracer_flutter_desktop:
-    path: ../adapter
-flutter:
+{consumer_dependencies(args.candidate_facade)}flutter:
   uses-material-design: true
   config:
     enable-swift-package-manager: false
 """)
+            if args.candidate_facade:
+                write_overrides(app, SIBLINGS)
             (app / 'lib/main.dart').write_text(MAIN)
             shutil.rmtree(app / 'test')
             (app / 'analysis_options.yaml').write_text('analyzer:\n  errors:\n    unused_import: error\n')
@@ -155,18 +128,10 @@ flutter:
             shutil.copy2(repo / package / 'example/macos/Podfile', app / 'macos/Podfile')
             run(['flutter', 'pub', 'get'], app)
             graph = json.loads(run(['dart', 'pub', 'deps', '--json'], app))
-            siblings = {p['name']: {'version': p['version'], 'source': p['source']}
-                        for p in graph['packages'] if p['name'].startswith('apptracer_')}
-            assert siblings['apptracer_flutter_desktop']['source'] == 'path'
-            assert siblings['apptracer_flutter']['source'] == 'hosted'
-            assert siblings['apptracer_flutter_platform_interface']['source'] == 'hosted'
-            assert all(p['source'] == 'hosted' for name, p in siblings.items()
-                       if name != 'apptracer_flutter_desktop'), siblings
-            assert not (app / 'pubspec_overrides.yaml').exists()
-            report['dependencies'] = siblings
+            check_consumer_graph(graph, root, app, args.candidate_facade, report)
             shutil.copy2(app / 'pubspec.lock', output / 'consumer.pubspec.lock')
-            run(['flutter', 'analyze', '--fatal-infos'], app)
-            run(['flutter', 'build', 'macos', '--release'], app)
+            run(['flutter', 'analyze', '--no-pub', '--fatal-infos'], app)
+            run(['flutter', 'build', 'macos', '--no-pub', '--release'], app)
             events, failures = [], []
 
             class Receiver(BaseHTTPRequestHandler):
@@ -176,7 +141,7 @@ flutter:
                 def do_POST(self):
                     try:
                         assert self.path == '/api/42/envelope/'
-                        data = self.rfile.read(int(self.headers['Content-Length']))
+                        data = read_http_body(self.rfile, self.headers)
                         if self.headers.get('Content-Encoding') == 'gzip':
                             data = gzip.decompress(data)
                         for kind, event in envelope_events(data):
