@@ -16,13 +16,15 @@ source candidate 2.0.0 на Sentry Flutter 10.6.0, sentry-native 0.17.6, Cocoa
 ([CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45228084723),
 [desktop candidate](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45228084675)).
 
-Задача остаётся открытой: нужны live Tracer smoke и, после отдельной публикации,
-clean pub.dev consumer 2.0.0. На macOS подтверждено изменение retry: published
-1.0.1 сохраняет envelope после HTTP 503, candidate удаляет его; обрыв соединения
-без HTTP-ответа envelope сохраняет. Это требует release decision и задокументировано
-в [migration guide](../desktop-migration.md#sentry-upgrades). Production остаётся
-на desktop 1.0.1 / Sentry Flutter 9.30.1; PR не вливается без принятия этого
-ограничения и live acceptance.
+23 ноября 2026 года для desktop 2.0.0 принято штатное поведение Cocoa 9.35.0
+на macOS. После HTTP 503 SDK удаляет envelope и переходит к следующему.
+Мы принимаем риск потери отчёта при временной недоступности Tracer. При обрыве
+соединения до HTTP-ответа SDK сохраняет envelope для повторной отправки при
+разрешённом запуске. Подробнее в [migration guide](../desktop-migration.md#sentry-upgrades).
+
+Для слияния PR остаётся live smoke с подтверждением событий в Tracer. После
+отдельной публикации нужна проверка чистой установки desktop 2.0.0 с pub.dev.
+Опубликованный desktop 1.0.1 использует Sentry Flutter 9.30.1.
 
 ## Контекст
 

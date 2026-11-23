@@ -16,12 +16,13 @@ supported release until every acceptance stage passes. See the
 `/.github/workflows/sentry-candidate.yml` runs monthly and on demand in isolated
 checkouts, with per-OS machine-readable results. It never merges or publishes.
 [Task 33](tasks/task-33-sentry-10-migration.md) remains open. The candidate
-still needs a live Tracer smoke test, a release decision on HTTP 503 retention,
-and a clean pub.dev consumer check after publication.
+still needs a live Tracer smoke test before merge and a clean pub.dev consumer
+check after publication.
 
 On macOS this upgrade changes delivery during server outages. Cocoa 8.58.4 kept
-a cached envelope after HTTP 503. Cocoa 9.35.0 deletes it after an HTTP 5xx,
-so an event rejected during an outage can be lost. A dropped connection with
+a cached envelope after HTTP 503. For desktop 2.0.0 we accepted the default
+Cocoa 9.35.0 behavior. After an HTTP 5xx, including 503, the SDK deletes the
+envelope and moves on, so an event rejected during an outage can be lost. A dropped connection with
 no HTTP response retains the envelope for an authorized restart with
 `preservePreviousReports: true`. Stop or clear still revokes replay. The
 lifecycle probe checks the original event ID on that restart. Roll back to
