@@ -1,8 +1,20 @@
 # П. 35. Runtime-валидация параметров TracerOptions
 
-**Статус:** открыта. **Приоритет:** P2. **Сложность:** S.
+**Статус:** выполнена. **Приоритет:** P2. **Сложность:** S.
 
 Связанный общий план: [development_v1.md](development_v1.md).
+
+## Результат
+
+[PR №35](https://github.com/KonstantenKomkov/apptracer_flutter/pull/35) добавил
+стабильные `invalid_max_*` для трёх отрицательных лимитов при выключенных
+assertions, сохранил `const TracerOptions` и documented zero/unlimited semantics.
+Codex-ревью исправило отложенную остановку native start, повторный invalid start
+поверх валидной сессии и восстановление cold bootstrap после ошибки.
+
+Поведенческие тесты с `--enable-asserts=false`, полный `make check` и
+`git diff --check` прошли; все 33 CI checks зелёные, scheduled canary report
+пропущен по условию. Device/live acceptance не запускался.
 
 ## Контекст
 

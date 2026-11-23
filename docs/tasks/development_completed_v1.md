@@ -12,6 +12,15 @@ baselines в обоих режимах reporter. CI реагирует на repo
 behavioral regression test. Глобальный порог 100% не вводился.
 [Задача и результат](task-37-risk-based-coverage.md), [PR №37](https://github.com/KonstantenKomkov/apptracer_flutter/pull/37).
 
+<a id="task-35"></a>
+
+### П. 35. Runtime-валидация параметров TracerOptions
+
+Три отрицательных лимита получают стабильные typed errors и в release, включая
+автоматический и явный запуск. Нулевые лимиты сохраняют прежний смысл, const API
+не изменён; invalid repeat start не разрушает действующую сессию.
+[Задача и результат](task-35-runtime-option-validation.md), [PR №35](https://github.com/KonstantenKomkov/apptracer_flutter/pull/35).
+
 <a id="task-32"></a>
 
 ### П. 32. Управляемое поведение privacy-фильтров при ошибках

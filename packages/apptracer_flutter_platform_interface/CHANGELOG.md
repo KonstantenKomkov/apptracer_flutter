@@ -9,6 +9,10 @@ as pub.dev expects.
 
 ## [Unreleased]
 
+- Move negative-limit errors from `TracerOptions` constructor assertions to
+  facade startup validation in debug and release. The constructor remains
+  `const` and accepts the same named parameters.
+
 - Add the source-compatible `TracerOptions.filterErrorPolicy` with
   `sendOriginal` compatibility default and fail-closed `drop` for Dart filters.
   The policy is not serialized to native adapters and does not filter native crashes.
