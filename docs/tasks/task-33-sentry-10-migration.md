@@ -6,6 +6,23 @@
 [процесс candidate-обновлений](task-29-desktop-sentry-upgrades.md),
 [общий план](development_v1.md).
 
+## Подготовленный результат
+
+[PR №33](https://github.com/KonstantenKomkov/apptracer_flutter/pull/33) переводит
+source candidate 2.0.0 на Sentry Flutter 10.6.0, sentry-native 0.17.6, Cocoa
+9.35.0, Flutter 3.44 / Dart 3.12 и macOS SPM. Codex-ревью и полный `make check`
+прошли; исправленный platform CI завершился с 43 passed и 2 skipped
+([CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45156546843),
+[desktop candidate](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45156546723)).
+
+Задача остаётся открытой: нужны live Tracer smoke и, после отдельной публикации,
+clean pub.dev consumer 2.0.0. На macOS подтверждено изменение retry: published
+1.0.1 сохраняет envelope после HTTP 503, candidate удаляет его; обрыв соединения
+без HTTP-ответа envelope сохраняет. Это требует release decision и задокументировано
+в [migration guide](../desktop-migration.md#sentry-upgrades). Production остаётся
+на desktop 1.0.1 / Sentry Flutter 9.30.1; PR не вливается без принятия этого
+ограничения и live acceptance.
+
 ## Контекст
 
 Опубликованный адаптер 1.0.1 использует `sentry_flutter 9.30.1`. До адаптации
