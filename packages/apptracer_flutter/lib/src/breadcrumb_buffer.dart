@@ -8,10 +8,9 @@ import 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
 /// the native Tracer log buffers behave (Android keeps a 64 KiB ring buffer).
 class BreadcrumbBuffer {
   /// Creates a buffer holding at most [maxLength] breadcrumbs.
-  BreadcrumbBuffer({required this.maxLength})
-      : assert(maxLength >= 0, 'maxLength must not be negative');
+  BreadcrumbBuffer({required this.maxLength});
 
-  /// Maximum number of retained breadcrumbs. Zero disables buffering.
+  /// Maximum number of retained breadcrumbs. Non-positive values disable buffering.
   final int maxLength;
 
   final Queue<TracerBreadcrumb> _entries = Queue<TracerBreadcrumb>();
@@ -28,7 +27,7 @@ class BreadcrumbBuffer {
 
   /// Appends [breadcrumb], evicting the oldest entry when full.
   void add(TracerBreadcrumb breadcrumb) {
-    if (maxLength == 0) {
+    if (maxLength <= 0) {
       return;
     }
     _entries.addLast(breadcrumb);

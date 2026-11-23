@@ -81,6 +81,63 @@ void main() {
     });
   });
 
+  group('invalid limits', () {
+    for (final entry in <({TracerOptions options, String reason})>[
+      (
+        options: const TracerOptions(maxBreadcrumbs: -1),
+        reason: 'invalid_max_breadcrumbs',
+      ),
+      (
+        options: const TracerOptions(maxRawStackTraceLogBytes: -1),
+        reason: 'invalid_max_raw_stack_trace_log_bytes',
+      ),
+      (
+        options: const TracerOptions(maxStackFrames: -1),
+        reason: 'invalid_max_stack_frames',
+      ),
+    ]) {
+      test('${entry.reason} rejects start before backend initialization',
+          () async {
+        final platform = FakeTracerPlatform();
+        final client = _client(platform);
+
+        final result = await client.startCollection(entry.options);
+
+        expect(result.state, TracerCollectionState.error);
+        expect(result.reason, entry.reason);
+        expect(platform.startCalls, 0);
+        expect(platform.initializeCalls, 0);
+        expect(client.isEnabled, isFalse);
+        expect(client.hasInstalledHandlers, isFalse);
+      });
+    }
+  });
+
+  test('zero limits preserve breadcrumb mirroring and the full stack',
+      () async {
+    final platform = FakeTracerPlatform();
+    final client = _client(platform);
+    const options = TracerOptions(
+      maxBreadcrumbs: 0,
+      maxRawStackTraceLogBytes: 0,
+      maxStackFrames: 0,
+    );
+    expect((await client.startCollection(options)).isEnabled, isTrue);
+    client.addBreadcrumb(TracerBreadcrumb(message: 'mirrored'));
+    final stack = List.generate(
+      250,
+      (i) => '#$i      deep.frame$i (package:example/deep.dart:$i:1)',
+    ).join('\n');
+    await client.recordError('test', stack);
+
+    final event = platform.events.single;
+    expect(event.breadcrumbs, isEmpty);
+    expect(platform.logs.first, contains('mirrored'));
+    expect(event.stackTrace.frames, hasLength(250));
+    expect(
+        platform.logs.last, endsWith(TracerClient.defuseFrameNumbers(stack)));
+  });
+
   group('TracerClient.stop', () {
     test('restores handlers so a second start does not stack them', () async {
       void appHandler(FlutterErrorDetails details) {}
