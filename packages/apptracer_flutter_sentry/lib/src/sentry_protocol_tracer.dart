@@ -9,15 +9,8 @@ import 'sentry_event_builder.dart';
 
 /// Delivers Dart errors to Tracer over the Sentry protocol.
 ///
-/// Tracer documents this route for platforms where it has no SDK of its own —
-/// Java, Go, Python, PHP, C/C++ on Windows, Linux and macOS — and issues a
-/// Sentry DSN for a project created through VK Cloud. For a Flutter
-/// application that means desktop, and Aurora OS when the vendor's C/C++ SDK
-/// is out of reach.
-///
-/// Web does **not** use this: Tracer has its own JavaScript SDK there, an
-/// ordinary JS project is issued no DSN, and `apptracer_flutter_web` speaks the
-/// same HTTP ingest that SDK speaks. See `docs/web-protocol.md`.
+/// Legacy manual transport for projects with a Sentry DSN. For current
+/// desktop installations use the optional `apptracer_flutter_desktop` adapter.
 class SentryProtocolTracer extends TracerPlatform {
   /// Creates a transport.
   ///

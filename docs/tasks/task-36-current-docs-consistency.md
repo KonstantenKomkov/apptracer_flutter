@@ -1,10 +1,23 @@
 # П. 36. Смысловая согласованность актуальной документации
 
-**Статус:** открыта. **Приоритет:** P2. **Сложность:** S.
+**Статус:** выполнена. **Приоритет:** P2. **Сложность:** S.
 
 Связанные документы: [карта документации](../README.md),
 [завершённая навигация №30](task-30-documentation-navigation.md),
 [общий план](development_v1.md).
+
+## Результат
+
+[PR №36](https://github.com/KonstantenKomkov/apptracer_flutter/pull/36) синхронизировал
+RU/EN quick start, Dartdoc и текущие package docs с поддерживаемым desktop DSN
+и Web appToken. Исторические acceptance/release документы сохранены; published
+production 1.0.1 / Sentry 9.30.1 отделён от более новых рабочих pubspec.
+
+Codex-ревью исправило desktop fallback в shared example, JS appToken в release
+commands и дублирующийся changelog heading. Полный `make check`, documentation
+tests, проверка 93 Markdown-файлов и `git diff --check` прошли; все 33 CI checks
+зелёные, scheduled canary report пропущен по условию. Внешний сбой загрузки
+OKTracer на старом head не повторился на исправленном.
 
 ## Контекст
 

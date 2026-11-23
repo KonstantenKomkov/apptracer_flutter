@@ -2,6 +2,15 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-36"></a>
+
+### П. 36. Смысловая согласованность актуальной документации
+
+RU/EN quick start, Dartdoc и package docs используют актуальные desktop DSN и
+Web appToken; shared example не включает лишний manual HTTP fallback. Текущие
+инструкции отделены от опубликованной 1.0.1 и исторических acceptance-протоколов.
+[Задача и результат](task-36-current-docs-consistency.md), [PR №36](https://github.com/KonstantenKomkov/apptracer_flutter/pull/36).
+
 <a id="task-34"></a>
 
 ### П. 34. Общая наблюдаемость доставки и lifecycle
