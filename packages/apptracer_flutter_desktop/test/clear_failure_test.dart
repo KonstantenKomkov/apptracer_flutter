@@ -22,12 +22,18 @@ void main() {
     expect(result.state, TracerCollectionState.error);
     expect(result.reason, 'native_cleanup_failed');
     expect(adapter.isEnabled, false);
-    expect((await adapter.stopAndClearCollection()).state,
-        TracerCollectionState.error);
-    expect((await adapter.startCollection(options)).state,
-        TracerCollectionState.error);
+    expect(
+      (await adapter.stopAndClearCollection()).state,
+      TracerCollectionState.error,
+    );
+    expect(
+      (await adapter.startCollection(options)).state,
+      TracerCollectionState.error,
+    );
     expect(probe.calls.where((c) => c.method == 'initNativeSdk'), hasLength(1));
     expect(
-        probe.calls.where((c) => c.method == 'clearNativeSdk'), hasLength(1));
+      probe.calls.where((c) => c.method == 'clearNativeSdk'),
+      hasLength(1),
+    );
   });
 }

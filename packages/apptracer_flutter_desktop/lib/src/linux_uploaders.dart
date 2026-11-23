@@ -14,40 +14,58 @@ final class _PollFd extends Struct {
 }
 
 /// Identifies only a same-user Crashpad process using this exact private queue.
-bool ownsLinuxCrashpad(String executable, List<String> arguments,
-        String database, int uid, int currentUid) =>
+bool ownsLinuxCrashpad(
+  String executable,
+  List<String> arguments,
+  String database,
+  int uid,
+  int currentUid,
+) =>
     uid == currentUid &&
     executable.split('/').last == 'crashpad_handler' &&
     arguments.contains('--database=$database');
 
 /// Identifies the native daemon by an open lock in this exact private queue.
-bool ownsLinuxNative(String executable, String lock, String database, int uid,
-        int currentUid) =>
+bool ownsLinuxNative(
+  String executable,
+  String lock,
+  String database,
+  int uid,
+  int currentUid,
+) =>
     uid == currentUid &&
     executable.split('/').last == 'sentry-crash' &&
     File(lock).parent.path == database &&
-    RegExp(r'^[0-9a-f-]{36}\.run\.daemon\.lock$')
-        .hasMatch(lock.split('/').last);
+    RegExp(
+      r'^[0-9a-f-]{36}\.run\.daemon\.lock$',
+    ).hasMatch(lock.split('/').last);
 
 /// Out-of-process uploaders may outlive their original application process.
 /// Linux pidfds let us terminate only the handler for our locked queue, without
 /// a PID-reuse race. Supported baseline: Ubuntu x86_64, kernel >= 5.3.
 class LinuxUploaders {
   static final _libc = DynamicLibrary.open('libc.so.6');
-  static final _uid =
-      _libc.lookupFunction<Uint32 Function(), int Function()>('getuid');
+  static final _uid = _libc.lookupFunction<Uint32 Function(), int Function()>(
+    'getuid',
+  );
   // glibc 2.35 has no pidfd wrappers, so use the x86_64 syscall ABI directly.
-  static final _open = _libc.lookupFunction<
-      IntPtr Function(IntPtr, Int32, Uint32),
-      int Function(int, int, int)>('syscall');
-  static final _signal = _libc.lookupFunction<
-      IntPtr Function(IntPtr, Int32, Int32, Pointer<Void>, Uint32),
-      int Function(int, int, int, Pointer<Void>, int)>('syscall');
-  static final _close =
-      _libc.lookupFunction<Int32 Function(Int32), int Function(int)>('close');
-  static final _poll = _libc.lookupFunction<
-      Int32 Function(Pointer<_PollFd>, UintPtr, Int32),
-      int Function(Pointer<_PollFd>, int, int)>('poll');
+  static final _open = _libc
+      .lookupFunction<
+        IntPtr Function(IntPtr, Int32, Uint32),
+        int Function(int, int, int)
+      >('syscall');
+  static final _signal = _libc
+      .lookupFunction<
+        IntPtr Function(IntPtr, Int32, Int32, Pointer<Void>, Uint32),
+        int Function(int, int, int, Pointer<Void>, int)
+      >('syscall');
+  static final _close = _libc
+      .lookupFunction<Int32 Function(Int32), int Function(int)>('close');
+  static final _poll = _libc
+      .lookupFunction<
+        Int32 Function(Pointer<_PollFd>, UintPtr, Int32),
+        int Function(Pointer<_PollFd>, int, int)
+      >('poll');
 
   /// Stops detached handlers before clearing/reusing storage or returning stop.
   /// The caller must hold the namespace lock for the entire operation.
@@ -98,8 +116,10 @@ class LinuxUploaders {
   static Future<bool> _matches(String process, String database, int uid) async {
     try {
       final status = await File('$process/status').readAsString();
-      final owner =
-          RegExp(r'^Uid:\s+(\d+)\s+(\d+)', multiLine: true).firstMatch(status);
+      final owner = RegExp(
+        r'^Uid:\s+(\d+)\s+(\d+)',
+        multiLine: true,
+      ).firstMatch(status);
       if (owner == null ||
           int.parse(owner.group(1)!) != uid ||
           int.parse(owner.group(2)!) != uid) {
@@ -108,8 +128,10 @@ class LinuxUploaders {
       // Check the readable command line first: same-user sandboxed processes
       // may deny access to exe/fd and are unrelated to our uploaders.
       final args = utf8
-          .decode(await File('$process/cmdline').readAsBytes(),
-              allowMalformed: true)
+          .decode(
+            await File('$process/cmdline').readAsBytes(),
+            allowMalformed: true,
+          )
           .split('\u0000');
       final name = args.first.split('/').last;
       if (name != 'sentry-crash' && name != 'crashpad_handler') return false;

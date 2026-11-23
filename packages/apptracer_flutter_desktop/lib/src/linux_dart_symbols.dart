@@ -9,6 +9,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// Missing, corrupt or mismatched maps leave the original SDK event intact.
 class LinuxDartSymbols {
   /// [directory] is injectable for isolated tests. Construction performs no IO.
+  // Keep the existing public argument name rather than renaming it to _directory.
+  // ignore: prefer_initializing_formals
   LinuxDartSymbols({String? directory}) : _directory = directory;
 
   final String? _directory;
@@ -30,11 +32,13 @@ class LinuxDartSymbols {
       }
       // Compare with the actual loaded ELF, not just a user-supplied stack ID.
       final images = event.debugMeta?.images ?? <DebugImage>[];
-      if (!images.any((image) =>
-          image.type == 'elf' &&
-          image.codeId == id &&
-          image.codeFile?.endsWith('/libapp.so') == true &&
-          _hex(image.imageAddr) == base)) {
+      if (!images.any(
+        (image) =>
+            image.type == 'elf' &&
+            image.codeId == id &&
+            image.codeFile?.endsWith('/libapp.so') == true &&
+            _hex(image.imageAddr) == base,
+      )) {
         return event;
       }
       if (_loadedId != id) {
@@ -83,7 +87,8 @@ class LinuxDartSymbols {
 
   Future<_SourceMap?> _load(String id) async {
     try {
-      final directory = _directory ??
+      final directory =
+          _directory ??
           '${File(Platform.resolvedExecutable).parent.path}/lib/apptracer-dart-symbols';
       final file = File('$directory/$id.json.gz');
       if (await file.length() > 16 * 1024 * 1024) return null;
@@ -100,8 +105,10 @@ class LinuxDartSymbols {
 
   static int? _hex(String? value) => value == null
       ? null
-      : int.tryParse(value.startsWith('0x') ? value.substring(2) : value,
-          radix: 16);
+      : int.tryParse(
+          value.startsWith('0x') ? value.substring(2) : value,
+          radix: 16,
+        );
 }
 
 class _SourceMap {

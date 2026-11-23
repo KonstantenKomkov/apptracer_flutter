@@ -1,3 +1,6 @@
+// Existing public test argument names stay unchanged.
+// ignore_for_file: prefer_initializing_formals
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -12,8 +15,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 class WindowsDartSymbols {
   /// [directory] is injectable for isolated tests. Construction performs no IO.
   WindowsDartSymbols({String? directory, String? appImage})
-      : _directory = directory,
-        _appImage = appImage;
+    : _directory = directory,
+      _appImage = appImage;
 
   final String? _directory;
   final String? _appImage;
@@ -36,8 +39,10 @@ class WindowsDartSymbols {
       }
       // Flutter's Windows AOT image is ELF mapped by the VM, not a PE DLL.
       // Verify its GNU build ID against both the reported stack and source map.
-      _imageIdentity ??= windowsElfIdentity(_appImage ??
-          '${File(Platform.resolvedExecutable).parent.path}/data/app.so');
+      _imageIdentity ??= windowsElfIdentity(
+        _appImage ??
+            '${File(Platform.resolvedExecutable).parent.path}/data/app.so',
+      );
       if (await _imageIdentity != id) return event;
       if (_loadedId != id) {
         _loadedId = id;
@@ -85,7 +90,8 @@ class WindowsDartSymbols {
 
   Future<_SourceMap?> _load(String id) async {
     try {
-      final directory = _directory ??
+      final directory =
+          _directory ??
           '${File(Platform.resolvedExecutable).parent.path}/data/apptracer-dart-symbols';
       final file = File('$directory/$id.json.gz');
       if (await file.length() > 16 * 1024 * 1024) return null;
@@ -102,8 +108,10 @@ class WindowsDartSymbols {
 
   static int? _hex(String? value) => value == null
       ? null
-      : int.tryParse(value.startsWith('0x') ? value.substring(2) : value,
-          radix: 16);
+      : int.tryParse(
+          value.startsWith('0x') ? value.substring(2) : value,
+          radix: 16,
+        );
 }
 
 class _SourceMap {

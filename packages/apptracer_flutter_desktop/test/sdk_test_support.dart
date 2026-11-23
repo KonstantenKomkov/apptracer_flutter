@@ -10,36 +10,41 @@ class NativeSdkProbe {
   void install() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-            const MethodChannel('dev.fluttercommunity.plus/package_info'),
-            (_) async => <String, dynamic>{
-                  'appName': 'SDK test',
-                  'packageName': 'dev.apptracer.test',
-                  'version': '1.0.0',
-                  'buildNumber': '1',
-                  'buildSignature': '',
-                });
+          const MethodChannel('dev.fluttercommunity.plus/package_info'),
+          (_) async => <String, dynamic>{
+            'appName': 'SDK test',
+            'packageName': 'dev.apptracer.test',
+            'version': '1.0.0',
+            'buildNumber': '1',
+            'buildSignature': '',
+          },
+        );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('sentry_flutter'),
-            (call) async {
-      calls.add(call);
-      if (onCall != null) return onCall!(call);
-      return null;
-    });
+        .setMockMethodCallHandler(const MethodChannel('sentry_flutter'), (
+          call,
+        ) async {
+          calls.add(call);
+          if (onCall != null) return onCall!(call);
+          return null;
+        });
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-            const MethodChannel('apptracer_flutter_desktop/lifecycle'),
-            (call) async {
-      calls.add(call);
-      if (onCall != null) {
-        final result = await onCall!(call);
-        if (result != null) return result;
-      }
-      return <String, Object?>{
-        'state': call.method == 'initNativeSdk' ? 'enabled' : 'restartRequired',
-        if (call.method == 'clearNativeSdk')
-          'reason': 'macos_cleared_restart_required',
-      };
-    });
+          const MethodChannel('apptracer_flutter_desktop/lifecycle'),
+          (call) async {
+            calls.add(call);
+            if (onCall != null) {
+              final result = await onCall!(call);
+              if (result != null) return result;
+            }
+            return <String, Object?>{
+              'state': call.method == 'initNativeSdk'
+                  ? 'enabled'
+                  : 'restartRequired',
+              if (call.method == 'clearNativeSdk')
+                'reason': 'macos_cleared_restart_required',
+            };
+          },
+        );
   }
 
   List<Map<String, dynamic>> get events =>

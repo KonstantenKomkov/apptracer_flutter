@@ -10,8 +10,10 @@ class MacOSLifecycle {
   static const channel = MethodChannel('apptracer_flutter_desktop/lifecycle');
 
   /// Awaits native acknowledgement and rejects explicit native failures.
-  static Future<TracerCollectionResult> invoke(String method,
-      [Map<String, Object?>? arguments]) async {
+  static Future<TracerCollectionResult> invoke(
+    String method, [
+    Map<String, Object?>? arguments,
+  ]) async {
     final result = await channel.invokeMapMethod<Object?, Object?>(method, {
       ...?arguments,
       'owner': _owner,

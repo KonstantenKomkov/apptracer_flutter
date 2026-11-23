@@ -16,36 +16,57 @@ void main() {
     const executable = '/opt/example/lib/crashpad_handler';
     const queue = '/home/user/.local/share/apptracer_desktop/example/v1/queue';
     expect(
-        ownsLinuxCrashpad(executable, ['--database=$queue'], queue, 1000, 1000),
-        true);
+      ownsLinuxCrashpad(executable, ['--database=$queue'], queue, 1000, 1000),
+      true,
+    );
     expect(
-        ownsLinuxCrashpad(
-            executable, ['--database=$queue-other'], queue, 1000, 1000),
-        false);
+      ownsLinuxCrashpad(
+        executable,
+        ['--database=$queue-other'],
+        queue,
+        1000,
+        1000,
+      ),
+      false,
+    );
     expect(
-        ownsLinuxCrashpad(executable, ['--database=$queue'], queue, 1001, 1000),
-        false);
+      ownsLinuxCrashpad(executable, ['--database=$queue'], queue, 1001, 1000),
+      false,
+    );
     expect(
-        ownsLinuxCrashpad(
-            '/usr/bin/unrelated', ['--database=$queue'], queue, 1000, 1000),
-        false);
+      ownsLinuxCrashpad(
+        '/usr/bin/unrelated',
+        ['--database=$queue'],
+        queue,
+        1000,
+        1000,
+      ),
+      false,
+    );
     expect(
-        ownsLinuxCrashpad(
-            executable, ['--annotation=$queue'], queue, 1000, 1000),
-        false);
+      ownsLinuxCrashpad(executable, ['--annotation=$queue'], queue, 1000, 1000),
+      false,
+    );
   });
   test('native daemon requires an open lock in the exact owned queue', () {
     const db = '/tmp/apptracer/queue';
     const lock = '$db/01234567-0123-0123-0123-0123456789ab.run.daemon.lock';
     expect(
-        ownsLinuxNative('/opt/app/sentry-crash', lock, db, 1000, 1000), true);
+      ownsLinuxNative('/opt/app/sentry-crash', lock, db, 1000, 1000),
+      true,
+    );
     expect(
-        ownsLinuxNative('/opt/app/sentry-crash', lock, '$db-other', 1000, 1000),
-        false);
+      ownsLinuxNative('/opt/app/sentry-crash', lock, '$db-other', 1000, 1000),
+      false,
+    );
     expect(
-        ownsLinuxNative('/opt/app/sentry-crash', lock, db, 1001, 1000), false);
+      ownsLinuxNative('/opt/app/sentry-crash', lock, db, 1001, 1000),
+      false,
+    );
     expect(ownsLinuxNative('/opt/app/unrelated', lock, db, 1000, 1000), false);
-    expect(ownsLinuxNative('/opt/app/sentry-crash', '$db/file', db, 1000, 1000),
-        false);
+    expect(
+      ownsLinuxNative('/opt/app/sentry-crash', '$db/file', db, 1000, 1000),
+      false,
+    );
   });
 }
