@@ -187,11 +187,11 @@ class UnsupportedTracerPlatform extends TracerPlatform {
     debugPrint(
       'apptracer_flutter: no Tracer implementation is registered for '
       '${defaultTargetPlatform.name}, so Dart errors are being discarded. '
-      'Android and iOS are covered by the bundled native plugins. On any '
-      'other target, register the pure-Dart transport yourself: '
-      'TracerPlatform.instance = TracerHttpTracer(...) from '
-      'package:apptracer_flutter_http, with TracerOptions.appToken set. '
-      'See docs/platform-matrix.md.',
+      'Android and iOS are covered by the bundled native plugins. On macOS, '
+      'Windows and Ubuntu Linux, add optional apptracer_flutter_desktop and '
+      'set TracerOptions.dsn. Web uses its project appToken. For Aurora OS '
+      'and other targets, consult docs/platform-matrix.md before selecting '
+      'a custom transport.',
     );
   }
 

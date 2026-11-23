@@ -22,8 +22,12 @@ request from the vendor's JS SDK and is written down in
 > [`apptracer_flutter_sentry`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_sentry).
 > Split 2026-08-26, before the first release.
 
-On **web** it is used automatically by `apptracer_flutter_web`. On **desktop and
-Aurora OS** register it yourself:
+On **web** it is used automatically by `apptracer_flutter_web`. Supported desktop
+configurations should use optional `apptracer_flutter_desktop` with the official
+Sentry SDK and DSN rather than the manual HTTP transport. Manual registration remains
+for custom/legacy scenarios; Aurora has no verified default HTTP integration. See the
+[platform matrix](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
+An example of manual registration:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';

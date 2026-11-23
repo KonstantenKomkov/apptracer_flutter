@@ -22,8 +22,12 @@ Android-плагин. Формат восстановлен перехватом
 > [`apptracer_flutter_sentry`](https://github.com/KonstantenKomkov/apptracer_flutter/tree/main/packages/apptracer_flutter_sentry).
 > Разделены 26.08.2026, до первой публикации.
 
-На **web** его подключает `apptracer_flutter_web` автоматически. На **десктопе
-и Аврора ОС** регистрируйте сами:
+На **web** его подключает `apptracer_flutter_web` автоматически. Для поддерживаемых
+desktop-конфигураций рекомендуем optional `apptracer_flutter_desktop` с официальным
+Sentry SDK и DSN, а не ручной HTTP transport. Ручная регистрация остаётся для
+собственных/legacy сценариев; для Авроры нет проверенного HTTP-решения по умолчанию.
+См. [матрицу платформ](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md).
+Пример ручной регистрации:
 
 ```dart
 import 'package:apptracer_flutter/apptracer_flutter.dart';

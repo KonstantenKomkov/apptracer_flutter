@@ -77,9 +77,9 @@ example-ios: $(TRACER_ENV) ## Пример на iOS
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter run --dart-define=TRACER_APP_TOKEN=$$TRACER_IOS_APP_TOKEN
 
-# Web с 26.08.2026 говорит с собственным API Tracer и хочет appToken
-# JS-проекта. Десктопной цели здесь нет: платформа не поддерживается, а DSN,
-# которого она требовала, вендор не выдаёт ни одному проекту.
+# Web говорит с собственным API Tracer и использует appToken JS-проекта.
+# Desktop собирается отдельным example: optional apptracer_flutter_desktop
+# использует официальный Sentry SDK и DSN соответствующего Tracer-проекта.
 example-web: $(TRACER_ENV) ## Пример в Chrome (собственный API Tracer)
 	@$(LOAD_ENV) && cd $(EXAMPLE) && \
 		flutter run -d chrome --dart-define=TRACER_APP_TOKEN=$$TRACER_JS_APP_TOKEN
