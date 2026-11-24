@@ -8,11 +8,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  apptracer_flutter_platform_interface: ^0.3.0
+  http: ^1.2.0
+  sentry: 9.30.1
   aurora_client_wrapper: 1.17.1
 flutter:
   plugin:
     platforms:
       aurora:
+        dartPluginClass: AuroraTracerPlatform
         pluginEntryPointHeader: plugin.h
         pluginEntryPoint: ApptracerFlutterAuroraRegister
         requiresExclude:

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_aurora/apptracer_flutter_aurora.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -23,6 +24,22 @@ Future<void> main() async {
   final lines = await input.readAsLines();
   await input.delete();
   final mode = lines.first;
+  if (mode.startsWith('facade-')) {
+    try {
+      await exerciseFacade(lines);
+      stdout.writeln('Acceptance $mode, worker exit 0');
+      await stdout.flush();
+      if (mode == 'facade-crash')
+        Process.killPid(pid, ProcessSignal.sigabrt);
+      else
+        exit(0);
+    } catch (error) {
+      if (error is StateError)
+        stderr.writeln('Acceptance failed: ${error.message}');
+      exit(3);
+    }
+    return;
+  }
   final network = File('$dir/fixture-network');
   final attempted = File('$dir/fixture-attempt');
   if (await network.exists()) await network.delete();
@@ -136,4 +153,72 @@ Future<void> main() async {
     stderr.writeln('Acceptance failed: ${error.runtimeType}');
     exit(3);
   }
+}
+
+@pragma('vm:never-inline')
+void throwFacadeError() => throw StateError('Аврора 2.0.0 facade acceptance');
+
+Future<void> exerciseFacade(List<String> lines) async {
+  final mode = lines.first;
+  final diagnostics = <TracerDeliveryDiagnostic>[];
+  final options = TracerOptions(
+    appToken: lines[1],
+    dsn: mode == 'facade-dart' ? lines[2] : null,
+    release: '2.0.0',
+    dist: '203',
+    auroraAccountScope: 'facade-fixture',
+    nativeInitialization: TracerNativeInitialization.deferred,
+    captureFlutterErrors: false,
+    capturePlatformDispatcherErrors: false,
+    captureZoneErrors: false,
+    preservePreviousReports: mode == 'facade-replay',
+    deliveryListener: diagnostics.add,
+  );
+  var runs = 0;
+  await Tracer.initialize(
+    options: options,
+    appRunner: () {
+      runs++;
+    },
+  );
+  if (runs != 1 || Tracer.isEnabled)
+    throw StateError('deferred_bootstrap_failed');
+  final result = await Tracer.startCollection(options);
+  if (!result.isEnabled)
+    throw StateError(result.reason ?? 'platform_unavailable');
+  if (mode == 'facade-replay') {
+    await waitForUpload();
+    return;
+  }
+  if (mode == 'facade-dart') {
+    // The subsequent identity transition discards the large native log.
+    await Tracer.recordLog('ю𐍈' * 24000);
+  }
+  await Tracer.setCustomKey(key: 'removed_key', value: 'old');
+  await Tracer.setUserId('fixture-previous-user');
+  await Tracer.removeCustomKey('removed_key');
+  await Tracer.setUserId(null);
+  await Tracer.setCustomKey(key: 'aurora_public_api', value: 'проверено');
+  await Tracer.setCustomKey(key: 'aurora_public_api', value: 'проверено');
+  Tracer.log('Контрольный шаг через публичный API', category: 'аврора');
+  if (mode == 'facade-dart') {
+    try {
+      throwFacadeError();
+    } catch (error, stack) {
+      await Tracer.recordError(error, stack);
+    }
+    if (!diagnostics.any(
+      (d) =>
+          d.operation == 'recordError' && d.state == TracerDeliveryState.sent,
+    ))
+      throw StateError('no_dart_delivery_receipt');
+    if ((await Tracer.stopAndClearCollection()).state ==
+            TracerCollectionState.disabled &&
+        !Tracer.isEnabled)
+      return;
+    throw StateError('facade_stop_failed');
+  }
+  await Future<void>.delayed(const Duration(milliseconds: 350));
+  if (diagnostics.any((d) => d.state == TracerDeliveryState.failed))
+    throw StateError('facade_operation_failed');
 }

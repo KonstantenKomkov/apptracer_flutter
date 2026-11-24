@@ -185,9 +185,15 @@ class Session {
     required(args, "version");
     if (args.value("build").toInt(-1) < 0 || !args.value("preserve").isBool())
       throw std::runtime_error("invalid_arguments");
+    const auto keys = args.value("keys").toObject();
+    for (auto it = keys.begin(); it != keys.end(); ++it) {
+      if (it.key().isEmpty() || it.key().contains(QChar::Null) || !it.value().isString() ||
+          it.value().toString().contains(QChar::Null)) throw std::runtime_error("invalid_arguments");
+    }
+    if (args.value("user").toString().contains(QChar::Null)) throw std::runtime_error("invalid_arguments");
     const auto owner = QCryptographicHash::hash(token.toUtf8() + '\0' + account.toUtf8(),
                                                QCryptographicHash::Sha256).toHex();
-    if (owner == activeOwner_ && ticket_.isEmpty()) {
+    if (owner == activeOwner_ && ticket_.isEmpty() && !args.value("replace").toBool()) {
       worker_.request({{"op", "status"}});
       return R"({"result":"active"})";
     }

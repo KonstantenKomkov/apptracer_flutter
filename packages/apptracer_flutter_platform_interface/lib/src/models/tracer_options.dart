@@ -37,6 +37,7 @@ class TracerOptions {
   const TracerOptions({
     this.appToken,
     this.iosAppToken,
+    this.auroraAccountScope,
     this.webAppToken,
     this.dsn,
     this.environment,
@@ -78,6 +79,10 @@ class TracerOptions {
 
   /// The iOS project's token, used instead of [appToken] on iOS.
   final String? iosAppToken;
+
+  /// Opaque consent scope for Aurora native replay. Required when restoring
+  /// previous Aurora reports. Use a distinct scope after changing accounts.
+  final String? auroraAccountScope;
 
   /// The web (JS) project's token, used instead of [appToken] on web.
   final String? webAppToken;
@@ -259,6 +264,7 @@ class TracerOptions {
   TracerOptions copyWith({
     String? appToken,
     String? iosAppToken,
+    String? auroraAccountScope,
     String? webAppToken,
     String? dsn,
     String? environment,
@@ -287,6 +293,7 @@ class TracerOptions {
     return TracerOptions(
       appToken: appToken ?? this.appToken,
       iosAppToken: iosAppToken ?? this.iosAppToken,
+      auroraAccountScope: auroraAccountScope ?? this.auroraAccountScope,
       webAppToken: webAppToken ?? this.webAppToken,
       dsn: dsn ?? this.dsn,
       environment: environment ?? this.environment,

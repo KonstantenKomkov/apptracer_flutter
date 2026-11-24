@@ -2,7 +2,7 @@
 
 Экспериментальный платформенный пакет для Flutter Аврора 3.41.4 и Aurora Build Tools
 5.2.1.200. Пакет регистрирует канал `apptracer_flutter/aurora` только в embedder
-Авроры. Включение сбора в фасаде 2.0.0 зависит от проверки отзыва согласия.
+Авроры. Пакет подключает публичный API фасада 2.0.0.
 
 ## Собрать и установить пример
 
@@ -58,3 +58,30 @@ adt device exec 'runtime-manager-tool Control start ru.apptracer.apptracer_flutt
 отчёта в кабинете.
 
 [Проверки отзыва, разных аккаунтов и восстановления сети](../../tool/aurora/acceptance/README.md).
+
+## Ошибки Dart через фасад 2.0.0
+
+Добавьте приложению зависимости `apptracer_flutter` и `apptracer_flutter_aurora`.
+Flutter Аврора регистрирует адаптер автоматически. Вызовите
+`Tracer.initialize(options: options, appRunner: ...)` с отложенной инициализацией,
+а после согласия пользователя вызовите `await Tracer.startCollection(options)`.
+
+```dart
+final options = TracerOptions(
+  appToken: appToken,
+  auroraAccountScope: accountScope,
+  nativeInitialization: TracerNativeInitialization.deferred,
+  release: '2.0.0',
+  dist: '203',
+  dsn: sentryDsn,
+);
+```
+
+App token включает отчёты о нативных падениях. Необязательный Sentry DSN того же
+проекта включает отдельную отправку обработанных исключений через Dart SDK.
+Без DSN операция `recordError` сообщает слушателю доставки `dart_dsn_missing`.
+`beforeSend` применяется к типу, сообщению, кадрам, ключам и breadcrumbs до отправки.
+`setUserId` пересоздаёт нативную сессию и очищает предыдущие отчёты и логи.
+Для смены аккаунта дождитесь `stopAndClearCollection()` и передайте новую область
+согласия. Перед повторной отправкой после перезапуска задайте прежний
+`auroraAccountScope` и `preservePreviousReports: true`.
