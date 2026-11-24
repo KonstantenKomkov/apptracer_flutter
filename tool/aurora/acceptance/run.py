@@ -12,7 +12,7 @@ DIRECTORY = '"$HOME/.local/share/ru.apptracer/apptracer_flutter_aurora_example"'
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('arm', 'upload', 'switch', 'revoke', 'retry', 'offline', 'hold', 'fresh', 'cancel', 'facade-crash', 'facade-replay', 'facade-dart'))
+    parser.add_argument('phase', choices=('arm', 'upload', 'switch', 'revoke', 'retry', 'offline', 'hold', 'fresh', 'cancel', 'facade-crash', 'facade-replay', 'facade-dart', 'facade-lifecycle'))
     parser.add_argument('ssh_arguments', nargs=argparse.REMAINDER,
                         help='-- followed by SSH options and user@emulator')
     args = parser.parse_args()
