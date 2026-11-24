@@ -1,7 +1,58 @@
 # Аврора: подготовка нативной сборки
 
-Дата: 2026-10-23. Независимая подготовительная часть №6. Flutter-плагин и RPM
-ещё не реализованы; поддержка платформы не объявлена.
+Целевая версия фасада — **2.0.0**. Приёмка плагина и RPM ведётся в
+[плане №1, №6–12](tasks/development_v1.md#task-1).
+
+<a id="emulator-audit"></a>
+
+## Проверка на эмуляторе 24 ноября 2026
+
+| Компонент | Проверка | Результат |
+| --- | --- | --- |
+| Эмулятор | ADT 0.7.13, `/etc/os-release`, `uname -m` внутри QEMU | Aurora 5.2.1.200 (Khabarovsk), release, aarch64 |
+| Библиотеки гостевой ОС | `getconf GNU_LIBC_VERSION`, `rpm -q libopenssl` | glibc 2.38, libopenssl 1.1.1w+git2-1.3.2.omp |
+| Flutter fork ОМП | Официальный архив macOS arm64, `flutter --version` и `aurora_embedder/pubspec.yaml` | Flutter 3.41.4 (`a0d3b222d7`), Dart 3.11.1, engine `4627d0f74a`, embedder 3.9.4 |
+| Tracer Native 0.1.15 | Проверка SHA-256 по lock-файлу, `dlopen(RTLD_NOW)` и поиск восьми функций в процессе гостевой ОС | `native_api_resolved: true`, build-id библиотеки `cccc68dd0127cd85200d275f452695760db925f7` |
+| Системный обработчик | Проверка пакета и `/proc/sys/kernel/core_pattern` до и после установки | В исходном образе обработчик был `\|/bin/false`. Установлен crash-dumper 0.1.4-1.1.11.omp. Применён его файл sysctl, вызов при SIGABRT виден в журнале |
+
+Команды для проверки библиотеки с Mac ARM и Docker. Из корня репозитория
+соберите диагностическую утилиту для Linux aarch64. Образ Debian используется
+только как компилятор. Загрузку проверяет динамический загрузчик гостевой Авроры.
+
+```sh
+python3 tool/prepare_aurora_sdk.py
+mkdir -p build/aurora-emulator
+docker run --rm --platform linux/arm64 --network=none \
+  -v "$PWD/tool/aurora:/src:ro" -v "$PWD/build/aurora-emulator:/out" \
+  python:3.10-bookworm g++ -std=c++11 /src/sdk_probe.cc -ldl -o /out/probe
+
+emu="$HOME/AuroraEmulator-5.2.1.200"
+"$emu/bin/adt" device list
+tool/aurora/check_emulator.sh build/aurora-emulator/probe \
+  -p 2223 -i "$emu/ssh/id_rsa" -o "UserKnownHostsFile=$emu/ssh/known_hosts" \
+  defaultuser@127.0.0.1
+```
+
+Используйте SSH-порт своего экземпляра. Скрипт работает от имени обычного
+пользователя и удаляет временные файлы при выходе. Ожидаемый ответ утилиты:
+
+```json
+{"native_api_resolved":true,"sdk_initialized":false,"collection_contract_supported":false}
+```
+
+Для подготовки чистого тестового образа внутри эмулятора выполните
+`sudo pkcon -y install crash-dumper` и
+`sudo /usr/lib/systemd/systemd-sysctl /usr/lib/sysctl.d/crash-dumper.conf`.
+Эти команды включают системный обработчик для всего эмулятора. У отдельного
+тестового процесса без установленного RPM обработчик сообщил
+`Application has empty version`. Затем через `adt device deploy` установлен
+тестовый нативный RPM `ru.apptracer.EmulatorAudit-2.0.0-1.aarch64`,
+подписанный тестовым ключом ОМП. При вызове `std::abort()` приложение завершилось
+с кодом 134. В `~/.cache/ru.apptracer/EmulatorAudit/` появились `time`,
+`version` со значением `2.0.0-1` и `minidump` размером 15 752 байта
+с сигнатурой `MDMP`. Приложение проверяет механизм ОС. Для №6 отдельно
+требуются Flutter MethodChannel, импорт дампа SDK до следующего `tracer_init`
+и отчёт в нужном проекте Tracer.
 
 ## Что можно воспроизвести сейчас
 
@@ -102,8 +153,8 @@ JSON manifest и диагностический журнал подготовк�
 
 ## Что блокирует следующие этапы
 
-1. Нужны Linux build environment, Aurora SDK/PSDK, Flutter fork и embedder с
-   закреплёнными версиями. Современный плагин должен использовать
+1. Для Flutter RPM на этом Mac используется Aurora SDK (BT) 5.2.1.200 и
+   [Flutter для ОС Аврора 3.41.4](https://developer.auroraos.ru/doc/extended/flutter/flutter_development/install). Современный плагин должен использовать
    `aurora_client_wrapper`, namespace `cw` и `pluginEntryPoint`, без регистрации
    на обычном upstream Linux. См. [миграцию ОМП](https://developer.auroraos.ru/doc/extended/flutter/migration_guide/3.32.7_to_3.35.7).
    При подготовке доступ по HTTPS к репозиториям Flutter/wrapper на hub.mos.ru
@@ -114,7 +165,7 @@ JSON manifest и диагностический журнал подготовк�
    См. [аудит](desktop-aurora-sdk-audit.md), B5. Старт будущего адаптера должен
    оставаться запрещённым для неподдерживаемого контракта, пока нет решения.
 3. Требуются app/plugin tokens C/C++ проекта, реальные каталоги приложения,
-   правила системных dumps, RPM, устройство/эмулятор, native crash/restart,
+   правила системных dumps, RPM, native crash/restart установленного Flutter-приложения,
    символизация и проверка Tracer. Отсутствие credentials не блокирует host-проверки.
 
 Источник закреплённой поставки: [Tracer Aurora quick start](https://apptracer.ru/doc/native-aurora/quick-start/).
