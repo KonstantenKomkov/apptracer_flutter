@@ -17,12 +17,8 @@ import tempfile
 import uuid
 
 
-def build_id(path):
-    description = subprocess.check_output(['file', '-b', str(path)], text=True)
-    match = re.search(r'BuildID\[\w+\]=([a-fA-F0-9]+)', description)
-    if not match:
-        raise ValueError(f'{path.name}: missing ELF build-id')
-    return match[1].lower()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from elf_build_id import build_id
 
 
 def dump_modules(path):
@@ -90,7 +86,7 @@ def main():
             with packaged.open('wb') as output:
                 subprocess.run(['bsdtar', '-xOf', rpm, member], stdout=output, check=True)
             identity = build_id(source)
-            if build_id(packaged) != identity or (modules is not None and modules.get(name) != identity):
+            if not identity or build_id(packaged) != identity or (modules is not None and modules.get(name) != identity):
                 raise ValueError(f'{name}: build-id mismatch')
             shutil.copy2(source, root / 'inputs' / name)
             records.append({'module': name, 'build_id': identity, 'path': member[1:],
