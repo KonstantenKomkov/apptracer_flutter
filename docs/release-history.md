@@ -6,7 +6,7 @@ start. Dated acceptance documents are historical evidence, not promises for newe
 
 ## Migrating the facade from 1.x to 2.0
 
-The 2.0 development version removes five deprecated exports from
+Facade 2.0.0 removes five deprecated exports from
 `package:apptracer_flutter/apptracer_flutter.dart`. If your application creates
 a `TracerClient`, move startup to the application's entry point:
 

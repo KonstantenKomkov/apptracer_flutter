@@ -7,7 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## 2.0.0-dev.1
+## 2.0.0
 
 - **Breaking:** the facade removes the deprecated exports of `TracerClient`,
   `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
