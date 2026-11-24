@@ -57,32 +57,12 @@ export 'package:apptracer_flutter_platform_interface/apptracer_flutter_platform_
         TracerSeverity,
         UnsupportedTracerPlatform;
 
-@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
-export 'src/breadcrumb_buffer.dart';
-@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
-export 'src/deduplicator.dart';
-@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
-export 'src/error_handler_chain.dart';
-@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
-export 'src/error_normalizer.dart';
-@Deprecated('Use the Tracer facade. This export will be removed in 2.0.0.')
-export 'src/tracer_client.dart';
-
 /// The entry point of the integration.
 ///
 /// Every method is safe to call before [initialize] and after
 /// [stopCollection]; calls simply do nothing while collection is off.
 abstract final class Tracer {
-  static TracerClient _client = TracerClient();
-
-  /// The client backing the facade.
-  ///
-  /// Exposed so tests can substitute a client wired to a fake platform.
-  @visibleForTesting
-  static TracerClient get client => _client;
-
-  @visibleForTesting
-  static set client(TracerClient value) => _client = value;
+  static TracerClient get _client => TracerClient.instance;
 
   /// Whether collection is currently running.
   static bool get isEnabled => _client.isEnabled;

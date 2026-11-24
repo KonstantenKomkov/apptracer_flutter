@@ -1,7 +1,6 @@
 import 'dart:ui' show ErrorCallback;
 
-import 'package:apptracer_flutter/apptracer_flutter.dart'
-    hide ErrorHandlerBindings;
+import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter/src/error_handler_chain.dart';
 import 'package:flutter/foundation.dart';
 
