@@ -115,8 +115,10 @@ class TracerClient {
       }
       return;
     }
-    final needsStop =
-        _started || _paused || _startingGeneration != null || platform.isEnabled;
+    final needsStop = _started ||
+        _paused ||
+        _startingGeneration != null ||
+        platform.isEnabled;
     _configureDelivery(options);
     _options = options;
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
