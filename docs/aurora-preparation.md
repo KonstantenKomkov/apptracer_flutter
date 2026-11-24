@@ -54,6 +54,56 @@ tool/aurora/check_emulator.sh build/aurora-emulator/probe \
 требуются Flutter MethodChannel, импорт дампа SDK до следующего `tracer_init`
 и отчёт в нужном проекте Tracer.
 
+### Обработанное исключение и аварийное завершение
+
+Репозиторий поставки VK на 24 ноября содержит один архив для Авроры,
+`tracer-native-aurora-0.1.15.zip`. В списке 20 экспортов есть
+`tracer_report_nonfatal_from_here()`. Она принимает ноль аргументов.
+Другая функция, `tracer_supports_arbitrary_dump()`, сообщает, может ли
+текущая сборка сохранить такой снимок.
+
+На эмуляторе выполнена [отдельная проверка](../tool/aurora/sdk_nonfatal_check.cc)
+с локальным тестовым ключом и новым каталогом. Проверка вызвала обе функции
+и посчитала файлы после возврата из `tracer_report_nonfatal_from_here()`.
+
+```json
+{"supported_before_init":false,"supported_after_init":false,"dump_files":0}
+```
+
+Для положительного контроля в подписанном RPM инициализирован Tracer, записаны
+тестовые ключ и лог, вызван `std::abort()`. При следующем запуске вызов
+`tracer_aurora_collect_minidump_from_cachedir()` перед `tracer_init()`
+скопировал 30 256 байт в `crashes/minidump.dmp` прошлой сессии. Копия
+совпала с системным файлом побайтово. В той же сессии найдены ключ и лог.
+Отправка в сеть при этих двух проверках не вызывалась.
+
+Flutter предоставляет исходное исключение и стек через свои обработчики.
+В подписанном Flutter RPM проверен отдельный путь с `sentry` 9.30.1 для Dart.
+Сборка выполнена на macOS arm64 с Aurora Build Tools 5.2.1.200, целевая
+платформа `aurora-arm64`, режим `--release`. Плагин, собранный с
+`aurora_client_wrapper` 1.17.1, ответил на вызов через MethodChannel и загрузил
+поставляемую с приложением библиотеку Tracer. В песочнице без разрешения
+`Internet` ОС отклонила создание сокета.
+
+При запуске установленного RPM из терминала эмулятора
+[тестовое приложение](../tool/aurora/dart_exception_check.dart) перехватило
+`StateError` и передало его с исходным стеком в официальный SDK Sentry для Dart.
+Приёмник на `127.0.0.1` внутри приложения получил HTTP envelope:
+
+```json
+{"path":"/api/1/envelope/","type":"StateError","message":"Bad state: aurora-dart-loopback","frames":5,"function":"throwAuditError","file":"main.dart","line":11}
+```
+
+Для воспроизведения создайте приложение `flutter-aurora create --platforms=aurora aurora_probe`,
+скопируйте тест в `lib/main.dart`, добавьте `sentry: 9.30.1` в зависимости
+и `aurora: {permissions: [Internet]}` в корень pubspec. Соберите
+`flutter-aurora build aurora --release --target-platform aurora-arm64`.
+В релизном приложении выводится фактический результат проверки.
+Для №7 остаются обычный запуск с разрешением сети, DSN нового проекта, проверка
+события в кабинете и явное решение о подключении второго транспорта.
+[Обработка ошибок Flutter](https://docs.flutter.dev/testing/errors) ·
+[Инструкция Tracer по Sentry DSN](https://apptracer.ru/doc/other-platforms/quick-start/).
+
 ## Что можно воспроизвести сейчас
 
 Из корня репозитория:
