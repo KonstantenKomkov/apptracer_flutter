@@ -1,7 +1,7 @@
 # apptracer_flutter_sentry
 
 Этот ручной транспорт архивирован. Исходники остаются по прежнему пути для
-Git-зависимостей. На поддерживаемых конфигурациях macOS, Windows и Ubuntu
+Git- и path-зависимостей. На поддерживаемых конфигурациях macOS, Windows и Ubuntu
 используйте необязательный адаптер `apptracer_flutter_desktop` с официальным
 Sentry SDK и DSN целевого проекта Tracer. Аврора ОС не поддерживается.
 [Переход на desktop-адаптер](../../docs/desktop-migration.md#moving-from-the-manual-transport).

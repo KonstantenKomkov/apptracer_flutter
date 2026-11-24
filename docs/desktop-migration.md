@@ -197,11 +197,17 @@ also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
 ## Moving from the manual transport
 
-The unpublished `apptracer_flutter_sentry` is archived in place for existing
-Git/path dependencies. Routine package checks cover the desktop adapter.
+For the facade 2.0.0 release, keep the manual transport archived at
+`packages/apptracer_flutter_sentry` with `publish_to: none` and outside the
+routine package checks. Existing Git subdirectory references and local paths
+can still resolve to that directory. The archive has no scheduled removal.
+[Consumer audit for issue #28](#manual-transport-consumer-audit).
 
-1. Remove `apptracer_flutter_sentry`, its `SentryProtocolTracer()` registration
-   and any separately initialized Sentry SDK. Add the optional desktop adapter.
+1. On supported macOS, Windows 11 x64 and Ubuntu 22.04.5 x86_64, remove the
+   archive's Git/path dependency, any matching dependency override, its Dart
+   import and the manual `SentryProtocolTracer()` registration. Install the
+   [desktop adapter](#external-application), which registers automatically.
+   Remove any separate Sentry SDK initialization.
 2. Keep the facade calls for errors, keys, breadcrumbs and user ID. Configure a
    Sentry DSN rather than an app token. Test with a new release identifier.
 3. Decide how to dispose of legacy SDK caches in your own application. The new
@@ -222,6 +228,24 @@ The main facade does not depend on Sentry. Adding the desktop package to a share
 mobile/desktop application does add Sentry's transitive native mobile plugins;
 conditional imports cannot remove them. A separate desktop app keeps those
 dependencies out of an existing mobile graph.
+
+### Manual transport consumer audit
+
+On 24 November 2026 we checked the facade and desktop examples at `89443ee`
+and 26 local checkouts of other Dart/Flutter projects. We searched package
+manifests, overrides and lockfiles for `apptracer_flutter_sentry`, and Dart
+sources for imports and `SentryProtocolTracer` registration.
+
+| Checked source | Result |
+| --- | --- |
+| `apptracer_flutter`, including both examples | The only Dart matches were the archived implementation and its own tests. Neither example depends on the archive. |
+| `farming` | Its earlier Git dependency at `e50788f5` selected `packages/apptracer_flutter`. At `ade43111` its lockfile resolves the facade to hosted 1.5.0. Neither revision uses the manual transport. |
+| `vkid-flutter-sdk`, `vk_maps_mapkit`, `push_token_tester` and the other locally available applications and libraries | No archive dependency, import or registration was found. |
+
+No checked application needs migration. Usage in third-party forks, private
+repositories outside the workspace and other revisions remains unknown. Keeping
+the directory in place preserves the path those consumers may have pinned.
+[Issue #28](https://github.com/KonstantenKomkov/apptracer_flutter/issues/28).
 
 ## Windows consumer
 

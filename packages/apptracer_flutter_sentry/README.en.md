@@ -1,7 +1,7 @@
 # apptracer_flutter_sentry
 
 This manual transport is archived. Its source remains at the same path for
-existing Git dependencies. On supported macOS, Windows and Ubuntu configurations,
+existing Git and path dependencies. On supported macOS, Windows and Ubuntu configurations,
 use the optional `apptracer_flutter_desktop` adapter with the official Sentry SDK
 and the target Tracer project's DSN. Aurora OS is unsupported.
 [Migration instructions](../../docs/desktop-migration.md#moving-from-the-manual-transport).
