@@ -2,6 +2,26 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-1"></a>
+
+### П. 1. Проверить SDK, конфигурацию проектов и границы поддержки
+
+24 ноября 2026 завершена сверка Авроры с ранее принятыми
+[Windows](../windows-local-acceptance.md), [macOS](../macos-local-acceptance.md)
+и [Ubuntu](../linux-preparation.md). Для Авроры подтверждены Flutter 3.41.4,
+Dart 3.11.1, embedder 3.9.4, Build Tools и эмулятор 5.2.1.200 aarch64.
+Верифицированы app token, plugin token и DSN одного C/C++ проекта.
+В кабинете просмотрены нативные SIGABRT и отдельное Dart-событие с кадром
+`auroraLiveFailure` в `main.dart:23`. Нативный ключ и UTF-8 лог присутствуют.
+
+Tracer Native 0.1.15 собирает системные минидампы. Его функция nonfatal на
+эмуляторе вернула управление без отчёта. Путь для Dart проверен отдельно
+с `sentry` 9.30.1. Общий фасад и обычный Linux не регистрируют
+Aurora-адаптер. Продуктовая интеграция относится к №6–7, отзыв согласия,
+очистка и привязка символов — к №8–9.
+[Матрица](../platform-matrix.md) · [Протокол](../aurora-preparation.md#emulator-audit) ·
+[PR №43](https://github.com/KonstantenKomkov/apptracer_flutter/pull/43).
+
 <a id="task-5"></a>
 
 ### П. 5. Символизация Windows, macOS и Ubuntu/Linux

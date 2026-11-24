@@ -19,6 +19,7 @@ import zipfile
 
 from elf_build_id import build_id
 
+DOWNLOAD_TIMEOUT_SECONDS = 480
 LOCK_PATH = Path(__file__).parent / 'aurora/sdk.lock.json'
 # ELF class, e_machine. armv7hl is inspected but not an initial supported target.
 ELF_ABIS = {'aarch64': (2, 183), 'x86_64': (2, 62), 'armv7hl': (1, 40)}
@@ -94,8 +95,8 @@ def prepare(destination, archive=None, verify_only=False, lock=None):
             with urllib.request.urlopen(lock['url'], timeout=30) as response:
                 with archive.open('wb') as output:
                     while True:
-                        if time.monotonic() - started > 180:
-                            raise OSError(f'SDK download exceeded 180 seconds after {received} bytes; '
+                        if time.monotonic() - started > DOWNLOAD_TIMEOUT_SECONDS:
+                            raise OSError(f'SDK download exceeded {DOWNLOAD_TIMEOUT_SECONDS} seconds after {received} bytes; '
                                           'retry or provide --archive from a verified local download')
                         block = response.read(128 * 1024)
                         if not block:

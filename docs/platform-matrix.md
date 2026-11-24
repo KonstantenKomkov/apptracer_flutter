@@ -21,7 +21,7 @@ macOS 15 arm64 CI and isolated consumer checks:
 | macOS (optional 1.0.0) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | stable; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
 | Windows 11 x64 (optional 1.0.0) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
 | Ubuntu 22.04.5 x86_64 (optional 1.0.0) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
-| Aurora OS | planned native Tracer C/C++ integration | unverified | unverified | unverified | unverified | **not supported in this release** — never run |
+| Aurora OS | optional adapter in development | Dart SDK test event with source line | SIGABRT from signed native test RPM | unverified | unverified | [Aurora 5.2.1.200 aarch64 emulator and Tracer receipts](aurora-preparation.md#emulator-audit); product acceptance pending |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
 [status.md](status.md) for what has and has not been exercised against a real
@@ -426,8 +426,7 @@ historical CI evidence. The current native backend additionally passed Windows 1
 [local lifecycle, source-map, live delivery and external-consumer checks](windows-local-acceptance.md).
 Stop/clear and all 24 current Windows CI scenarios passed; a fresh Windows 11 x64
 VM without build tools passed 11 runtime/consumer checks. Windows 10/ARM64 remain
-outside this evidence. Aurora still needs a target
-environment and a Flutter plugin. Ubuntu/Linux was added to this iteration on
+outside this evidence. The Aurora emulator passed the native SDK loader probe. Flutter plugin and RPM acceptance remain open. Ubuntu/Linux was added to this iteration on
 2026-10-24 in [task 13](tasks/development_v1.md#task-13); Linux runner, official
 SDK integration, release, Dart/native loopback, persistent queue and lifecycle now
 have [WSL2 and clean Ubuntu VM evidence](linux-preparation.md). Local symbolication
