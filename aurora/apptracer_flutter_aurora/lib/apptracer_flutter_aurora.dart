@@ -19,7 +19,7 @@ class AuroraTracer {
   /// Supply the same opaque [accountScope] on restart to replay approved reports.
   static Future<String> startCollection({
     required String appToken,
-    required String accountScope,
+    required String? accountScope,
     required String versionName,
     required int versionCode,
     bool preservePreviousReports = false,
