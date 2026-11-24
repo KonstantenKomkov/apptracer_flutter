@@ -1,8 +1,68 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
+import 'package:apptracer_flutter_aurora/apptracer_flutter_aurora.dart';
+
+Future<void> verifyConsentRecovery(String token) async {
+  final path =
+      "${Platform.environment['HOME']}/.local/share/ru.apptracer/apptracer_flutter_aurora_example/apptracer-native-v2/consent";
+  final lease = File(path);
+  final options = TracerOptions(
+    appToken: token,
+    nativeInitialization: TracerNativeInitialization.deferred,
+  );
+  if (!(await Tracer.startCollection(options)).isEnabled ||
+      jsonDecode(await lease.readAsString())['scoped'] != false) {
+    throw StateError('unscoped_session_not_isolated');
+  }
+  final next = await AuroraTracer.startCollection(
+    appToken: token,
+    accountScope: 'no-replay',
+    versionName: '2.0.0',
+    versionCode: 1,
+    preservePreviousReports: true,
+  );
+  if (next != 'started') throw StateError('anonymous_session_reused');
+
+  // A nonempty directory forces removal of this fixture's consent file to fail.
+  await lease.delete();
+  final blocked = Directory(path);
+  await blocked.create();
+  final sentinel = File('$path/test-only');
+  await sentinel.writeAsString('fixture');
+  try {
+    final result = await Tracer.stopAndClearCollection();
+    final prctl = DynamicLibrary.process()
+        .lookupFunction<
+          Int32 Function(
+            Int32,
+            UnsignedLong,
+            UnsignedLong,
+            UnsignedLong,
+            UnsignedLong,
+          ),
+          int Function(int, int, int, int, int)
+        >('prctl');
+    if (result.state != TracerCollectionState.error ||
+        prctl(3, 0, 0, 0, 0) != 0) {
+      throw StateError('dump_enabled_after_failed_withdrawal');
+    }
+    // Even while the filesystem remains unavailable a new grant must stay off.
+    if ((await Tracer.startCollection(options)).isEnabled)
+      throw StateError('failed_cleanup_bypassed');
+  } finally {
+    await sentinel.delete();
+    await blocked.delete();
+  }
+  if (!(await Tracer.startCollection(options)).isEnabled ||
+      (await Tracer.stopAndClearCollection()).state !=
+          TracerCollectionState.disabled) {
+    throw StateError('cleanup_recovery_failed');
+  }
+}
 
 /// The first receiver withholds its HTTP response until collection is revoked.
 Future<void> exerciseLifecycle(String token) async {
@@ -120,6 +180,7 @@ Future<void> exerciseLifecycle(String token) async {
     await Tracer.stopCollection();
     await Tracer.stopCollection();
     await requireDisabled();
+    await verifyConsentRecovery(token);
   } finally {
     await server.close(force: true);
   }

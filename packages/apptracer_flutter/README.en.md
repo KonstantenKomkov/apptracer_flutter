@@ -11,6 +11,8 @@ error-monitoring service by OK.TECH / VK.
 
 Русская версия: [README.md](README.md).
 
+Facade 2.0.0 supports the optional Flutter Aurora source adapter. Use an app token for native crashes and the same project’s DSN for Dart exceptions. [Installation and tested versions](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/aurora-release.md).
+
 ## Quick start
 
 **1. Install the package** from your Flutter application directory.

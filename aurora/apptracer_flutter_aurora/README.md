@@ -1,8 +1,10 @@
 # Tracer для Flutter на ОС Аврора
 
-Экспериментальный платформенный пакет для Flutter Аврора 3.41.4 и Aurora Build Tools
+Платформенный пакет версии 2.0.0 для Flutter Аврора 3.41.4 и Aurora Build Tools
 5.2.1.200. Пакет регистрирует канал `apptracer_flutter/aurora` только в embedder
 Авроры. Пакет подключает публичный API фасада 2.0.0.
+
+[English guide](README.en.md). Пакет устанавливается из checkout исходного кода.
 
 ## Собрать и установить пример
 

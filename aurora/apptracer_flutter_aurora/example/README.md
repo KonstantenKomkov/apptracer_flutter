@@ -1,5 +1,7 @@
 # Проверить Tracer на Авроре
 
+[English guide](README.en.md).
+
 Подготовьте Tracer Native 0.1.15 и соберите пример с Flutter Аврора 3.41.4.
 Команды выполняются из корня checkout. Для рабочего SDK с обычным расположением
 Build Tools можно опустить параметр `--sdk-dir`.

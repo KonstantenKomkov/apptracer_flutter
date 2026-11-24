@@ -9,6 +9,10 @@ as pub.dev expects.
 
 ## 2.0.0
 
+- Support the optional source-distributed Flutter Aurora adapter with platform
+  interface 0.3.1. It uses the native SDK for crashes and an explicit project
+  DSN for Dart errors. A deferred bootstrap also stops a previous active session.
+
 - **Breaking:** the facade removes the deprecated exports of `TracerClient`,
   `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
   `EventDeduplicator` and `BreadcrumbBuffer`, plus the test-only `Tracer.client`

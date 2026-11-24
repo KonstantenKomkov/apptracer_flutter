@@ -1,5 +1,12 @@
 # Publishing
 
+## Aurora and facade 2.0.0 candidate
+
+Publish platform interface 0.3.1 before facade 2.0.0. The Aurora adapter is
+distributed from a pinned source checkout for the Flutter Aurora fork. The
+external candidate consumer uses the two unpublished shared packages locally.
+[Installation and release checks](aurora-release.md).
+
 ## Coordinated desktop 2.0.0 release
 
 Facade 1.5.0 and desktop 2.0.0 use platform interface 0.3.0. The interface

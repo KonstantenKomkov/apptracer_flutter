@@ -11,6 +11,8 @@
 
 English version: [README.en.md](README.en.md).
 
+Для ОС Аврора в кандидате 2.0.0 подключите отдельный адаптер для Flutter Аврора. Нативным отчётам нужен app token, ошибкам Dart также нужен DSN того же проекта. [Подключение и проверенные версии](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/aurora-release.md).
+
 ## Быстрый старт
 
 **1. Установите пакет** из каталога вашего Flutter-приложения.
