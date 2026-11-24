@@ -10,7 +10,7 @@ work=$(mktemp -d "$repo/build/aurora-runner-XXXXXX")
 mkdir -p "$work/example/aurora"
 cp "$plugin/example/pubspec.yaml" "$work/example/"
 mkdir -p "$work/example/lib"
-cp "$fixture/main.dart" "$fixture/lifecycle.dart" "$work/example/lib/"
+cp "$fixture/main.dart" "$fixture/lifecycle.dart" "$fixture/live.dart" "$work/example/lib/"
 cp "$plugin/example/aurora/CMakeLists.txt" "$work/example/aurora/"
 # Allow Dart FFI to resolve the intentional crash hook in this test executable.
 echo 'set_target_properties(${BINARY_NAME} PROPERTIES ENABLE_EXPORTS ON)' >> "$work/example/aurora/CMakeLists.txt"
