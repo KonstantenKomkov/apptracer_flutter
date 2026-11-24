@@ -164,11 +164,11 @@ class Session {
     worker_.stop();
     activeOwner_.clear();
     ticket_.clear();
+    setMode(0);
     unmap();
     if (!store_) store_ = std::make_unique<Store>();
     fs::remove(store_->lease);
     syncDirectory(store_->root);
-    setMode(0);
     fs::remove_all(store_->sessions);
     wipeCache(store_->cache);
     store_.reset();
@@ -178,7 +178,10 @@ class Session {
   }
   std::string prepare(const QJsonObject& args) {
     const auto token = required(args, "token");
-    const auto account = required(args, "account");
+    // An unscoped session may collect a crash, but cannot authorize its replay.
+    const bool scoped = !args.value("account").isNull();
+    const auto account = scoped ? required(args, "account") : QString();
+    if (!scoped && args.value("preserve").toBool()) throw std::runtime_error("account_scope_required");
     required(args, "version");
     if (args.value("build").toInt(-1) < 0 || !args.value("preserve").isBool())
       throw std::runtime_error("invalid_arguments");
@@ -214,7 +217,9 @@ class Session {
         previous = QJsonDocument::fromJson(lease.read(4096)).object();
       lease.close();
       const auto old = previous.value("marker").toString().toLatin1();
-      const bool preserve = args.value("preserve").toBool() &&
+      // Earlier facade builds used the literal "no-replay" for anonymous sessions.
+      const bool priorScoped = previous.value("scoped").toBool(account != "no-replay");
+      const bool preserve = scoped && priorScoped && args.value("preserve").toBool() &&
           previous.value("owner").toString().toLatin1() == owner &&
           old.size() == 32 && QByteArray::fromHex(old).toHex() == old;
       if (!preserve) db.clear();
@@ -263,7 +268,7 @@ class Session {
       worker_.request(init);
       // Commit the new lease before allowing either the next dump or upload.
       QSaveFile next(QString::fromStdString(db.lease.string()));
-      const auto content = QJsonDocument(QJsonObject{{"owner", QString::fromLatin1(owner)},
+      const auto content = QJsonDocument(QJsonObject{{"scoped", scoped}, {"owner", QString::fromLatin1(owner)},
                                              {"marker", QString::fromLatin1(id)}}).toJson(QJsonDocument::Compact);
       if (!next.open(QIODevice::WriteOnly) || next.write(content) != content.size() || !next.commit())
         throw std::runtime_error("consent_commit_failed");
