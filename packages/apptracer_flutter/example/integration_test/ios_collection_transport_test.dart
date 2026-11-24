@@ -103,7 +103,6 @@ void main() {
     expect(restart.isEnabled, isFalse);
     expect(Tracer.isEnabled, isFalse);
     expect(Tracer.breadcrumbs, isEmpty);
-    expect(Tracer.client.customKeys, isEmpty);
     await Future<void>.delayed(const Duration(seconds: 35));
     expect(requests.length, atStop,
         reason:

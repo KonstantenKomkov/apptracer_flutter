@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:apptracer_flutter/apptracer_flutter.dart' hide TracerClient;
+import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter/src/tracer_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -391,7 +391,7 @@ void main() {
 
   test('deferred bootstrap and explicit starts run appRunner only once',
       () async {
-    Tracer.client = client;
+    TracerClient.instance = client;
     var runs = 0;
     await Tracer.initialize(
       options: const TracerOptions(

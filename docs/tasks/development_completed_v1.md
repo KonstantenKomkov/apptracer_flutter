@@ -2,6 +2,22 @@
 
 Активный план: [development_v1.md](development_v1.md).
 
+<a id="task-5"></a>
+
+### П. 5. Символизация Windows, macOS и Ubuntu/Linux
+
+Сверка 24 ноября 2026 по сохранённым release-протоколам:
+
+| Проверенная среда | Что видно в Tracer и как восстановлен исходный кадр |
+| --- | --- |
+| Windows 11 x64 | Dart AOT и native кадры с файлами и строками получены через клиентские карты точной сборки. Проверяются ELF build ID для Dart и GUID/age PDB для native. [Live-приёмка](../windows-local-acceptance.md), [сверка minidump и PDB](../windows-symbols-acceptance.md). |
+| Ubuntu 22.04.5 x64 VM | В трёх Dart-пробах и нативном падении Tracer показал исходные кадры после клиентской символизации по build ID. Загрузка символов на сервер сама по себе строк не дала. [Протокол и идентификаторы сборки](../linux-preparation.md). |
+| macOS arm64 | В трёх обфусцированных Dart-карточках кадры показаны как неизвестные. По стеку из Context и совпадающему UUID команда `atos` восстановила, например, `_handled` в `main.dart:47`. Нативный стек также расшифрован локально по dSYM. Серверная native-символизация принята как ограничение проверенной интеграции. [Dart AOT и UUID](../macos-dart-symbols-acceptance.md#live-tracer-2026-11-22), [native и dSYM](../macos-symbols-acceptance.md). |
+
+Сводка относится к сборкам и архитектурам из протоколов. Расширенная сквозная
+приёмка macOS остаётся в [№11](development_v1.md#task-11), символизация Авроры —
+в [№9](development_v1.md#task-9).
+
 <a id="task-37"></a>
 
 ### П. 37. Risk-based coverage для desktop и lifecycle

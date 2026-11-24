@@ -24,6 +24,14 @@ String? _invalidLimit(TracerOptions options) {
 /// handler-chaining, deduplication and breadcrumb rules can be tested without
 /// process-wide state. Application code should use [Tracer].
 class TracerClient {
+  static TracerClient _instance = TracerClient();
+
+  /// The client used by the public facade in this isolate.
+  static TracerClient get instance => _instance;
+
+  @visibleForTesting
+  static set instance(TracerClient client) => _instance = client;
+
   /// Creates a client.
   ///
   /// [platform] defaults to the registered platform implementation, resolved

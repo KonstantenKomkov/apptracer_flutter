@@ -38,7 +38,7 @@ void main() {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       // This test explicitly authorizes a new session after a previous run
       // revoked collection. Automatic bootstrap must not clear that marker.
-      await Tracer.startCollection(Tracer.client.options.copyWith(
+      await Tracer.startCollection(app.exampleOptions.copyWith(
         nativeInitialization: TracerNativeInitialization.deferred,
       ));
     }
@@ -129,12 +129,17 @@ void main() {
       // Exercise a real browser Client after stop closed the previous one.
       // Payload isolation and exact HTTP counts are checked separately in the
       // HTTP package's Chrome lifecycle tests.
-      expect(Tracer.client.customKeys, isEmpty);
+      TracerEvent? restartedEvent;
       expect(Tracer.breadcrumbs, isEmpty);
       final restarted = await Tracer.startCollection(
-        Tracer.client.options.copyWith(
+        app.exampleOptions.copyWith(
           nativeInitialization: TracerNativeInitialization.deferred,
           debug: true,
+          beforeSend: (event) {
+            restartedEvent = event;
+            final filter = app.exampleOptions.beforeSend;
+            return filter == null ? event : filter(event);
+          },
         ),
       );
       expect(restarted.state, TracerCollectionState.enabled);
@@ -144,6 +149,8 @@ void main() {
         StackTrace.current,
         issueKey: 'web-consent-restarted',
       );
+      expect(restartedEvent, isNotNull);
+      expect(restartedEvent!.customKeys, isEmpty);
       final stopped = await Tracer.stopAndClearCollection();
       expect(stopped.state, TracerCollectionState.disabled);
       expect(Tracer.isEnabled, isFalse);
@@ -211,7 +218,7 @@ Future<void> _waitUntil(
   }
   if (!condition()) {
     final native = await Tracer.getCollectionState();
-    reason = '$reason Backend: ${Tracer.client.platform.backendName}; '
+    reason = '$reason Backend: ${TracerPlatform.instance.backendName}; '
         'state: ${native.state.name}; reason: ${native.reason ?? "none"}.';
   }
   expect(condition(), isTrue, reason: reason);

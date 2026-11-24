@@ -21,24 +21,26 @@ import 'src/crash_inside_dart.dart';
 /// example refuses to carry a default.
 const String _appToken = String.fromEnvironment('TRACER_APP_TOKEN');
 
+final exampleOptions = TracerOptions(
+  appToken: _appToken.isEmpty ? null : _appToken,
+  // release и environment не задаются намеренно: версию Android и iOS
+  // берут из бандла, web — из version.json, а окружение выводится из
+  // kReleaseMode. Пример показывает и это тоже.
+  debug: !kReleaseMode,
+  maxBreadcrumbs: 50,
+  // Nothing personal is collected by default; this hook is where an
+  // application would strip anything it does not want to leave the device.
+  beforeSend: (TracerEvent event) {
+    if (event.message.contains('@')) {
+      return event.copyWith(message: '<redacted>');
+    }
+    return event;
+  },
+);
+
 void main() {
   Tracer.initialize(
-    options: TracerOptions(
-      appToken: _appToken.isEmpty ? null : _appToken,
-      // release и environment не задаются намеренно: версию Android и iOS
-      // берут из бандла, web — из version.json, а окружение выводится из
-      // kReleaseMode. Пример показывает и это тоже.
-      debug: !kReleaseMode,
-      maxBreadcrumbs: 50,
-      // Nothing personal is collected by default; this hook is where an
-      // application would strip anything it does not want to leave the device.
-      beforeSend: (TracerEvent event) {
-        if (event.message.contains('@')) {
-          return event.copyWith(message: '<redacted>');
-        }
-        return event;
-      },
-    ),
+    options: exampleOptions,
     appRunner: () {
       unawaited(_warmUpNetworkPermission());
       runApp(const ExampleApp());

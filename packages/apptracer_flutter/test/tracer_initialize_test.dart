@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:apptracer_flutter/apptracer_flutter.dart' hide TracerClient;
+import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter/src/tracer_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +16,8 @@ void main() {
   setUp(() {
     platform = FakeTracerPlatform();
     bindings = FakeErrorHandlerBindings();
-    Tracer.client = TracerClient(platform: platform, bindings: bindings);
+    TracerClient.instance =
+        TracerClient(platform: platform, bindings: bindings);
   });
 
   tearDown(() async {
@@ -50,7 +51,7 @@ void main() {
     });
 
     test('when the platform SDK throws while starting', () async {
-      Tracer.client = TracerClient(
+      TracerClient.instance = TracerClient(
         platform: FakeTracerPlatform(failOnInitialize: true),
         bindings: bindings,
       );
@@ -66,7 +67,7 @@ void main() {
     });
 
     test('when no implementation exists for the platform', () async {
-      Tracer.client = TracerClient(
+      TracerClient.instance = TracerClient(
         platform: UnsupportedTracerPlatform(),
         bindings: bindings,
       );
@@ -106,7 +107,7 @@ void main() {
           expect(result.reason, reason);
           expect(calls, 1);
           expect(platform.startCalls, 0);
-          expect(Tracer.client.hasInstalledHandlers, isFalse);
+          expect(TracerClient.instance.hasInstalledHandlers, isFalse);
         });
       }
     }

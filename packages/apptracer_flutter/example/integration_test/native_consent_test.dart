@@ -16,11 +16,16 @@ void main() {
   testWidgets('deferred native start and purge use one bootstrap',
       (tester) async {
     var runners = 0;
-    const options = TracerOptions(
+    final events = <TracerEvent>[];
+    final options = TracerOptions(
       nativeInitialization: TracerNativeInitialization.deferred,
       // The test binding already owns its zone. Normal consent_main uses the
       // default guarded bootstrap, which creates the binding inside its zone.
       captureZoneErrors: false,
+      beforeSend: (event) {
+        events.add(event);
+        return event;
+      },
     );
     await Tracer.initialize(
       options: options,
@@ -46,7 +51,7 @@ void main() {
     await Tracer.recordLog('off-log');
     await Tracer.recordError(StateError('off-error'), StackTrace.current);
     expect(Tracer.breadcrumbs, isEmpty);
-    expect(Tracer.client.customKeys, isEmpty);
+    expect(events, isEmpty);
 
     // Cleanup must reach native even before a successful Dart start.
     final before = await Tracer.stopAndClearCollection();
@@ -70,12 +75,13 @@ void main() {
       await Tracer.recordError(
           StateError('Consent device lifecycle probe'), StackTrace.current);
       expect(Tracer.breadcrumbs, isNotEmpty);
+      expect(events.single.customKeys['consent_case'], 'device_lifecycle');
+      expect(events.single.customKeys.containsKey('off-key'), isFalse);
     }
 
     final stopping = Tracer.stopAndClearCollection();
     expect(Tracer.isEnabled, isFalse); // Before the native reply.
     expect(Tracer.breadcrumbs, isEmpty);
-    expect(Tracer.client.customKeys, isEmpty);
     final stopped = await stopping;
     expect(
         stopped.state,
@@ -86,8 +92,9 @@ void main() {
     await Tracer.setUserId('consent-integration-B-off');
     await Tracer.setCustomKey(key: 'old-key', value: 'must-not-queue');
     Tracer.log('off-after-stop');
+    await Tracer.recordError(StateError('off-after-stop'), StackTrace.current);
+    expect(events, hasLength(_expectSdk ? 1 : 0));
     expect(Tracer.breadcrumbs, isEmpty);
-    expect(Tracer.client.customKeys, isEmpty);
     final restarted = await Tracer.startCollection(options);
     expect(
         restarted.state,
@@ -137,7 +144,6 @@ void main() {
     await Tracer.recordLog('ios-off-log');
     await Tracer.recordError(StateError('ios-off-error'), StackTrace.current);
     expect(Tracer.breadcrumbs, isEmpty);
-    expect(Tracer.client.customKeys, isEmpty);
     final restarted = await Tracer.startCollection(options);
     expect(restarted.state, TracerCollectionState.restartRequired);
     expect(Tracer.isEnabled, isFalse);

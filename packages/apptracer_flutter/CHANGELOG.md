@@ -7,6 +7,14 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
+## 2.0.0
+
+- **Breaking:** the facade removes the deprecated exports of `TracerClient`,
+  `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
+  `EventDeduplicator` and `BreadcrumbBuffer`, plus the test-only `Tracer.client`
+  getter and setter. Use `Tracer` for collection, error reporting and breadcrumbs.
+  [Migration from 1.x](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/release-history.md#migrating-the-facade-from-1x-to-20).
+
 ## [1.5.0] - 2026-11-23
 
 - Add typed delivery/platform-lifecycle diagnostics through

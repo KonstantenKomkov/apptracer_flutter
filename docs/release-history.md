@@ -4,6 +4,36 @@ Current versions and limitations belong to [platform-matrix.md](platform-matrix.
 This file preserves release-specific notes instead of mixing them into the quick
 start. Dated acceptance documents are historical evidence, not promises for newer code.
 
+## Migrating the facade from 1.x to 2.0
+
+Facade 2.0.0 removes five deprecated exports from
+`package:apptracer_flutter/apptracer_flutter.dart`. If your application creates
+a `TracerClient`, move startup to the application's entry point:
+
+```dart
+await Tracer.initialize(options: options, appRunner: () => runApp(const MyApp()));
+```
+
+For consent-driven collection, initialize once with
+`TracerNativeInitialization.deferred`, then call `Tracer.startCollection(options)`
+after consent and `Tracer.stopAndClearCollection()` on revocation. Keep the
+application's `TracerOptions` if you need to change them for a later session.
+Replace calls on your client with `Tracer.recordError`, `Tracer.setCustomKey`,
+`Tracer.log` and the corresponding static methods. The facade owns one client
+per isolate.
+
+`Tracer.initialize` installs the configured error handlers. Use
+`Tracer.recordFlutterError` to forward framework errors manually and
+`TracerOptions.beforeSend` to inspect or transform the resulting `TracerEvent`.
+The facade handles deduplication and buffers breadcrumbs added through
+`Tracer.addBreadcrumb`. This covers the reporting flow previously exposed
+through `ErrorHandlerChain`, `ErrorHandlerBindings`, `ErrorNormalizer`,
+`EventDeduplicator` and `BreadcrumbBuffer`.
+
+Tests that assigned `Tracer.client` can register a fake `TracerPlatform.instance`
+before initialization, observe events on the fake, then stop collection and
+restore the previous platform in teardown.
+
 ## apptracer_flutter 1.5.0 and desktop 2.0.0
 
 The facade and adapters use a common delivery listener. On desktop, upgrade
