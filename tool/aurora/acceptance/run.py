@@ -12,7 +12,7 @@ DIRECTORY = '"$HOME/.local/share/ru.apptracer/apptracer_flutter_aurora_example"'
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('arm', 'upload'))
+    parser.add_argument('phase', choices=('arm', 'upload', 'switch', 'revoke', 'retry', 'offline', 'hold', 'fresh', 'cancel'))
     parser.add_argument('ssh_arguments', nargs=argparse.REMAINDER,
                         help='-- followed by SSH options and user@emulator')
     args = parser.parse_args()
@@ -54,10 +54,17 @@ def main():
         process.communicate()
         raise
     expected = f'Acceptance {args.phase}, worker exit 0'.encode()
+    for line in output.splitlines():
+        for prefix in (b'Acceptance state ', b'Acceptance failed: '):
+            start = line.find(prefix)
+            if start >= 0:
+                code = line[start + len(prefix):]
+                if len(code) < 64 and code.replace(b'_', b'').isalnum():
+                    print((prefix + code).decode('ascii'))
     if expected not in output:
         print('No successful worker receipt. Check the emulator permission dialog.', file=sys.stderr)
         return 1
-    print(f'{args.phase}: worker completed. Confirm the report in Tracer after upload.')
+    print(f'Acceptance {args.phase} passed')
     return 0
 
 

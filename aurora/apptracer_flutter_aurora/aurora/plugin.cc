@@ -2,6 +2,8 @@
 #include <client_wrapper/basic_plugin.h>
 #include <client_wrapper/plugin_registrar.h>
 
+#include "session.h"
+#include <QJsonDocument>
 #include <dlfcn.h>
 #include <filesystem>
 #include <fstream>
@@ -16,15 +18,27 @@ class AuroraTracerPlugin final : public cw::BasicPlugin<> {
 
  private:
   Result HandleMethodCall(const std::string& method,
-                          const cw::EncodableValue*) override {
-    if (method != "probe") return cw::NotImplemented();
-    Dl_info info{};
-    if (!dladdr(reinterpret_cast<void*>(&ApptracerFlutterAuroraRegister), &info) ||
-        !info.dli_fname || !std::filesystem::path(info.dli_fname).is_absolute()) {
-      return cw::FlutterError("plugin_path_unavailable");
+                          const cw::EncodableValue* arguments) override {
+    try {
+      if (method == "probe") return probe();
+      if (method != "prepare" && method != "activate" && method != "withdraw" && method != "log" && method != "key" && method != "status")
+        return cw::NotImplemented();
+      QJsonObject args;
+      if (arguments && std::holds_alternative<std::string>(*arguments)) {
+        const auto doc = QJsonDocument::fromJson(QByteArray::fromStdString(std::get<std::string>(*arguments)));
+        if (!doc.isObject()) return cw::FlutterError("invalid_arguments");
+        args = doc.object();
+      }
+      return cw::EncodableValue(apptracer::handleCollection(method, args));
+    } catch (const std::filesystem::filesystem_error&) {
+      return cw::FlutterError("collection_storage_failed");
+    } catch (const std::exception& e) {
+      return cw::FlutterError(e.what());
     }
-    const auto sdk_path = std::filesystem::path(info.dli_fname).parent_path() /
-                          "libtracernative.so";
+  }
+
+  Result probe() {
+    const auto sdk_path = apptracer::sdkPath();
     void* sdk = dlopen(sdk_path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (!sdk) return cw::FlutterError("sdk_load_failed", dlerror());
     for (const char* symbol : {"tracer_init", "tracer_set_platform_info2",

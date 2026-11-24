@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+// Call before constructing FlutterApp to enable consent-controlled native collection.
+APPTRACER_AURORA_EXPORT void ApptracerFlutterAuroraPrepareRunner(int argc, char** argv);
+
 APPTRACER_AURORA_EXPORT void ApptracerFlutterAuroraRegister(
     FlutterAuroraPluginContext* context);
 

@@ -1,52 +1,56 @@
-// Entry point for the isolated acceptance RPM, which uses the example's app ID.
+// Acceptance RPM only. Exercise the real SDK transport with an unavailable
+// network or a local TLS peer that withholds its reply until consent is revoked.
 #include "generated_plugin_registrant.h"
-#include <tracer.h>
-
-#include <chrono>
+#include <apptracer_flutter_aurora/plugin.h>
+#include <arpa/inet.h>
+#include <cerrno>
 #include <cstring>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
-#include <string>
-#include <thread>
+#include <sys/socket.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+
+namespace {
+int testPort = 0;
+std::filesystem::path attempt;
+}
+
+extern "C" __attribute__((visibility("default"))) int connect(
+    int fd, const sockaddr* address, socklen_t size) {
+  if (testPort != 0 && address &&
+      (address->sa_family == AF_INET || address->sa_family == AF_INET6)) {
+    if (testPort == -1) {
+      std::ofstream(attempt).put('1');
+      errno = ENETUNREACH;
+      return -1;
+    }
+    int type = 0;
+    socklen_t length = sizeof(type);
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &type, &length) == 0 && type == SOCK_STREAM) {
+      if (address->sa_family != AF_INET) { errno = ENETUNREACH; return -1; }
+      sockaddr_in loop{};
+      loop.sin_family = AF_INET;
+      loop.sin_port = htons(testPort);
+      loop.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+      return syscall(SYS_connect, fd, &loop, sizeof(loop));
+    }
+  }
+  return syscall(SYS_connect, fd, address, size);
+}
 
 int main(int argc, char** argv) {
-  if (argc != 2 || std::strcmp(argv[1], "--apptracer-test-worker") != 0) {
-    aurora::FlutterApp app(argc, argv);
-    return app.exec();
+  if (argc == 2 && !std::strcmp(argv[1], "--apptracer-aurora-worker")) {
+    const auto base = std::filesystem::path(std::getenv("HOME")) /
+        ".local/share/ru.apptracer/apptracer_flutter_aurora_example";
+    int port = 0;
+    if (std::ifstream(base / "fixture-network") >> port && port >= -1 && port <= 65535) {
+      testPort = port;
+      attempt = base / "fixture-attempt";
+    }
   }
-
-  std::string mode;
-  std::string token;
-  const char* home = std::getenv("HOME");
-  if (!home || !std::getline(std::cin, mode) || !std::getline(std::cin, token) ||
-      token.empty() || (mode != "arm" && mode != "upload")) {
-    return 2;
-  }
-  const std::filesystem::path base(home);
-  const auto root = base / ".local/share/ru.apptracer/apptracer_flutter_aurora_example/explicit-test";
-  const auto cache = base / ".cache/ru.apptracer/apptracer_flutter_aurora_example";
-  const auto marker = root / "armed-by-fixture";
-  std::filesystem::create_directories(root);
-  if (mode == "upload") {
-    // A test operator explicitly requests both runs on a fresh example installation.
-    if (!std::filesystem::exists(cache / "minidump") ||
-        !std::filesystem::remove(marker)) return 3;
-    tracer_aurora_collect_minidump_from_cachedir(cache.c_str(), root.c_str());
-  }
-  tracer_init(token.c_str(), root.c_str());
-  tracer_set_platform_info2("2.0.0", 201);
-  if (mode == "upload") {
-    tracer_upload();
-  } else {
-    tracer_set_key("aurora_runner", "flutter-sandbox");
-    tracer_log(u8"Контрольное падение Flutter runner в песочнице Авроры");
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    std::ofstream output(marker);
-    output << "arm";
-    output.close();
-    if (!output) return 4;
-  }
-  return 0;
+  ApptracerFlutterAuroraPrepareRunner(argc, argv);
+  aurora::FlutterApp app(argc, argv);
+  return app.exec();
 }
