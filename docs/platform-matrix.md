@@ -1,6 +1,6 @@
 # Platform matrix
 
-The table covers the facade 2.0.0 candidate and optional desktop adapter 2.0.0.
+The table covers the published facade 2.0.0 and optional desktop adapter 2.0.0.
 Each acceptance record identifies the SDK, hardware or emulator and build used.
 
 ## Summary
@@ -18,7 +18,7 @@ Each acceptance record identifies the SDK, hardware or emulator and build used.
 Android, iOS and Web register with the facade by default. For macOS, Windows or Ubuntu, add the
 [hosted desktop package](desktop-migration.md). For Flutter Aurora, add the
 [source adapter](aurora-release.md) to the Aurora application.
-The facade candidate requires platform interface `^0.3.1` and Android adapter `^0.5.0`.
+Facade 2.0.0 requires platform interface `^0.3.1` and Android adapter `^0.5.0`.
 The [previous hosted release](publishing.md#coordinated-desktop-200-release) paired facade 1.5.0 with desktop 2.0.0.
 
 The [Android context checks](android-event-context.md) document which native values the adapter restores after each Dart report.

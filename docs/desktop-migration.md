@@ -37,7 +37,7 @@ Install the facade and optional desktop adapter from pub.dev:
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter: ^1.5.0
+  apptracer_flutter: ^2.0.0
   apptracer_flutter_desktop: ^2.0.0
 flutter:
   config:
@@ -248,7 +248,7 @@ repositories outside the workspace and other revisions remains unknown.
 
 ## Windows consumer
 
-Use `apptracer_flutter_desktop ^2.0.0` alongside `apptracer_flutter ^1.5.0`. Before
+Use `apptracer_flutter_desktop ^2.0.0` alongside `apptracer_flutter ^2.0.0`. Before
 `flutter build windows --release`, set `$env:SENTRY_NATIVE_BACKEND = 'native'`.
 The desktop FFI CMake target bundles the lifecycle helper, `sentry-crash.exe`,
 `sentry-wer.dll` and app-local MSVC redistributable DLLs. Ship the entire Release
