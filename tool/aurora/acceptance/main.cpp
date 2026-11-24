@@ -40,6 +40,11 @@ extern "C" __attribute__((visibility("default"))) int connect(
   return syscall(SYS_connect, fd, address, size);
 }
 
+// The faulting instruction is in the installed runner, for symbol verification.
+extern "C" __attribute__((visibility("default"), noinline)) void AuroraAcceptanceCrash() {
+  __builtin_trap();
+}
+
 int main(int argc, char** argv) {
   if (argc == 2 && !std::strcmp(argv[1], "--apptracer-aurora-worker")) {
     const auto base = std::filesystem::path(std::getenv("HOME")) /

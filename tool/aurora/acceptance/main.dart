@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi';
 
 import 'package:apptracer_flutter/apptracer_flutter.dart';
 import 'package:apptracer_flutter_aurora/apptracer_flutter_aurora.dart';
@@ -26,6 +27,18 @@ Future<void> main() async {
   final lines = await input.readAsLines();
   await input.delete();
   final mode = lines.first;
+  if (mode == 'dart-symbols') {
+    try {
+      throwFacadeError();
+    } catch (_, stack) {
+      await File(
+        '$dir/acceptance-aot-stack',
+      ).writeAsString(stack.toString(), flush: true);
+    }
+    stdout.writeln('Acceptance $mode, worker exit 0');
+    await stdout.flush();
+    exit(0);
+  }
   if (mode.startsWith('facade-')) {
     try {
       if (mode == 'facade-lifecycle') {
@@ -35,6 +48,13 @@ Future<void> main() async {
       }
       stdout.writeln('Acceptance $mode, worker exit 0');
       await stdout.flush();
+      if (mode == 'facade-symbols') {
+        DynamicLibrary.executable()
+            .lookupFunction<Void Function(), void Function()>(
+              'AuroraAcceptanceCrash',
+            )();
+        throw StateError('expected_native_crash');
+      }
       if (mode == 'facade-crash')
         Process.killPid(pid, ProcessSignal.sigabrt);
       else
