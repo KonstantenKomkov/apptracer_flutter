@@ -15,7 +15,6 @@
 | `apptracer_flutter_web` | Браузерная реализация, использующая HTTP-транспорт |
 | `apptracer_flutter_http` | Отправка в собственный HTTP API Tracer на Dart |
 | `apptracer_flutter_desktop` | Опциональная реализация для macOS, Windows и Linux через официальный Sentry SDK |
-| `apptracer_flutter_sentry` | Старый ручной HTTP-транспорт по протоколу Sentry; не является текущим desktop-адаптером |
 
 Платформенные реализации наследуют `TracerPlatform` и регистрируются через
 `TracerPlatform.instance`. Пока реализация не зарегистрирована, используется

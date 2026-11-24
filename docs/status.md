@@ -138,7 +138,7 @@ in the lifecycle section below; publication remains a separate step.
 | Tracer's grouping ignores file names and line numbers, and `issueKey` overrides it for non-fatals | vendor documentation, "Символизация и группировка сбоев"; the iOS key and the Android frame mapping were both designed around it |
 | A pathological stack trace cannot flush the breadcrumb trail out of the 64 KiB circular log buffer | unit tests, then confirmed live on 2026-08-26: after six verbatim traces including a 128-frame one, both breadcrumbs were still the first two entries in the event's log tab, and the trace carried the `truncated, 123 more line(s)` marker |
 | The web payload matches the shape captured from the vendor's own SDK | unit tests in `apptracer_flutter_http`, written against the captured request |
-| The Sentry envelope is well formed: byte-accurate item length, hex event id, frames oldest-first, `in_app` classification, 429 back-off | unit tests in `apptracer_flutter_sentry` |
+| The former manual transport produced valid Sentry envelopes: byte-accurate item length, hex event id, frames oldest-first, `in_app` classification, 429 back-off | [manual transport tests at v1.5.0](https://github.com/KonstantenKomkov/apptracer_flutter/tree/v1.5.0/packages/apptracer_flutter_sentry/test) |
 | Android SDK coordinates, minSdk, permissions, init mechanism, generated resource names, and the one-way nature of `Tracer.disable()` | inspection of the published AAR and Gradle plugin bytecode |
 | iOS SDK API signatures, architectures, deployment target | the `.swiftinterface` shipped inside `OKTracer.xcframework` 1.5.1 |
 | The Tracer Licence Agreement does not prohibit publishing this wrapper | read in full (edition 29 May 2025); clause-by-clause reading in `legal.md` |

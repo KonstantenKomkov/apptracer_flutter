@@ -15,8 +15,6 @@ def packages() -> list[dict]:
     expected = {p.parent.relative_to(ROOT).as_posix() for pattern in
                 ('packages/*/pubspec.yaml', 'packages/*/example/pubspec.yaml')
                 for p in ROOT.glob(pattern)}
-    # The archived transport stays at its original path for Git consumers.
-    expected.discard('packages/apptracer_flutter_sentry')
     if not rows or len(set(paths)) != len(paths) or set(paths) != expected:
         raise ValueError(f'Duplicate or missing catalog entries: {set(paths) ^ expected}')
     for row in rows:

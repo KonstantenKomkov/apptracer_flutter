@@ -12,8 +12,8 @@ Windows preparation run, so documentation-only pushes start neither workflow.
 
 ## Layout
 
-Seven publishable packages under `packages/`, an archived Sentry transport,
-and an example application at `packages/apptracer_flutter/example`.
+Seven publishable packages live under `packages/`. The facade and desktop adapter
+each include an `example/` application.
 
 The packages depend on each other by **version**, exactly as a consumer would,
 and are wired together locally through `pubspec_overrides.yaml`. Pub omits that
