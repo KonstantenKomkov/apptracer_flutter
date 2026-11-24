@@ -10,7 +10,7 @@ work=$(mktemp -d "$repo/build/aurora-runner-XXXXXX")
 mkdir -p "$work/example/aurora"
 cp "$plugin/example/pubspec.yaml" "$work/example/"
 mkdir -p "$work/example/lib"
-cp "$fixture/main.dart" "$work/example/lib/main.dart"
+cp "$fixture/main.dart" "$fixture/lifecycle.dart" "$work/example/lib/"
 cp "$fixture/main.cpp" "$work/example/aurora/main.cpp"
 cp -R "$plugin/example/aurora/icons" "$work/example/aurora/"
 cd "$work/example"

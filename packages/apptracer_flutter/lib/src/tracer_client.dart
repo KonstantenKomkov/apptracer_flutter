@@ -115,20 +115,21 @@ class TracerClient {
       }
       return;
     }
+    final needsStop = _started ||
+        _paused ||
+        _startingGeneration != null ||
+        platform.isEnabled;
     _configureDelivery(options);
     _options = options;
-    if (!options.isCollectionEnabled &&
-        (_started ||
-            _paused ||
-            _startingGeneration != null ||
-            platform.isEnabled)) {
-      await _startCollection(options);
-      return;
-    }
     if (options.nativeInitialization == TracerNativeInitialization.deferred ||
         !options.isCollectionEnabled) {
-      ++_generation;
-      _disableDart();
+      if (needsStop) {
+        // A second bootstrap must also stop the already running native SDK.
+        await _startCollection(options.copyWith(isCollectionEnabled: false));
+      } else {
+        ++_generation;
+        _disableDart();
+      }
       return;
     }
     await _startCollection(options);

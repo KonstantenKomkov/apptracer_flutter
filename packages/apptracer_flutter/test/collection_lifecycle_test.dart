@@ -222,6 +222,17 @@ void main() {
     expect(platform.isEnabled, isFalse);
   });
 
+  test('deferred bootstrap stops a live platform until another explicit start',
+      () async {
+    await client.startCollection(const TracerOptions());
+    await client.start(const TracerOptions(
+        nativeInitialization: TracerNativeInitialization.deferred));
+    expect(client.isEnabled, isFalse);
+    expect(platform.isEnabled, isFalse);
+    expect(platform.stopCalls, 1);
+    expect((await client.startCollection()).isEnabled, isTrue);
+  });
+
   test('start queued before stop is discarded before contacting native',
       () async {
     final started = client.startCollection(const TracerOptions());

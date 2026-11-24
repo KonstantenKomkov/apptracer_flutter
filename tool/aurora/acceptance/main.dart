@@ -6,6 +6,8 @@ import 'package:apptracer_flutter_aurora/apptracer_flutter_aurora.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'lifecycle.dart';
+
 Future<void> waitForUpload() async {
   final deadline = DateTime.now().add(const Duration(seconds: 45));
   while (await AuroraTracer.isUploading()) {
@@ -26,7 +28,11 @@ Future<void> main() async {
   final mode = lines.first;
   if (mode.startsWith('facade-')) {
     try {
-      await exerciseFacade(lines);
+      if (mode == 'facade-lifecycle') {
+        await exerciseLifecycle(lines[1]);
+      } else {
+        await exerciseFacade(lines);
+      }
       stdout.writeln('Acceptance $mode, worker exit 0');
       await stdout.flush();
       if (mode == 'facade-crash')
@@ -34,8 +40,9 @@ Future<void> main() async {
       else
         exit(0);
     } catch (error) {
-      if (error is StateError)
-        stderr.writeln('Acceptance failed: ${error.message}');
+      stderr.writeln(
+        'Acceptance failed: ${error is StateError ? error.message : error.runtimeType}',
+      );
       exit(3);
     }
     return;
