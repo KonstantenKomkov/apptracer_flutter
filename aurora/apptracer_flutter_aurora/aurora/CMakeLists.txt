@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.14)
+project(apptracer_flutter_aurora LANGUAGES CXX)
+
+set(plugin apptracer_flutter_aurora_platform_plugin)
+include("${CMAKE_CURRENT_SOURCE_DIR}/TracerNative.cmake")
+apptracer_import_aurora_sdk("${CMAKE_CURRENT_SOURCE_DIR}/sdk")
+
+find_package(ZLIB REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Core)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(AppTracerAppDir REQUIRED IMPORTED_TARGET appdir-cpp)
+
+add_library(${plugin} SHARED plugin.cc session.cc minidump.cc retry.cc worker.cc)
+target_compile_features(${plugin} PRIVATE cxx_std_17)
+include(AuroraClientWrapper)
+ADD_CLIENT_WRAPPER_SOURCE(${plugin})
+target_include_directories(${plugin} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_definitions(${plugin} PRIVATE APPTRACER_AURORA_IMPL)
+target_link_libraries(${plugin} PRIVATE apptracer_aurora_headers PkgConfig::AppTracerAppDir Qt5::Core ZLIB::ZLIB ${CMAKE_DL_LIBS})
+set_target_properties(${plugin} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+apptracer_install_aurora_sdk("${CMAKE_INSTALL_DATADIR}/${BINARY_NAME}/lib")

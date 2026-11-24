@@ -1,0 +1,19 @@
+name: apptracer_flutter_aurora
+description: Native Tracer integration for the Aurora OS Flutter embedder.
+version: 2.0.0-dev.1
+publish_to: none
+environment:
+  sdk: ^3.11.1
+  flutter: ">=3.41.4"
+dependencies:
+  flutter:
+    sdk: flutter
+  aurora_client_wrapper: 1.17.1
+flutter:
+  plugin:
+    platforms:
+      aurora:
+        pluginEntryPointHeader: plugin.h
+        pluginEntryPoint: ApptracerFlutterAuroraRegister
+        requiresExclude:
+          - tracernative

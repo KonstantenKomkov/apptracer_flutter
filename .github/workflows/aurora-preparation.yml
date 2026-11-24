@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'tool/aurora/**'
+      - 'aurora/apptracer_flutter_aurora/aurora/**'
       - 'tool/prepare_aurora_sdk.py'
       - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'
@@ -22,6 +23,7 @@ on:
   pull_request:
     paths:
       - 'tool/aurora/**'
+      - 'aurora/apptracer_flutter_aurora/aurora/**'
       - 'tool/prepare_aurora_sdk.py'
       - 'tool/inspect_aurora_elf.py'
       - 'tool/elf_build_id.py'

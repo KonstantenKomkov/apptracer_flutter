@@ -1,0 +1,15 @@
+name: apptracer_flutter_aurora_example
+description: Check the native Tracer integration on Aurora OS.
+organization: ru.apptracer
+license: MIT
+version: 2.0.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  apptracer_flutter_aurora:
+    path: ../
