@@ -22,6 +22,8 @@ application that is most of the errors. This repository closes that gap.
 For macOS, Windows and Ubuntu, install the optional desktop package. See the
 [desktop setup](docs/desktop-migration.md) and [tested environments](docs/platform-matrix.md#summary).
 
+Facade 2.0.0 supports the optional Flutter Aurora source adapter. Use an app token for native crashes and the same project’s DSN for Dart exceptions. [Installation and tested versions](docs/aurora-release.md).
+
 ## Repository layout
 
 ```
