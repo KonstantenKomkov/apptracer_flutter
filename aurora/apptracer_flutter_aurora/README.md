@@ -24,7 +24,7 @@ adt device deploy --silent build/aurora/*/aurora-arm64/release/RPMS/*example-2*.
 `--sdk-dir /путь/к/SDK`. Откройте пример на устройстве или запустите его так:
 
 ```sh
-adt device exec runtime-manager-tool Control start ru.apptracer.apptracer_flutter_aurora_example
+adt device exec 'runtime-manager-tool Control start ru.apptracer.apptracer_flutter_aurora_example'
 ```
 
 `AuroraTracer.probe()` загружает библиотеку из RPM и проверяет экспортируемые
