@@ -14,7 +14,8 @@
 | `apptracer_flutter_ios` | Мост на Swift к OKTracer |
 | `apptracer_flutter_web` | Браузерная реализация, использующая HTTP-транспорт |
 | `apptracer_flutter_http` | Отправка в собственный HTTP API Tracer на Dart |
-| `apptracer_flutter_desktop` | Опциональная реализация для macOS, Windows и Linux через официальный Sentry SDK |
+| `apptracer_flutter_desktop` | Опциональная реализация для macOS, Windows и Ubuntu через Sentry Flutter |
+| `apptracer_flutter_aurora` | Адаптер из исходников для Flutter Аврора. Tracer Native отправляет минидампы, Sentry Dart отправляет ошибки по DSN |
 
 Платформенные реализации наследуют `TracerPlatform` и регистрируются через
 `TracerPlatform.instance`. Пока реализация не зарегистрирована, используется
@@ -22,7 +23,7 @@
 
 Основной пакет объявляет Android, iOS и Web реализациями по умолчанию.
 Desktop подключается отдельной зависимостью и после её добавления
-регистрируется автоматически на поддерживаемых desktop-платформах.
+регистрируется автоматически на поддерживаемых desktop-платформах. Для Flutter Аврора подключите [адаптер из checkout](aurora-release.md).
 
 ## Путь ошибки
 
@@ -31,9 +32,10 @@ flowchart TD
     A["Dart / Flutter ошибка"] --> B["Tracer / TracerClient"]
     B --> C["Устранение дублей, нормализация,<br/>beforeSend, ключ группировки"]
     C --> D["TracerPlatform"]
-    D --> E["Android / iOS<br/>MethodChannel → нативный Tracer SDK"]
+    D --> E["Android / iOS<br/>Pigeon → нативный Tracer SDK"]
     D --> F["Web<br/>HTTP API Tracer"]
     D --> G["Desktop<br/>Sentry SDK → Tracer"]
+    D --> H["Аврора<br/>Sentry Dart → Tracer по DSN"]
 ```
 
 Общая обработка находится в
@@ -94,7 +96,7 @@ native, а новый Dart вызывает прежний метод, если 
 Главная причина — сделать Sentry необязательной зависимостью. Для Android и
 iOS используются SDK Tracer, поэтому основной `apptracer_flutter` не должен
 подключать Sentry всем приложениям ради desktop. Это решение зафиксировано в
-[README desktop-пакета](../packages/apptracer_flutter_desktop/README.md#зависимости-и-переход).
+[README desktop-пакета](../packages/apptracer_flutter_desktop/README.md).
 
 Разделение также отражает отличия реализации:
 

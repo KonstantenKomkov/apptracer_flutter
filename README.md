@@ -37,6 +37,8 @@ packages/
   apptracer_flutter_desktop/            optional официальный Sentry SDK для desktop;
                                         проверенные среды указаны в матрице платформ
   apptracer_flutter_http/               собственный приём Tracer на чистом Dart
+aurora/
+  apptracer_flutter_aurora/              исходный адаптер для Flutter Аврора
 docs/
 tool/
   bootstrap.sh              pub get во всех пакетах

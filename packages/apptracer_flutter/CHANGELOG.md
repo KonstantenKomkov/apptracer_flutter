@@ -7,7 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## 2.0.0
+## 2.0.0 - 2026-11-24
 
 - Support the optional source-distributed Flutter Aurora adapter with platform
   interface 0.3.1. It uses the native SDK for crashes and an explicit project

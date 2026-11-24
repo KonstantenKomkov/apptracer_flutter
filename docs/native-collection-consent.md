@@ -38,6 +38,10 @@ on 2026-10-03 from tag `v0.2.0`. The local Sentry transport remains
 `publish_to: none`; Garden applications have not been migrated. Earlier
 `0.2.0-dev.1` references below describe the verification builds.
 
+## Aurora consent in facade 2.0.0
+
+Initialize the Aurora runner hook before Flutter starts. After explicit consent, the facade starts the native worker. A stable `auroraAccountScope` and `preservePreviousReports: true` allow replay for the same project and account. Without a scope, every session starts fresh. Await `stopAndClearCollection()` before switching accounts. The native stop disables new system dumps before deleting the local files. If deletion fails, the facade returns `error` and a subsequent start retries cleanup before it can collect. [Aurora setup](../aurora/apptracer_flutter_aurora/README.en.md) and [lifecycle checks](../tool/aurora/acceptance/README.md).
+
 ## Dart contract
 
 ```dart

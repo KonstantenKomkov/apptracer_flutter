@@ -12,7 +12,7 @@ Do not use historical acceptance reports as installation instructions.
 | iOS | [apptracer_flutter_ios/README.md](../packages/apptracer_flutter_ios/README.md), [English](../packages/apptracer_flutter_ios/README.en.md) |
 | Web | [web-protocol.md](web-protocol.md#web-setup) |
 | Aurora OS | [Release setup](aurora-release.md), [English adapter guide](../aurora/apptracer_flutter_aurora/README.en.md), [symbols](aurora-symbols.md) |
-| Desktop | [desktop-migration.md](desktop-migration.md) |
+| Desktop | [Быстрый старт](../packages/apptracer_flutter_desktop/README.md), [English](../packages/apptracer_flutter_desktop/README.en.md), [build and migration](desktop-migration.md) |
 | Consent and cleanup | [native-collection-consent.md](native-collection-consent.md) |
 | Privacy | [privacy.md](privacy.md) |
 | Filtering and context | [filtering.md](filtering.md), [English](filtering.en.md) |

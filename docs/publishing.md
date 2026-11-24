@@ -229,8 +229,8 @@ The removed `apptracer_flutter_sentry` manual transport was never published.
 The first stable desktop release and its acceptance results are recorded
 [below](#stable-100--2026-10-24).
 
-Published desktop 1.0.1 pins `sentry_flutter: 9.30.1`. The 2.0.0 source candidate
-pins 10.6.0 and requires the platform and live acceptance recorded in
+Published desktop 1.0.1 pins `sentry_flutter: 9.30.1`. Published desktop 2.0.0
+pins 10.6.0 and passed the platform and live checks recorded in
 [task 33](tasks/task-33-sentry-10-migration.md). Its dry run allows the single
 Pub warning for that exact dependency.
 
