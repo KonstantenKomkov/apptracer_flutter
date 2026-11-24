@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'lifecycle.dart';
+import 'live.dart';
 
 Future<void> waitForUpload() async {
   final deadline = DateTime.now().add(const Duration(seconds: 45));
@@ -41,7 +42,9 @@ Future<void> main() async {
   }
   if (mode.startsWith('facade-')) {
     try {
-      if (mode == 'facade-lifecycle') {
+      if (mode == 'facade-matrix') {
+        await exerciseLive(lines[1], lines[2]);
+      } else if (mode == 'facade-lifecycle') {
         await exerciseLifecycle(lines[1]);
       } else {
         await exerciseFacade(lines);

@@ -21,7 +21,7 @@ macOS 15 arm64 CI and isolated consumer checks:
 | macOS (optional 1.0.0) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | stable; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
 | Windows 11 x64 (optional 1.0.0) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
 | Ubuntu 22.04.5 x86_64 (optional 1.0.0) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
-| Aurora OS | optional adapter in development | Dart SDK test event with source line | SIGABRT from signed native test RPM | unverified | unverified | [Aurora 5.2.1.200 aarch64 emulator and Tracer receipts](aurora-preparation.md#emulator-audit); product acceptance pending |
+| Aurora OS 5.2.1.200 aarch64 | optional Flutter Aurora adapter, Tracer Native 0.1.15 and opt-in Sentry Dart DSN | handled, Flutter and uncaught async errors with source lines | signed RPM, verified SIGABRT and symbolized SIGTRAP | unverified | not claimed | [2.0.0 candidate acceptance on the emulator](aurora-live-acceptance.md) |
 
 "Implemented" means the code exists, analyses clean and is unit-tested. See
 [status.md](status.md) for what has and has not been exercised against a real
@@ -51,12 +51,10 @@ unit tests also passed on 3.50.0. New analyze deprecations on that newer toolcha
 remain a separate canary finding, not a baseline failure. See
 [contributing](contributing.md#flutter-compatibility) for update and local checks.
 
-**Aurora is a C/C++ project, not a Sentry one.** The vendor ships a native
-`libtracernative.so`, a C++ header and Python upload scripts; integration is
-`tracer_init(app_key, storage_dir)`, and crashes arrive as minidumps collected
-by the system `crash-dumper`. Read from the vendor's Aurora documentation on
-2026-08-26. A Flutter application cannot produce those minidumps from Dart.
-The manual HTTP transport has no Aurora device verification.
+On Aurora, configure the Tracer C/C++ project app token for native minidumps
+and its optional Sentry DSN for Dart exceptions. The Flutter Aurora fork registers
+the adapter. Consent, account isolation and native replay were exercised on the
+5.2.1.200 aarch64 emulator. [Integration guide](../aurora/apptracer_flutter_aurora/README.md).
 
 **ANR needs Android 11.** `AnrReporter.collect` in `tracer-crash-report` 1.4.0
 opens with `if (Build.VERSION.SDK_INT < 30) return emptyList()` and then reads
@@ -410,7 +408,7 @@ Consequences worth knowing:
 The published optional desktop adapter supports the macOS, Windows and Ubuntu
 environments listed in the summary. The live and VM results below cover the
 published 9.30.1 SDK family. Acceptance of the 2.0.0 source candidate is tracked
-in [task 33](tasks/task-33-sentry-10-migration.md). Aurora remains unsupported.
+in [task 33](tasks/task-33-sentry-10-migration.md). Aurora uses its own optional adapter for facade 2.0.0.
 The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.
@@ -426,7 +424,7 @@ historical CI evidence. The current native backend additionally passed Windows 1
 [local lifecycle, source-map, live delivery and external-consumer checks](windows-local-acceptance.md).
 Stop/clear and all 24 current Windows CI scenarios passed; a fresh Windows 11 x64
 VM without build tools passed 11 runtime/consumer checks. Windows 10/ARM64 remain
-outside this evidence. The Aurora emulator passed the native SDK loader probe. Flutter plugin and RPM acceptance remain open. Ubuntu/Linux was added to this iteration on
+outside this evidence. The Aurora Flutter plugin passed signed RPM and live delivery checks on the aarch64 emulator. Ubuntu/Linux was added to this iteration on
 2026-10-24 in [task 13](tasks/development_v1.md#task-13); Linux runner, official
 SDK integration, release, Dart/native loopback, persistent queue and lifecycle now
 have [WSL2 and clean Ubuntu VM evidence](linux-preparation.md). Local symbolication
@@ -469,11 +467,9 @@ that fix ships in stable facade 1.0.0. Hosted 0.2.1 does not preserve it.
 documentation/filtering/release-preparation scope. Both stable 1.0.0 packages
 are published; see [the release record](publishing.md#stable-100--2026-10-24).
 
-* **Aurora OS.** Tracer publishes a C/C++ SDK (`tracer.h` plus
-  `libtracernative.so`, current version 0.1.15) that relies on the system
-  `crash-dumper` package for minidumps. Binding it would mean shipping an
-  Aurora-specific Flutter embedder plugin, which is out of scope for this
-  release.
+* **Aurora OS.** The system crash-dumper and Tracer Native SDK handle native
+  reports. The matching runner and plugin DWARF support server-side symbolication.
+  [Symbol verification](aurora-symbols.md).
 * **Native desktop symbols.** Tracer documents a C/C++ breakpad route with
   `symupload.py` / `crashupload.py`; it does not establish Cocoa report
   symbolication in the tested macOS integration.

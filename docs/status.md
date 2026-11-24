@@ -4,6 +4,12 @@
 > dates and environments. See [current documentation map](README.md) and
 > [platform matrix](platform-matrix.md) for current guidance.
 
+On 2026-11-24 the optional Aurora adapter for facade 2.0.0 was exercised on
+Aurora 5.2.1.200 aarch64. The Tracer project received handled Dart, FlutterError,
+uncaught async and native reports from signed RPMs. The release matrix includes
+source lines, grouping, account context, consent withdrawal and native replay.
+[Acceptance and limitations](aurora-live-acceptance.md).
+
 On 2026-11-18, `apptracer_flutter 1.2.1` and `apptracer_flutter_android 0.4.1`
 were published with support for Tracer Android SDK 1.6.2 from VK Nexus. The
 release APK includes the SDK’s bundled CA certificates. On-device upload on
@@ -82,7 +88,7 @@ events or duplicates were found in this series; fresh Dart keys/logs/Context als
 match. See the
 [dated evidence and limits](macos-lifecycle-acceptance.md). Restart after stop
 requires a new process; server native symbolication is unsupported in the tested
-integration. Aurora acceptance remains open; Windows evidence is recorded below.
+integration. Aurora has a separate acceptance record above; Windows evidence is recorded below.
 
 **macOS automation and packaging:** the separate macOS 15 arm64 CI builds the
 release example, runs real loopback/lifecycle checks and retains binaries,
@@ -208,7 +214,7 @@ in the lifecycle section below; publication remains a separate step.
 | Dart errors reach the project from a real browser | live run in Chrome, 2026-08-26, on the rewritten transport: the event arrives, the platform is recognised (`Chrome 151`, `Mac OS`), and under `flutter run -d chrome` the frames read straight against Dart sources — `package:apptracer_flutter_example/main.dart 190:21` — because DDC keeps that mapping at runtime. A release build compiles through dart2js and will need source maps instead |
 | Tracer accepts the rewritten web payload | live probe into the real JS project, 2026-08-26: `200 {"success":true}`, and the event appears in the console. A second probe differing only in stack-trace shape showed that JavaScript-style frames (`at name (url:line:col)`) are parsed into a structured stack, while Dart VM frames (`#0 name (package:…)`) are only stored as text — which costs nothing, since `dart2js` produces the former |
 | **The web half of the Sentry premise did not survive contact** (see [web-protocol.md](web-protocol.md)) | `design-decisions.md` claimed Tracer ingests over the Sentry protocol on every platform, citing nothing. Half of that is true — the vendor documents Sentry ingest for platforms with no Tracer SDK, with a DSN issued when the project is created through VK Cloud — but not for web, which has its own SDK and no DSN. Measured 2026-08-26: a JS project hands out no DSN, and the vendor's own `@apptracer/sdk` 2.6.9, unpacked from npm, posts to `sdk-api.apptracer.ru/api/crash/uploadBatch`, `/api/crash/trackSession` and `/api/perf/upload`, authenticating with the same `appToken` as Android and carrying `versionName`/`versionCode`. There is no Sentry anywhere in it | web delivery is not merely unverified: the route it was built for may not exist |
-| Delivery from **desktop and Aurora OS** | The published release excludes these platforms. Optional macOS and Ubuntu adapters have live delivery and lifecycle evidence; Ubuntu also has client-resolved Dart/native source frames, grouping and account isolation on the accepted x64 VM baseline. Windows 11 x64 local lifecycle, Dart/native source frames, live delivery and external consumers passed; a fresh Windows 11 x64 VM without build tools also passed 11 runtime/consumer checks; other Windows targets and Aurora remain outside the evidence | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md), [Ubuntu evidence](linux-preparation.md); publication is separate |
+| Delivery from **desktop and Aurora OS** | The published release excludes these platforms. Optional macOS and Ubuntu adapters have live delivery and lifecycle evidence; Ubuntu also has client-resolved Dart/native source frames, grouping and account isolation on the accepted x64 VM baseline. Windows 11 x64 local lifecycle, Dart/native source frames, live delivery and external consumers passed; a fresh Windows 11 x64 VM without build tools also passed 11 runtime/consumer checks; other Windows targets remain outside the evidence; Aurora has a separate signed RPM acceptance record above | [active backlog](tasks/development_v1.md), [macOS evidence](macos-lifecycle-acceptance.md), [Ubuntu evidence](linux-preparation.md); publication is separate |
 | ~~Clause 4.2.4 of the licence is not read as covering an integration wrapper~~ | **Answered 2026-08-27: the vendor does not object**, to the reading or to the name. This was the last thing blocking publication. Summarised rather than quoted — see [legal.md](legal.md) | closed |
 | ~~Tracer's backend *applies* the staged Dart symbols~~ | **Measured 2026-08-27: it does not, and cannot.** This row used to say a native crash inside Dart AOT code «cannot be provoked» because `Process.sendSignal` lands in libc. It can: a store through a `dart:ffi` pointer to an unmapped address compiles to an instruction inside `_kDartIsolateSnapshotInstructions`, and the example has a button for it. The report that came back carries `libapp.so + 0xa5234` with a zero build id, against the real `0x155234` and id `F99DCFDB6338…30`, so nothing is matched. Cause in the confirmed table above | closed; `flutter symbolize` on the verbatim trace is the route, and check 15 closed it. Closed from the other end too: the vendor states there is no Dart symbolication at all, so this is not a scenario waiting on a fix |
 
