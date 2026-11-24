@@ -1,148 +1,58 @@
 # apptracer_flutter_desktop
 
+Optional adapter for reporting Dart errors and native crashes to Tracer on macOS, Windows and Ubuntu. The `apptracer_flutter` facade installs the error handlers. The adapter sends reports through the official Sentry Flutter SDK using your Tracer project's DSN.
+
 [Русский](README.md)
 
-Desktop 2.0.0 `TracerPlatform` adapter using the official **sentry_flutter 10.6.0**
-SDK for macOS/Windows/Ubuntu Linux. macOS arm64 and Ubuntu x64 are
-accepted within their documented scope. Windows 11 x64 local acceptance is recorded below.
+## Quick start
 
-Ubuntu 22.04 x86_64 uses the official native queue for SDK-serialized Dart events
-and native reports. Linux requires `SENTRY_NATIVE_BACKEND=native` and an executable
-`lib/sentry-crash` in the bundle (see the example build helper).
-The Linux CMake hook resolves native source frames inside the crash daemon using
-matching Breakpad maps in `lib/symbols`. The example build helper generates these
-from the same build's DWARF; this native store does not contain Dart maps. Missing
-or mismatched maps preserve the original SDK report. The hook is pinned to
-sentry-native 0.16.6 in published 1.0.1 and 0.17.6 in 2.0.0.
-For Dart AOT, the adapter reads an optional compact map from
-`lib/apptracer-dart-symbols/<build-id>.json.gz` before SDK serialization. Stack,
-loaded ELF and map build IDs must agree; the original stack is retained.
-The example helper generates this map by default. It exposes function names and
-source paths, weakening obfuscation; opt out with
-`TRACER_BUNDLE_DART_SYMBOLS=0 bash tool/build_linux_desktop.sh`.
-Full DWARF and source code remain outside the bundle.
-After consent, Linux adds distro/kernel, architecture and DMI model/vendor;
-it does not read hostname, serial or machine-id. Tracer displays these fields
-under Data → Other/Context. Its C/C++ receiver still has limitations in the
-OS/device widgets and the `Stacktrace not available` caption, which can remain
-even when source files and lines are present.
-Linux registration is automatic. Stop revokes replay and
-cancels owned uploaders; restarting collection requires a new process. Live Tracer
-delivery, source frames and grouping were verified separately on an Ubuntu
-22.04.5 x64 VM; see the tested environments and results in the
-[Linux commands and record](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/linux-preparation.md).
+1. Install the facade and adapter from your desktop application's directory. Adapter 2.0.0 requires Flutter 3.44 or later and Dart 3.12 or later.
 
-For an external Ubuntu app, follow the
-[CMake and packaging setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer):
-set the bundle install prefix before plugins, omit the unused JNI runtime and
-install `sentry-crash` as PROGRAMS. A pubspec dependency alone is insufficient.
-Verified with glibc 2.35, GTK 3 and X11; uploader cancellation requires kernel ≥5.3
-and `/proc`. Ship the whole bundle with executable permissions; the target does
-not need Flutter/Java. Generate symbols using tools from the same repository
-revision; client maps need no plugin token. Facade 1.0.0 preserves the
-`FlutterError` type name under obfuscation.
+   ```sh
+   flutter pub add apptracer_flutter apptracer_flutter_desktop
+   ```
 
-Install both stable packages from pub.dev:
+2. Configure the build for your platform.
 
-```yaml
-dependencies:
-  apptracer_flutter: ^1.5.0
-  apptracer_flutter_desktop: ^2.0.0
-flutter:
-  config:
-    enable-swift-package-manager: true
-```
+   | Platform | Setup |
+   |---|---|
+   | macOS arm64 | Enable Swift Package Manager, set the Runner deployment target to macOS 12.0 or later and allow outgoing connections in the release entitlements. [macOS setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#external-application) |
+   | Windows 11 x64 | Set `$env:SENTRY_NATIVE_BACKEND = 'native'` in PowerShell before building. Ship the entire Release directory with its DLLs and crash handler. [Windows build](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#windows-consumer) |
+   | Ubuntu 22.04.5 x86_64 (X11) | Set `SENTRY_NATIVE_BACKEND=native` and configure CMake to install an executable `lib/sentry-crash` in the bundle. [CMake and packaging](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#ubuntu-linux-consumer) |
 
-Pass the Tracer project's Sentry DSN through `TracerOptions.dsn`. Release,
-environment and dist use the existing options. Never embed a symbol plugin token.
-macOS/Windows/Linux register the optional adapter automatically; explicit assignment is
-only needed when selecting the backend yourself. See [example](example/README.md)
-for the separate macOS runner and local release transport checks.
+3. Pass the HTTPS DSN from the Tracer project for your target platform. The adapter registers automatically.
 
-Tracer owns appRunner, Dart error handlers and user filters. Do not initialize or
-write to Sentry separately. Existing SDK ownership is rejected without closing it.
-Automatic sessions, tracing, profiling, replay, logs/metrics, screenshots and Dart
-error integrations are disabled. Filtered keys/breadcrumbs cannot be restored by
-SDK scope merging. Original Dart stacks are retained under
-`contexts.apptracer.dart_stack_trace`; issueKey maps to fingerprint.
+   ```dart
+   import 'package:apptracer_flutter/apptracer_flutter.dart';
+   import 'package:flutter/material.dart';
 
-Native crashes do not run Dart beforeSend. Do not put sensitive values into native
-scope expecting the Dart callback to filter a later native crash.
+   Future<void> main() async {
+     await Tracer.initialize(
+       options: const TracerOptions(dsn: String.fromEnvironment('TRACER_DSN')),
+       appRunner: () => runApp(const MyApp()),
+     );
+   }
+   ```
 
-**Server-side native macOS symbolication is unsupported in the tested integration**
-(sentry_flutter 9.30.1 / Cocoa 8.58.4, Tracer DESKTOP project). SIGABRT delivery is
-confirmed, but matching desktop symbols do not restore source files/lines; the
-Apple dSYM endpoint rejects DESKTOP projects. Local dSYM symbolication works.
-Ordinary symbolic Dart stacks are sent separately. See the
-[acceptance record](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-symbols-acceptance.md).
+4. Run with the DSN. On macOS, use the command below. On Windows or Ubuntu, select the `windows` or `linux` device.
 
-Disabled/deferred bootstrap does not start the SDK. On macOS, stop gates Dart and
-native network admission, cancels in-flight requests, and closes Cocoa SDK; it waits
-for session invalidation before acknowledging. Failures remain `error`. After a
-native initialization attempt, restarting collection requires a new process.
-`stopAndClearCollection` also removes this adapter's queue, crash files, persisted
-scope/identity and Cocoa async diagnostic log; it returns `restartRequired` after
-native init, or `disabled` before it. An empty file prevents late cache recreation.
+   ```sh
+   flutter run -d macos --release --dart-define=TRACER_DSN=YOUR_PROJECT_DSN
+   ```
 
-`preservePreviousReports=false` (default) purges before native startup. `true`
-retains reports from an ordinarily terminated/crashed process. Any preceding stop,
-including an explicit stop before first init, revokes replay even with `true`.
-Already transmitted bytes/server data cannot be recalled. Cleanup covers the new
-`Library/Application Support/apptracer_desktop/<bundle-id>/v1` namespace (inside the
-container for sandboxed apps), plus `async.log`. Legacy SDK caches are neither
-imported nor automatically deleted; app owners must plan migration cleanup.
-System macOS crash logs are not deleted.
+   Call `await Tracer.recordError(StateError('desktop check'), StackTrace.current)` from a button and open the event in your Tracer project.
 
-Version 2.0.0 uses public Cocoa 9.35.0 APIs and Swift Package Manager.
-Official SDK serialization, crash handling and queueing remain in use; a
-session-local URLProtocol gates network delivery. The published 1.0.1 adapter stays
-on Cocoa 8.58.4/CocoaPods. Cocoa 9.35.0 drops cached envelopes on HTTP 5xx;
-a connection lost before an HTTP response can be retried after authorized restart. See the
-[local lifecycle evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/macos-lifecycle-acceptance.md).
-Windows has its own native queue/lifecycle implementation and separate acceptance below.
+## Consent and delivery
 
-The main package's dependency graph is unchanged. Adding this optional package to
-a combined mobile/desktop app also pulls in Sentry's iOS/Android native dependencies;
-use a separate desktop consumer until that graph has been verified.
+For deferred collection, set `TracerOptions.nativeInitialization` to `TracerNativeInitialization.deferred`. Call `Tracer.startCollection()` after consent and `Tracer.stopAndClearCollection()` on withdrawal. After stopping an active native SDK, restart the process to collect again. On an ordinary restart, replay requires `preservePreviousReports: true`. On macOS an HTTP 5xx response can cause an event to be lost. [Lifecycle and delivery limits](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#sentry-upgrades)
 
-When migrating from the removed `apptracer_flutter_sentry`, replace its Git
-or path dependency with `apptracer_flutter_desktop` and remove the manual
-`SentryProtocolTracer()` registration. The desktop adapter registers automatically.
-[Migration guide](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#moving-from-the-manual-transport).
+The adapter initializes Sentry. Use `Tracer` to report events. The `beforeSend` filter applies to Dart events. A native crash report can include previously recorded keys, logs and user IDs. [Data and privacy](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/privacy.md)
 
-Run `flutter pub get`, `flutter analyze`, `flutter test` on macOS. Tests exercise
-the official SDK with a mocked native channel, not live Tracer ingestion. See the
-[Russian README](README.md) for the setup example and full limitations.
+If mobile and desktop builds share a `pubspec.yaml`, the `sentry_flutter` dependency also brings native SDKs into Android and iOS. Use a separate desktop application to keep those dependency sets independent.
 
-## Windows x64
+## Example and guides
 
-Build with `SENTRY_NATIVE_BACKEND=native`. Automatic registration includes the
-native lifecycle helper and bundles `sentry-crash.exe`, `sentry-wer.dll` and
-app-local MSVC runtime DLLs. Ship the entire Release directory. Storage is
-`%LOCALAPPDATA%/apptracer_desktop/<exe-name>/v1`, independent of the install path.
-Default startup discards old reports; preservation is opt-in. Stop durably
-revokes replay and cancels owned uploaders; clear deletes the owned queue.
-After native initialization, collection requires a new process to resume.
-Windows reparse-point ancestors are rejected and a process lock prevents two
-instances from sharing the active queue. Legacy SDK caches are not migrated.
-
-Optional exact-build maps resolve obfuscated Dart frames from `data/app.so`
-and native runner frames from PE/PDB identity. Maps expose function names/source
-paths; omit the map generation steps to keep them private. Missing/mismatched
-maps retain the SDK report and raw Dart stack. No symbol plugin token is needed.
-See [commands](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md),
-[consumer setup](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#windows-consumer) and
-[Windows 11 x64 evidence](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-local-acceptance.md).
-All 24 local release scenarios and two external consumers passed. Eight events
-were accepted by Tracer; handled/native cards and grouping counts were inspected.
-The current Windows CI passed all 24 scenarios and independent PDB/minidump
-checks. A fresh Windows 11 x64 VM without build tools passed 11 runtime/consumer
-checks with an unelevated token. Windows 10 and ARM64 are untested.
-
-## External consumer and migration
-
-See [desktop-migration.md](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md) for installation
-without monorepo overrides, SPM setup, legacy-cache ownership and the
-package dry-run procedure. The candidate baseline is Flutter 3.47.4 / Dart 3.13.3,
-sentry_flutter 10.6.0 / Cocoa 9.35.0 on macOS arm64. The bridge deployment target
-is macOS 12.0; this is not runtime acceptance on every older OS or Intel.
+- [Example for all three platforms](example/README.md)
+- [Platform matrix and symbol verification](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/platform-matrix.md#summary)
+- [Migration from the old transport](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#moving-from-the-manual-transport)
+- [Separate Flutter Aurora adapter](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/aurora-release.md)

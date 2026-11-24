@@ -7,7 +7,7 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the version is below `1.0.0`, a breaking change bumps the minor version,
 as pub.dev expects.
 
-## 0.3.1
+## 0.3.1 - 2026-11-24
 
 - Add the optional Dart-only `auroraAccountScope` option and a platform hook to
   invalidate a prepared native start on consent withdrawal.

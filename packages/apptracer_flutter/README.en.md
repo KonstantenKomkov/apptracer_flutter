@@ -11,8 +11,6 @@ error-monitoring service by OK.TECH / VK.
 
 Русская версия: [README.md](README.md).
 
-Facade 2.0.0 supports the optional Flutter Aurora source adapter. Use an app token for native crashes and the same project’s DSN for Dart exceptions. [Installation and tested versions](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/aurora-release.md).
-
 ## Quick start
 
 **1. Install the package** from your Flutter application directory.
@@ -51,6 +49,10 @@ For Windows, macOS and Ubuntu Linux, add `apptracer_flutter_desktop ^2.0.0` and
 configure the Tracer project's Sentry DSN using the
 [desktop guide](../../docs/desktop-migration.md). The facade alone does not add
 a desktop backend.
+
+### Aurora OS (optional)
+
+For facade 2.0.0, add the Flutter Aurora adapter from a pinned source checkout. Use the C/C++ project's app token for native crashes and its Sentry DSN for Dart errors. The release guide includes the runner setup, consent flow and dependency configuration before and after publication. [Aurora setup](../../docs/aurora-release.md).
 
 **3. Wrap the application's start.**
 
@@ -138,10 +140,7 @@ deliberate different policy.
 
 ## Why this exists
 
-The native Tracer SDKs cannot see Dart errors. The package captures them through
-`FlutterError.onError`, `PlatformDispatcher.instance.onError` and guarded zones
-and forwards them to the native SDK, which keeps handling native crashes, ANRs
-and crash-free metrics.
+The facade captures Dart errors through Flutter and isolate error handlers. Android and iOS forward them to the native Tracer SDK. Web, desktop and Aurora use the transport listed for each target in the [platform matrix](../../docs/platform-matrix.md#summary).
 
 ## Comparison with Firebase Crashlytics
 
@@ -151,7 +150,7 @@ Firebase uses Google's SDKs and ingest. Data and privacy limitations are in
 
 ## What you get beyond Dart errors
 
-Native crashes and ANRs/hangs are handled by the platform SDK. Current
+Native crash, ANR and hang coverage depends on the platform. Current
 capabilities and limitations live only in
 [platform-matrix.md](../../docs/platform-matrix.md).
 

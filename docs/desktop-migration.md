@@ -5,7 +5,7 @@ The accepted macOS scope is recorded in
 [macos-lifecycle-acceptance.md](macos-lifecycle-acceptance.md); Ubuntu 22.04.5
 x86_64 VM evidence is in [linux-preparation.md](linux-preparation.md).
 Windows 11 x64 evidence is in [windows-local-acceptance.md](windows-local-acceptance.md).
-Aurora is not supported by this adapter.
+Flutter Aurora uses a [separate source adapter](aurora-release.md).
 
 ## Sentry upgrades
 

@@ -1,40 +1,27 @@
 # Platform matrix
 
-Everything below was verified against the live artefacts on the dates shown, not
-copied from prose documentation. Where a fact could not be verified it says so.
-
-Baseline verified: 2026-08-25. Android SDK 1.6.1 release scope accepted: 2026-11-13;
-see [artifact audit](android-sdk-1.6.1.md) and [acceptance/limits](android-sdk-1.6.1-acceptance.md).
-Kotlin console file/line remain incorrect; local exact-build Retrace works.
-Full Flutter configuration cache is not supported on the audited toolchain.
-macOS 1.0.0 update, 2026-10-23: see [local lifecycle and live recheck](macos-lifecycle-acceptance.md).
-macOS 15 arm64 CI and isolated consumer checks:
-[automation and packaging evidence](macos-ci-consumer-acceptance.md).
+The table covers the facade 2.0.0 candidate and optional desktop adapter 2.0.0.
+Each acceptance record identifies the SDK, hardware or emulator and build used.
 
 ## Summary
 
 | Platform | Backend | Dart errors | Native crashes | ANR / hangs | Crash-free | Status |
 |---|---|---|---|---|---|---|
-| Android | `ru.ok.tracer` SDK via method channel | yes | yes, by the native SDK | yes, by the native SDK, **Android 11+ only** | yes, by the native SDK | implemented |
-| iOS | `OKTracer` SDK via method channel | yes | yes, by the native SDK | hang count, by the native SDK | via native sessions | implemented |
-| Web | Tracer's own HTTP ingest, pure Dart | yes | n/a | n/a | no | verified against a live project 2026-08-26; breadcrumbs, custom keys and `userId` added and verified 2026-08-27 |
-| macOS (optional 1.0.0) | official sentry_flutter 9.30.1 / Cocoa 8.58.4 | verified release probes, keys/logs/Context | SIGABRT + userId/keys/breadcrumb/OS verified; server symbolication unsupported in tested integration | disabled | not claimed | stable; arm64 local lifecycle passed, 8 fresh live events and repeat grouping verified; expanded acceptance remains open |
-| Windows 11 x64 (optional 1.0.0) | official sentry_flutter 9.30.1 / Sentry Native 0.16.6, native backend | obfuscated release, local source frames and live delivery | access violation, exact PDB source frames, retry/revocation verified | disabled | not claimed | stop/clear, grouping and external consumers verified locally; [scope/limits](windows-local-acceptance.md) |
-| Ubuntu 22.04.5 x86_64 (optional 1.0.0) | official Sentry Flutter 9.30.1 / sentry-native 0.16.6 native backend | live handled/FlutterError/async, fields and exact-build source frames verified | Flutter runner SIGSEGV + minidump and client-resolved source frames verified in Tracer | disabled | not claimed; sessions disabled | accepted on clean VM/X11; 21 CI scenarios, lifecycle, grouping and account isolation passed; client maps required for source lines; service UI limits remain |
-| Aurora OS 5.2.1.200 aarch64 | optional Flutter Aurora adapter, Tracer Native 0.1.15 and opt-in Sentry Dart DSN | handled, Flutter and uncaught async errors with source lines | signed RPM, verified SIGABRT and symbolized SIGTRAP | unverified | not claimed | [2.0.0 candidate acceptance on the emulator](aurora-live-acceptance.md) |
+| Android | Tracer Android 1.6.2 via Pigeon | yes | JVM and native | Android 11+ | native SDK | [Device checks and SDK 1.6.2 limits](release-history.md#android-sdk-162-migration) |
+| iOS | OKTracer 1.5.2 via Pigeon | yes | yes | native hang count | native sessions | [Physical-device acceptance](native-collection-consent.md) |
+| Web | Tracer HTTP ingest in Dart | yes | n/a | n/a | no | [Browser delivery, retry and limits](web-protocol.md) |
+| macOS arm64 | Sentry Flutter 10.6.0 / Cocoa 9.35.0 | handled, Flutter and async errors verified live on 2.0.0 | SIGABRT verified with Cocoa 8.58.4. Use matching dSYM for local source lines | disabled | not claimed | [2.0.0 live smoke and hosted consumer](tasks/task-33-sentry-10-migration.md), [native symbols](macos-symbols-acceptance.md) |
+| Windows 11 x64 | Sentry Flutter 10.6.0 / sentry-native 0.17.6 | Dart errors, optional exact-build maps | native backend, optional PDB-derived maps | disabled | not claimed | [2.0.0 platform CI](tasks/task-33-sentry-10-migration.md), [earlier live events and clean Windows VM](windows-local-acceptance.md) |
+| Ubuntu 22.04.5 x86_64 (X11) | Sentry Flutter 10.6.0 / sentry-native 0.17.6 | Dart errors, optional exact-build maps | native backend, optional DWARF-derived maps | disabled | not claimed | [2.0.0 platform CI](tasks/task-33-sentry-10-migration.md), [earlier live events and clean Ubuntu VM](linux-preparation.md) |
+| Aurora OS 5.2.1.200 aarch64 (emulator) | Flutter Aurora source adapter, Tracer Native 0.1.15 and optional Sentry Dart 9.30.1 | handled, Flutter and async errors with source lines via project DSN | SIGABRT delivered and SIGTRAP symbolized in a signed RPM | unverified | not claimed | [Live events and limits](aurora-live-acceptance.md), [runner and plugin symbols](aurora-symbols.md) |
 
-"Implemented" means the code exists, analyses clean and is unit-tested. See
-[status.md](status.md) for what has and has not been exercised against a real
-Tracer project.
+Android, iOS and Web register with the facade by default. For macOS, Windows or Ubuntu, add the
+[hosted desktop package](desktop-migration.md). For Flutter Aurora, add the
+[source adapter](aurora-release.md) to the Aurora application.
+The facade candidate requires platform interface `^0.3.1` and Android adapter `^0.5.0`.
+The [previous hosted release](publishing.md#coordinated-desktop-200-release) paired facade 1.5.0 with desktop 2.0.0.
 
-The desktop rows record the 1.0.0 acceptance results. For those configurations,
-the earlier hosted release was desktop 1.0.1. The [desktop 2.0.0 release](publishing.md#coordinated-desktop-200-release) uses Sentry Flutter 10.6.0.
-It uses the official Sentry SDK with the target Tracer project's DSN.
-
-Facade 1.5.0 requires platform interface `^0.3.0` and Android adapter `^0.5.0`. Starting
-with 0.4.2, the adapter restores the native context after each Dart report.
-[Verified scope and concurrency limits](android-event-context.md) ·
-[Published packages](publishing.md#coordinated-desktop-200-release).
+The [Android context checks](android-event-context.md) document which native values the adapter restores after each Dart report.
 
 ## Flutter toolchain
 
@@ -52,7 +39,7 @@ remain a separate canary finding, not a baseline failure. See
 [contributing](contributing.md#flutter-compatibility) for update and local checks.
 
 On Aurora, configure the Tracer C/C++ project app token for native minidumps
-and its optional Sentry DSN for Dart exceptions. The Flutter Aurora fork registers
+and its optional Sentry DSN for Dart exceptions. Flutter Aurora 3.41.4 (Dart 3.11.1) registers
 the adapter. Consent, account isolation and native replay were exercised on the
 5.2.1.200 aarch64 emulator. [Integration guide](../aurora/apptracer_flutter_aurora/README.md).
 
@@ -238,10 +225,9 @@ bytecode:
   package handles it gracefully: `Tracer.isDisabled` is checked at startup and
   the integration reports "collection is off" rather than failing.
 
-### stopCollection is one-way
+### Android runtime pause and full cleanup
 
-`Tracer.disable()` is irreversible in a process, but its bytecode only sets a
-flag. It does not establish uploader shutdown or native report deletion.
+`Tracer.disable()` is one-way on 1.4.0 and 1.5.2. On 1.6.1 and 1.6.2, an explicit resume can re-enable a paused SDK. Disabling only sets a flag. It does not establish uploader shutdown or native report deletion.
 `isCollectionEnabled=false` only gates Dart in an automatic Android integration.
 Remove both startup providers for deferred bootstrap. The new lifecycle contract,
 its current native implementation gates, checked artifacts and backend support are
@@ -252,8 +238,8 @@ in [native-collection-consent.md](native-collection-consent.md).
 | Item | Value | How it was checked |
 |---|---|---|
 | Pod | `OKTracer` | `github.com/odnoklassniki/tracer-ios`, `Specs/OKTracer/*` |
-| Spec repository | `https://github.com/odnoklassniki/tracer-ios.git` — a custom source that the host `Podfile` must declare | podspec layout |
-| Latest version | `1.5.2` — and the **floor** this package declares, see below | `Specs/OKTracer/` listing |
+| CocoaPods spec repository | `https://github.com/odnoklassniki/tracer-ios.git` — a custom source that the host `Podfile` must declare | podspec layout |
+| Integrated version | Exactly `1.5.2` for the audited consent and storage behavior | [Podspec](../packages/apptracer_flutter_ios/ios/apptracer_flutter_ios.podspec) and [Swift Package Manager manifest](../packages/apptracer_flutter_ios/ios/apptracer_flutter_ios/Package.swift) |
 | Distribution | binary `OKTracer.xcframework` downloaded from `nexus-external.vkteam.ru`, plus an `OKTracer.bundle` holding a root CA certificate | podspec `:http` source, zip listing |
 | Architectures | `ios-arm64`, `ios-arm64_x86_64-simulator`, `tvos-arm64`, `tvos-arm64_x86_64-simulator` | `Info.plist` of the xcframework |
 | Deployment target | iOS **12.4** for the binary; this package declares **13.0** to match Flutter | `-target arm64-apple-ios12.4` in the `.swiftinterface` |
@@ -261,9 +247,9 @@ in [native-collection-consent.md](native-collection-consent.md).
 | Linkage | the xcframework is **static**, so the host `Podfile` needs `use_frameworks! :linkage => :static` | `pod install` fails otherwise with "transitive dependencies that include statically linked binaries"; reproduced and fixed in the example |
 | License | "Tracer's License Agreement"; the repository `LICENSE` file is one line pointing at <https://apptracer.ru/license> | repository |
 
-### Why 1.5.2 is the floor
+### Why the adapter pins OKTracer 1.5.2
 
-Not a feature threshold. On 2026-08-31 the vendor moved its binaries from
+The CocoaPods and Swift Package Manager manifests pin the SDK version used to verify storage cleanup on consent withdrawal. On 2026-08-31 the vendor moved its binaries from
 `artifactory-external.vkpartner.ru` to `nexus-external.vkteam.ru` and took the
 old host down; the announcement of 1.5.2 (2026-09-02) says it differs from
 1.5.1 only in the version number and the host. Every podspec in
@@ -272,7 +258,7 @@ old host down; the announcement of 1.5.2 (2026-09-02) says it differs from
 answers `404`, the 1.5.2 archives `200`. A floor of 1.4.0 would therefore
 promise three versions that cannot be installed. A `Podfile.lock` that pins
 1.5.1 still has to be moved by hand — `pod update OKTracer`, since `pod
-install` keeps a locked pod even with `--repo-update` — but with the floor it
+install` keeps a locked pod even with `--repo-update` — but with the pin it
 stops at a resolver message naming the constraint rather than at a 404 from
 the download.
 
@@ -321,7 +307,7 @@ documentation states that a supplied `callStackSymbols` array is **ignored
 unless a debugger is attached**, so in a release build there is nothing left to
 group on and every Dart error in the app would collapse into a single issue.
 
-The iOS implementation therefore synthesises an `issueKey` from the Dart error
+For the iOS adapter, the facade therefore synthesises an `issueKey` from the Dart error
 type and the innermost named frame when the caller did not supply one:
 
 ```
@@ -405,11 +391,9 @@ Consequences worth knowing:
 
 ## Desktop and Aurora OS
 
-The published optional desktop adapter supports the macOS, Windows and Ubuntu
-environments listed in the summary. The live and VM results below cover the
-published 9.30.1 SDK family. Acceptance of the 2.0.0 source candidate is tracked
-in [task 33](tasks/task-33-sentry-10-migration.md). Aurora uses its own optional adapter for facade 2.0.0.
-The optional macOS adapter now uses the official Sentry SDK with a Tracer DSN.
+Desktop 2.0.0 uses the target project's DSN. Its macOS live checks and platform CI are
+recorded in [the SDK migration](tasks/task-33-sentry-10-migration.md).
+The detailed desktop results below were obtained on the earlier Sentry Flutter 9.30.1 SDK family.
 macOS arm64 has local lifecycle and live delivery evidence, with incomplete
 expanded console acceptance and a server-native-symbolication limitation.
 On 2026-11-22 Tracer displayed unknown frames in all three obfuscated macOS

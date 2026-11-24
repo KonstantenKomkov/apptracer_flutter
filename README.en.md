@@ -36,6 +36,8 @@ packages/
   apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
                                         tested environments listed in the platform matrix
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
+aurora/
+  apptracer_flutter_aurora/              source adapter for Flutter Aurora
 docs/
 tool/
   bootstrap.sh              pub get in every package

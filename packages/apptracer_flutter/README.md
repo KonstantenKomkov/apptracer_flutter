@@ -11,8 +11,6 @@
 
 English version: [README.en.md](README.en.md).
 
-Для ОС Аврора в кандидате 2.0.0 подключите отдельный адаптер для Flutter Аврора. Нативным отчётам нужен app token, ошибкам Dart также нужен DSN того же проекта. [Подключение и проверенные версии](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/aurora-release.md).
-
 ## Быстрый старт
 
 **1. Установите пакет** из каталога вашего Flutter-приложения.
@@ -44,11 +42,15 @@ Gradle-плагин Tracer, репозитории, `resValues = true`, токе
 [Руководство по Web](../../docs/web-protocol.md#web-setup) описывает
 загрузку сорсмап и ограничения доставки.
 
-### Desktop (optional)
+### Desktop (опционально)
 
 Для Windows, macOS и Ubuntu Linux добавьте `apptracer_flutter_desktop ^2.0.0`
 и настройте Sentry DSN по [desktop-руководству](../../docs/desktop-migration.md).
 Основной пакет сам desktop backend не подключает.
+
+### ОС Аврора (опционально)
+
+Для фасада 2.0.0 подключите адаптер из зафиксированной ревизии исходников Flutter-плагина Авроры. Для нативных падений нужен app token проекта C/C++, для ошибок Dart — Sentry DSN того же проекта. Настройка runner, согласия и зависимостей до и после публикации описана в [руководстве для Авроры](../../docs/aurora-release.md).
 
 **3. Оберните запуск приложения.**
 
@@ -134,10 +136,7 @@ onPressed: () => throw StateError('проверка apptracer_flutter'),
 
 ## Зачем это нужно
 
-Нативные SDK Tracer не видят ошибок Dart. Пакет перехватывает их через
-`FlutterError.onError`, `PlatformDispatcher.instance.onError` и guarded zone и
-передаёт нативному SDK, который продолжает обрабатывать native crashes, ANR и
-crash-free метрики.
+Фасад перехватывает ошибки Dart через обработчики Flutter и изолята. На Android и iOS он передаёт их нативному SDK Tracer. Для Web, desktop и Авроры транспорт указан в [матрице платформ](../../docs/platform-matrix.md#summary).
 
 ## Сравнение с Firebase Crashlytics
 
@@ -147,7 +146,7 @@ ingest, Firebase — SDK и ingest Google. Данные и ограничени�
 
 ## Что вы получите, кроме ошибок Dart
 
-Нативные краши и ANR/hangs обрабатывает SDK платформы. Полный актуальный список
+Возможность сбора нативных падений, ANR и зависаний зависит от платформы. Полный актуальный список
 возможностей и ограничений находится только в
 [platform-matrix.md](../../docs/platform-matrix.md).
 
