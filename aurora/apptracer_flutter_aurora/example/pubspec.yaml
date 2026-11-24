@@ -9,6 +9,7 @@ environment:
   sdk: ^3.11.1
 
 dependencies:
+  apptracer_flutter: ^2.0.0
   flutter:
     sdk: flutter
   apptracer_flutter_aurora:

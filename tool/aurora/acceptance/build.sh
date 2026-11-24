@@ -14,10 +14,12 @@ cp "$fixture/main.dart" "$work/example/lib/main.dart"
 cp "$fixture/main.cpp" "$work/example/aurora/main.cpp"
 cp -R "$plugin/example/aurora/icons" "$work/example/aurora/"
 cd "$work/example"
-python3 - "$plugin" <<'PY'
+python3 - "$plugin" "$repo" <<'PY'
 import json
 import sys
 from pathlib import Path
+overrides = Path(sys.argv[1], 'example', 'pubspec_overrides.yaml').read_text()
+Path('pubspec_overrides.yaml').write_text(overrides.replace('../../../packages/', sys.argv[2] + '/packages/'))
 pubspec = Path('pubspec.yaml')
 pubspec.write_text(pubspec.read_text().replace('path: ../', 'path: ' + json.dumps(sys.argv[1]))
                    + '\naurora:\n  permissions:\n    - Internet\n')

@@ -140,6 +140,7 @@ class TracerClient {
         _options.deliveryListener != options.deliveryListener;
     if (listenerChanged ||
         _options.resolvedAppToken != options.resolvedAppToken ||
+        _options.auroraAccountScope != options.auroraAccountScope ||
         _options.apiUrl != options.apiUrl ||
         _options.dsn != options.dsn ||
         _options.isCollectionEnabled != options.isCollectionEnabled) {
@@ -175,6 +176,7 @@ class TracerClient {
         ? null
         : TracerCollectionResult(TracerCollectionState.error, reason: reason);
     if (!requested.isCollectionEnabled) {
+      if (_startingGeneration != null) platform.cancelPendingStart();
       final generation = ++_generation;
       _disableDart();
       return _serialize(
@@ -434,6 +436,7 @@ class TracerClient {
   ///
   /// Always reaches the platform, including before a successful Dart start.
   Future<void> stop() async {
+    if (_startingGeneration != null) platform.cancelPendingStart();
     final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(
@@ -467,6 +470,7 @@ class TracerClient {
 
   /// Revokes Dart collection synchronously, then stops and purges transport.
   Future<TracerCollectionResult> stopAndClearCollection() {
+    if (_startingGeneration != null) platform.cancelPendingStart();
     final generation = ++_generation;
     _disableDart();
     _options = _options.copyWith(

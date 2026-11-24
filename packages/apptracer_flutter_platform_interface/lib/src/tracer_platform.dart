@@ -98,6 +98,9 @@ abstract class TracerPlatform extends PlatformInterface {
   /// integration disabled, not break the host application.
   Future<void> initialize(TracerOptions options);
 
+  /// Invalidates a prepared start before a serialized withdrawal reaches native code.
+  void cancelPendingStart() {}
+
   /// Stops collection and releases platform resources.
   ///
   /// Must be idempotent.

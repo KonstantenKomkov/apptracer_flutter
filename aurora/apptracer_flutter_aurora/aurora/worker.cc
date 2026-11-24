@@ -107,6 +107,7 @@ int runWorker() {
     const auto version = symbol<decltype(&tracer_set_platform_info2)>(sdk, "tracer_set_platform_info2");
     const auto upload = symbol<decltype(&tracer_upload)>(sdk, "tracer_upload");
     const auto log = symbol<decltype(&tracer_log)>(sdk, "tracer_log");
+    const auto user = symbol<decltype(&tracer_set_userid)>(sdk, "tracer_set_userid");
     const auto key = symbol<decltype(&tracer_set_key)>(sdk, "tracer_set_key");
     static std::atomic_bool uploading{false};
     bool initialized = false;
@@ -121,6 +122,11 @@ int runWorker() {
         if (!stage.isEmpty()) collect(stage.constData(), root.constData());
         init(args.value("token").toString().toUtf8().constData(), root.constData());
         version(args.value("version").toString().toUtf8().constData(), args.value("build").toInt());
+        const auto keys = args.value("keys").toObject();
+        for (auto it = keys.begin(); it != keys.end(); ++it)
+          key(it.key().toUtf8().constData(), it.value().toString().toUtf8().constData());
+        if (args.value("user").isString())
+          user(args.value("user").toString().toUtf8().constData());
         initialized = true;
       } else if (initialized && op == "upload") {
         if (!uploading.exchange(true)) {
