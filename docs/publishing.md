@@ -1,11 +1,27 @@
 # Publishing
 
-## Aurora and facade 2.0.0 candidate
+## Aurora and facade 2.0.0
 
-Publish platform interface 0.3.1 before facade 2.0.0. The Aurora adapter is
-distributed from a pinned source checkout for the Flutter Aurora fork. The
-external candidate consumer uses the two unpublished shared packages locally.
-[Installation and release checks](aurora-release.md).
+Published on 2026-11-24 from [tag v2.0.0](https://github.com/KonstantenKomkov/apptracer_flutter/tree/v2.0.0), commit `675f2a5`.
+The platform interface was published first. The facade resolved the new interface
+from pub.dev before upload. Both final publication dry runs used hosted
+dependencies and completed with zero warnings or hints.
+
+| Published package | Files verified | Archive SHA-256 |
+|---|---:|---|
+| [apptracer_flutter_platform_interface 0.3.1](https://pub.dev/packages/apptracer_flutter_platform_interface/versions/0.3.1) | 31 | `62cdd8a74e51585fa872aa572fd1ec6c828812e90d65684f2a0fb38e0fc89b33` |
+| [apptracer_flutter 2.0.0](https://pub.dev/packages/apptracer_flutter/versions/2.0.0) | 122 | `1f05cbd73e030e737a917a7d6efb1c155599bfd6dbc15509596af49aaeb1760a` |
+
+Both downloaded archives matched their registry digests. Every packaged file
+matched the release commit. Flutter Aurora uses the source adapter from the same tag.
+[Installation and supported toolchain](aurora-release.md). For upgrades that use
+deprecated facade types, see the [1.x migration guide](release-history.md#migrating-the-facade-from-1x-to-20).
+
+An external Flutter example resolved all six shared packages from pub.dev
+without overrides, passed analysis and passed its four tests. A desktop consumer
+resolved both facade and desktop 2.0.0 from pub.dev and passed analysis.
+On Flutter Aurora 3.41.4, an external consumer resolved the same six hosted
+packages plus the source adapter, passed analysis and built an aarch64 release RPM.
 
 ## Coordinated desktop 2.0.0 release
 

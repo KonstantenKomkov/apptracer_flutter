@@ -1,4 +1,4 @@
-# Подключение Авроры к кандидату 2.0.0
+# Подключение Авроры к фасаду 2.0.0
 
 Для Flutter Аврора используется исходный пакет `apptracer_flutter_aurora 2.0.0`
 с `publish_to: none`. В его метаданных указан платформенный ключ `aurora`,
@@ -8,12 +8,14 @@
 продолжают зависеть от фасада. Desktop SDK и Aurora SDK проверялись в отдельных
 графах зависимостей.
 
-## До публикации общих пакетов
+## Установка
 
-Положите checkout рядом с приложением. Подготовьте нативную поставку из корня
-checkout следующей командой.
+Скачайте исходный адаптер из релизного тега `v2.0.0` в каталог рядом с приложением.
+Из родительского каталога приложения выполните команды ниже.
 
 ```sh
+git clone --branch v2.0.0 --depth 1 https://github.com/KonstantenKomkov/apptracer_flutter.git tracer
+cd tracer
 python3 tool/prepare_aurora_sdk.py --destination aurora/apptracer_flutter_aurora/aurora/sdk
 ```
 
@@ -23,14 +25,9 @@ python3 tool/prepare_aurora_sdk.py --destination aurora/apptracer_flutter_aurora
 dependencies:
   flutter:
     sdk: flutter
-  apptracer_flutter:
-    path: ../tracer/packages/apptracer_flutter
+  apptracer_flutter: ^2.0.0
   apptracer_flutter_aurora:
     path: ../tracer/aurora/apptracer_flutter_aurora
-
-dependency_overrides:
-  apptracer_flutter_platform_interface:
-    path: ../tracer/packages/apptracer_flutter_platform_interface
 
 aurora:
   permissions:
@@ -42,18 +39,10 @@ aurora:
 Запустите `flutter-aurora pub get`, затем соберите и установите подписанный RPM
 по [инструкции примера](../aurora/apptracer_flutter_aurora/example/README.md).
 
-## Порядок выпуска
-
-1. Первым публикуется `apptracer_flutter_platform_interface 0.3.1`. В нём добавлены
-   `auroraAccountScope` и отмена подготовленного старта. Уже опубликованная
-   версия 0.3.0 этих API не содержит.
-2. После этого публикуется фасад `apptracer_flutter 2.0.0` с зависимостью
-   `^0.3.1`. Для финальной проверки разрешите обе зависимости с pub.dev,
-   удалив локальный override и заменив путь к фасаду на `^2.0.0`.
-3. Для Авроры сохраните path на проверенный checkout адаптера и подготовленный
-   Tracer Native 0.1.15. Plugin token задаётся только при отправке символов на
-   сборочной машине. Android, iOS, Web и HTTP используют совместимые уже
-   опубликованные версии.
+Фасад и платформенный интерфейс устанавливаются с pub.dev. Адаптер Авроры
+подключается из checkout, а сборка использует Tracer Native 0.1.15.
+Plugin token нужен на сборочной машине для отправки символов.
+[Версии и контрольные суммы архивов](publishing.md#aurora-and-facade-200).
 
 [Результаты целевой приёмки](aurora-live-acceptance.md) ·
 [Управление согласием и настройка DSN](../aurora/apptracer_flutter_aurora/README.md).
@@ -72,7 +61,7 @@ app token, plugin token и DSN тестового проекта.
 Из чистых экспортов исходников вне Git checkout выполнен
 `dart pub publish --dry-run` для платформенного интерфейса и фасада. Обе
 проверки прошли с нулём предупреждений. Фасад получил одну подсказку о
-локальном override неопубликованного интерфейса. После выхода 0.3.1 следует
-повторить dry-run фасада с hosted-зависимостью. Для адаптера с
+локальном override неопубликованного интерфейса. Перед публикацией фасад повторно
+прошёл dry-run с интерфейсом 0.3.1 из pub.dev. Для адаптера с
 `publish_to: none` проверена сборка из исходного пакета, включая штатную
 регистрацию платформы. Нативный SDK подготовлен отдельным шагом.
