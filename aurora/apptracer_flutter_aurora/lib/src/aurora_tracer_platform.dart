@@ -108,10 +108,10 @@ class AuroraTracerPlatform extends TracerPlatform {
     bool replace = false,
   }) => AuroraTracer.startCollection(
     appToken: options.resolvedAppToken!,
-    accountScope: options.auroraAccountScope ?? 'no-replay',
+    accountScope: options.auroraAccountScope,
     versionName: options.release ?? 'unspecified',
     versionCode: int.tryParse(options.dist ?? '') ?? 0,
-    preservePreviousReports: preserve,
+    preservePreviousReports: preserve && options.auroraAccountScope != null,
     initialKeys: _keys,
     userId: _user,
     replaceContext: replace,
@@ -127,7 +127,9 @@ class AuroraTracerPlatform extends TracerPlatform {
       final old = _options;
       if (old != null && isEnabled && _sameScope(old, options)) return _state;
       try {
-        if (old != null) {
+        final needsCleanup =
+            old != null || _state.state == TracerCollectionState.error;
+        if (needsCleanup) {
           await _closeClient();
           await AuroraTracer.stopAndClearCollection();
         }
@@ -146,7 +148,7 @@ class AuroraTracerPlatform extends TracerPlatform {
         _options = options;
         await _startNative(
           options,
-          preserve: options.preservePreviousReports && old == null,
+          preserve: options.preservePreviousReports && !needsCleanup,
         );
         if (epoch != _generation) return _disabled;
         if (dsn.isNotEmpty) {
