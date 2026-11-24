@@ -34,7 +34,6 @@ packages/
   apptracer_flutter_desktop/            optional official Sentry SDK for desktop;
                                         tested environments listed in the platform matrix
   apptracer_flutter_http/               pure-Dart client for Tracer's own ingest
-  apptracer_flutter_sentry/             archived manual Sentry transport
 docs/
 tool/
   bootstrap.sh              pub get in every package

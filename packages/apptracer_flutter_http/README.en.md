@@ -41,7 +41,7 @@ void main() {
 The HTTP transport reports Dart errors only. Native crashes, ANRs and hangs require a native SDK.
 
 On 2026-08-26, before the first release, the manual Sentry protocol implementation
-was split into the now archived [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter_sentry/README.en.md).
+was split into [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/v1.5.0/packages/apptracer_flutter_sentry/README.en.md), which was subsequently removed.
 
 ## Status
 

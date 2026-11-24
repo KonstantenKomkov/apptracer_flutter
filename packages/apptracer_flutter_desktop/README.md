@@ -156,9 +156,10 @@ Session-local `URLProtocol` только ограничивает сетевую
 их не убирает. Используйте отдельный desktop example/consumer; iOS-граф проверяется
 отдельно. На iOS/Android/Web этот адаптер откажется стартовать.
 
-Git-потребителям `apptracer_flutter_sentry` нужно явно заменить зависимость и
-`SentryProtocolTracer()` на `SentryDesktopTracer()`. Старый manual envelope transport
-остаётся неизменным; одновременно запускать его и новый SDK нельзя.
+При переходе с удалённого `apptracer_flutter_sentry` замените Git- или
+path-зависимость на `apptracer_flutter_desktop` и уберите ручную регистрацию
+`SentryProtocolTracer()`. Desktop-адаптер регистрируется автоматически.
+[Руководство по миграции](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#moving-from-the-manual-transport).
 
 Пример с Windows/macOS/Linux runners: [example](example/README.md).
 Сборка и проверенная область Windows: [протокол](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/windows-preparation.md).

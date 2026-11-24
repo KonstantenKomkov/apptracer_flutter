@@ -218,7 +218,7 @@ has to be on pub.dev before the next resolves.
 6. `apptracer_flutter`
 7. `apptracer_flutter_desktop` (optional adapter for Windows, macOS and Ubuntu Linux)
 
-The archived `apptracer_flutter_sentry` manual transport keeps `publish_to: none`.
+The removed `apptracer_flutter_sentry` manual transport was never published.
 The first stable desktop release and its acceptance results are recorded
 [below](#stable-100--2026-10-24).
 

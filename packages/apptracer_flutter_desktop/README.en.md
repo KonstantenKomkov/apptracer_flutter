@@ -105,9 +105,10 @@ The main package's dependency graph is unchanged. Adding this optional package t
 a combined mobile/desktop app also pulls in Sentry's iOS/Android native dependencies;
 use a separate desktop consumer until that graph has been verified.
 
-To migrate from the git-only manual protocol package, replace
-`apptracer_flutter_sentry` / `SentryProtocolTracer` with this package /
-`SentryDesktopTracer`. Never run both transports.
+When migrating from the removed `apptracer_flutter_sentry`, replace its Git
+or path dependency with `apptracer_flutter_desktop` and remove the manual
+`SentryProtocolTracer()` registration. The desktop adapter registers automatically.
+[Migration guide](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/docs/desktop-migration.md#moving-from-the-manual-transport).
 
 Run `flutter pub get`, `flutter analyze`, `flutter test` on macOS. Tests exercise
 the official SDK with a mocked native channel, not live Tracer ingestion. See the

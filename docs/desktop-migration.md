@@ -197,11 +197,11 @@ also be checked on a clean VM with `--bundle <extracted-bundle>`.
 
 ## Moving from the manual transport
 
-For the facade 2.0.0 release, keep the manual transport archived at
-`packages/apptracer_flutter_sentry` with `publish_to: none` and outside the
-routine package checks. Existing Git subdirectory references and local paths
-can still resolve to that directory. The archive has no scheduled removal.
-[Consumer audit for issue #28](#manual-transport-consumer-audit).
+The unpublished `packages/apptracer_flutter_sentry` directory was removed
+ahead of facade 2.0.0. If your Git or path dependency points to that directory,
+migrate before updating the SDK checkout. Existing Git pins that include the
+directory still resolve. The [v1.5.0 tag contains the original source](https://github.com/KonstantenKomkov/apptracer_flutter/tree/v1.5.0/packages/apptracer_flutter_sentry).
+[Consumer audit](#manual-transport-consumer-audit) and [removal decision](https://github.com/KonstantenKomkov/apptracer_flutter/issues/41).
 
 1. On supported macOS, Windows 11 x64 and Ubuntu 22.04.5 x86_64, remove the
    archive's Git/path dependency, any matching dependency override, its Dart
@@ -243,8 +243,7 @@ sources for imports and `SentryProtocolTracer` registration.
 | `vkid-flutter-sdk`, `vk_maps_mapkit`, `push_token_tester` and the other locally available applications and libraries | No archive dependency, import or registration was found. |
 
 No checked application needs migration. Usage in third-party forks, private
-repositories outside the workspace and other revisions remains unknown. Keeping
-the directory in place preserves the path those consumers may have pinned.
+repositories outside the workspace and other revisions remains unknown.
 [Issue #28](https://github.com/KonstantenKomkov/apptracer_flutter/issues/28).
 
 ## Windows consumer

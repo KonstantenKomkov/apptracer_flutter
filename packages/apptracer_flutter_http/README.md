@@ -41,7 +41,7 @@ void main() {
 HTTP-транспорт передаёт только ошибки Dart. Для нативных сбоев, ANR и зависаний нужен нативный SDK.
 
 26.08.2026, до первой публикации, ручную реализацию протокола Sentry выделили
-в отдельный пакет [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/main/packages/apptracer_flutter_sentry/README.md), теперь архивный.
+в отдельный пакет [apptracer_flutter_sentry](https://github.com/KonstantenKomkov/apptracer_flutter/blob/v1.5.0/packages/apptracer_flutter_sentry/README.md), впоследствии удалённый.
 
 ## Статус
 
