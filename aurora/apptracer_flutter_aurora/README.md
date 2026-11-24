@@ -31,7 +31,8 @@ adt device exec 'runtime-manager-tool Control start ru.apptracer.apptracer_flutt
 функции. Результат содержит `sdkVersion` и `crashDumperConfigured`.
 Значение `null` означает, что песочница закрыла доступ к настройке ядра.
 При ошибке загрузки или отсутствующем экспорте метод возвращает
-`PlatformException`. Пример работает без токена и разрешения Internet.
+`PlatformException`. Начальная проверка работает без токена. Для отправки отчётов пример запрашивает разрешение Internet.
+[Шаги в приложении и сборка release](example/README.md).
 
 [Проверки на эмуляторе и в кабинете Tracer](../../docs/aurora-preparation.md#emulator-audit).
 

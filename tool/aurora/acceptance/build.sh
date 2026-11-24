@@ -26,8 +26,7 @@ from pathlib import Path
 overrides = Path(sys.argv[1], 'example', 'pubspec_overrides.yaml').read_text()
 Path('pubspec_overrides.yaml').write_text(overrides.replace('../../../packages/', sys.argv[2] + '/packages/'))
 pubspec = Path('pubspec.yaml')
-pubspec.write_text(pubspec.read_text().replace('path: ../', 'path: ' + json.dumps(sys.argv[1]))
-                   + '\naurora:\n  permissions:\n    - Internet\n')
+pubspec.write_text(pubspec.read_text().replace('path: ../', 'path: ' + json.dumps(sys.argv[1])))
 PY
 "$flutter_bin" --suppress-analytics pub get
 "$flutter_bin" --suppress-analytics analyze

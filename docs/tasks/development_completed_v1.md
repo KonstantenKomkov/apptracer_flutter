@@ -1,5 +1,21 @@
 # Выполненные задачи итерации v1
 
+<a id="task-10"></a>
+
+## №10. Примеры, команды сборки и CI
+
+24 ноября 2026 пример Авроры получил экран управления фасадом, ручной ввод
+параметров без сохранения на диск и подтверждение перед SIGABRT. В инструкции
+приведены шаги от сборки и подписи до сверки в кабинете. Пример собран
+Flutter Аврора 3.41.4 для Aurora 5.2.1.200 aarch64. Целевые тесты и сборка RPM
+выполняются на подготовленной машине. GitHub Actions проверяет SDK и ABI
+на Ubuntu. Регрессии фасада, Android, iOS и Web прошли в CI публичного API.
+[Пример](../../aurora/apptracer_flutter_aurora/example/README.md),
+[команды приёмки](../../tool/aurora/acceptance/README.md),
+[CI](https://github.com/KonstantenKomkov/apptracer_flutter/actions/runs/45444468250).
+Результаты остальных платформ сохранены в [№10.macOS](#task-10-macos),
+[№10.Ubuntu](#task-10-ubuntu) и [№10.Windows](#task-10-windows).
+
 <a id="task-9"></a>
 
 ## №9. Символы Flutter RPM для Авроры
