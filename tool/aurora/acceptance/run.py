@@ -12,7 +12,7 @@ DIRECTORY = '"$HOME/.local/share/ru.apptracer/apptracer_flutter_aurora_example"'
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('arm', 'upload', 'switch', 'revoke', 'retry', 'offline', 'hold', 'fresh', 'cancel', 'facade-crash', 'facade-replay', 'facade-dart', 'facade-lifecycle'))
+    parser.add_argument('phase', choices=('arm', 'upload', 'switch', 'revoke', 'retry', 'offline', 'hold', 'fresh', 'cancel', 'facade-crash', 'facade-replay', 'facade-dart', 'facade-lifecycle', 'facade-symbols', 'dart-symbols'))
     parser.add_argument('ssh_arguments', nargs=argparse.REMAINDER,
                         help='-- followed by SSH options and user@emulator')
     args = parser.parse_args()
@@ -22,11 +22,12 @@ def main():
     if not ssh_args:
         parser.error('Provide the SSH destination')
     ssh = ['ssh', '-o', 'BatchMode=yes', *ssh_args]
-    token = os.environ.get('TRACER_AURORA_APP_TOKEN') or getpass.getpass('Tracer app token: ')
-    if not token or '\n' in token or '\r' in token:
-        parser.error('Expected a single nonempty app token')
-
-    fields = [args.phase, token]
+    fields = [args.phase]
+    if args.phase != 'dart-symbols':
+        token = os.environ.get('TRACER_AURORA_APP_TOKEN') or getpass.getpass('Tracer app token: ')
+        if not token or '\n' in token or '\r' in token:
+            parser.error('Expected a single nonempty app token')
+        fields.append(token)
     if args.phase == 'facade-dart':
         dsn = os.environ.get('TRACER_AURORA_SENTRY_DSN') or getpass.getpass('Tracer DSN: ')
         if not dsn or '\n' in dsn or '\r' in dsn:

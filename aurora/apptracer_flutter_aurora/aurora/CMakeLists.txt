@@ -11,6 +11,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(AppTracerAppDir REQUIRED IMPORTED_TARGET appdir-cpp)
 
 add_library(${plugin} SHARED plugin.cc session.cc minidump.cc retry.cc worker.cc)
+target_compile_options(${plugin} PRIVATE -g)
 target_compile_features(${plugin} PRIVATE cxx_std_17)
 include(AuroraClientWrapper)
 ADD_CLIENT_WRAPPER_SOURCE(${plugin})
