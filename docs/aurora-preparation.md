@@ -113,7 +113,14 @@ C/C++ проекта. Значения загружены из локально�
 | --- | --- | --- |
 | Нативный SDK | SIGABRT в подписанном RPM, импорт на следующем запуске и `tracer_upload()` | TLS проверен, в журнале SDK два ответа HTTP 200 |
 | Символы | Breakpad-файл тестового ELF `ru.apptracer.EmulatorAudit`, ID `69424C9D03E41324212A8A413A59A8290` | API с plugin token первоначально запросил файл. После передачи повторный запрос `exists` вернул HTTP 200 и пустой список недостающих файлов |
-| Dart | `StateError` с сообщением `Bad state: Aurora Flutter 2.0.0 acceptance` из подписанной Flutter release-сборки, запущенной из терминала эмулятора | По DSN выполнен запрос с ответом HTTP 200. Sentry SDK вернул пустой event ID. Отображение события и кадров проверяется в кабинете |
+| Dart | `StateError` с сообщением `Bad state: Aurora Flutter 2.0.0 acceptance` из подписанной Flutter release-сборки, запущенной из терминала эмулятора | По DSN выполнен запрос с ответом HTTP 200. Sentry SDK вернул пустой event ID. В кабинете видны тип, сообщение, `main.dart:45` (main) и `main.dart:23` (auroraLiveFailure) |
+
+В группе NATIVE просмотрены оба события за 17:58 и 17:59 МСК. В первом
+проверены вкладки «Ключи» и «Логи» с `aurora_audit=emulator-aarch64` и
+сообщением «Контрольный SIGABRT из тестового RPM». В обычном тексте второго
+события ID модуля совпадает с загруженной картой. В карточке отображался
+адрес `ru.apptracer.EmulatorAudit + 0x1fe4`. Локально `addr2line` для этого
+ELF восстановил `main`, `sdk-smoke.cc:29`.
 
 ## Что можно воспроизвести сейчас
 
